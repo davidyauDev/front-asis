@@ -1,5 +1,5 @@
 <template>
-  <div v-if="paginationInfo.total > 1" class="mt-6">
+  <div v-if="paginationInfo.totalItems > paginationInfo.perPage" class="mt-6">
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
       <!-- Info de paginación -->
       <div class="flex items-center gap-4">
@@ -22,8 +22,8 @@
       <UPagination
         :model-value="paginationInfo.current"
         :total="paginationInfo.totalItems"
-        :page-count="paginationInfo.perPage"
-        @update:model-value="$emit('goToPage', $event)"
+        :items-per-page="paginationInfo.perPage"
+        @update:page="handlePageChange"
         :max="7"
         size="sm"
         show-first
@@ -57,5 +57,10 @@ interface Emits {
 }
 
 defineProps<Props>()
-defineEmits<Emits>()
+const emit = defineEmits<Emits>()
+
+const handlePageChange = (page: number) => {
+  emit('goToPage', page);
+}
+
 </script>

@@ -4,13 +4,11 @@ import type { UserListItem } from "~/types";
 
 definePageMeta({ middleware: "auth" });
 
-// 🎯 Composables principales
 const {
   users,
   loading,
   error,
   paginationInfo,
-  searchQuery,
   sortBy,
   sortOrder,
   goToPage,
@@ -23,33 +21,22 @@ const {
 
 const toast = useToast();
 
-// 🎯 Estado local reactivo
 const search = ref("");
 const selectedUsers = ref<number[]>([]);
 const selectedPerPage = ref(10);
-const viewMode = ref<'table' | 'grid' | 'compact'>('table');
 const showFilters = ref(false);
 const selectedRole = ref('');
 const selectedStatus = ref('');
 const selectedUser = ref<UserListItem | null>(null);
 const showUserPreview = ref(false);
 const isRefreshing = ref(false);
-const lastUpdated = ref(new Date());
 const isCreatingUser = ref(false);
-const isMobile = ref(false);
 
-// 📊 Estadísticas computadas
-const userStats = computed(() => ({
-  total: paginationInfo.value.totalItems || 0,
-  active: users.value.filter(u => (u as any).status === 'active').length,
-  online: Math.floor(Math.random() * users.value.length * 0.3),
-}));
 
-// 🔄 Funciones principales
+
 const handleRefresh = async () => {
   isRefreshing.value = true;
   await refreshUsers();
-  lastUpdated.value = new Date();
   isRefreshing.value = false;
   
   toast.add({
@@ -83,7 +70,6 @@ const toggleUserSelection = (userId: number) => {
   }
 };
 
-// 👤 Acciones de usuario
 const openUserPreview = (user: UserListItem) => {
   selectedUser.value = user;
   showUserPreview.value = true;
@@ -93,12 +79,7 @@ const viewUser = (user: UserListItem) => openUserPreview(user);
 const editUser = (user: UserListItem) => console.log("Editar usuario:", user);
 const deleteUser = (user: UserListItem) => console.log("Eliminar usuario:", user);
 
-// 📱 Detección móvil
-const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768;
-};
-
-// 🔍 Búsqueda con debounce
+//  Búsqueda con debounce
 watchDebounced(
   search,
   async (query) => {
@@ -114,216 +95,231 @@ onMounted(async () => {
       await initializeUsers();
     }
     selectedPerPage.value = paginationInfo.value.perPage;
-    
-    // Configurar detección móvil
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
   } catch (err) {
     console.error('Error al inicializar usuarios:', err);
   }
 });
 
-onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile);
-});
-
-// 🧭 Meta de página
-useHead({ title: "Usuarios - Asisten" });
 </script>
 
 <template>
   <UDashboardPanel id="users">
-    <!-- Header -->
     <template #header>
-      <UsersHeader
-        :total-users="userStats.total"
-        :active-users="userStats.active" 
-        :online-users="userStats.online"
-        v-model:view-mode="viewMode"
-        :is-mobile="isMobile"
-        :is-refreshing="isRefreshing"
-        :is-creating="isCreatingUser"
-        @refresh="handleRefresh"
-        @create-user="isCreatingUser = true"
-        @export="(type) => console.log('Export:', type)"
-      />
+      <UDashboardNavbar title="Usuarios" :ui="{ right: 'gap-3' }">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
 
-      <!-- Toolbar -->
-      <div class="border-b border-gray-100 dark:border-gray-800">
-        <div class="flex items-center justify-between p-4">
-          <div class="flex items-center gap-3">
-            <!-- Búsqueda -->
-            <UInput
-              v-model="search"
-              icon="i-lucide-search"
-              placeholder="Buscar usuarios..."
-              class="w-80"
-              :loading="loading"
-              size="sm"
-            />
-
-            <!-- Toggle filtros -->
+        <template #right>
+          <UTooltip text="Refrescar">
             <UButton
-              :icon="showFilters ? 'i-lucide-x' : 'i-lucide-filter'"
-              variant="outline"
-              size="sm"
-              @click="showFilters = !showFilters"
-              :color="showFilters ? 'primary' : 'neutral'"
+              color="neutral"
+              variant="ghost"
+              square
+              :loading="isRefreshing"
+              @click="handleRefresh"
             >
-              {{ showFilters ? 'Ocultar' : 'Filtros' }}
+              <UIcon name="i-lucide-refresh-cw" class="size-5 shrink-0" />
             </UButton>
-          </div>
+          </UTooltip>
 
-          <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-            <span v-if="paginationInfo.totalItems">
-              {{ paginationInfo.from }}-{{ paginationInfo.to }} de {{ paginationInfo.totalItems }}
-            </span>
+          <UButton
+            icon="i-lucide-user-plus"
+            @click="isCreatingUser = true"
+          >
+            Nuevo Usuario
+          </UButton>
+        </template>
+      </UDashboardNavbar>
 
-            <USelectMenu
-              v-model="selectedPerPage"
-              :options="[
-                { label: '5 por página', value: 5 },
-                { label: '10 por página', value: 10 },
-                { label: '15 por página', value: 15 },
-                { label: '25 por página', value: 25 },
-                { label: '50 por página', value: 50 }
-              ]"
-              size="xs"
-              :loading="loading"
-              @update:model-value="handlePerPageChange"
-              class="w-24"
-            />
-          </div>
-        </div>
+      <UDashboardToolbar>
+        <template #left>
+          <UInput
+            v-model="search"
+            icon="i-lucide-search"
+            placeholder="Buscar usuarios..."
+            class="w-64"
+            :loading="loading"
+          />
 
-        <!-- Panel de filtros -->
-        <div v-if="showFilters" class="border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-4">
-          <div class="flex flex-wrap items-center gap-4">
-            <UFormGroup label="Rol" size="sm">
-              <USelectMenu
-                v-model="selectedRole"
-                :options="[
-                  { label: 'Todos los roles', value: '' },
-                  { label: 'Gerente', value: 'Gerente' },
-                  { label: 'Jefe de Área', value: 'Jefe de Área' },
-                  { label: 'Supervisor', value: 'Supervisor' },
-                  { label: 'Técnico', value: 'Técnico' },
-                  { label: 'Administrativo', value: 'Administrativo' }
-                ]"
-                placeholder="Seleccionar rol"
-                size="sm"
-                class="w-48"
-                clearable
-              />
-            </UFormGroup>
-            
-            <UFormGroup label="Estado" size="sm">
-              <USelectMenu
-                v-model="selectedStatus"
-                :options="[
-                  { label: 'Todos los estados', value: '' },
-                  { label: 'Activo', value: 'active' },
-                  { label: 'Inactivo', value: 'inactive' },
-                  { label: 'Pendiente', value: 'pending' }
-                ]"
-                placeholder="Seleccionar estado"
-                size="sm"
-                class="w-48"
-                clearable
-              />
-            </UFormGroup>
+          <UButton
+            :icon="showFilters ? 'i-lucide-x' : 'i-lucide-filter'"
+            :color="showFilters ? 'primary' : 'neutral'"
+            variant="ghost"
+            @click="showFilters = !showFilters"
+          >
+            {{ showFilters ? 'Ocultar' : 'Filtros' }}
+          </UButton>
+        </template>
 
-            <div class="flex-1"></div>
+        <template #right>
+          <span v-if="paginationInfo.totalItems" class="text-sm text-muted">
+            {{ paginationInfo.from }}-{{ paginationInfo.to }} de {{ paginationInfo.totalItems }}
+          </span>
 
-            <div class="flex items-center gap-2">
-              <UButton
-                variant="ghost"
-                size="sm"
-                icon="i-lucide-eraser"
-                @click="selectedRole = ''; selectedStatus = ''"
-              >
-                Limpiar
-              </UButton>
-            </div>
-          </div>
+          <USelectMenu
+            v-model="selectedPerPage"
+            :options="[
+              { label: '10', value: 10 },
+              { label: '25', value: 25 },
+              { label: '50', value: 50 }
+            ]"
+            :loading="loading"
+            @update:model-value="handlePerPageChange"
+          />
+        </template>
+      </UDashboardToolbar>
+
+      <!-- Panel de filtros expandible -->
+      <div v-if="showFilters" class="border-t">
+        <div class="p-4 flex items-center gap-4">
+          <USelectMenu
+            v-model="selectedRole"
+            :options="[
+              { label: 'Todos los roles', value: '' },
+              { label: 'Gerente', value: 'Gerente' },
+              { label: 'Jefe de Área', value: 'Jefe de Área' },
+              { label: 'Supervisor', value: 'Supervisor' }
+            ]"
+            placeholder="Rol"
+            clearable
+          />
+          
+          <USelectMenu
+            v-model="selectedStatus"
+            :options="[
+              { label: 'Todos', value: '' },
+              { label: 'Activo', value: 'active' },
+              { label: 'Inactivo', value: 'inactive' }
+            ]"
+            placeholder="Estado"
+            clearable
+          />
+
+          <UButton
+            variant="ghost"
+            icon="i-lucide-eraser"
+            @click="selectedRole = ''; selectedStatus = ''"
+          >
+            Limpiar
+          </UButton>
         </div>
       </div>
     </template>
 
     <!-- Contenido principal -->
     <template #body>
-      <div class="space-y-4">
-        <!-- Estados especiales -->
-        <div v-if="loading && users.length === 0" class="space-y-3">
-          <div v-for="i in 5" :key="i" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-            <div class="animate-pulse flex items-center space-x-4">
-              <div class="rounded-full bg-gray-200 dark:bg-gray-700 h-8 w-8"></div>
-              <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+      <!-- Estado de carga -->
+      <Transition
+        enter-active-class="transition-all duration-500 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition-all duration-300 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+        mode="out-in"
+      >
+        <div v-if="loading && users.length === 0" key="loading" class="min-h-[calc(100vh-16rem)]">
+          <div class="space-y-4">
+            <!-- Skeleton de la tabla -->
+            <div class="rounded-lg overflow-hidden bg-white dark:bg-gray-950">
+              <!-- Header de tabla -->
+              <div class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+                <USkeleton class="h-4 w-full" />
               </div>
+              <!-- Filas -->
+              <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                <div v-for="i in 10" :key="i" class="px-4 py-4 flex items-center gap-4">
+                  <USkeleton class="size-4 rounded" />
+                  <USkeleton class="h-6 w-20" />
+                  <USkeleton class="size-8 rounded-full" />
+                  <USkeleton class="h-5 w-32" />
+                  <USkeleton class="h-5 w-48" />
+                  <USkeleton class="h-6 w-24" />
+                  <USkeleton class="h-6 w-20" />
+                  <div class="ml-auto flex gap-2">
+                    <USkeleton class="size-8 rounded" />
+                    <USkeleton class="size-8 rounded" />
+                    <USkeleton class="size-8 rounded" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Skeleton de paginación -->
+            <div class="flex justify-between items-center">
+              <USkeleton class="h-5 w-32" />
+              <USkeleton class="h-10 w-64" />
             </div>
           </div>
         </div>
 
-        <UAlert
-          v-else-if="error"
-          :title="error"
-          color="error"
-          variant="soft"
-          icon="i-lucide-alert-circle"
-        >
-          <template #description>
-            <div class="space-y-2">
-              <p class="text-sm">Hubo un problema al cargar los usuarios.</p>
+        <!-- Error -->
+        <div v-else-if="error" key="error" class="min-h-[calc(100vh-16rem)] flex items-center justify-center">
+          <UAlert
+            :title="error"
+            color="error"
+            variant="subtle"
+            icon="i-lucide-alert-circle"
+            class="max-w-xl"
+          >
+            <template #actions>
               <UButton 
                 @click="handleRefresh" 
                 color="error" 
-                variant="outline" 
-                size="sm"
+                variant="outline"
                 icon="i-lucide-refresh-cw"
                 :loading="isRefreshing"
               >
                 Reintentar
               </UButton>
-            </div>
-          </template>
-        </UAlert>
-
-        <div v-else-if="!users.length" class="text-center py-12">
-          <div class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
-            <UIcon name="i-lucide-users" class="w-6 h-6 text-gray-400 dark:text-gray-500" />
-          </div>
-          <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">
-            {{ search ? "Sin resultados" : "No hay usuarios" }}
-          </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            {{ search ? `No se encontraron usuarios para "${search}"` : "Aún no se han registrado usuarios" }}
-          </p>
-          <UButton 
-            v-if="search" 
-            variant="outline" 
-            size="sm"
-            @click="search = ''"
-          >
-            Limpiar búsqueda
-          </UButton>
+            </template>
+          </UAlert>
         </div>
 
-        <!-- Contenido principal -->
-        <div v-else>
-          <!-- Acciones en lote -->
-          <UsersBulkActions
-            v-if="selectedUsers.length > 0"
-            :selected-users="selectedUsers"
-            @send-email="console.log('Send email')"
-            @deactivate-users="console.log('Deactivate')"
-            @clear-selection="selectedUsers = []"
-          />
+        <!-- Sin resultados -->
+        <div v-else-if="!users.length" key="empty" class="min-h-[calc(100vh-16rem)] flex items-center justify-center">
+          <UCard class="max-w-lg">
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+              <UIcon name="i-lucide-users" class="size-12 text-muted mb-4 animate-pulse" />
+              <h3 class="text-lg font-semibold mb-2">
+                {{ search ? 'Sin resultados' : 'No hay usuarios' }}
+              </h3>
+              <p class="text-sm text-muted mb-4">
+                {{ search ? 'No se encontraron usuarios para tu búsqueda' : 'Aún no se han registrado usuarios' }}
+              </p>
+              <UButton 
+                v-if="search" 
+                @click="search = ''"
+                variant="outline"
+              >
+                Limpiar búsqueda
+              </UButton>
+            </div>
+          </UCard>
+        </div>
 
-          <!-- Vista de tabla -->
+        <!-- Lista de usuarios -->
+        <div v-else key="content" class="space-y-4 min-h-[calc(100vh-16rem)]">
+          <!-- Acciones en lote -->
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-4 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 -translate-y-4 scale-95"
+          >
+            <UsersBulkActions
+              v-if="selectedUsers.length > 0"
+              :selected-users="selectedUsers"
+              @send-email="console.log('Send email')"
+              @deactivate-users="console.log('Deactivate')"
+              @clear-selection="selectedUsers = []"
+            />
+          </Transition>
+
+          <!-- Tabla de usuarios -->
           <UsersTable
-            v-if="viewMode === 'table'"
             :users="users"
             :selected-users="selectedUsers"
             :sort-by="sortBy"
@@ -336,46 +332,6 @@ useHead({ title: "Usuarios - Asisten" });
             @delete-user="deleteUser"
           />
 
-          <!-- Otras vistas (simplificadas por ahora) -->
-          <div v-else-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <UCard v-for="user in users" :key="user.id" class="p-4">
-              <div class="flex items-center gap-3">
-                <UAvatar :alt="user.name" size="sm">
-                  {{ user.name.charAt(0).toUpperCase() }}
-                </UAvatar>
-                <div>
-                  <p class="font-medium">{{ user.name }}</p>
-                  <p class="text-sm text-gray-500">{{ user.email }}</p>
-                </div>
-              </div>
-            </UCard>
-          </div>
-
-          <div v-else class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 divide-y">
-            <div v-for="user in users" :key="user.id" class="p-4 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <UCheckbox 
-                  :model-value="selectedUsers.includes(user.id)"
-                  @change="toggleUserSelection(user.id)"
-                  size="sm"
-                />
-                <UAvatar :alt="user.name" size="sm">
-                  {{ user.name.charAt(0).toUpperCase() }}
-                </UAvatar>
-                <div>
-                  <p class="font-medium">{{ user.name }}</p>
-                  <p class="text-sm text-gray-500">{{ user.email }}</p>
-                </div>
-              </div>
-              <UButton 
-                icon="i-lucide-more-horizontal" 
-                size="xs" 
-                variant="ghost"
-                @click="openUserPreview(user)"
-              />
-            </div>
-          </div>
-
           <!-- Paginación -->
           <UsersPagination
             :pagination-info="paginationInfo"
@@ -383,74 +339,67 @@ useHead({ title: "Usuarios - Asisten" });
             @go-to-page="goToPage"
           />
         </div>
-      </div>
+      </Transition>
     </template>
   </UDashboardPanel>
 
   <!-- Modal de vista previa -->
-  <USlideover v-model="showUserPreview" side="right">
+  <USlideover v-model="showUserPreview">
     <UCard v-if="selectedUser" class="flex flex-col flex-1">
       <template #header>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <UAvatar :alt="selectedUser.name" size="lg">
-              {{ selectedUser.name.charAt(0).toUpperCase() }}
-            </UAvatar>
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ selectedUser.name }}</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">{{ selectedUser.emp_code }}</p>
-            </div>
+        <div class="flex items-center gap-3">
+          <UAvatar :alt="selectedUser.name" size="md">
+            {{ selectedUser.name.charAt(0).toUpperCase() }}
+          </UAvatar>
+          <div class="flex-1">
+            <h3 class="font-semibold">{{ selectedUser.name }}</h3>
+            <p class="text-sm text-muted">{{ selectedUser.emp_code }}</p>
           </div>
           <UButton 
             icon="i-lucide-x" 
             color="neutral" 
-            variant="ghost" 
-            size="sm"
+            variant="ghost"
+            square
             @click="showUserPreview = false"
           />
         </div>
       </template>
 
-      <div class="flex-1 space-y-6 p-6">
-        <!-- Información básica -->
-        <UFormGroup label="Información de contacto">
-          <div class="space-y-3">
-            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <UIcon name="i-lucide-mail" class="w-4 h-4 text-gray-500" />
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">Email</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ selectedUser.email }}</p>
-              </div>
-            </div>
-          </div>
-        </UFormGroup>
-
-        <!-- Estado -->
-        <UFormGroup label="Estado">
+      <div class="flex-1 space-y-4">
+        <div class="space-y-1">
+          <div class="text-sm text-muted">Email</div>
           <div class="flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-green-400"></div>
+            <UIcon name="i-lucide-mail" class="size-4 text-muted" />
+            <span class="text-sm">{{ selectedUser.email }}</span>
+          </div>
+        </div>
+
+
+        <div class="space-y-1">
+          <div class="text-sm text-muted">Estado</div>
+          <div class="flex items-center gap-2">
+            <div class="size-2 rounded-full bg-success"></div>
             <span class="text-sm">Activo</span>
           </div>
-        </UFormGroup>
+        </div>
       </div>
 
       <template #footer>
-        <div class="flex items-center justify-between p-6">
-          <div class="text-xs text-gray-500 dark:text-gray-400">
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-muted">
             Última conexión: {{ new Date().toLocaleDateString() }}
           </div>
           
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <UButton 
               icon="i-lucide-edit"
-              size="sm"
               @click="editUser(selectedUser!); showUserPreview = false"
             >
               Editar
             </UButton>
             <UButton 
-              variant="outline"
-              size="sm"
+              color="neutral"
+              variant="ghost"
               @click="showUserPreview = false"
             >
               Cerrar

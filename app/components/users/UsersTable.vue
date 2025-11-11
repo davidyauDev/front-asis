@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+  <div class="rounded-lg overflow-hidden bg-white dark:bg-gray-950">
     <div class="overflow-x-auto">
       <table class="w-full">
-        <thead class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
           <tr>
             <th class="px-4 py-3 w-12">
               <UCheckbox 
@@ -16,13 +16,13 @@
               <button 
                 v-if="col.sortable"
                 :class="getSortButtonClass(col.key)" 
-                @click="$emit('sort', col.key)"
                 class="group flex items-center gap-1 font-medium"
+                @click="$emit('sort', col.key)"
               >
                 {{ col.label }}
                 <UIcon 
                   :name="getSortIcon(col.key)" 
-                  class="w-3 h-3 opacity-60 group-hover:opacity-100" 
+                  class="size-3 opacity-60 group-hover:opacity-100" 
                 />
               </button>
               <span v-else class="text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -37,8 +37,8 @@
             v-for="user in users"
             :key="user.id"
             :class="[
-              'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200',
-              selectedUsers.includes(user.id) ? 'bg-blue-50 dark:bg-blue-950/50' : ''
+              'hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors',
+              selectedUsers.includes(user.id) ? 'bg-primary-50 dark:bg-primary-950/30' : ''
             ]"
           >
             <!-- Checkbox -->
@@ -55,7 +55,7 @@
               <UBadge 
                 :label="user.emp_code" 
                 variant="outline" 
-                size="sm"
+                size="md"
                 class="font-mono"
               />
             </td>
@@ -66,13 +66,13 @@
                 <UAvatar 
                   :alt="user.name"
                   size="sm"
-                  class="bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400"
+                  class="ring-1 ring-gray-200 dark:ring-gray-800"
                 >
                   {{ user.name.charAt(0).toUpperCase() }}
                 </UAvatar>
                 <div>
-                  <p class="font-medium text-gray-900 dark:text-white">{{ user.name }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">ID: {{ user.id }}</p>
+                  <p class="text-xs font-medium text-gray-700 dark:text-gray-200">{{ user.name }}</p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400">ID: {{ user.id }}</p>
                 </div>
               </div>
             </td>
@@ -80,8 +80,8 @@
             <!-- Email -->
             <td class="px-4 py-4">
               <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-mail" class="w-3 h-3 text-gray-400" />
-                <span class="text-sm text-gray-900 dark:text-white">{{ user.email }}</span>
+                <UIcon name="i-lucide-mail" class="size-4 text-gray-400 dark:text-gray-500" />
+                <span class="text-sm text-gray-700 dark:text-gray-300">{{ user.email }}</span>
               </div>
             </td>
 
@@ -91,25 +91,16 @@
                 :label="(user as any).role || 'Sin rol'"
                 color="neutral"
                 variant="soft"
-                size="sm"
+                size="md"
               />
             </td>
 
             <!-- Estado -->
             <td class="px-4 py-4">
-              <div class="flex items-center gap-2">
-                <div 
-                  :class="[
-                    'w-2 h-2 rounded-full',
-                    getStatusColor((user as any).status)
-                  ]"
-                />
-                <UBadge 
-                  :label="getStatusLabel((user as any).status)"
-                  :color="getStatusBadgeColor((user as any).status)"
-                  variant="soft"
-                  size="xs"
-                />
+              <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full" :class="getStatusContainerClass((user as any).status)">
+                <span class="text-xs font-medium" :class="getStatusTextClass((user as any).status)">
+                  {{ getStatusLabel((user as any).status) }}
+                </span>
               </div>
             </td>
 
@@ -132,18 +123,40 @@
                     @click="$emit('editUser', user)" 
                   />
                 </UTooltip>
-                <UDropdown 
-                  :items="getActionItems(user)"
-                  :popper="{ placement: 'bottom-end' }"
-                >
-                  <UTooltip text="Más acciones">
-                    <UButton 
-                      icon="i-lucide-more-horizontal" 
-                      size="xs" 
-                      variant="ghost"
-                    />
-                  </UTooltip>
-                </UDropdown>
+                <UPopover>
+                  <UButton 
+                    icon="i-lucide-more-horizontal" 
+                    size="xs" 
+                    variant="ghost"
+                  />
+                  
+                  <template #content>
+                    <div class="p-1 space-y-1">
+                      <UButton
+                        label="Ver detalles"
+                        icon="i-lucide-eye"
+                        variant="ghost"
+                        block
+                        @click="$emit('viewUser', user)"
+                      />
+                      <UButton
+                        label="Editar"
+                        icon="i-lucide-edit"
+                        variant="ghost"
+                        block
+                        @click="$emit('editUser', user)"
+                      />
+                      <UButton
+                        label="Eliminar"
+                        icon="i-lucide-trash-2"
+                        variant="ghost"
+                        color="error"
+                        block
+                        @click="$emit('deleteUser', user)"
+                      />
+                    </div>
+                  </template>
+                </UPopover>
               </div>
             </td>
           </tr>
@@ -201,17 +214,33 @@ const getSortIcon = (column: string) => {
 }
 
 const getSortButtonClass = (column: string) => {
-  const base = "flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 cursor-pointer transition-colors"
+  const base = "flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
   return props.sortBy === column
-    ? base + " text-gray-900 dark:text-gray-100"
+    ? base + " !text-gray-900 dark:!text-gray-100"
     : base
 }
 
-const getStatusColor = (status: string) => {
+const getStatusDotColor = (status: string) => {
   switch (status) {
-    case 'active': return 'bg-green-400'
-    case 'inactive': return 'bg-red-400'
-    default: return 'bg-yellow-400'
+    case 'active': return 'bg-green-500'
+    case 'inactive': return 'bg-red-500'
+    default: return 'bg-yellow-500'
+  }
+}
+
+const getStatusContainerClass = (status: string) => {
+  switch (status) {
+    case 'active': return 'bg-green-50 dark:bg-green-950/50'
+    case 'inactive': return 'bg-red-50 dark:bg-red-950/50'
+    default: return 'bg-yellow-50 dark:bg-yellow-950/50'
+  }
+}
+
+const getStatusTextClass = (status: string) => {
+  switch (status) {
+    case 'active': return 'text-green-700 dark:text-green-400'
+    case 'inactive': return 'text-red-700 dark:text-red-400'
+    default: return 'text-yellow-700 dark:text-yellow-400'
   }
 }
 
@@ -230,19 +259,4 @@ const getStatusBadgeColor = (status: string) => {
     default: return 'warning'
   }
 }
-
-const getActionItems = (user: UserListItem) => [
-  [
-    { label: "Ver detalles", icon: "i-lucide-eye", click: () => emit('viewUser', user) },
-    { label: "Editar", icon: "i-lucide-edit", click: () => emit('editUser', user) },
-  ],
-  [
-    {
-      label: "Eliminar",
-      icon: "i-lucide-trash-2",
-      click: () => emit('deleteUser', user),
-      color: "red" as const,
-    },
-  ],
-]
 </script>

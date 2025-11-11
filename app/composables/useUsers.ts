@@ -58,7 +58,6 @@ const _useUsers = () => {
       params.append("sort_order", sortOrderParam || sortOrder.value);
 
       const url = `${apiBaseUrl}/api/users?${params.toString()}`;
-      console.log("Fetching users from:", url);
 
       const response = await $fetch<any>(url, {
         headers: {
@@ -119,6 +118,7 @@ const _useUsers = () => {
 
   // Buscar usuarios
   const searchUsers = async (query: string) => {
+    searchQuery.value = query; // ✅ Actualizar el searchQuery interno
     currentPage.value = 1; // Reset a primera página
     await fetchUsers(1, query, sortBy.value, sortOrder.value);
   };
