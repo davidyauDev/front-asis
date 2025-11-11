@@ -1,42 +1,56 @@
 <template>
   <div class="overflow-hidden">
     <!-- 📊 Header mejorado -->
-    <div class="px-4 sm:px-6 py-4 border-b border-gray-200/50 dark:border-gray-800/50 bg-white dark:bg-gray-900">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center space-x-3">
+    <div class="px-4 sm:px-6 py-3 border-b border-gray-200/50 dark:border-gray-800/50 bg-white dark:bg-gray-900">
+      <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
+        <!-- Left: title -->
+        <div class="flex items-center gap-3">
           <div class="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
             <UIcon name="i-lucide-table" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <div>
-            <h2 class="font-semibold text-gray-900 dark:text-white">
-              Registros de Asistencia
-            </h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ totalRecords.toLocaleString() }} registros encontrados
-            </p>
+          <div class="leading-tight">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">Registros de Asistencia</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">{{ totalRecords.toLocaleString() }} registros</div>
           </div>
         </div>
 
-        <!-- 📈 Stats inline responsivas -->
-        <div class="flex flex-wrap items-center gap-3 text-sm">
-          <div class="flex items-center space-x-2 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full">
-            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span class="text-green-700 dark:text-green-300 font-medium">
-              {{ stats.check_ins_hoy }} entradas
-            </span>
-          </div>
-          <div class="flex items-center space-x-2 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-full">
-            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span class="text-red-700 dark:text-red-300 font-medium">
-              {{ stats.check_outs_hoy }} salidas
-            </span>
-          </div>
-          <div class="flex items-center space-x-2 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-full">
-            <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
-            <span class="text-amber-700 dark:text-amber-300 font-medium">
-              {{ stats.pendientes }} pendientes
-            </span>
-          </div>
+        <!-- Right: controls (estilo UsersTable) -->
+        <div class="flex items-center gap-2">
+          <!-- Search (visual, sin logica adicional) -->
+          <UInput
+            placeholder="Buscar por nombre, ID o ubicación..."
+            size="sm"
+            clearable
+            class="w-56"
+            @clear="$emit('refresh')"
+            @input.stop
+          />
+
+          <!-- Abrir filtros -->
+          <UButton
+            icon="i-lucide-sliders"
+            size="sm"
+            variant="outline"
+            @click="$emit('openFilters')"
+            title="Abrir filtros"
+          />
+
+          <!-- Refrescar -->
+          <UButton
+            icon="i-lucide-refresh-cw"
+            size="sm"
+            variant="ghost"
+            @click="$emit('refresh')"
+            title="Actualizar"
+          />
+
+          <!-- Agregar -->
+          <UButton
+            icon="i-lucide-plus"
+            size="sm"
+            variant="ghost"
+            @click="$emit('add')"
+          />
         </div>
       </div>
     </div>
@@ -120,10 +134,11 @@
                 <div class="flex items-center gap-3">
                   <UAvatar
                     :alt="asistencia.usuario?.name"
-                    :src="getEmployeeAvatar(asistencia.usuario)"
                     size="sm"
-                    class="ring-2 ring-white dark:ring-gray-800"
-                  />
+                    class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600"
+                  >
+                    {{ (asistencia.usuario?.name || '?').charAt(0).toUpperCase() }}
+                  </UAvatar>
                   <div class="min-w-0">
                     <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                       {{ asistencia.usuario?.name || 'Usuario desconocido' }}
@@ -298,9 +313,11 @@
               <div class="flex items-center gap-3">
                 <UAvatar
                   :alt="asistencia.usuario?.name"
-                  :src="getEmployeeAvatar(asistencia.usuario)"
                   size="sm"
-                />
+                  class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600"
+                >
+                  {{ (asistencia.usuario?.name || '?').charAt(0).toUpperCase() }}
+                </UAvatar>
                 <div>
                   <div class="font-medium text-sm truncate">
                     {{ asistencia.usuario?.name || 'Usuario desconocido' }}
@@ -405,9 +422,11 @@
             <div class="flex items-center gap-3">
               <UAvatar
                 :alt="asistencia.usuario?.name"
-                :src="getEmployeeAvatar(asistencia.usuario)"
                 size="sm"
-              />
+                class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600"
+              >
+                {{ (asistencia.usuario?.name || '?').charAt(0).toUpperCase() }}
+              </UAvatar>
               <div>
                 <div class="font-medium text-sm">
                   {{ asistencia.usuario?.name || 'Usuario desconocido' }}
@@ -525,30 +544,52 @@
     </div>
 
     <!-- 😕 Estado vacío -->
-    <div v-else-if="!loading" class="text-center p-12">
-      <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-        <UIcon name="i-lucide-inbox" class="w-10 h-10 text-gray-400" />
-      </div>
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-        No hay registros de asistencia
-      </h3>
-      <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-        No se encontraron registros que coincidan con los filtros aplicados. Prueba ajustando los criterios de búsqueda.
-      </p>
-      <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <UButton
-          icon="i-lucide-plus"
-          @click="$emit('add')"
-        >
-          Registrar asistencia
-        </UButton>
-        <UButton
-          icon="i-lucide-refresh-cw"
-          variant="outline"
-          @click="$emit('refresh')"
-        >
-          Actualizar
-        </UButton>
+    <div v-else-if="!loading" class="p-6">
+      <div class="max-w-xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 text-center">
+        <div class="mx-auto mb-4 w-20 h-20 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+          <UIcon name="i-lucide-inbox" class="w-10 h-10 text-gray-400" />
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No hay registros</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          No se encontraron registros que coincidan con los filtros actuales.
+        </p>
+
+        <!-- Resumen / ayuda sobre filtros -->
+        <div class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Usa los filtros para acotar por fecha, empleado, tipo de registro o estado de sincronización.
+        </div>
+
+        <!-- Acciones principales -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
+          <UButton
+            icon="i-lucide-sliders"
+            variant="outline"
+            @click="$emit('openFilters')"
+          >
+            Abrir filtros
+          </UButton>
+          <UButton
+            icon="i-lucide-x-circle"
+            variant="outline"
+            color="neutral"
+            @click="$emit('clearFilters')"
+          >
+            Limpiar filtros
+          </UButton>
+        </div>
+
+        <!-- Acciones secundarias -->
+        <div class="flex items-center justify-center gap-3">
+          <UButton icon="i-lucide-plus" @click="$emit('add')">Registrar asistencia</UButton>
+          <UButton icon="i-lucide-refresh-cw" variant="outline" @click="$emit('refresh')">Actualizar</UButton>
+        </div>
+
+        <!-- Sugerencias rápidas -->
+        <div class="mt-5 flex flex-wrap justify-center gap-2">
+          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej: Hoy</span>
+          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej: Empleado</span>
+          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej: Pendientes</span>
+        </div>
       </div>
     </div>
 
@@ -613,6 +654,8 @@ interface Emits {
   (e: 'sync', asistencia: AsistenciaRecord): void
   (e: 'add'): void
   (e: 'refresh'): void
+  (e: 'openFilters'): void
+  (e: 'clearFilters'): void
   (e: 'pageChanged', page: number): void
   (e: 'perPageChanged', perPage: number): void
   (e: 'sort', field: string): void

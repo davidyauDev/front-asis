@@ -1,270 +1,119 @@
 <template>
-  <UDashboardPanel class="h-screen flex flex-col">
+  <UDashboardPanel id="asistencias">
     <!-- 🎯 Header fijo -->
-    <UDashboardNavbar title="Control de Asistencias" class="shrink-0 sticky top-0 z-50 bg-white dark:bg-gray-900 border-b">
-      <template #right>
-        <UButton
-          icon="i-lucide-refresh-cw"
-          variant="ghost"
-          size="sm"
-          @click="refreshData"
-          :loading="loading"
-        />
+    <UDashboardNavbar title="Asistencias" :ui="{ right: 'gap-3' }">
+      <template #leading>
+        <UDashboardSidebarCollapse />
       </template>
     </UDashboardNavbar>
-
-    <!-- 📊 Stats Cards compactas -->
-    <div class="shrink-0 px-6 py-3 bg-gray-50 dark:bg-gray-800/50 border-b">
-      <div class="grid grid-cols-2 md:grid-cols-6 gap-3 stats-compact">
-        <UCard class="hover:shadow-sm transition-shadow stat-card">
-          <div class="text-lg font-bold text-gray-900 dark:text-white">{{ stats.total_registros }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Total</div>
-        </UCard>
-        
-        <UCard class="hover:shadow-sm transition-shadow stat-card">
-          <div class="text-lg font-bold text-emerald-600">{{ stats.check_ins_hoy }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Entradas</div>
-        </UCard>
-        
-        <UCard class="hover:shadow-sm transition-shadow stat-card">
-          <div class="text-lg font-bold text-red-500">{{ stats.check_outs_hoy }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Salidas</div>
-        </UCard>
-        
-        <UCard class="hover:shadow-sm transition-shadow stat-card">
-          <div class="text-lg font-bold text-blue-600">{{ stats.usuarios_activos }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Activos</div>
-        </UCard>
-        
-        <UCard class="hover:shadow-sm transition-shadow stat-card">
-          <div class="text-lg font-bold text-emerald-600">{{ stats.sincronizados }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Sync</div>
-        </UCard>
-        
-        <UCard class="hover:shadow-sm transition-shadow stat-card">
-          <div class="text-lg font-bold text-amber-500">{{ stats.pendientes }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Pendientes</div>
-        </UCard>
-      </div>
-    </div>
-
-    <!-- 🔍 Filtros compactos -->
-    <div class="shrink-0 px-6 py-3 bg-white dark:bg-gray-900 border-b">
-      <AsistenciaFilters
-        v-model="filtros"
-        :loading="loading"
-        @filters-changed="aplicarFiltros"
-      />
-    </div>
-
-    <!-- 📋 Contenedor principal con scroll -->
     <div class="flex-1 overflow-hidden relative">
       <!-- Indicador de scroll superior -->
-      <div class="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-purple-500 transform origin-left scale-x-0 transition-transform duration-300 z-10 scroll-indicator"></div>
-      
+      <div
+        class="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-purple-500 transform origin-left scale-x-0 transition-transform duration-300 z-10 scroll-indicator">
+      </div>
+
       <div class="h-full overflow-y-auto scroll-container" @scroll="onScroll">
         <div class="p-6">
-          <!-- Tabla de asistencias -->
-          <UCard class="min-h-96">
-            <AsistenciaTable
-              :asistencias="asistencias as AsistenciaRecord[]"
-              :loading="loading"
-              :total-records="total"
-              :current-page="currentPage"
-              :per-page="perPage"
-              :from-record="fromRecord"
-              :to-record="toRecord"
-              :stats="stats"
-              @edit="abrirModalEditarAsistencia"
-              @view="verDetalleAsistencia"
-              @duplicate="duplicarAsistencia"
-              @sync="forzarSincronizacion"
-              @page-changed="cambiarPagina"
-              @per-page-changed="cambiarRegistrosPorPagina"
-            />
-          </UCard>
-        </div>
-      </div>
-    </div>
-
-    <!-- ️ Modal de detalles -->
-    <UModal v-model="modalDetalleAbierto">
-      <div class="p-6" v-if="asistenciaDetalle">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-            <UIcon name="i-lucide-eye" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              Detalles del Registro #{{ asistenciaDetalle.id }}
-            </h3>
-            <p class="text-gray-600 dark:text-gray-400">
-              Información completa del registro de asistencia
-            </p>
-          </div>
-        </div>
-
-        <div class="space-y-6">
-          <!-- Usuario -->
-          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <h4 class="font-semibold mb-3 flex items-center gap-2">
-              <UIcon name="i-lucide-user" class="w-4 h-4" />
-              Usuario
-            </h4>
-            <div class="flex items-center gap-3">
-              <UAvatar :alt="asistenciaDetalle.usuario?.name" size="sm" />
-              <div>
-                <div class="font-medium">{{ asistenciaDetalle.usuario?.name || 'Usuario desconocido' }}</div>
-                <div class="text-sm text-gray-500">{{ asistenciaDetalle.usuario?.emp_code || `ID: ${asistenciaDetalle.usuario_id}` }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Registro -->
-          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <h4 class="font-semibold mb-3 flex items-center gap-2">
-              <UIcon name="i-lucide-clock" class="w-4 h-4" />
-              Información del Registro
-            </h4>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="font-medium">Tipo de Registro:</span>
-                <div class="flex items-center gap-2 mt-1">
-                  <UIcon 
-                    :name="getTipoRegistroIcon(asistenciaDetalle.tipo_registro)" 
-                    :class="{
-                      'text-green-600': asistenciaDetalle.tipo_registro === 'check_in',
-                      'text-red-600': asistenciaDetalle.tipo_registro === 'check_out'
-                    }"
-                    class="w-4 h-4"
-                  />
-                  {{ asistenciaDetalle.tipo_registro === 'check_in' ? 'Check In' : 'Check Out' }}
-                </div>
-              </div>
-              <div>
-                <span class="font-medium">Evento:</span>
-                <div class="mt-1">{{ asistenciaDetalle.tipo_evento }}</div>
-              </div>
-              <div>
-                <span class="font-medium">Fecha y Hora:</span>
-                <div class="mt-1">{{ formatFecha(asistenciaDetalle.created_at) }}</div>
-              </div>
-              <div>
-                <span class="font-medium">Timestamp:</span>
-                <div class="mt-1 font-mono text-xs">{{ asistenciaDetalle.timestamp }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Ubicación -->
-          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <h4 class="font-semibold mb-3 flex items-center gap-2">
-              <UIcon name="i-lucide-map-pin" class="w-4 h-4" />
-              Ubicación
-            </h4>
-            <div class="space-y-3">
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span class="font-medium">Latitud:</span>
-                  <div class="mt-1 font-mono">{{ asistenciaDetalle.latitud.toFixed(6) }}</div>
-                </div>
-                <div>
-                  <span class="font-medium">Longitud:</span>
-                  <div class="mt-1 font-mono">{{ asistenciaDetalle.longitud.toFixed(6) }}</div>
-                </div>
-              </div>
-              <UButton
-                :to="getGoogleMapsUrl(asistenciaDetalle.latitud, asistenciaDetalle.longitud)"
-                target="_blank"
-                size="sm"
-                icon="i-lucide-external-link"
-              >
-                Ver en Google Maps
-              </UButton>
-            </div>
-          </div>
-
-          <!-- Dispositivo -->
-          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <h4 class="font-semibold mb-3 flex items-center gap-2">
-              <UIcon name="i-lucide-smartphone" class="w-4 h-4" />
-              Dispositivo
-            </h4>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="font-medium">Dispositivo:</span>
-                <div class="mt-1">{{ asistenciaDetalle.dispositivo }}</div>
-              </div>
-              <div>
-                <span class="font-medium">UUID:</span>
-                <div class="mt-1 font-mono text-xs break-all">{{ asistenciaDetalle.uuid }}</div>
-              </div>
-              <div>
-                <span class="font-medium">Batería:</span>
-                <div class="mt-1 flex items-center gap-2">
-                  <UIcon 
-                    :name="getBateriaIcon(asistenciaDetalle.bateria)" 
-                    :class="getBateriaColor(asistenciaDetalle.bateria)"
-                    class="w-4 h-4"
-                  />
-                  <span :class="getBateriaColor(asistenciaDetalle.bateria)">
-                    {{ asistenciaDetalle.bateria }}%
-                  </span>
-                </div>
-              </div>
-              <div>
-                <span class="font-medium">Conexión:</span>
-                <div class="mt-1 flex items-center gap-2">
-                  <UIcon 
-                    :name="getMetodoConexionConfig(asistenciaDetalle.metodo)?.icon || 'i-lucide-wifi'" 
-                    :class="getMetodoConexionConfig(asistenciaDetalle.metodo)?.color || 'text-gray-500'"
-                    class="w-4 h-4"
-                  />
-                  {{ getMetodoConexionConfig(asistenciaDetalle.metodo)?.label || 'Desconocido' }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Estado -->
-          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <h4 class="font-semibold mb-3 flex items-center gap-2">
-              <UIcon name="i-lucide-info" class="w-4 h-4" />
-              Estado
-            </h4>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="font-medium">Sincronización:</span>
-                <div class="mt-1 flex items-center gap-2">
-                  <UIcon 
-                    :name="getSincronizadoStatus(asistenciaDetalle.sincronizado ?? 0).icon" 
-                    :class="getSincronizadoStatus(asistenciaDetalle.sincronizado ?? 0).color"
-                    class="w-4 h-4"
-                  />
-                  <span :class="getSincronizadoStatus(asistenciaDetalle.sincronizado ?? 0).color">
-                    {{ getSincronizadoStatus(asistenciaDetalle.sincronizado ?? 0).label }}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <span class="font-medium">Última actualización:</span>
-                <div class="mt-1">{{ formatFecha(asistenciaDetalle.updated_at) }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex justify-end mt-6">
-          <UButton
-            variant="outline"
-            @click="modalDetalleAbierto = false"
+          <!-- Transición principal (igual que en users.vue) -->
+          <Transition
+            enter-active-class="transition-all duration-500 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition-all duration-300 ease-in"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+            mode="out-in"
           >
-            Cerrar
-          </UButton>
+            <!-- Loading skeleton -->
+            <div v-if="loading && (!asistencias || asistencias.length === 0)" key="loading" class="min-h-[calc(100vh-12rem)]">
+              <div class="space-y-4">
+                <div class="rounded-lg overflow-hidden bg-white dark:bg-gray-950">
+                  <div class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+                    <USkeleton class="h-4 w-1/3" />
+                  </div>
+                  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                    <div v-for="i in 8" :key="i" class="px-4 py-4 flex items-center gap-4">
+                      <USkeleton class="size-4 rounded" />
+                      <USkeleton class="h-6 w-32" />
+                      <USkeleton class="size-8 rounded-full" />
+                      <USkeleton class="h-5 w-40" />
+                      <div class="ml-auto flex gap-2">
+                        <USkeleton class="size-8 rounded" />
+                        <USkeleton class="size-8 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <USkeleton class="h-5 w-32" />
+                  <USkeleton class="h-10 w-64" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Error -->
+            <div v-else-if="error" key="error" class="min-h-[calc(100vh-12rem)] flex items-center justify-center">
+              <UAlert
+                :title="error"
+                color="error"
+                variant="subtle"
+                icon="i-lucide-alert-circle"
+                class="max-w-xl"
+              >
+                <template #actions>
+                  <UButton 
+                    @click="refreshData" 
+                    color="error" 
+                    variant="outline"
+                    icon="i-lucide-refresh-cw"
+                  >
+                    Reintentar
+                  </UButton>
+                </template>
+              </UAlert>
+            </div>
+
+            <!-- Empty state -->
+            <div v-else-if="!asistencias || asistencias.length === 0" key="empty" class="min-h-[calc(100vh-12rem)] flex items-center justify-center">
+              <UCard class="max-w-lg">
+                <div class="flex flex-col items-center justify-center py-8 text-center">
+                  <UIcon name="i-lucide-inbox" class="size-12 text-muted mb-4 animate-pulse" />
+                  <h3 class="text-lg font-semibold mb-2">No hay registros</h3>
+                  <p class="text-sm text-muted mb-4">No se encontraron registros que coincidan con los filtros aplicados.</p>
+                  <div class="flex gap-3">
+                    <UButton icon="i-lucide-sliders" variant="outline" @click="$emit('openFilters')">Abrir filtros</UButton>
+                    <UButton icon="i-lucide-refresh-cw" variant="outline" @click="refreshData">Actualizar</UButton>
+                  </div>
+                </div>
+              </UCard>
+            </div>
+
+            <!-- Content: tabla + paginación (estado por defecto) -->
+            <div v-else key="content" class="space-y-4">
+              <UCard class="min-h-96">
+                <AsistenciaTable
+                  :asistencias="asistencias as AsistenciaRecord[]"
+                  :loading="loading"
+                  :total-records="total"
+                  :current-page="currentPage"
+                  :per-page="perPage"
+                  :from-record="fromRecord"
+                  :to-record="toRecord"
+                  :stats="stats"
+                  @edit="abrirModalEditarAsistencia"
+                  @view="verDetalleAsistencia"
+                  @duplicate="duplicarAsistencia"
+                  @sync="forzarSincronizacion"
+                  @page-changed="cambiarPagina"
+                  @per-page-changed="cambiarRegistrosPorPagina"
+                />
+              </UCard>
+            </div>
+          </Transition>
         </div>
-      </div>
-    </UModal>
-  </UDashboardPanel>
+       </div>
+     </div>
+   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
@@ -279,15 +128,15 @@ definePageMeta({
 })
 
 // 🎯 Composables
-const { 
-  asistencias, 
-  loading, 
-  total, 
-  currentPage, 
-  perPage, 
+const {
+  asistencias,
+  loading,
+  total,
+  currentPage,
+  perPage,
   stats,
   error,
-  fetchAsistencias, 
+  fetchAsistencias,
   deleteAsistencia,
   fetchStats,
   applyFilters,
@@ -319,11 +168,21 @@ const toRecord = computed(() => {
   return Math.min(calculatedTo, total.value)
 })
 
+// Key para controlar cuándo debe ejecutarse la animación (igual que en Users)
+const transitionKey = computed(() => {
+  try {
+    // incluir filtros en key para que al cambiarlos también se anime
+    return `${total.value}-${currentPage.value}-${JSON.stringify(filtros.value || {})}`
+  } catch {
+    return `${total.value}-${currentPage.value}`
+  }
+})
+
 // 🎯 Funciones de la página - OPTIMIZADO (Sin 404)
 const cargarDatos = async () => {
   // Primero cargar los datos de la tabla (principal)
   await fetchAsistencias(1, filtros.value)
-  
+
   // Stats locales en background (sin API)
   nextTick(() => {
     // Ya no usar fetchStats() para evitar 404
@@ -334,10 +193,10 @@ const cargarDatos = async () => {
 const refreshData = async () => {
   // Solo refrescar los datos principales
   await fetchAsistencias(currentPage.value, filtros.value)
-  
+
   // Stats locales automáticamente
   // Se actualizan cuando cambian los datos
-  
+
   toast.add({
     title: 'Datos actualizados',
     description: 'Los registros se han actualizado correctamente',
@@ -400,14 +259,14 @@ const forzarSincronizacion = async (asistencia: AsistenciaRecord) => {
   try {
     // Simular sincronización
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     toast.add({
       title: 'Sincronización exitosa',
       description: `Registro de ${asistencia.usuario?.name} sincronizado`,
       icon: 'i-lucide-check-circle',
       color: 'success'
     })
-    
+
     await cargarDatos()
   } catch (error: any) {
     toast.add({
@@ -425,10 +284,10 @@ const onScroll = (event: Event) => {
   const scrollTop = target.scrollTop
   const scrollHeight = target.scrollHeight
   const clientHeight = target.clientHeight
-  
+
   // Calcular el porcentaje de scroll
   const scrollPercentage = scrollTop / (scrollHeight - clientHeight)
-  
+
   // Actualizar el indicador de scroll
   const indicator = target.parentElement?.querySelector('.scroll-indicator') as HTMLElement
   if (indicator) {
@@ -472,34 +331,35 @@ useSeoMeta({
   background-color: rgb(107, 114, 128);
 }
 
-/* Animación suave para las cards */
-.stat-card {
-  transition: all 0.2s ease-in-out;
+/* Eliminadas las reglas de transición fade-slide y stat-card-loaded
+   para que no se muestre la animación. */
+
+/* Mejora del indicador de scroll */
+.scroll-indicator {
+  will-change: transform;
+  transition: transform 320ms cubic-bezier(.2,.8,.2,1);
 }
 
-.stat-card:hover {
-  transform: translateY(-1px);
+/* Transición fade + slide (coherente con Users page) */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 320ms cubic-bezier(.2,.8,.2,1), transform 320ms cubic-bezier(.2,.8,.2,1);
+  will-change: opacity, transform;
 }
-
-/* Paginación sticky mejorada */
-.pagination-sticky {
-  backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.95);
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
 }
-
-.dark .pagination-sticky {
-  background-color: rgba(17, 24, 39, 0.95);
+.fade-slide-enter-to {
+  opacity: 1;
+  transform: translateY(0);
 }
-
-/* Espaciado mejorado para mobile */
-@media (max-width: 640px) {
-  .stats-compact {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-  }
-  
-  .stat-card {
-    padding: 0.75rem;
-  }
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>

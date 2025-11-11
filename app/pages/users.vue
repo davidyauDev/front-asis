@@ -110,26 +110,7 @@ onMounted(async () => {
           <UDashboardSidebarCollapse />
         </template>
 
-        <template #right>
-          <UTooltip text="Refrescar">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              square
-              :loading="isRefreshing"
-              @click="handleRefresh"
-            >
-              <UIcon name="i-lucide-refresh-cw" class="size-5 shrink-0" />
-            </UButton>
-          </UTooltip>
-
-          <UButton
-            icon="i-lucide-user-plus"
-            @click="isCreatingUser = true"
-          >
-            Nuevo Usuario
-          </UButton>
-        </template>
+        
       </UDashboardNavbar>
 
       <UDashboardToolbar>
@@ -142,14 +123,7 @@ onMounted(async () => {
             :loading="loading"
           />
 
-          <UButton
-            :icon="showFilters ? 'i-lucide-x' : 'i-lucide-filter'"
-            :color="showFilters ? 'primary' : 'neutral'"
-            variant="ghost"
-            @click="showFilters = !showFilters"
-          >
-            {{ showFilters ? 'Ocultar' : 'Filtros' }}
-          </UButton>
+         
         </template>
 
         <template #right>
