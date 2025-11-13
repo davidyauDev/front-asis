@@ -55,6 +55,7 @@
       </div>
     </div>
 
+
     <!-- 🔄 Loading state -->
     <div v-if="loading" class="flex items-center justify-center p-12">
       <div class="text-center">
@@ -108,6 +109,9 @@
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Estado del Dispositivo
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Imagen
               </th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Acciones
@@ -252,6 +256,18 @@
                     </span>
                   </div>
                 </div>
+              </td>
+
+              <!-- Imagen -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <img
+                  v-if="asistencia.image"
+                  :src="asistencia.image"
+                  alt="Imagen de asistencia"
+                  class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer"
+                  @click.stop="openImageModal(asistencia.image)"
+                />
+                <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin imagen</span>
               </td>
 
               <!-- Acciones -->
@@ -462,58 +478,38 @@
             </div>
 
             <!-- Ubicación -->
-            <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-map-pin" class="w-4 h-4 text-gray-400" />
               <UButton
                 :to="getGoogleMapsUrl(asistencia.latitud, asistencia.longitud)"
                 target="_blank"
                 size="xs"
                 variant="outline"
-                icon="i-lucide-map-pin"
                 @click.stop
               >
-                Ver mapa
+                Ver ubicación
               </UButton>
             </div>
 
-            <!-- Estados del dispositivo -->
-            <div class="flex items-center justify-between text-xs">
-              <div class="flex items-center gap-3">
-                <!-- Batería -->
-                <div class="flex items-center gap-1">
-                  <UIcon 
-                    :name="getBateriaIcon(asistencia.bateria)" 
-                    :class="getBateriaColor(asistencia.bateria)"
-                    class="w-3 h-3"
-                  />
-                  <span>{{ asistencia.bateria || 'N/A' }}%</span>
-                </div>
-                
-                <!-- Conexión -->
-                <div class="flex items-center gap-1">
-                  <UIcon 
-                    :name="getMetodoConexionConfig(asistencia.metodo)?.icon || 'i-lucide-wifi'" 
-                    :class="getMetodoConexionConfig(asistencia.metodo)?.color || 'text-gray-500'"
-                    class="w-3 h-3"
-                  />
-                  <span>{{ getMetodoConexionConfig(asistencia.metodo)?.label }}</span>
-                </div>
-              </div>
-
-              <!-- Internet status -->
-              <div v-if="asistencia.is_internet_available !== undefined" class="flex items-center gap-1">
+            <!-- Estado del dispositivo -->
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-1">
                 <UIcon 
-                  :name="asistencia.is_internet_available ? 'i-lucide-wifi' : 'i-lucide-wifi-off'" 
-                  :class="asistencia.is_internet_available ? 'text-green-500' : 'text-red-500'"
-                  class="w-3 h-3"
+                  :name="getBateriaIcon(asistencia.bateria)" 
+                  :class="getBateriaColor(asistencia.bateria)"
+                  class="w-4 h-4"
                 />
-                <span>{{ asistencia.is_internet_available ? 'Online' : 'Offline' }}</span>
+                <span class="text-xs">{{ asistencia.bateria || 'N/A' }}%</span>
               </div>
-            </div>
-
-            <!-- Notas si existen -->
-            <div v-if="asistencia.notes" class="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded p-2">
-              <UIcon name="i-lucide-message-circle" class="w-3 h-3 mr-1 inline" />
-              {{ asistencia.notes }}
+              
+              <div class="flex items-center gap-1">
+                <UIcon 
+                  :name="getMetodoConexionConfig(asistencia.metodo)?.icon || 'i-lucide-wifi'" 
+                  :class="getMetodoConexionConfig(asistencia.metodo)?.color || 'text-gray-500'"
+                  class="w-4 h-4"
+                />
+                <span class="text-xs">{{ getMetodoConexionConfig(asistencia.metodo)?.label }}</span>
+              </div>
             </div>
           </div>
 
@@ -629,10 +625,26 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal para ampliar imagen -->
+    <UModal v-model:open="imageModalOpen" title="Vista previa de la imagen">
+      <template #content>
+        <div class="flex justify-center items-center">
+        <img 
+          :src="selectedImage" 
+          alt="Imagen ampliada" 
+          class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg border border-gray-300 dark:border-gray-700"
+        />
+      </div>
+      </template>
+      
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
+import SimpleFilters from './SimpleFilters.vue'
+
 import type { AsistenciaRecord, AsistenciaStats, AttendanceUser } from '~/types'
 
 interface Props {
@@ -687,6 +699,20 @@ const isMobile = ref(false)
 //  Estados locales
 const currentPageModel = ref(props.currentPage)
 const selectedPerPage = ref({ label: `${props.perPage} por página`, value: props.perPage })
+
+// Estados para el modal de imagen
+const imageModalOpen = ref(false);
+const selectedImage = ref<string | undefined>(undefined);
+
+const openImageModal = (image: string) => {
+  selectedImage.value = image;
+  imageModalOpen.value = true;
+};
+
+const closeImageModal = () => {
+  selectedImage.value = undefined;
+  imageModalOpen.value = false;
+};
 
 // 🎯 Opciones de registros por página
 const perPageOptions = [
@@ -773,6 +799,11 @@ const getActionItems = (asistencia: AsistenciaRecord) => {
     ]
   ]
 }
+
+// Función para aplicar filtros
+const applyFilters = (filters: any) => {
+  console.log('Filtros aplicados:', filters);
+};
 </script>
 
 <style scoped>
@@ -862,6 +893,8 @@ const getActionItems = (asistencia: AsistenciaRecord) => {
 .image-modal img {
   max-height: 70vh;
   object-fit: contain;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Mejoras de accesibilidad */

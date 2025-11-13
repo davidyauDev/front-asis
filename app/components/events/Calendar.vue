@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EventoCalendario } from '~/composables/useEventos'
 import DayEventPanel from '~/components/events/DayEventPanel.vue'
+import EventDetailModal from '~/components/events/EventDetailModal.vue'
 
 interface Props {
   eventos: EventoCalendario[];
@@ -14,6 +15,15 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+// State for the detail modal
+const isDetailModalOpen = ref(false)
+const selectedEventoForDetail = ref<EventoCalendario | null>(null)
+
+const openEventDetails = (evento: EventoCalendario) => {
+  selectedEventoForDetail.value = evento
+  isDetailModalOpen.value = true
+}
 
 // 📅 Estado del calendario
 const currentDate = ref(new Date());
@@ -32,6 +42,21 @@ const monthNames = [
 const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 // 📊 Generar días del mes
+const formatLocalYMD = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const parseYMDToLocalDate = (ymd: string) => {
+  const [ys, ms, ds] = ymd.split('-') as [string, string, string];
+  const y = Number(ys);
+  const m = Number(ms);
+  const d = Number(ds);
+  return new Date(isNaN(y) ? 1970 : y, (isNaN(m) ? 1 : m) - 1, isNaN(d) ? 1 : d);
+};
+
 const calendarDays = computed(() => {
   const year = currentYear.value;
   const month = currentMonth.value;
@@ -46,9 +71,12 @@ const calendarDays = computed(() => {
   
   // Generar 42 días (6 semanas)
   for (let i = 0; i < 42; i++) {
-    const dayEvents = props.eventos.filter(evento => 
-      new Date(evento.fecha).toDateString() === currentDay.toDateString()
-    );
+    // Comparación sin desfases: comparar por YYYY-MM-DD local
+    const currentDayYMD = formatLocalYMD(currentDay);
+    const dayEvents = props.eventos.filter(evento => {
+      const eventDate = typeof evento.fecha === 'string' ? parseYMDToLocalDate(evento.fecha) : new Date(evento.fecha as any);
+      return formatLocalYMD(eventDate) === currentDayYMD;
+    });
     
     const isToday = currentDay.toDateString() === new Date().toDateString();
     const isSelected = selectedDate.value !== null && selectedDate.value.toDateString() === currentDay.toDateString();
@@ -136,9 +164,11 @@ const getCategoriaColorHex = (categoria: string) => {
 
 const selectedDateEvents = computed(() => {
   if (!selectedDate.value) return [];
-  return props.eventos.filter(evento => 
-    new Date(evento.fecha).toDateString() === selectedDate.value!.toDateString()
-  );
+  const selectedYMD = formatLocalYMD(selectedDate.value);
+  return props.eventos.filter(evento => {
+    const eventDate = typeof evento.fecha === 'string' ? parseYMDToLocalDate(evento.fecha) : new Date(evento.fecha as any);
+    return formatLocalYMD(eventDate) === selectedYMD;
+  });
 });
 
 // 🔄 Emitir evento de mes actual al montar componente
@@ -275,6 +305,7 @@ onMounted(() => {
                 :class="getCategoriaColor(evento.categoria) + ' bg-opacity-10 hover:bg-opacity-20 text-gray-800 dark:text-gray-200'"
                 :style="{ borderLeftColor: getCategoriaColorHex(evento.categoria) }"
                 :title="evento.nombre + ' - ' + evento.descripcion"
+                @click.stop="openEventDetails(evento)"
               >
                 <div class="font-medium truncate">{{ evento.nombre }}</div>
                 <div v-if="evento.programado" class="flex items-center gap-1 mt-1">
@@ -299,51 +330,14 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- 📋 Panel lateral mejorado con componente dedicado -->
       <DayEventPanel 
         :selected-date="selectedDate"
         :selected-date-events="selectedDateEvents"
         @add-event="handleAddEvent"
       />
     </div>
-
-    <!-- 🎨 Leyenda de categorías mejorada -->
-    <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-linear-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
-      <div class="flex items-center justify-between">
-        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-          Categorías de Eventos
-        </h4>
-        <UButton 
-          icon="i-lucide-info" 
-          size="xs" 
-          variant="ghost" 
-          class="text-gray-500"
-        />
-      </div>
-      
-      <div class="grid grid-cols-5 gap-4">
-        <div class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-          <div class="w-4 h-4 rounded-full bg-red-500 shrink-0"></div>
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Feriados</span>
-        </div>
-        <div class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-          <div class="w-4 h-4 rounded-full bg-green-500 shrink-0"></div>
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Celebraciones</span>
-        </div>
-        <div class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-          <div class="w-4 h-4 rounded-full bg-yellow-500 shrink-0"></div>
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Cumpleaños</span>
-        </div>
-        <div class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-          <div class="w-4 h-4 rounded-full bg-pink-500 shrink-0"></div>
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Aniversarios</span>
-        </div>
-        <div class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-          <div class="w-4 h-4 rounded-full bg-blue-500 shrink-0"></div>
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Especiales</span>
-        </div>
-      </div>
-    </div>
+    
+    <EventDetailModal v-model="isDetailModalOpen" :evento="selectedEventoForDetail" />
   </div>
 </template>
 

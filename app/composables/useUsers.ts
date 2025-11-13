@@ -22,7 +22,7 @@ const _useUsers = () => {
 
   // Configuración de la API
   const config = useRuntimeConfig();
-  const apiBaseUrl = config.public.apiBaseUrl || "http://127.0.0.1:8000";
+  const apiBaseUrl = config.public.apiBaseUrl || "https://api-asistencia.cechriza.com/";
 
   // Obtener token de autenticación
   const getAuthToken = (): string | null => {

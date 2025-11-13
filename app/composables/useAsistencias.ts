@@ -115,7 +115,10 @@ export const useAsistencias = () => {
         throw new Error('Token de autenticación no encontrado')
       }
 
-      const url = `http://127.0.0.1:8000/api/attendances?${params}`
+      const config = useRuntimeConfig();
+      const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000';
+
+      const url = `${apiBaseUrl}/api/attendances?${params}`
 
       const response = await $fetch<AttendancesResponse>(url, {
         headers: {
@@ -180,7 +183,10 @@ export const useAsistencias = () => {
         client_id: crypto.randomUUID()
       }
 
-      const response = await $fetch<AttendanceRecord>('http://127.0.0.1:8000/api/attendances', {
+      const config = useRuntimeConfig();
+      const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000';
+
+      const response = await $fetch<AttendanceRecord>(`${apiBaseUrl}/api/attendances`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -222,7 +228,10 @@ export const useAsistencias = () => {
         battery_percentage: data.battery_percentage || data.bateria
       }
 
-      const response = await $fetch<AttendanceRecord>(`http://127.0.0.1:8000/api/attendances/${id}`, {
+      const config = useRuntimeConfig();
+      const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000';
+
+      const response = await $fetch<AttendanceRecord>(`${apiBaseUrl}/api/attendances/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -260,7 +269,10 @@ export const useAsistencias = () => {
         throw new Error('Token de autenticación no encontrado')
       }
 
-      await $fetch(`http://127.0.0.1:8000/api/attendances/${id}`, {
+      const config = useRuntimeConfig();
+      const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000';
+
+      await $fetch(`${apiBaseUrl}/api/attendances/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

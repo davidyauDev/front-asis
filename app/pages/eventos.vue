@@ -4,59 +4,31 @@ import type { EventoCalendario } from '~/composables/useEventos'
 definePageMeta({ middleware: "auth" });
 
 const { 
-  obtenerEventosParaCalendario, 
-  obtenerEventosLocales, 
-  guardarEventoLocal,
   obtenerEventosPorMes,
   transformarEventosParaCalendario
 } = useEventos()
 
-// Agregar composable de autenticación para verificar cuando el usuario se loguee
 const { user, isLoggedIn } = useAuth()
 
 const selectedTab = ref("calendar");
-const selectedEventForUpload = ref<any>(null);
 const selectedDateForUpload = ref<string | null>(null);
 const showAddEventModal = ref(false);
 
-// 🔍 Estado para modal de detalles del evento
-const selectedEventForDetails = ref<any>(null);
-const showEventDetailsModal = ref(false);
-
-// 🔑 Key para forzar re-render del calendario cuando sea necesario
 const calendarKey = ref(0);
 
-// ️ Estado para todos los eventos
 const eventosDelMes = ref<EventoCalendario[]>([]);
-const eventosPersonalizados = ref<EventoCalendario[]>([]);
 const isLoading = ref(false);
 
-// 🎭 Estados de loading específicos para mejor UX
 const isLoadingCalendar = ref(false);
 const isLoadingEvents = ref(false);
 const showCalendarSkeleton = ref(false); // Solo cuando realmente cargue del servidor
 const loadingProgress = ref(0);
 const isInitialLoad = ref(true); // Para distinguir primera carga vs cambio de tab
 
-// 🎭 Eventos de prueba para mostrar de inmediato
-const eventosPrueba = ref<EventoCalendario[]>([
-  {
-    id: 999,
-    nombre: "Día del Programador (Ejemplo)",
-    fecha: "2025-11-12",
-    categoria: "especial",
-    programado: true,
-    descripcion: "Evento de ejemplo del endpoint"
-  }
-]);
+// Eliminado: eventos de prueba
 
-// 💾 Cargar eventos del localStorage al inicializar
 onMounted(async () => {
-  console.log('🚀 Componente montado, iniciando carga de eventos...');
-  
-  // Cargar eventos locales primero (instantáneo)
-  eventosPersonalizados.value = obtenerEventosLocales();
-  
+
   // Si el usuario ya está logueado, cargar eventos del mes actual
   if (isLoggedIn.value) {
     // Solo mostrar skeleton en la primera carga real del servidor
@@ -83,12 +55,7 @@ watch(isLoggedIn, async (newValue, oldValue) => {
   }
 });
 
-// 💾 Guardar eventos en localStorage cuando cambien
-watch(eventosPersonalizados, (newEvents) => {
-  if (import.meta.client) {
-    localStorage.setItem('eventos-personalizados', JSON.stringify(newEvents));
-  }
-}, { deep: true });
+// Eliminado: persistencia local de eventos
 
 // 🌐 Función para cargar eventos del mes desde la API
 // 🔄 Función para recargar el calendario después de crear un evento
@@ -126,9 +93,8 @@ const recargarCalendario = async (nuevoEvento?: any) => {
       // Forzar re-render del calendario
       calendarKey.value++;
       
-      // Forzar actualización de los computeds
-      triggerRef(eventosDelMes);
-      triggerRef(eventosPersonalizados);
+  // Forzar actualización de los computeds
+  triggerRef(eventosDelMes);
       
       loadingProgress.value = 100;
       
@@ -276,58 +242,13 @@ const cargarEventosDelMes = async (año: number, mes: number) => {
   }
 };
 
-// 📅 Fechas especiales predefinidas (mantener algunas como ejemplo)
-const fechasEspeciales = ref([
-  {
-    id: 1,
-    nombre: "Día del Trabajador",
-    fecha: "2025-05-01",
-    descripcion: "Celebración internacional del trabajo",
-    categoria: "feriado",
-    activo: true,
-    imagen: null,
-    programado: false
-  },
-  {
-    id: 2,
-    nombre: "Día de la Madre",
-    fecha: "2025-05-11",
-    descripcion: "Homenaje a las madres trabajadoras",
-    categoria: "celebracion",
-    activo: true,
-    imagen: null,
-    programado: false
-  },
-  {
-    id: 3,
-    nombre: "Fiestas Patrias",
-    fecha: "2025-07-28",
-    descripcion: "Independencia del Perú",
-    categoria: "feriado",
-    activo: true,
-    imagen: null,
-    programado: true
-  },
-  {
-    id: 4,
-    nombre: "Navidad",
-    fecha: "2025-12-25",
-    descripcion: "Celebración navideña",
-    categoria: "feriado",
-    activo: true,
-    imagen: null,
-    programado: false
-  }
-]);
+// Eliminado: fechas especiales predefinidas de ejemplo
 
-// 🔄 Combinar todos los eventos (API + predefinidos + personalizados)
+// 🔄 Lista de eventos provenientes solo de API
 const todosLosEventos = computed(() => {
-  const combinados = [...eventosDelMes.value, ...eventosPrueba.value, ...fechasEspeciales.value, ...eventosPersonalizados.value];
+  const combinados = [...eventosDelMes.value];
   console.log(`📊 [COMPUTED] todosLosEventos recalculado: ${combinados.length} eventos totales`);
   console.log(`   - eventosDelMes: ${eventosDelMes.value.length}`);
-  console.log(`   - eventosPrueba: ${eventosPrueba.value.length}`);
-  console.log(`   - fechasEspeciales: ${fechasEspeciales.value.length}`);
-  console.log(`   - eventosPersonalizados: ${eventosPersonalizados.value.length}`);
   return combinados;
 });
 
@@ -430,23 +351,20 @@ const abrirModalParaFecha = (fecha: string) => {
     console.log('📋 Detalles del evento:', evento);
   }
   
-  // Solo mostrar información del día seleccionado, no abrir modal automáticamente
   console.log(`📅 Día seleccionado: ${fecha} con ${eventosEnFecha.length} evento(s)`);
 };
 
 const handleAddEventFromCalendar = (fecha: string) => {
-  console.log('📅 Agregar evento para fecha:', fecha);
   selectedDateForUpload.value = fecha;
   showAddEventModal.value = true;
 };
 
-// 🗓️ Manejar cambio de mes en el calendario
+
 let loadingTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const handleMonthChanged = async (year: number, month: number) => {
   console.log(`📅 Mes cambiado a: ${year}-${month}`);
   
-  // Evitar llamadas concurrentes
   if (isLoading.value) {
     console.log('⚠️ Ya hay una carga en progreso, ignorando...');
     return;
@@ -506,14 +424,7 @@ const descargarImagen = async (imagen: any) => {
   }
 };
 
-const editarEvento = (evento: any) => {
-  console.log('✏️ Editando evento:', evento);
-  // Cerrar modal de detalles y abrir modal de edición
-  showEventDetailsModal.value = false;
-  selectedEventForUpload.value = evento;
-  selectedDateForUpload.value = evento.fecha;
-  showAddEventModal.value = true;
-};
+// Eliminado: edición local de eventos
 
 const compartirEvento = async (evento: any) => {
   const textoCompartir = `🎉 ${evento.nombre}\n📅 ${new Date(evento.fecha).toLocaleDateString('es-ES')}\n${evento.descripcion || ''}`;
@@ -554,118 +465,7 @@ const programarEvento = (evento: any) => {
   });
 };
 
-const handleImageUpload = async (data: any) => {
-  console.log("📨 Datos recibidos del modal:", data);
-  
-  // 🌐 Si el evento viene del API (estructura completa con título, fecha_inicio, etc.)
-  if (data.titulo && data.fecha_inicio) {
-    console.log("✅ Evento creado exitosamente en el API:", data);
-    
-    // Usar la nueva función para recargar el calendario
-    await recargarCalendario(data);
-    
-    const toast = useToast();
-    toast.add({
-      title: "✅ Evento creado",
-      description: `Se creó el evento "${data.titulo}" exitosamente en el servidor`,
-      color: "success"
-    });
-    return;
-  }
-  
-  // 🗓️ Si tiene fechas múltiples, crear un evento para cada fecha (eventos locales)
-  if (data.fechasMultiples && data.fechasMultiples.length > 0) {
-    data.fechasMultiples.forEach((fecha: string, index: number) => {
-      const nuevoEvento = {
-        id: Date.now() + index, // ID único temporal
-        nombre: data.descripcion || `Evento ${new Date(fecha).toLocaleDateString()}`,
-        fecha: fecha,
-        descripcion: data.descripcion || '',
-        categoria: data.categoria || 'especial',
-        activo: true,
-        imagenes: data.imagenes || [],
-        programado: data.programado || false,
-        fechaCreacion: new Date().toISOString(),
-        hora: data.hora || '08:00'
-      };
-      
-      eventosPersonalizados.value.push(nuevoEvento);
-    });
-    
-    const toast = useToast();
-    toast.add({
-      title: "✅ Eventos creados",
-      description: `Se crearon ${data.fechasMultiples.length} eventos para las fechas seleccionadas`,
-      color: "success"
-    });
-  }
-  // 🗓️ Si es para una fecha específica del calendario
-  else if (selectedDateForUpload.value) {
-    const nuevoEvento = {
-      id: Date.now(), // ID único temporal
-      nombre: data.descripcion || `Evento ${new Date(selectedDateForUpload.value).toLocaleDateString()}`,
-      fecha: selectedDateForUpload.value,
-      descripcion: data.descripcion || '',
-      categoria: data.categoria || 'especial',
-      activo: true,
-      imagenes: data.imagenes || [],
-      programado: data.programado || false,
-      fechaCreacion: new Date().toISOString(),
-      hora: data.hora || '08:00'
-    };
-    
-    eventosPersonalizados.value.push(nuevoEvento);
-    
-    const toast = useToast();
-    toast.add({
-      title: "✅ Evento creado",
-      description: `Se creó el evento para el ${new Date(selectedDateForUpload.value).toLocaleDateString()}`,
-      color: "success"
-    });
-  }
-  // 🗓️ Si tiene una fecha programada individual
-  else if (data.fechaProgramada) {
-    const nuevoEvento = {
-      id: Date.now(),
-      nombre: data.descripcion || `Evento ${new Date(data.fechaProgramada).toLocaleDateString()}`,
-      fecha: data.fechaProgramada,
-      descripcion: data.descripcion || '',
-      categoria: data.categoria || 'especial',
-      activo: true,
-      imagenes: data.imagenes || [],
-      programado: data.programado || false,
-      fechaCreacion: new Date().toISOString(),
-      hora: data.hora || '08:00'
-    };
-    
-    eventosPersonalizados.value.push(nuevoEvento);
-    
-    const toast = useToast();
-    toast.add({
-      title: "✅ Evento creado",
-      description: `Se creó el evento para el ${new Date(data.fechaProgramada).toLocaleDateString()}`,
-      color: "success"
-    });
-  }
-  // 📝 Si es para un evento existente, actualizar
-  else if (selectedEventForUpload.value) {
-    const evento = selectedEventForUpload.value;
-    evento.imagenes = data.imagenes || [];
-    evento.descripcion = data.descripcion || evento.descripcion;
-    evento.programado = data.programado || false;
-    
-    const toast = useToast();
-    toast.add({
-      title: "✅ Evento actualizado",
-      description: `Se actualizó ${evento.nombre}`,
-      color: "success"
-    });
-  }
-  
-  // 🔄 Limpiar estado
-  selectedDateForUpload.value = null;
-  selectedEventForUpload.value = null;
-};
+// Eliminado: creación/actualización de eventos locales desde el modal
 
 // Manejar evento creado exitosamente
 const handleEventCreated = (eventData: any) => {
@@ -743,6 +543,7 @@ useHead({ title: "Eventos Especiales - Asisten" });
             >
               Agregar Evento
             </UButton>
+            <!-- Botón de limpiar locales eliminado -->
           </div>
         </template>
       </UDashboardNavbar>
@@ -1035,7 +836,6 @@ useHead({ title: "Eventos Especiales - Asisten" });
     :is-open="showAddEventModal"
     :pre-selected-date="selectedDateForUpload || undefined"
     @close="showAddEventModal = false; selectedDateForUpload = null"
-    @upload="handleImageUpload"
     @event-created="recargarCalendario"
   />
 

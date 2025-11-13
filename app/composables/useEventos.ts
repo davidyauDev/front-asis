@@ -77,19 +77,33 @@ export const useEventos = () => {
         throw new Error('Token de autenticación inválido o expirado')
       }
       
-      // �🔧 Fallback: usar datos de ejemplo solo en desarrollo y para noviembre 2025
-      if (import.meta.dev && año === 2025 && mes === 11) {
-        console.warn('⚠️ Usando datos de ejemplo como fallback')
-        const { eventosEjemplo } = await import('~/utils/mockEventos')
-        return eventosEjemplo as EventoAPI[]
-      }
+      // Fallback de prueba eliminado: siempre propagar error para manejo en UI
       
       // Re-lanzar el error para que lo maneje el componente
       throw error
     }
   }
 
-  // 🔄 Transformar eventos de la API al formato del calendario
+  // � Utilidades de fecha sin zonas horarias (local)
+  const parseYMDToLocalDate = (ymd: string) => {
+    const [ys, ms, ds] = ymd.split('-') as [string, string, string]
+    const y = Number(ys)
+    const m = Number(ms)
+    const d = Number(ds)
+    const ySafe = isNaN(y) ? 1970 : y
+    const mSafe = isNaN(m) ? 1 : m
+    const dSafe = isNaN(d) ? 1 : d
+    return new Date(ySafe, mSafe - 1, dSafe)
+  }
+
+  const formatLocalYMD = (date: Date) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  // �🔄 Transformar eventos de la API al formato del calendario (sin desfase por TZ)
   const transformarEventosParaCalendario = (eventosAPI: EventoAPI[]): EventoCalendario[] => {
     const eventosTransformados: EventoCalendario[] = []
     
@@ -100,8 +114,8 @@ export const useEventos = () => {
         return
       }
       
-      const fechaInicio = new Date(evento.fecha_inicio.split('T')[0]!)
-      const fechaFin = new Date(evento.fecha_fin.split('T')[0]!)
+      const fechaInicio = parseYMDToLocalDate(evento.fecha_inicio.split('T')[0]!)
+      const fechaFin = parseYMDToLocalDate(evento.fecha_fin.split('T')[0]!)
       
       // Verificar que las fechas sean válidas
       if (isNaN(fechaInicio.getTime()) || isNaN(fechaFin.getTime())) {
@@ -114,7 +128,7 @@ export const useEventos = () => {
       let contadorDias = 0
       
       while (fechaActual <= fechaFin && contadorDias < 366) { // Límite de seguridad para evitar loops infinitos
-        const fechaStr = fechaActual.toISOString().split('T')[0]!
+  const fechaStr = formatLocalYMD(fechaActual)
         
         // Determinar si es el primer día, último día, o día intermedio
         const esPrimerDia = fechaActual.getTime() === fechaInicio.getTime()

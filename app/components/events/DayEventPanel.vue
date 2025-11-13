@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, ref } from 'vue'
+import type { EventoCalendario } from '~/composables/useEventos'
+import EventDetailModal from '~/components/events/EventDetailModal.vue'
 
 interface Props {
   selectedDate: Date | null;
-  selectedDateEvents: any[];
+  selectedDateEvents: EventoCalendario[];
 }
 
 interface Emits {
@@ -12,6 +14,15 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+// State for the detail modal
+const isDetailModalOpen = ref(false)
+const selectedEventoForDetail = ref<EventoCalendario | null>(null)
+
+const openEventDetails = (evento: EventoCalendario) => {
+  selectedEventoForDetail.value = evento
+  isDetailModalOpen.value = true
+}
 
 // Debug para verificar que el componente se está montando
 onMounted(() => {
@@ -29,11 +40,11 @@ watch(() => props.selectedDate, (newDate) => {
 // Función para obtener el color de la categoría
 const getCategoriaColor = (categoria: string) => {
   const colorMap: Record<string, string> = {
-    feriados: 'bg-red-500',
-    celebraciones: 'bg-green-500',
+    feriado: 'bg-red-500',
+    celebracion: 'bg-green-500',
     cumpleanos: 'bg-yellow-500',
-    aniversarios: 'bg-pink-500',
-    especiales: 'bg-blue-500',
+    aniversario: 'bg-pink-500',
+    especial: 'bg-blue-500',
     default: 'bg-gray-400'
   };
   
@@ -90,7 +101,8 @@ const handleAddEvent = () => {
         <div 
           v-for="evento in selectedDateEvents" 
           :key="evento.id"
-          class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200"
+          class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+          @click="openEventDetails(evento)"
         >
           <div class="flex items-start gap-3">
             <div 
@@ -121,9 +133,10 @@ const handleAddEvent = () => {
                     size="xs"
                   />
                   <UButton
-                    icon="i-lucide-more-horizontal"
+                    icon="i-lucide-search"
                     size="xs"
                     variant="ghost"
+                    label="Ver"
                   />
                 </div>
               </div>
@@ -174,5 +187,9 @@ const handleAddEvent = () => {
         <div class="h-6"></div>
       </div>
     </div>
+
+
+   <EventDetailModal v-model:open="isDetailModalOpen" :evento="selectedEventoForDetail" />
+
   </div>
 </template>
