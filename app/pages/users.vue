@@ -30,7 +30,6 @@ const selectedStatus = ref('');
 const selectedUser = ref<UserListItem | null>(null);
 const showUserPreview = ref(false);
 const isRefreshing = ref(false);
-const isCreatingUser = ref(false);
 
 
 
@@ -52,7 +51,6 @@ const handlePerPageChange = async (value: any) => {
   await changePerPage(newValue);
 };
 
-// 🏷️ Gestión de selección
 const toggleSelectAll = () => {
   if (selectedUsers.value.length === users.value.length) {
     selectedUsers.value = [];
@@ -79,7 +77,6 @@ const viewUser = (user: UserListItem) => openUserPreview(user);
 const editUser = (user: UserListItem) => console.log("Editar usuario:", user);
 const deleteUser = (user: UserListItem) => console.log("Eliminar usuario:", user);
 
-//  Búsqueda con debounce
 watchDebounced(
   search,
   async (query) => {
@@ -88,7 +85,6 @@ watchDebounced(
   { debounce: 250, maxWait: 600 }
 );
 
-// 🚀 Inicialización
 onMounted(async () => {
   try {
     if (!users.value?.length) {
@@ -274,7 +270,6 @@ onMounted(async () => {
 
         <!-- Lista de usuarios -->
         <div v-else key="content" class="space-y-4 min-h-[calc(100vh-16rem)]">
-          <!-- Acciones en lote -->
           <Transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 -translate-y-4 scale-95"
@@ -291,8 +286,6 @@ onMounted(async () => {
               @clear-selection="selectedUsers = []"
             />
           </Transition>
-
-          <!-- Tabla de usuarios -->
           <UsersTable
             :users="users"
             :selected-users="selectedUsers"
@@ -306,7 +299,6 @@ onMounted(async () => {
             @delete-user="deleteUser"
           />
 
-          <!-- Paginación -->
           <UsersPagination
             :pagination-info="paginationInfo"
             :selected-count="selectedUsers.length"

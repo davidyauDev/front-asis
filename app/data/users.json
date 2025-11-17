@@ -1,0 +1,12 @@
+[
+  { "id": 1, "name": "Carlos Méndez", "email": "carlos.mendez@company.com", "emp_code": "LIM-001" },
+  { "id": 2, "name": "Ana García", "email": "ana.garcia@company.com", "emp_code": "LIM-002" },
+  { "id": 3, "name": "Roberto Silva", "email": "roberto.silva@company.com", "emp_code": "LIM-003" },
+  { "id": 4, "name": "Sofia Campos", "email": "sofia.campos@company.com", "emp_code": "LIM-004" },
+  { "id": 5, "name": "Diego Rojas", "email": "diego.rojas@company.com", "emp_code": "LIM-005" },
+  { "id": 6, "name": "María López", "email": "maria.lopez@company.com", "emp_code": "AQP-001" },
+  { "id": 7, "name": "Luis Ramírez", "email": "luis.ramirez@company.com", "emp_code": "AQP-002" },
+  { "id": 8, "name": "Elena Quispe", "email": "elena.quispe@company.com", "emp_code": "AQP-003" },
+  { "id": 9, "name": "Marco Pinto", "email": "marco.pinto@company.com", "emp_code": "AQP-004" },
+  { "id": 10, "name": "Patricia Torres", "email": "patricia.torres@company.com", "emp_code": "CUS-001" }
+]

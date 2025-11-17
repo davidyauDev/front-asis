@@ -51,6 +51,13 @@ const links = [[{
     open.value = false
   }
 }, {
+  label: 'Rutas GPS',
+  icon: 'i-lucide-map',
+  to: '/rutas',
+  onSelect: () => {
+    open.value = false
+  }
+}, {
   label: 'Settings',
   to: '/settings',
   icon: 'i-lucide-settings',

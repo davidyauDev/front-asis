@@ -98,15 +98,15 @@ export const useAsistencias = () => {
 
       // Agregar filtros de la nueva API
       if (filters) {
-        if (filters.user_id) params.append('user_id', filters.user_id.toString())
-        if (filters.start_date) params.append('start_date', filters.start_date)
-        if (filters.end_date) params.append('end_date', filters.end_date)
-        if (filters.type) params.append('type', filters.type)
+        if (filters.usuario_id) params.append('user_id', filters.usuario_id.toString())
+        if (filters.fecha_desde) params.append('start_date', filters.fecha_desde)
+        if (filters.fecha_hasta) params.append('end_date', filters.fecha_hasta)
+        if (filters.tipo_registro) params.append('type', filters.tipo_registro)
         if (filters.search) params.append('search', filters.search)
-        if (filters.month) params.append('month', filters.month.toString())
-        if (filters.year) params.append('year', filters.year.toString())
         if (filters.sort_by) params.append('sort_by', filters.sort_by)
         if (filters.sort_order) params.append('sort_order', filters.sort_order)
+        if (filters.month) params.append('month', filters.month.toString())
+        if (filters.year) params.append('year', filters.year.toString())
       }
 
       // Obtener token de localStorage
@@ -115,8 +115,8 @@ export const useAsistencias = () => {
         throw new Error('Token de autenticación no encontrado')
       }
 
-      const config = useRuntimeConfig();
-      const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000';
+      const config = useRuntimeConfig()
+      const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000'
 
       const url = `${apiBaseUrl}/api/attendances?${params}`
 
@@ -127,25 +127,12 @@ export const useAsistencias = () => {
           'Content-Type': 'application/json'
         }
       })
-      
-      // Optimización: Transformar solo una vez y usar requestIdleCallback si está disponible
-      if ('requestIdleCallback' in window) {
-        // @ts-ignore
-        requestIdleCallback(() => {
-          asistencias.value = response.data.map(transformApiRecord)
-          // Auto-actualizar stats después de cargar datos
-          setTimeout(() => generateLocalStats(), 10)
-        })
-      } else {
-        // Fallback inmediato
-        asistencias.value = response.data.map(transformApiRecord)
-        // Auto-actualizar stats después de cargar datos
-        setTimeout(() => generateLocalStats(), 10)
-      }
-      
+
+      // Transformar y actualizar los datos locales
+      asistencias.value = response.data.map(transformApiRecord)
       total.value = response.meta.total
       currentPage.value = response.meta.current_page
-      
+
       return response
     } catch (err: any) {
       console.error('Error al cargar asistencias:', err)

@@ -247,3 +247,69 @@ export interface AsistenciaStats {
   sincronizados: number
   pendientes: number
 }
+
+// 🗺️ Tipos para el módulo de Rutas y Tracking GPS
+export interface GPSPoint {
+  id: string
+  latitude: number
+  longitude: number
+  timestamp: string
+  accuracy?: number
+  speed?: number // km/h
+  altitude?: number
+  heading?: number // grados (0-360)
+}
+
+export interface StopPoint extends GPSPoint {
+  duration: number // minutos
+  address?: string
+  notes?: string
+}
+
+export interface Route {
+  id: string
+  user_id: number
+  user: AttendanceUser
+  date: string
+  start_time: string
+  end_time: string
+  points: GPSPoint[]
+  stops: StopPoint[]
+  total_distance: number // kilómetros
+  total_duration: number // minutos
+  average_speed: number // km/h
+  max_speed: number // km/h
+  color?: string
+}
+
+export interface RouteFilters {
+  user_id?: number
+  start_date?: string
+  end_date?: string
+  min_distance?: number
+  max_distance?: number
+  min_duration?: number
+  max_duration?: number
+}
+
+export interface RouteStats {
+  total_routes: number
+  total_distance: number
+  total_duration: number
+  average_distance: number
+  average_duration: number
+  most_active_user?: AttendanceUser
+}
+
+export interface MapBounds {
+  north: number
+  south: number
+  east: number
+  west: number
+}
+
+export interface MapConfig {
+  center: [number, number] // [lat, lng]
+  zoom: number
+  stopMinDuration: number // minutos para considerar una parada
+}

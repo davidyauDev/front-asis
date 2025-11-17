@@ -1,74 +1,15 @@
 <template>
   <div class="overflow-hidden">
-    <!-- 📊 Header mejorado -->
-    <div class="px-4 sm:px-6 py-3 border-b border-gray-200/50 dark:border-gray-800/50 bg-white dark:bg-gray-900">
-      <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
-        <!-- Left: title -->
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-            <UIcon name="i-lucide-table" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div class="leading-tight">
-            <div class="text-sm font-semibold text-gray-900 dark:text-white">Registros de Asistencia</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">{{ totalRecords.toLocaleString() }} registros</div>
-          </div>
-        </div>
-
-        <!-- Right: controls (estilo UsersTable) -->
-        <div class="flex items-center gap-2">
-          <!-- Search (visual, sin logica adicional) -->
-          <UInput
-            placeholder="Buscar por nombre, ID o ubicación..."
-            size="sm"
-            clearable
-            class="w-56"
-            @clear="$emit('refresh')"
-            @input.stop
-          />
-
-          <!-- Abrir filtros -->
-          <UButton
-            icon="i-lucide-sliders"
-            size="sm"
-            variant="outline"
-            @click="$emit('openFilters')"
-            title="Abrir filtros"
-          />
-
-          <!-- Refrescar -->
-          <UButton
-            icon="i-lucide-refresh-cw"
-            size="sm"
-            variant="ghost"
-            @click="$emit('refresh')"
-            title="Actualizar"
-          />
-
-          <!-- Agregar -->
-          <UButton
-            icon="i-lucide-plus"
-            size="sm"
-            variant="ghost"
-            @click="$emit('add')"
-          />
-        </div>
-      </div>
-    </div>
-
-
-    <!-- 🔄 Loading state -->
-    <div v-if="loading" class="flex items-center justify-center p-12">
+    <div v-if="loading" class="flex items-center justify-center p-">
       <div class="text-center">
         <div class="w-8 h-8 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
         <p class="text-sm text-gray-600 dark:text-gray-400">Cargando registros...</p>
       </div>
     </div>
 
-    <!-- 📋 Vista Desktop - Tabla completa -->
     <div v-else-if="asistencias.length > 0" class="hidden lg:block">
       <div class="overflow-x-auto">
         <table class="w-full">
-          <!-- Headers con ordenamiento -->
           <thead class="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -126,14 +67,12 @@
               class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer group"
               @click="$emit('view', asistencia)"
             >
-              <!-- ID -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="text-sm font-mono text-gray-900 dark:text-gray-100 font-medium">
                   #{{ asistencia.id }}
                 </span>
               </td>
 
-              <!-- Usuario -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                   <UAvatar
@@ -154,7 +93,6 @@
                 </div>
               </td>
 
-              <!-- Tipo de Registro -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <UBadge
                   :color="asistencia.tipo_registro === 'check_in' ? 'success' : 'error'"
@@ -169,7 +107,6 @@
                 </UBadge>
               </td>
 
-              <!-- Fecha y Hora -->
               <td class="px-6 py-4">
                 <div class="text-sm text-gray-900 dark:text-gray-100 font-medium">
                   {{ formatFecha(asistencia.created_at) }}
@@ -179,7 +116,6 @@
                 </div>
               </td>
 
-              <!-- Ubicación -->
               <td class="px-6 py-4">
                 <div class="flex flex-col space-y-1">
                   <UButton
@@ -199,7 +135,6 @@
                 </div>
               </td>
 
-              <!-- Dispositivo -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-2">
                   <UIcon 
@@ -217,7 +152,6 @@
                 </div>
               </td>
 
-              <!-- Estado del Dispositivo -->
               <td class="px-6 py-4">
                 <div class="space-y-2">
                   <!-- Batería -->
@@ -244,7 +178,6 @@
                     </span>
                   </div>
 
-                  <!-- Conexión Internet -->
                   <div v-if="asistencia.is_internet_available !== undefined" class="flex items-center gap-2">
                     <UIcon 
                       :name="asistencia.is_internet_available ? 'i-lucide-wifi' : 'i-lucide-wifi-off'" 
@@ -258,7 +191,6 @@
                 </div>
               </td>
 
-              <!-- Imagen -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <img
                   v-if="asistencia.image"
@@ -270,7 +202,6 @@
                 <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin imagen</span>
               </td>
 
-              <!-- Acciones -->
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end gap-1 transition-all duration-200 hover:gap-2">
                   <UTooltip text="Ver detalles">
@@ -314,7 +245,6 @@
       </div>
     </div>
 
-    <!-- 📱 Vista Tablet - Grid de Cards -->
     <div v-else-if="asistencias.length > 0" class="hidden md:block lg:hidden">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
         <UCard
