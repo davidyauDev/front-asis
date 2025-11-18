@@ -209,9 +209,7 @@ const activeFiltersCount = computed(() => {
 const hasDateFilters = computed(() => !!localFilters.value.start_date || !!localFilters.value.end_date)
 const hasAdvancedFilters = computed(() => !!localFilters.value.month || !!localFilters.value.year)
 
-/* -------------------- METHODS -------------------- */
 const applyFilters = () => {
-  emit('filters-changed', { ...localFilters.value })
   emit('apply', { ...localFilters.value })
 }
 

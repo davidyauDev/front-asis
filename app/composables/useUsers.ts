@@ -6,7 +6,6 @@ const _useUsers = () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-
   // Paginación
   const currentPage = ref(1);
   const totalPages = ref(1);
@@ -20,9 +19,8 @@ const _useUsers = () => {
   const sortBy = ref("created_at");
   const sortOrder = ref<"asc" | "desc">("desc");
 
-  // Configuración de la API
   const config = useRuntimeConfig();
-  const apiBaseUrl = config.public.apiBaseUrl || "https://api-asistencia.cechriza.com/";
+  const apiBaseUrl = config.public.apiBaseUrl ;
 
   // Obtener token de autenticación
   const getAuthToken = (): string | null => {
@@ -50,7 +48,7 @@ const _useUsers = () => {
       }
 
       const params = new URLSearchParams();
-      params.append("page", page.toString()); // ✅ enviar siempre
+      params.append("page", page.toString()); 
       params.append("per_page", perPage.value.toString());
 
       if (search.trim()) params.append("search", search.trim());
@@ -58,7 +56,8 @@ const _useUsers = () => {
       params.append("sort_order", sortOrderParam || sortOrder.value);
 
       const url = `${apiBaseUrl}/api/users?${params.toString()}`;
-
+      console.log("Fetching users with URL:", token);
+      console.log(`Bearer ${token}`);
       const response = await $fetch<any>(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -66,6 +65,7 @@ const _useUsers = () => {
           "Content-Type": "application/json",
         },
       });
+
 
       users.value = response.data || [];
 
@@ -80,10 +80,6 @@ const _useUsers = () => {
         to.value = from.value + (response.data?.length || 0) - 1;
       }
     } catch (err: any) {
-      console.error("❌ Error completo fetching users:", err);
-      console.error("❌ Error type:", typeof err);
-      console.error("❌ Error stack:", err.stack);
-
       // Manejo más específico de errores
       if (err.statusCode === 401) {
         error.value = "Error de autenticación: Token inválido o expirado";
@@ -118,8 +114,8 @@ const _useUsers = () => {
 
   // Buscar usuarios
   const searchUsers = async (query: string) => {
-    searchQuery.value = query; // ✅ Actualizar el searchQuery interno
-    currentPage.value = 1; // Reset a primera página
+    searchQuery.value = query; 
+    currentPage.value = 1; 
     await fetchUsers(1, query, sortBy.value, sortOrder.value);
   };
 
@@ -128,7 +124,6 @@ const _useUsers = () => {
     newSortBy: string,
     newSortOrder?: "asc" | "desc"
   ) => {
-    // Si es la misma columna, alternar orden
     if (newSortBy === sortBy.value && !newSortOrder) {
       sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
     } else {
@@ -138,7 +133,7 @@ const _useUsers = () => {
       }
     }
 
-    currentPage.value = 1; // Reset a primera página al cambiar orden
+    currentPage.value = 1;
     await fetchUsers(1, searchQuery.value, sortBy.value, sortOrder.value);
   };
 
@@ -174,7 +169,6 @@ const _useUsers = () => {
     perPage: perPage.value,
   }));
 
-  // 🔧 Utilidades adicionales para filtros de asistencia
   const getUserById = (id: number) => {
     return users.value.find(user => user.id === id)
   }
@@ -209,25 +203,20 @@ const _useUsers = () => {
   }
 
   return {
-    // Datos
     users: readonly(users),
     loading: readonly(loading),
     error: readonly(error),
 
-    // Paginación
     currentPage: readonly(currentPage),
     totalPages: readonly(totalPages),
     totalUsers: readonly(totalUsers),
     paginationInfo,
 
-    // Búsqueda
     searchQuery: readonly(searchQuery),
 
-    // Ordenamiento
     sortBy: readonly(sortBy),
     sortOrder: readonly(sortOrder),
 
-    // Métodos
     fetchUsers,
     goToPage,
     searchUsers,
@@ -236,7 +225,6 @@ const _useUsers = () => {
     changePerPage,
     changeSorting,
 
-    // Utilidades adicionales
     getUserById,
     getUserByEmpCode,
     formatUserForSelect,

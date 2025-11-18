@@ -59,6 +59,7 @@ const refreshData = async () => {
 
 const aplicarFiltros = async (nuevosFiltros: IAsistenciaFilters) => {
   filtros.value = nuevosFiltros
+  console.log('Nuevos filtros aplicados:', nuevosFiltros)
   await applyFilters(nuevosFiltros)
 }
 
@@ -130,7 +131,6 @@ const onScroll = (event: Event) => {
   }
 }
 
-// 🎯 Detectar cambios en los filtros y actualizar los datos
 watchDebounced(
   filtros,
   async (newFilters) => {
@@ -162,7 +162,7 @@ onMounted(async () => {
 
     <!-- Filtros -->
     <div class="p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-      <AsistenciaFilters :filtros="filtros" @aplicar="aplicarFiltros" />
+      <AsistenciaFilters :filtros="filtros" @apply="aplicarFiltros" />
     </div>
 
     <div class="flex-1 overflow-hidden relative">

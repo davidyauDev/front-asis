@@ -72,20 +72,8 @@ export const useAsistencias = () => {
     }
   }
 
-  // 🔄 Función para transformar filtros al formato de la nueva API
-  const transformFilters = (filters: AsistenciaFilters): AttendanceFilters => {
-    const apiFilters: AttendanceFilters = {}
-    
-    if (filters.usuario_id) apiFilters.user_id = filters.usuario_id
-    if (filters.fecha_desde) apiFilters.start_date = filters.fecha_desde
-    if (filters.fecha_hasta) apiFilters.end_date = filters.fecha_hasta
-    if (filters.tipo_registro) apiFilters.type = filters.tipo_registro
-    if (filters.search) apiFilters.search = filters.search
-    
-    return apiFilters
-  }
+  
 
-  // 📡 Funciones de API - Conectar directamente a Laravel (OPTIMIZADO)
   const fetchAsistencias = async (page: number = 1, filters?: AsistenciaFilters) => {
     loading.value = true
     error.value = null
@@ -95,13 +83,11 @@ export const useAsistencias = () => {
         page: page.toString(),
         per_page: perPage.value.toString()
       })
-
-      // Agregar filtros de la nueva API
       if (filters) {
         if (filters.usuario_id) params.append('user_id', filters.usuario_id.toString())
-        if (filters.fecha_desde) params.append('start_date', filters.fecha_desde)
-        if (filters.fecha_hasta) params.append('end_date', filters.fecha_hasta)
-        if (filters.tipo_registro) params.append('type', filters.tipo_registro)
+        if (filters.start_date) params.append('start_date', filters.start_date)
+        if (filters.end_date) params.append('end_date', filters.end_date)
+        if (filters.type) params.append('type', filters.type)
         if (filters.search) params.append('search', filters.search)
         if (filters.sort_by) params.append('sort_by', filters.sort_by)
         if (filters.sort_order) params.append('sort_order', filters.sort_order)
@@ -116,7 +102,7 @@ export const useAsistencias = () => {
       }
 
       const config = useRuntimeConfig()
-      const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000'
+      const apiBaseUrl = config.public.apiBaseUrl 
 
       const url = `${apiBaseUrl}/api/attendances?${params}`
 

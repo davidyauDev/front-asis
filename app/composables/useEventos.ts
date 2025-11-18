@@ -35,9 +35,8 @@ interface EventoCalendario {
 
 export const useEventos = () => {
   const config = useRuntimeConfig()
-  const baseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000'
+  const baseUrl = config.public.apiBaseUrl 
 
-  // 🔑 Obtener token de autenticación
   const getAuthToken = (): string | null => {
     if (import.meta.client) {
       return localStorage.getItem('auth_token')
@@ -45,29 +44,22 @@ export const useEventos = () => {
     return null
   }
 
-  // 🌐 Obtener eventos por mes con autenticación
   const obtenerEventosPorMes = async (año: number, mes: number): Promise<EventoAPI[]> => {
     try {
-      console.log(`🌐 Obteniendo eventos para ${año}/${mes}...`)
-      
       const token = getAuthToken()
       if (!token) {
         console.error('🚫 No hay token de autenticación')
         throw new Error('No hay token de autenticación')
       }
-
-      console.log(`🔗 URL: ${baseUrl}/api/eventos/mes/${año}/${mes}`)
-      console.log(`🔑 Token: ${token.substring(0, 20)}...`)
-
-      const data = await $fetch<EventoAPI[]>(`${baseUrl}/api/eventos/mes/${año}/${mes}`, {
+      const response = await $fetch<EventoAPI[]>(`${baseUrl}/api/eventos/mes/${año}/${mes}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         }
       })
       
-      console.log(`✅ Eventos obtenidos:`, data)
-      return data || []
+      console.log(`✅ Eventos obtenidos:`, response)
+      return response.data.events || []
     } catch (error: any) {
       console.error('💥 Error al obtener eventos del mes:', error)
       
@@ -76,10 +68,6 @@ export const useEventos = () => {
         console.error('� Token inválido o expirado')
         throw new Error('Token de autenticación inválido o expirado')
       }
-      
-      // Fallback de prueba eliminado: siempre propagar error para manejo en UI
-      
-      // Re-lanzar el error para que lo maneje el componente
       throw error
     }
   }
@@ -106,7 +94,7 @@ export const useEventos = () => {
   // �🔄 Transformar eventos de la API al formato del calendario (sin desfase por TZ)
   const transformarEventosParaCalendario = (eventosAPI: EventoAPI[]): EventoCalendario[] => {
     const eventosTransformados: EventoCalendario[] = []
-    
+    console.log('eventoo',eventosAPI);
     eventosAPI.forEach(evento => {
       // Verificar que las fechas existan
       if (!evento.fecha_inicio || !evento.fecha_fin) {
