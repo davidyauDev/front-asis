@@ -4,26 +4,15 @@
       <table class="w-full">
         <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
           <tr>
-            <th class="px-4 py-3 w-12">
-              <UCheckbox 
-                :model-value="isAllSelected"
-                :indeterminate="isIndeterminate"
-                @change="$emit('toggleSelectAll')"
-                size="sm"
-              />
-            </th>
+            <!-- <th class="px-4 py-3 w-12">
+              <UCheckbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
+                @change="$emit('toggleSelectAll')" size="sm" />
+            </th> -->
             <th v-for="col in columns" :key="col.key" class="px-4 py-3 text-left">
-              <button 
-                v-if="col.sortable"
-                :class="getSortButtonClass(col.key)" 
-                class="group flex items-center gap-1 font-medium"
-                @click="$emit('sort', col.key)"
-              >
+              <button v-if="col.sortable" :class="getSortButtonClass(col.key)"
+                class="group flex items-center gap-1 font-medium" @click="$emit('sort', col.key)">
                 {{ col.label }}
-                <UIcon 
-                  :name="getSortIcon(col.key)" 
-                  class="size-3 opacity-60 group-hover:opacity-100" 
-                />
+                <UIcon :name="getSortIcon(col.key)" class="size-3 opacity-60 group-hover:opacity-100" />
               </button>
               <span v-else class="text-xs font-medium text-gray-600 dark:text-gray-400">
                 {{ col.label }}
@@ -33,41 +22,25 @@
         </thead>
 
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-          <tr
-            v-for="user in users"
-            :key="user.id"
-            :class="[
-              'hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors',
-              selectedUsers.includes(user.id) ? 'bg-primary-50 dark:bg-primary-950/30' : ''
-            ]"
-          >
+          <tr v-for="user in users" :key="user.id" :class="[
+            'hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors',
+           
+          ]">
             <!-- Checkbox -->
-            <td class="px-4 py-4">
-              <UCheckbox 
-                :model-value="selectedUsers.includes(user.id)"
-                @change="$emit('toggleUser', user.id)"
-                size="sm" 
-              />
-            </td>
+            <!-- <td class="px-4 py-4">
+              <UCheckbox :model-value="selectedUsers.includes(user.id)" @change="$emit('toggleUser', user.id)"
+                size="sm" />
+            </td> -->
 
             <!-- Código -->
             <td class="px-4 py-4">
-              <UBadge 
-                :label="user.emp_code" 
-                variant="outline" 
-                size="md"
-                class="font-mono"
-              />
+              <UBadge :label="user.emp_code" variant="outline" size="md" class="font-mono" />
             </td>
 
             <!-- Usuario -->
             <td class="px-4 py-4">
               <div class="flex items-center gap-3">
-                <UAvatar 
-                  :alt="user.name"
-                  size="sm"
-                  class="ring-1 ring-gray-200 dark:ring-gray-800"
-                >
+                <UAvatar :alt="user.name" size="sm" class="ring-1 ring-gray-200 dark:ring-gray-800">
                   {{ user.name.charAt(0).toUpperCase() }}
                 </UAvatar>
                 <div>
@@ -87,76 +60,48 @@
 
             <!-- Rol -->
             <td class="px-4 py-4">
-              <UBadge
-                :label="(user as any).role || 'Sin rol'"
-                color="neutral"
-                variant="soft"
-                size="md"
-              />
+              <UBadge :label="roleOptions[user.role]?.label || 'Sin rol'" color="neutral" variant="soft" size="md" />
             </td>
 
-            <!-- Estado -->
+           
+
             <td class="px-4 py-4">
-              <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full" :class="getStatusContainerClass((user as any).status)">
-                <span class="text-xs font-medium" :class="getStatusTextClass((user as any).status)">
-                  {{ getStatusLabel((user as any).status) }}
-                </span>
-              </div>
+              <!-- <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full" :class="getStatusContainerClass((user as any).status)"> -->
+              <!-- <span class="text-xs font-medium p-1 rounded-full" :class="getStatusDotColor((user.active))"> -->
+              <button :disabled="loading" @click="$emit('toggleUserActive', user.id)"
+                class="ml-2 text-sm cursor-pointer font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded-full flex items-center gap-1 transition-colors">
+                <UIcon :name="user.active ? 'i-lucide-shield-check' : 'i-lucide-shield-off'"
+                  class="size-3 text-white" />
+                <!-- </span> -->
+
+                {{ user.active ? 'Sí' : 'No' }}
+              </button>
+              <!-- </div> -->
             </td>
 
             <!-- Acciones -->
             <td class="px-4 py-4">
               <div class="flex items-center justify-end gap-1">
                 <UTooltip text="Ver detalles">
-                  <UButton 
-                    icon="i-lucide-eye" 
-                    size="xs" 
-                    variant="ghost" 
-                    @click="$emit('viewUser', user)" 
-                  />
+                  <UButton icon="i-lucide-eye" size="xs" variant="ghost" @click="$emit('viewUser', user)" />
                 </UTooltip>
                 <UTooltip text="Editar">
-                  <UButton 
-                    icon="i-lucide-edit" 
-                    size="xs" 
-                    variant="ghost"
-                    @click="$emit('editUser', user)" 
-                  />
+                  <UButton icon="i-lucide-edit" size="xs" variant="ghost" @click="$emit('editUser', user)" />
                 </UTooltip>
-                <UPopover>
-                  <UButton 
-                    icon="i-lucide-more-horizontal" 
-                    size="xs" 
-                    variant="ghost"
-                  />
-                  
-                  <template #content>
-                    <div class="p-1 space-y-1">
-                      <UButton
-                        label="Ver detalles"
-                        icon="i-lucide-eye"
-                        variant="ghost"
-                        block
-                        @click="$emit('viewUser', user)"
-                      />
-                      <UButton
-                        label="Editar"
-                        icon="i-lucide-edit"
-                        variant="ghost"
-                        block
-                        @click="$emit('editUser', user)"
-                      />
-                      <UButton
-                        label="Eliminar"
-                        icon="i-lucide-trash-2"
-                        variant="ghost"
-                        color="error"
-                        block
-                        @click="$emit('deleteUser', user)"
-                      />
-                    </div>
-                  </template>
-                </UPopover>
+
+
+
+                <UTooltip v-if="user.id !== userAuth?.id" :text="user.deleted_at ? 'Restaurar' : 'Eliminar'">
+                  <UButton v-if="!user.deleted_at" icon="i-lucide-trash-2" size="xs" variant="ghost" color="error"
+                    @click="$emit('deleteUser', user)" />
+                  <UButton v-else icon="i-lucide-timer-reset" size="xs" variant="ghost" color="success"
+                    @click="$emit('restoreUser', user)" />
+
+                </UTooltip>
+
+
+
+              
               </div>
             </td>
           </tr>
@@ -168,21 +113,26 @@
 
 <script setup lang="ts">
 import type { UserListItem } from "~/types"
+import { roleOptions } from "~/enums/user"
+
+const { user: userAuth } = useAuth()
 
 interface Props {
   users: readonly UserListItem[];
-  selectedUsers: number[];
+  loading: boolean;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
 }
 
 interface Emits {
-  (e: 'toggleSelectAll'): void
-  (e: 'toggleUser', userId: number): void
+  // (e: 'toggleSelectAll'): void
+  // (e: 'toggleUser', userId: number): void
   (e: 'sort', column: string): void
   (e: 'viewUser', user: UserListItem): void
   (e: 'editUser', user: UserListItem): void
   (e: 'deleteUser', user: UserListItem): void
+  (e: 'restoreUser', user: UserListItem): void
+  (e: 'toggleUserActive', userId: number): void
 }
 
 const props = defineProps<Props>()
@@ -194,18 +144,10 @@ const columns = [
   { key: 'name', label: 'Usuario', sortable: true },
   { key: 'email', label: 'Email', sortable: true },
   { key: 'role', label: 'Rol', sortable: false },
-  { key: 'status', label: 'Estado', sortable: false },
+  { key: 'active', label: 'Activo', sortable: false },
   { key: 'actions', label: '', sortable: false }
 ]
 
-// Estados computados
-const isAllSelected = computed(() => 
-  props.users.length > 0 && props.selectedUsers.length === props.users.length
-)
-
-const isIndeterminate = computed(() => 
-  props.selectedUsers.length > 0 && props.selectedUsers.length < props.users.length
-)
 
 // Funciones de utilidad
 const getSortIcon = (column: string) => {
@@ -220,43 +162,4 @@ const getSortButtonClass = (column: string) => {
     : base
 }
 
-const getStatusDotColor = (status: string) => {
-  switch (status) {
-    case 'active': return 'bg-green-500'
-    case 'inactive': return 'bg-red-500'
-    default: return 'bg-yellow-500'
-  }
-}
-
-const getStatusContainerClass = (status: string) => {
-  switch (status) {
-    case 'active': return 'bg-green-50 dark:bg-green-950/50'
-    case 'inactive': return 'bg-red-50 dark:bg-red-950/50'
-    default: return 'bg-yellow-50 dark:bg-yellow-950/50'
-  }
-}
-
-const getStatusTextClass = (status: string) => {
-  switch (status) {
-    case 'active': return 'text-green-700 dark:text-green-400'
-    case 'inactive': return 'text-red-700 dark:text-red-400'
-    default: return 'text-yellow-700 dark:text-yellow-400'
-  }
-}
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'active': return 'Activo'
-    case 'inactive': return 'Inactivo'
-    default: return 'Pendiente'
-  }
-}
-
-const getStatusBadgeColor = (status: string) => {
-  switch (status) {
-    case 'active': return 'success'
-    case 'inactive': return 'error'
-    default: return 'warning'
-  }
-}
 </script>
