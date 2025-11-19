@@ -272,29 +272,22 @@ export interface StopPoint extends GPSPoint {
 }
 
 export interface Route {
-  id: string;
+  id: string;                   
   user_id: number;
   user: AttendanceUser;
-  date: string;
-  start_time: string;
-  end_time: string;
-  points: GPSPoint[];
-  stops: StopPoint[];
-  total_distance: number; // kilómetros
-  total_duration: number; // minutos
-  average_speed: number; // km/h
-  max_speed: number; // km/h
-  color?: string;
+  date: string;                 
+  check_in?: GPSPoint;          
+  check_out?: GPSPoint;         
+  attendances: GPSPoint[];     
+  points: [number, number][];   
+  start_point?: [number, number];
+  end_point?: [number, number];
+  color?: string;               
+
 }
 
 export interface RouteFilters {
-  user_id?: number;
-  start_date?: string;
-  end_date?: string;
-  min_distance?: number;
-  max_distance?: number;
-  min_duration?: number;
-  max_duration?: number;
+  date?: string;
 }
 
 export interface RouteStats {

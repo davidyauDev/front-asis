@@ -234,7 +234,6 @@ onMounted(async () => {
               </UCard>
             </div>
 
-            <!-- Content: tabla + paginación (estado por defecto) -->
             <div v-else key="content" class="space-y-4">
               <UCard >
                 <AsistenciaTable :asistencias="asistencias as AsistenciaRecord[]" :loading="loading"

@@ -63,7 +63,7 @@
           <!-- Fecha -->
           <UButton
             variant="soft"
-            :color="hasDateFilters ? 'primary' : 'gray'"
+            color="primary"
             size="sm"
             icon="i-lucide-calendar"
             @click="toggleDateFilters"
@@ -74,7 +74,7 @@
           <!-- Avanzado -->
           <UButton
             variant="soft"
-            :color="hasAdvancedFilters ? 'primary' : 'gray'"
+            color="primary"
             size="sm"
             icon="i-lucide-settings-2"
             @click="toggleAdvancedFilters"
@@ -199,15 +199,12 @@ const yearOptions = computed(() => {
   return years
 })
 
-/* -------------------- COMPUTED -------------------- */
 const activeFiltersCount = computed(() => {
   return Object.entries(localFilters.value)
     .filter(([k, v]) => v !== '' && v !== undefined && v !== null)
     .length
 })
 
-const hasDateFilters = computed(() => !!localFilters.value.start_date || !!localFilters.value.end_date)
-const hasAdvancedFilters = computed(() => !!localFilters.value.month || !!localFilters.value.year)
 
 const applyFilters = () => {
   emit('apply', { ...localFilters.value })
