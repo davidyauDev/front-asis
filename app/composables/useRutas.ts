@@ -62,6 +62,7 @@ function generateGPSPoints(
 }
 
 export const useRutas = () => {
+
   const routes = ref<Route[]>([]);
   const users = ref<AttendanceUser[]>([]);
   const selectedRoute = ref<Route | null>(null);
@@ -85,7 +86,7 @@ export const useRutas = () => {
         params.append("date", filters.value.date);
       }
 
-      const url = `http://127.0.0.1:8000/api/users/check-in-out?${params.toString()}`;
+      const url = `http://172.19.0.17/api/users/check-in-out?${params.toString()}`;
 
       const res = await fetch(url, {
         headers: {
