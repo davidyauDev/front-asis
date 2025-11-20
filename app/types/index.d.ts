@@ -71,6 +71,16 @@ export interface AuthUser {
   };
 }
 
+export interface CreateUserPayload {
+  name: string;
+  emp_code: string;
+  email: string;
+  role: UserRole;
+  password: string;
+  active: boolean;
+  
+}
+
 export interface LoginCredentials {
   emp_code: string;
   password: string;
@@ -90,12 +100,38 @@ export interface LoginResponse {
   };
 }
 
+
 export interface UserListItem {
   id: number;
   name: string;
   email: string;
   emp_code: string;
+  role: UserRole;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
 }
+
+export type RoleOption = {
+  label: string;
+  value: UserRole;
+};
+
+// export const roleOptions: Record<UserRole, RoleOption> = {
+//   SUPER_ADMIN: {
+//     label: "Super Administrador",
+//     value: UserRole.SUPER_ADMIN,
+//   },
+//   ADMIN: {
+//     label: "Administrador",
+//     value: UserRole.ADMIN,
+//   },
+//   TECHNICIAN: {
+//     label: "Técnico",
+//     value: UserRole.TECHNICIAN,
+//   },
+// };
 
 export interface PaginationLinks {
   first: string | null;

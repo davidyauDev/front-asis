@@ -1,10 +1,12 @@
 import { createSharedComposable } from "@vueuse/core";
-import type { UserListItem } from "~/types";
+import type { CreateUserPayload, UserListItem } from "~/types";
 
 const _useUsers = () => {
   const users = ref<UserListItem[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+
+  const toast = useToast();
 
   // Paginación
   const currentPage = ref(1);
@@ -20,7 +22,7 @@ const _useUsers = () => {
   const sortOrder = ref<"asc" | "desc">("desc");
 
   const config = useRuntimeConfig();
-  const apiBaseUrl = config.public.apiBaseUrl ;
+  const apiBaseUrl = config.public.apiBaseUrl;
 
   // Obtener token de autenticación
   const getAuthToken = (): string | null => {
@@ -48,7 +50,7 @@ const _useUsers = () => {
       }
 
       const params = new URLSearchParams();
-      params.append("page", page.toString()); 
+      params.append("page", page.toString());
       params.append("per_page", perPage.value.toString());
 
       if (search.trim()) params.append("search", search.trim());
@@ -65,7 +67,6 @@ const _useUsers = () => {
           "Content-Type": "application/json",
         },
       });
-
 
       users.value = response.data || [];
 
@@ -114,8 +115,8 @@ const _useUsers = () => {
 
   // Buscar usuarios
   const searchUsers = async (query: string) => {
-    searchQuery.value = query; 
-    currentPage.value = 1; 
+    searchQuery.value = query;
+    currentPage.value = 1;
     await fetchUsers(1, query, sortBy.value, sortOrder.value);
   };
 
@@ -170,12 +171,12 @@ const _useUsers = () => {
   }));
 
   const getUserById = (id: number) => {
-    return users.value.find(user => user.id === id)
-  }
+    return users.value.find((user) => user.id === id);
+  };
 
   const getUserByEmpCode = (empCode: string) => {
-    return users.value.find(user => user.emp_code === empCode)
-  }
+    return users.value.find((user) => user.emp_code === empCode);
+  };
 
   const formatUserForSelect = (user: UserListItem) => {
     return {
@@ -183,24 +184,229 @@ const _useUsers = () => {
       value: user.id,
       name: user.name,
       emp_code: user.emp_code,
-      email: user.email
-    }
-  }
+      email: user.email,
+    };
+  };
 
   const getUsersForSelect = () => {
-    return users.value.map(formatUserForSelect)
-  }
+    return users.value.map(formatUserForSelect);
+  };
 
   const searchUsersLocal = (query: string) => {
-    if (!query) return users.value
+    if (!query) return users.value;
+
+    const lowerQuery = query.toLowerCase();
+    return users.value.filter(
+      (user) =>
+        user.name.toLowerCase().includes(lowerQuery) ||
+        user.email.toLowerCase().includes(lowerQuery) ||
+        user.emp_code.toLowerCase().includes(lowerQuery)
+    );
+  };
+
+  const toggleUserActive = async (userId: number) => {
+    loading.value = true;
+    const user = getUserById(userId);
+    if (!user) {
+      loading.value = false;
+      return;
+    }
+
+    try {
+      const url = `${apiBaseUrl}/api/users/${userId}/toggle-active`;
+      const token = getAuthToken();
+      await $fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      user.active = !user.active;
+
+      toast.add({
+        title: "Estado actualizado",
+        description: `El usuario ${user.name} ahora está ${
+          user.active ? "activo" : "inactivo"
+        }.`,
+        color: "success",
+      });
+
+      
+    } catch (err: any) {
+      console.error("Error al actualizar el estado del usuario:", err);
+      toast.add({
+        title: "Error al actualizar estado",
+        description:
+          err.data?.message || "No se pudo actualizar el estado del usuario.",
+        color: "error",
+        duration: 5000,
+      });
+    } finally {
+      loading.value = false;
+    }
+    // if (user) {
+    //   user.active = !user.active;
+    //   const url = `${apiBaseUrl}/api/users/${userId}/toggle-active`;
+
+    //   $fetch(url, {
+    //     method: "POST",
+    //     headers: {
+    //       Authorization: `Bearer ${getAuthToken()}`,
+    //     },
+    //   })
+
+    //   .catch((err) => {
+    //     error.value =
+    //       err.message || "No se pudo actualizar el estado del usuario";
+    //     // Revertir el cambio en caso de error
+    //     user.active = !user.active;
+    //   });
+    // }
+    // // loading.value = false;
+  };
+
+  const createUser = async (newUser: CreateUserPayload) => {
+    try {
+      const url = `${apiBaseUrl}/api/users`;
+      const token = getAuthToken();
+      const { data } = await $fetch<{
+        data: UserListItem;
+      }>(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newUser),
+      });
+
+      
+
+      users.value = [data, ...users.value];
+
+      toast.add({
+        title: "Usuario creado",
+        description: `El usuario ${data.name} ha sido creado correctamente.`,
+        color: "success",
+      });
+
+      return data;
+    } catch (err: any) {
+      toast.add({
+        title: "Error al crear usuario",
+        description:
+          err.data?.message || "No se pudo crear el usuario.",
+        color: "error",
+        duration: 5000,
+      });
+      return null;
+    }
+  };
+
+  const updateUserInList = async (id: number, updatedUser: CreateUserPayload) => {
+    const index = users.value.findIndex((user) => user.id === id);
+
+    try {
+      if (index === -1) return false;
+
+      const url = `${apiBaseUrl}/api/users/${id}`;
+      const token = getAuthToken();
+
+      const { data } = await $fetch<{ data: UserListItem }>(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedUser),
+      });
+      users.value[index] = data;
+
+      toast.add({
+        title: "Usuario actualizado",
+        description: `El usuario ${updatedUser.name} ha sido actualizado correctamente.`,
+        color: "success",
+      });
+
+      return true;
+    } catch (err: any) {
+      // Si Laravel mandó JSON, ofetch lo guarda así:
+      // console.log("👉 Detalle error backend:", err.data.message);
+      // if (err.data && err.data.message) {
+      toast.add({
+        title: "Error al actualizar usuario",
+        // message: err.data.message,
+        description:
+          err.data?.message || "No se pudo actualizar el usuario seleccionado.",
+        color: "error",
+        duration: 5000,
+      });
+      // }
+
+      return false;
+    }
+  };
+
+  const deleteUserFromList = async (userId: number) => {
+    try {
+      await $fetch(`${apiBaseUrl}/api/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      users.value = users.value.map((user) =>
+        user.id === userId
+          ? { ...user, deleted_at: new Date().toISOString() }
+          : user
+      );
+
     
-    const lowerQuery = query.toLowerCase()
-    return users.value.filter(user => 
-      user.name.toLowerCase().includes(lowerQuery) ||
-      user.email.toLowerCase().includes(lowerQuery) ||
-      user.emp_code.toLowerCase().includes(lowerQuery)
-    )
-  }
+      toast.add({
+        title: "Usuario eliminado",
+        description: `El usuario ha sido eliminado correctamente.`,
+        color: "success",
+      });
+    } catch (err: any) {
+      toast.add({
+        title: "Error al eliminar usuario",
+        description:
+          err.data?.message || "No se pudo eliminar el usuario seleccionado.",
+        color: "error",
+        duration: 5000,
+      });
+    }
+  };
+
+  const restoreUser = async (user: UserListItem) => {
+    try {
+      await $fetch(`${apiBaseUrl}/api/users/${user.id}/restore`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      users.value = users.value.map((u) =>
+        u.id === user.id ? { ...u, deleted_at: undefined } : u
+      );
+
+      toast.add({
+        title: "Usuario restaurado",
+        description: `El usuario ${user.name} ha sido restaurado correctamente.`,
+        color: "success",
+      });
+    } catch (err: any) {
+      toast.add({
+        title: "Error al restaurar usuario",
+        description:
+          err.data?.message || "No se pudo restaurar el usuario seleccionado.",
+        color: "error",
+        duration: 5000,
+      });
+    }
+  };
 
   return {
     users: readonly(users),
@@ -230,6 +436,11 @@ const _useUsers = () => {
     formatUserForSelect,
     getUsersForSelect,
     searchUsersLocal,
+    toggleUserActive,
+    createUser,
+    updateUserInList,
+    deleteUserFromList,
+    restoreUser,
   };
 };
 

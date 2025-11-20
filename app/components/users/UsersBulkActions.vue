@@ -16,7 +16,7 @@
           >
             Enviar email
           </UButton>
-          <UButton 
+          <!-- <UButton 
             size="sm" 
             variant="outline" 
             icon="i-lucide-user-x" 
@@ -24,7 +24,7 @@
             @click="$emit('deactivateUsers')"
           >
             Desactivar
-          </UButton>
+          </UButton> -->
           <UButton 
             size="sm" 
             variant="ghost" 
