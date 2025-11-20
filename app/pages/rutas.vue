@@ -13,6 +13,7 @@
                 @selectRoute="handleSelectRoute"
                 @updateFilters="handleUpdateFilters"
                 @clearFilters="handleClearFilters"
+                @resetMap="handleResetMap"
               />
             </div>
             <div class="lg:col-span-3 space-y-6">
@@ -65,7 +66,10 @@ const handleSelectRoute = (route: Route | null) => {
 
 const handleUpdateFilters = (newFilters: Partial<RouteFilters>) => {
   updateFilters(newFilters);
+};
 
+const handleResetMap = () => {
+ mapTargetCenter.value = null;
 };
 
 const handleClearFilters = () => {

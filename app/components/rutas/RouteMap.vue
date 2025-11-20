@@ -22,10 +22,10 @@ const props = defineProps<{
   allRoutes?: Route[]
    targetCenter?: [number, number] | null
 }>()
-
+const defaultMapCenter: [number, number] = [-9.19, -75.0152];
+const mapCenter = ref<[number, number]>(defaultMapCenter);
 const mapRef = ref()
 
-const mapCenter: [number, number] = [-9.19, -75.0152];
 
 const convertPoints = (route: Route) =>
   route.points
@@ -48,13 +48,23 @@ const routesToDraw = computed(() => {
 })
 
 watch(
-  () => props.targetCenter,
-  (newCenter) => {
-    if (newCenter && mapRef.value) {
+  () => [props.targetCenter?.toString(), props.route?.id].toString(), 
+  () => {
+    const newCenter = props.targetCenter;
+    if (mapRef.value) {
+       if (newCenter && mapRef.value) {
       mapRef.value.leafletObject.flyTo(newCenter, 14, { duration: 1.2 });
+    }
+ else {
+        const defaultZoom = 5.5;
+        const defaultCenter: [number, number] = [-9.19, -75.0152];
+        mapRef.value.leafletObject.setView(defaultCenter, defaultZoom, { animate: true, duration: 1.2 });
+        mapCenter.value = defaultCenter;
+      }
     }
   }
 );
+
 
 
 </script>

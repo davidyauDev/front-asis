@@ -11,21 +11,31 @@ const emit = defineEmits<{
   selectRoute: [r: Route | null];
   updateFilters: [f: Partial<RouteFilters>];
   clearFilters: [];
+  resetMap: [];
 }>();
+
 
 const selectedUser = ref<AttendanceUser | null>(null);
 const today = new Date().toISOString().split("T")[0];
 const date = ref(today);
 
+
 const applyFilters = () => {
   emit("updateFilters", { date: date.value });
-};
+}
+
 
 const clearFilters = () => {
   selectedUser.value = null;
-  date.value = today;
+  date.value = "";
   emit("clearFilters");
 };
+
+
+const listarTodos = () => {
+  emit('selectRoute', null)
+  emit('resetMap') 
+}
 </script>
 
 <template>
@@ -70,15 +80,18 @@ const clearFilters = () => {
 
     <UCard>
       <template #header>
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-map-pin" class="w-4 h-4" />
             <h3 class="text-sm font-semibold">Rutas</h3>
           </div>
-          <UBadge size="xs" color="neutral" variant="subtle">{{
-            filteredRoutes.length
-          }}</UBadge>
+          <div class="flex items-center gap-2">
+            <UButton size="xs" color="primary" variant="soft" @click="listarTodos">Listar todos</UButton>
+            <UBadge size="xs" color="neutral" variant="subtle">{{ filteredRoutes.length }}</UBadge>
+          </div>
         </div>
+
+
       </template>
       <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
         <div
@@ -120,7 +133,9 @@ const clearFilters = () => {
           >
             <div class="flex items-center gap-1">
               <UIcon name="i-heroicons-calendar-days" class="w-3 h-3" />
-             {{ r.date }}
+              {{
+                r.date
+              }}
             </div>
           </div>
         </div>
