@@ -2,11 +2,7 @@
   <div class="map-wrapper">
     <LMap ref="mapRef" :zoom="5.5" :center="mapCenter" :use-global-leaflet="false">
       <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <LMarker
-        v-for="r in routesToDraw"
-        :key="`marker-${r.id}`"
-        :lat-lng="r.lastPoint"
-      >
+      <LMarker v-for="r in routesToDraw" :key="`marker-${r.id}`" :lat-lng="r.lastPoint">
         <LPopup>
           <strong>{{ r.user.name }}</strong><br />
         </LPopup>
@@ -20,7 +16,7 @@ import type { Route } from '~/types'
 const props = defineProps<{
   route?: Route | null
   allRoutes?: Route[]
-   targetCenter?: [number, number] | null
+  targetCenter?: [number, number] | null
 }>()
 const defaultMapCenter: [number, number] = [-9.19, -75.0152];
 const mapCenter = ref<[number, number]>(defaultMapCenter);
@@ -48,14 +44,14 @@ const routesToDraw = computed(() => {
 })
 
 watch(
-  () => [props.targetCenter?.toString(), props.route?.id].toString(), 
+  () => [props.targetCenter?.toString(), props.route?.id].toString(),
   () => {
     const newCenter = props.targetCenter;
     if (mapRef.value) {
-       if (newCenter && mapRef.value) {
-      mapRef.value.leafletObject.flyTo(newCenter, 14, { duration: 1.2 });
-    }
- else {
+      if (newCenter && mapRef.value) {
+        mapRef.value.leafletObject.flyTo(newCenter, 14, { duration: 1.2 });
+      }
+      else {
         const defaultZoom = 5.5;
         const defaultCenter: [number, number] = [-9.19, -75.0152];
         mapRef.value.leafletObject.setView(defaultCenter, defaultZoom, { animate: true, duration: 1.2 });
@@ -74,5 +70,6 @@ watch(
   width: 100%;
   position: relative;
 }
+
 @import "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
 </style>

@@ -56,6 +56,21 @@ const listarTodos = () => {
             >
             <UInput v-model="date" type="date" size="xs" />
           </div>
+          <div>
+            <label
+              class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5 block"
+              >Ubicación</label
+            >
+            <USelect
+              :items="[
+                { label: 'Lima', value: 'lima' },
+                { label: 'Provincia', value: 'provincia' }
+              ]"
+              
+              size="xs"
+              placeholder="Selecciona"
+            />
+          </div>
         </div>
         <div class="flex gap-2 pt-1">
           <UButton

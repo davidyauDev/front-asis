@@ -6,6 +6,16 @@
         <div class="p-6">
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div class="lg:col-span-1">
+              <!-- Resumen de usuarios activos -->
+              <div class="mb-4">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 shadow-sm">
+                  <UIcon name="i-heroicons-user-group" class="w-6 h-6 text-blue-500" />
+                  <div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Usuarios activos</div>
+                    <div class="text-lg font-bold text-blue-700 dark:text-blue-200">{{ users.length }}</div>
+                  </div>
+                </div>
+              </div>
               <RutasRouteFilters
                 :users="users"
                 :filteredRoutes="filteredRoutes"
