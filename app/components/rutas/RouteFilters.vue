@@ -1,13 +1,11 @@
 ﻿<script setup lang="ts">
 import type { Route, RouteFilters, AttendanceUser } from "~/types";
 
-
 const props = defineProps<{
   users: AttendanceUser[];
   filteredRoutes: Route[];
   selectedRoute: Route | null;
 }>();
-
 
 const emit = defineEmits<{
   selectRoute: [r: Route | null];
@@ -15,29 +13,18 @@ const emit = defineEmits<{
   clearFilters: [];
 }>();
 
-
 const selectedUser = ref<AttendanceUser | null>(null);
 const today = new Date().toISOString().split("T")[0];
 const date = ref(today);
 
-
 const applyFilters = () => {
   emit("updateFilters", { date: date.value });
-}
-
+};
 
 const clearFilters = () => {
   selectedUser.value = null;
-  date.value = "";
+  date.value = today;
   emit("clearFilters");
-};
-
-
-
-const formatDuration = (mins: number) => {
-  const h = Math.floor(mins / 60);
-  const m = Math.round(mins % 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 </script>
 
@@ -133,26 +120,7 @@ const formatDuration = (mins: number) => {
           >
             <div class="flex items-center gap-1">
               <UIcon name="i-heroicons-calendar-days" class="w-3 h-3" />
-              {{
-                new Date(r.date).toLocaleDateString("es-ES", {
-                  day: "2-digit",
-                  month: "short",
-                })
-              }}
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-arrow-long-right" class="w-3 h-3" />
-                {{ r.total_distance.toFixed(1) }}km
-              </span>
-              <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-clock" class="w-3 h-3" />
-                {{ formatDuration(r.total_duration) }}
-              </span>
-              <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-stop-circle" class="w-3 h-3" />
-                {{ r.stops.length }}
-              </span>
+             {{ r.date }}
             </div>
           </div>
         </div>

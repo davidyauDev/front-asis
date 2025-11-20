@@ -403,7 +403,7 @@
               <UIcon name="i-lucide-clock" class="w-4 h-4 text-gray-400 shrink-0" />
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-medium truncate">{{ formatFecha(asistencia.created_at) }}</div>
-                <div class="text-xs text-gray-500 truncate">{{ formatTimestamp(asistencia.timestamp) }}</div>
+                <div class="text-xs text-gray-500 truncate">{{asistencia.timestamp }}</div>
               </div>
             </div>
 

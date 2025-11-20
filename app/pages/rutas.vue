@@ -24,6 +24,7 @@
                     :route="selectedRoute"
                     :config="mapConfig"
                     :all-routes="filteredRoutes"
+                    :target-center="mapTargetCenter"
                   />
                 </div>
               </div>
@@ -51,6 +52,7 @@ const {
   updateFilters,
   clearFilters,
   mapConfig,
+  mapTargetCenter
 } = useRutas();
 
 const handleSelectRoute = (route: Route | null) => {

@@ -62,6 +62,7 @@ function generateGPSPoints(
 }
 
 export const useRutas = () => {
+  const mapTargetCenter = ref<[number, number] | null>(null);
 
   const routes = ref<Route[]>([]);
   const users = ref<AttendanceUser[]>([]);
@@ -156,11 +157,20 @@ export const useRutas = () => {
   }));
 
   const selectRoute = (routeId: string | null) => {
-    selectedRoute.value = routeId
-      ? routes.value.find((r) => r.id === routeId) || null
-      : null;
-  };
+  selectedRoute.value = routeId
+    ? routes.value.find((r) => r.id === routeId) || null
+    : null;
 
+  if (selectedRoute.value) {
+    const lastPoint = selectedRoute.value.points.at(-1);
+
+    if (lastPoint) {
+      mapTargetCenter.value = [lastPoint.latitude, lastPoint.longitude];
+    }
+  } else {
+    mapTargetCenter.value = null;
+  }
+};
  const updateFilters = async (newFilters: Partial<RouteFilters>) => {
   filters.value = { ...filters.value, ...newFilters };
   await fetchRoutesFromAPI(); // recargar datos con la fecha elegida
@@ -168,7 +178,9 @@ export const useRutas = () => {
 
 
   const clearFilters = () => {
-    filters.value = {};
+     const today = new Date().toISOString().split("T")[0];
+
+    filters.value = { date: today }; 
     selectedRoute.value = null;
   };
 
@@ -201,5 +213,6 @@ export const useRutas = () => {
     clearFilters,
     getMapBounds,
     getUserRoutes,
+    mapTargetCenter,
   };
 };
