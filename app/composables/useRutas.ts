@@ -76,24 +76,25 @@ export const useRutas = () => {
   });
 
   async function fetchRoutesFromAPI() {
+  const config = useRuntimeConfig();
+  const apiBaseUrl = config.public.apiBaseUrl;
     loading.value = true;
 
     try {
       const token = localStorage.getItem("auth_token");
-
       const params = new URLSearchParams();
       if (filters.value.date) {
         params.append("date", filters.value.date);
       }
 
-      const url = `http://172.19.0.17/api/users/check-in-out?${params.toString()}`;
+      const url = `${apiBaseUrl}/api/users/check-in-out?${params.toString()}`;
 
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
 
       const json = await res.json();
       const apiUsers = json.data || [];
