@@ -164,7 +164,7 @@ const handleClose = () => {
 <LazyEventsSimpleUploadModal
   :is-open="openEditModal"
   :pre-selected-date="selectedDateForUpload || undefined"
-  @close="openEditModal = false;"
+  @close="openEditModal = false; isOpen = false"
   @event-created="() => {}"
   :selected-event="{ ...props.evento }"
 />

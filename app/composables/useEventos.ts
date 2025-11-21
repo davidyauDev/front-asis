@@ -34,9 +34,10 @@ interface EventoCalendario {
   estado?: string;
 }
 
-export const useEventos = () => {
 
  const updateEvent = ref(false);
+
+export const useEventos = () => {
 
   const config = useRuntimeConfig();
   const baseUrl = config.public.apiBaseUrl;

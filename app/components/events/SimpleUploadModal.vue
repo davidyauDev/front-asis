@@ -179,7 +179,6 @@ const processFiles = (files: File[], event: Event) => {
 
 
     img.onload = () => {
-      console.log('✅ Imagen válida:', img.width, img.height);
       if (img.width > MAX_WIDTH || img.height > MAX_HEIGHT) {
         const toast = useToast();
         toast.add({
@@ -239,6 +238,20 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     return;
   }
 
+  if (props.selectedEvent) {
+    const dateInicio = new Date(event.data.fecha_inicio).getTime();
+    const dateFin = new Date(event.data.fecha_fin).getTime();
+    if (dateFin !== dateInicio) {
+      const toast = useToast();
+      toast.add({
+        title: 'Fechas inválidas',
+        description: 'Para editar un evento existente, la fecha de inicio y fin deben ser iguales',
+        color: 'error'
+      });
+      return;
+    }
+  }
+
   uploading.value = true;
   const toast = useToast();
 
@@ -267,7 +280,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
     if (imagenesDeleteIds.value.length > 0) {
       imagenesDeleteIds.value.forEach((id) => {
-        formData.append('imagenes_delete_ids[]', id.toString());
+        formData.append('images_delete[]', id.toString());
       });
       // imagenesDeleteIds.value = [];
     }
@@ -285,6 +298,14 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
       if (response.ok) {
         updateEvent.value = true;
+        // props.selectedEvent = {
+        //   ...props.selectedEvent,
+        //   nombre: event.data.titulo,
+        //   descripcion: event.data.descripcion,
+        //   fecha: event.data.fecha_inicio,
+        //   fecha_fin: event.data.fecha_fin,
+        //   estado: event.data.estado
+        // }
       }
     } else {
       response = await fetch(`${apiBaseUrl}/api/eventos`, {
