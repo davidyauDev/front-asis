@@ -60,7 +60,7 @@
 
             <!-- Rol -->
             <td class="px-4 py-4">
-              <UBadge :label="roleOptions[user.role]?.label || 'Sin rol'" color="neutral" variant="soft" size="md" />
+              <UBadge :label="getRoleOp(user.role).label" :color="getRoleOp(user.role).color" variant="soft" size="md" />
             </td>
 
            
@@ -113,7 +113,7 @@
 
 <script setup lang="ts">
 import type { UserListItem } from "~/types"
-import { roleOptions } from "~/enums/user"
+import { getRoleOp } from "~/enums/user"
 
 const { user: userAuth } = useAuth()
 

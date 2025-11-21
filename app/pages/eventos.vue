@@ -5,7 +5,8 @@ definePageMeta({ middleware: "auth" });
 
 const { 
   obtenerEventosPorMes,
-  transformarEventosParaCalendario
+  transformarEventosParaCalendario,
+  updateEvent,
 } = useEventos()
 
 const { user, isLoggedIn } = useAuth()
@@ -54,6 +55,18 @@ watch(isLoggedIn, async (newValue, oldValue) => {
     await cargarEventosDelMes(hoy.getFullYear(), hoy.getMonth() + 1);
   }
 });
+
+
+watch(updateEvent, async (newValue, oldValue) => {
+  console.log('👀 watch updateEvent:', { newValue, oldValue });
+  if (newValue && newValue !== oldValue) {
+    console.log('🔄 Evento actualizado, recargando calendario...');
+    const hoy = new Date();
+    await cargarEventosDelMes(hoy.getFullYear(), hoy.getMonth() + 1);
+    updateEvent.value = false;
+  }
+});
+
 
 // Eliminado: persistencia local de eventos
 
@@ -181,7 +194,7 @@ const cargarEventosDelMes = async (año: number, mes: number) => {
         fecha: evento.fecha,
         categoria: evento.categoria,
         estado: evento.estado,
-        fecha_fin: evento.fecha_fin
+        // fecha_fin: evento.fecha_fin
       });
     });
     
@@ -818,10 +831,10 @@ useHead({ title: "Eventos Especiales - Asisten" });
               'opacity-100': !isLoadingEvents
             }"
           >
+          <!-- @date-selected="abrirModalParaFecha" -->
             <LazyEventsCalendar 
               :key="calendarKey"
               :eventos="todosLosEventos" 
-              @date-selected="abrirModalParaFecha"
               @month-changed="handleMonthChanged"
               @add-event-click="handleAddEventFromCalendar"
             />

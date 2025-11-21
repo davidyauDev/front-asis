@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watchDebounced } from "@vueuse/core";
 import type { CreateUserPayload, UserListItem } from "~/types";
-import { roleOptions } from "~/enums/user";
+import { getRoleOp, roleOptions } from "~/enums/user";
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
 import { EMAIL_REGEX } from '~/constants/regex'
 
@@ -47,7 +47,7 @@ const isViewMode = computed(() => mode.value === 'view');
 const currentId = computed(() => selectedUser.value ? selectedUser.value.id : null);
 
 
-
+const showPassword = ref(false)
 
 const formState = reactive<CreateUserPayload>({
   name: '',
@@ -319,14 +319,12 @@ onMounted(async () => {
 
           <div class="flex justify-end mb-4">
 
-            <UButton variant="outline" size="sm"
-            class="ml-auto"
-            @click="() => { mode = 'create'; showUserPreview = true }"
-            :loading="loading" icon="i-lucide-user-plus">
-            Agregar usuario
-          </UButton>
-          
-        </div>
+            <UButton variant="outline" size="sm" class="ml-auto"
+              @click="() => { mode = 'create'; showUserPreview = true }" :loading="loading" icon="i-lucide-user-plus">
+              Agregar usuario
+            </UButton>
+
+          </div>
 
           <UsersTable :users="users" :sort-by="sortBy" :loading="loading" :sort-order="sortOrder"
             @toggle-user="toggleUserSelection" @sort="changeSorting" @view-user="user => viewUser(user, 'view')"
@@ -348,6 +346,9 @@ onMounted(async () => {
 
   <UModal v-model:open="showUserPreview" @update:open="(isOpen: boolean) => {
     if (!isOpen) {
+      
+      showUserPreview = false;
+      selectedUser = null;
       resetForm();
     }
   }" :title="isViewMode ? 'Vista de Usuario' : mode === 'create' ? 'Crear Usuario' : 'Editar Usuario'" size="lg">
@@ -397,13 +398,21 @@ onMounted(async () => {
             <template v-if="isViewMode && selectedUser">
               <p class="text-sm">{{ selectedUser.email }}</p>
             </template>
-            <UInput v-else  v-model="formState.email" class="w-full" placeholder="Correo electrónico" />
+            <UInput v-else v-model="formState.email" class="w-full" placeholder="Correo electrónico" />
           </UFormField>
 
           <!-- Password -->
 
           <UFormField v-if="mode === 'create'" label="Contraseña" class="w-full" name="password">
-            <UInput type="password" v-model="formState.password" class="w-full" placeholder="Contraseña" />
+            <UInput :type="showPassword ? 'text' : 'password'" v-model="formState.password" class="w-full"
+              placeholder="Contraseña">
+
+              <template #trailing>
+                <UButton :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" variant="ghost" color="neutral"
+                  size="xs" @click="showPassword = !showPassword" type="button"
+                  class="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-md" />
+              </template>
+            </UInput>
           </UFormField>
 
 
@@ -413,9 +422,12 @@ onMounted(async () => {
 
             <!-- Rol -->
             <UFormField label="Rol" class="w-full" name="role">
-              <template v-if="isViewMode && selectedUser">
-                <p class="text-sm">{{ selectedUser.role }}</p>
-              </template>
+
+              <UBadge v-if="isViewMode && selectedUser" variant="soft" :color="getRoleOp(selectedUser.role).color"
+                size="sm">
+                {{ getRoleOp(selectedUser.role).label }}
+              </UBadge>
+
               <USelect v-else v-model="formState.role" :items="Object.values(roleOptions)" item-label="label"
                 item-value="value" placeholder="Selecciona un rol" />
             </UFormField>
@@ -438,7 +450,7 @@ onMounted(async () => {
 
           <!-- Footer -->
           <div class="flex justify-between items-center pt-4 border-t gap-6 border-gray-200 dark:border-gray-700">
-      
+
 
             <div class="flex items-center gap-2 ml-auto">
 
@@ -448,9 +460,7 @@ onMounted(async () => {
                 Guardar
               </UButton>
 
-              <UButton color="neutral" variant="ghost" @click="showUserPreview = false; selectedUser = null">
-                Cerrar
-              </UButton>
+            
             </div>
           </div>
         </UForm>

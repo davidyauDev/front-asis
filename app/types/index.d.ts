@@ -1,5 +1,7 @@
 import type { AvatarProps } from "@nuxt/ui";
 
+export type Severity = "primary" | "secondary" | "success" | "info" | "warning" | "error" | "neutral";
+
 export type UserStatus = "subscribed" | "unsubscribed" | "bounced";
 export type SaleStatus = "paid" | "failed" | "refunded";
 
@@ -116,6 +118,7 @@ export interface UserListItem {
 export type RoleOption = {
   label: string;
   value: UserRole;
+  color: Severity;
 };
 
 // export const roleOptions: Record<UserRole, RoleOption> = {

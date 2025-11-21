@@ -64,7 +64,7 @@ const _useUsers = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
-          "Content-Type": "application/json",
+          // "Content-Type": "application/json",
         },
       });
 
@@ -244,25 +244,7 @@ const _useUsers = () => {
     } finally {
       loading.value = false;
     }
-    // if (user) {
-    //   user.active = !user.active;
-    //   const url = `${apiBaseUrl}/api/users/${userId}/toggle-active`;
-
-    //   $fetch(url, {
-    //     method: "POST",
-    //     headers: {
-    //       Authorization: `Bearer ${getAuthToken()}`,
-    //     },
-    //   })
-
-    //   .catch((err) => {
-    //     error.value =
-    //       err.message || "No se pudo actualizar el estado del usuario";
-    //     // Revertir el cambio en caso de error
-    //     user.active = !user.active;
-    //   });
-    // }
-    // // loading.value = false;
+   
   };
 
   const createUser = async (newUser: CreateUserPayload) => {

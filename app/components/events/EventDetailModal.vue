@@ -7,6 +7,7 @@ interface EventoImagen {
   descripcion?: string
 }
 
+
 interface EventoCalendario {
   id: number
   nombre: string
@@ -18,11 +19,13 @@ interface EventoCalendario {
   fecha_fin?: string
   estado?: string
 }
+const selectedDateForUpload = ref<string | null>(null);
 
 // v-model para abrir/cerrar el modal
 const isOpen = defineModel('open', { type: Boolean, default: false })
 const props = defineProps<{ evento?: EventoCalendario | null }>()
 
+const openEditModal = ref(false)
 // Color según categoría
 const categoriaColor = computed(() => {
   const colorMap: Record<string, string> = {
@@ -148,6 +151,7 @@ const handleClose = () => {
           />
           <UButton
             label="Editar evento"
+            @click="openEditModal = true"
             color="primary"
             icon="i-lucide-pencil"
             variant="soft"
@@ -156,4 +160,13 @@ const handleClose = () => {
       </div>
     </template>
   </UModal>
+
+<LazyEventsSimpleUploadModal
+  :is-open="openEditModal"
+  :pre-selected-date="selectedDateForUpload || undefined"
+  @close="openEditModal = false;"
+  @event-created="() => {}"
+  :selected-event="{ ...props.evento }"
+/>
 </template>
+
