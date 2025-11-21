@@ -1,18 +1,17 @@
 ﻿<script setup lang="ts">
 import type { Route, RouteFilters, AttendanceUser } from "~/types";
 
-
 const props = defineProps<{
   users: AttendanceUser[];
   filteredRoutes: Route[];
   selectedRoute: Route | null;
 }>();
 
-
 const emit = defineEmits<{
   selectRoute: [r: Route | null];
   updateFilters: [f: Partial<RouteFilters>];
   clearFilters: [];
+  resetMap: [];
 }>();
 
 
@@ -33,12 +32,10 @@ const clearFilters = () => {
 };
 
 
-
-const formatDuration = (mins: number) => {
-  const h = Math.floor(mins / 60);
-  const m = Math.round(mins % 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-};
+const listarTodos = () => {
+  emit('selectRoute', null)
+  emit('resetMap') 
+}
 </script>
 
 <template>
@@ -58,6 +55,21 @@ const formatDuration = (mins: number) => {
               >Fecha</label
             >
             <UInput v-model="date" type="date" size="xs" />
+          </div>
+          <div>
+            <label
+              class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5 block"
+              >Ubicación</label
+            >
+            <USelect
+              :items="[
+                { label: 'Lima', value: 'lima' },
+                { label: 'Provincia', value: 'provincia' }
+              ]"
+              
+              size="xs"
+              placeholder="Selecciona"
+            />
           </div>
         </div>
         <div class="flex gap-2 pt-1">
@@ -83,15 +95,18 @@ const formatDuration = (mins: number) => {
 
     <UCard>
       <template #header>
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-map-pin" class="w-4 h-4" />
             <h3 class="text-sm font-semibold">Rutas</h3>
           </div>
-          <UBadge size="xs" color="neutral" variant="subtle">{{
-            filteredRoutes.length
-          }}</UBadge>
+          <div class="flex items-center gap-2">
+            <UButton size="xs" color="primary" variant="soft" @click="listarTodos">Listar todos</UButton>
+            <UBadge size="xs" color="neutral" variant="subtle">{{ filteredRoutes.length }}</UBadge>
+          </div>
         </div>
+
+
       </template>
       <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
         <div
@@ -134,25 +149,8 @@ const formatDuration = (mins: number) => {
             <div class="flex items-center gap-1">
               <UIcon name="i-heroicons-calendar-days" class="w-3 h-3" />
               {{
-                new Date(r.date).toLocaleDateString("es-ES", {
-                  day: "2-digit",
-                  month: "short",
-                })
+                r.date
               }}
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-arrow-long-right" class="w-3 h-3" />
-                {{ r.total_distance.toFixed(1) }}km
-              </span>
-              <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-clock" class="w-3 h-3" />
-                {{ formatDuration(r.total_duration) }}
-              </span>
-              <span class="flex items-center gap-1">
-                <UIcon name="i-heroicons-stop-circle" class="w-3 h-3" />
-                {{ r.stops.length }}
-              </span>
             </div>
           </div>
         </div>

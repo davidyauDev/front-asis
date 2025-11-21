@@ -62,6 +62,7 @@ function generateGPSPoints(
 }
 
 export const useRutas = () => {
+  const mapTargetCenter = ref<[number, number] | null>(null);
 
   const routes = ref<Route[]>([]);
   const users = ref<AttendanceUser[]>([]);
@@ -76,24 +77,25 @@ export const useRutas = () => {
   });
 
   async function fetchRoutesFromAPI() {
+  const config = useRuntimeConfig();
+  const apiBaseUrl = config.public.apiBaseUrl;
     loading.value = true;
 
     try {
       const token = localStorage.getItem("auth_token");
-
       const params = new URLSearchParams();
       if (filters.value.date) {
         params.append("date", filters.value.date);
       }
 
-      const url = `http://172.19.0.17/api/users/check-in-out?${params.toString()}`;
+      const url = `${apiBaseUrl}/api/users/check-in-out?${params.toString()}`;
 
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
 
       const json = await res.json();
       const apiUsers = json.data || [];
@@ -155,11 +157,20 @@ export const useRutas = () => {
   }));
 
   const selectRoute = (routeId: string | null) => {
-    selectedRoute.value = routeId
-      ? routes.value.find((r) => r.id === routeId) || null
-      : null;
-  };
+  selectedRoute.value = routeId
+    ? routes.value.find((r) => r.id === routeId) || null
+    : null;
 
+  if (selectedRoute.value) {
+    const lastPoint = selectedRoute.value.points.at(-1);
+
+    if (lastPoint) {
+      mapTargetCenter.value = [lastPoint.latitude, lastPoint.longitude];
+    }
+  } else {
+    mapTargetCenter.value = null;
+  }
+};
  const updateFilters = async (newFilters: Partial<RouteFilters>) => {
   filters.value = { ...filters.value, ...newFilters };
   await fetchRoutesFromAPI(); // recargar datos con la fecha elegida
@@ -167,7 +178,9 @@ export const useRutas = () => {
 
 
   const clearFilters = () => {
-    filters.value = {};
+     const today = new Date().toISOString().split("T")[0];
+
+    filters.value = { date: today }; 
     selectedRoute.value = null;
   };
 
@@ -200,5 +213,6 @@ export const useRutas = () => {
     clearFilters,
     getMapBounds,
     getUserRoutes,
+    mapTargetCenter,
   };
 };

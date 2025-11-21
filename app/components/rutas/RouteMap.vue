@@ -2,35 +2,9 @@
   <div class="map-wrapper">
     <LMap ref="mapRef" :zoom="5.5" :center="mapCenter" :use-global-leaflet="false">
       <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-      <!-- Dibujar líneas -->
-      <LPolyline
-        v-for="r in routesToDraw"
-        :key="`line-${r.id}`"
-        :lat-lngs="r.pointsLatLng"
-        :color="r.color"
-        :weight="selectedRoute ? 6 : 4"
-        :opacity="selectedRoute ? 1 : 0.75"
-      />
-
-      <!-- Dibujar markers -->
-      <LMarker
-        v-for="r in routesToDraw"
-        :key="`marker-${r.id}`"
-        :lat-lng="r.lastPoint"
-      >
-        <LIcon :icon-anchor="[12, 24]">
-          <svg width="28" height="28" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" :fill="r.color"></circle>
-            <text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-weight="bold">
-              {{ selectedRoute ? 'S' : 'U' }}
-            </text>
-          </svg>
-        </LIcon>
-
+      <LMarker v-for="r in routesToDraw" :key="`marker-${r.id}`" :lat-lng="r.lastPoint">
         <LPopup>
           <strong>{{ r.user.name }}</strong><br />
-          <small>{{ formatTime(r.end_time) }}</small>
         </LPopup>
       </LMarker>
     </LMap>
@@ -42,11 +16,12 @@ import type { Route } from '~/types'
 const props = defineProps<{
   route?: Route | null
   allRoutes?: Route[]
+  targetCenter?: [number, number] | null
 }>()
-
+const defaultMapCenter: [number, number] = [-9.19, -75.0152];
+const mapCenter = ref<[number, number]>(defaultMapCenter);
 const mapRef = ref()
 
-const mapCenter = [-9.19, -75.0152]
 
 const convertPoints = (route: Route) =>
   route.points
@@ -68,11 +43,26 @@ const routesToDraw = computed(() => {
   })
 })
 
-const formatTime = (dateStr: string) =>
-  new Date(dateStr).toLocaleTimeString("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit"
-  })
+watch(
+  () => [props.targetCenter?.toString(), props.route?.id].toString(),
+  () => {
+    const newCenter = props.targetCenter;
+    if (mapRef.value) {
+      if (newCenter && mapRef.value) {
+        mapRef.value.leafletObject.flyTo(newCenter, 14, { duration: 1.2 });
+      }
+      else {
+        const defaultZoom = 5.5;
+        const defaultCenter: [number, number] = [-9.19, -75.0152];
+        mapRef.value.leafletObject.setView(defaultCenter, defaultZoom, { animate: true, duration: 1.2 });
+        mapCenter.value = defaultCenter;
+      }
+    }
+  }
+);
+
+
+
 </script>
 <style scoped>
 .map-wrapper {
@@ -80,5 +70,6 @@ const formatTime = (dateStr: string) =>
   width: 100%;
   position: relative;
 }
+
 @import "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
 </style>
