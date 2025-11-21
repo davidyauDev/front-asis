@@ -2,6 +2,7 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { EventoAPI } from '~/composables/useEventos'
+import { statusOptions } from '~/enums/evento'
 
 interface Props {
   isOpen: boolean;
@@ -26,7 +27,9 @@ const schema = z.object({
   descripcion: z.string().min(10, 'La descripción debe tener al menos 10 caracteres'),
   fecha_inicio: z.string().min(1, 'La fecha de inicio es requerida'),
   fecha_fin: z.string().min(1, 'La fecha de fin es requerida'),
-  estado: z.string().default('programado')
+  estado: z.int().refine(val => [0, 1].includes(val), {
+    message: 'El estado debe ser 0 (inactivo) o 1 (activo)'
+  })
 });
 
 type Schema = z.output<typeof schema>;
@@ -43,7 +46,7 @@ const state = reactive<Partial<Schema>>({
   descripcion: props.selectedEvent?.descripcion || undefined,
   fecha_inicio: props.preSelectedDate || props.selectedEvent?.fecha || undefined,
   fecha_fin: props.preSelectedDate || props.selectedEvent?.fecha || undefined,
-  estado: props.selectedEvent?.estado || 'programado'
+  estado: props.selectedEvent?.estado || 1
 });
 
 // Estado de archivos e imágenes
@@ -79,7 +82,7 @@ const resetForm = () => {
     descripcion: undefined,
     fecha_inicio: props.preSelectedDate || undefined,
     fecha_fin: props.preSelectedDate || undefined,
-    estado: 'programado'
+    estado: 1
   });
   clearImages();
 };
@@ -99,7 +102,7 @@ watch(() => props.selectedEvent, (event) => {
       descripcion: event.descripcion,
       fecha_inicio: event.fecha,
       fecha_fin: event.fecha_fin || event.fecha,
-      estado: event.estado || 'programado'
+      estado: event.estado || 0
     });
   } else {
     resetForm();
@@ -267,7 +270,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     formData.append('descripcion', event.data.descripcion);
     formData.append('fecha_inicio', event.data.fecha_inicio);
     formData.append('fecha_fin', event.data.fecha_fin);
-    formData.append('estado', event.data.estado);
+    formData.append('active', event.data.estado);
 
     // Agregar archivos
     selectedFiles.value.forEach((file, index) => {
@@ -298,14 +301,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
       if (response.ok) {
         updateEvent.value = true;
-        // props.selectedEvent = {
-        //   ...props.selectedEvent,
-        //   nombre: event.data.titulo,
-        //   descripcion: event.data.descripcion,
-        //   fecha: event.data.fecha_inicio,
-        //   fecha_fin: event.data.fecha_fin,
-        //   estado: event.data.estado
-        // }
+
       }
     } else {
       response = await fetch(`${apiBaseUrl}/api/eventos`, {
@@ -318,14 +314,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       });
     }
 
-    // const response = await fetch(`${apiBaseUrl}/api/eventos`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${token}`,
-    //     'Accept': 'application/json'
-    //   },
-    //   body: formData
-    // });
+
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -395,7 +384,7 @@ const handleClose = () => {
           </div>
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-
+           
 
               {{ selectedEvent ? 'Editar Evento' : 'Nuevo Evento' }}
             </h3>
@@ -426,6 +415,7 @@ const handleClose = () => {
         </p>
         <UButton label="Entendido" @click="handleClose" />
       </div>
+      
 
       <!-- Formulario principal -->
       <div v-else>
@@ -474,12 +464,8 @@ const handleClose = () => {
 
               <div class="grid grid-cols-1 gap-6">
                 <UFormField label="Estado del evento" name="estado" class="w-full">
-                  <USelectMenu v-model="state.estado" :options="[
-                    { label: '📅 Programado', value: 'programado' },
-                    { label: '✅ Activo', value: 'activo' },
-                    { label: '❌ Cancelado', value: 'cancelado' },
-                    { label: '🏁 Completado', value: 'completado' }
-                  ]" size="lg" class="w-full" />
+                  <USelectMenu v-model="state.estado" :items="Object.values(statusOptions)" icon="i-lucide-toggle-right"
+                    value-key="value" label-key="label" size="lg" class="w-full" />
                 </UFormField>
               </div>
             </div>
@@ -611,6 +597,8 @@ const handleClose = () => {
             </UCard>
           </div>
 
+         
+          {{ canSubmit }}
           <!-- Botones de acción -->
           <div class="grid grid-cols-1 gap-6">
             <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">

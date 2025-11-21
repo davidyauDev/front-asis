@@ -16,7 +16,7 @@ export interface EventoAPI {
   // fecha_inicio: string;
   // fecha_fin: string;
   fecha: string;
-  estado: string;
+  active: number;
   created_at: string;
   updated_at: string;
   imagenes: EventoImagen[];
@@ -26,12 +26,10 @@ interface EventoCalendario {
   id: number;
   nombre: string;
   fecha: string;
-  categoria: string;
-  programado: boolean;
   descripcion: string;
   imagenes?: EventoImagen[];
 
-  estado?: string;
+  estado: number;
 }
 
 
@@ -178,12 +176,11 @@ export const useEventos = () => {
         id: evento.id,
         nombre: evento.titulo,
         fecha: evento.fecha,
-        categoria: determinarCategoria(evento.titulo, evento.descripcion),
-        programado: evento.estado === "programado",
+       
         descripcion: evento.descripcion,
         imagenes: evento.imagenes,
 
-        estado: evento.estado,
+        estado: evento.active,
       };
     });
   };

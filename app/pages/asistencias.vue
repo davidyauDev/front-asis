@@ -3,6 +3,7 @@ import { watchDebounced } from '@vueuse/core'
 import type { AsistenciaRecord, AsistenciaFilters as IAsistenciaFilters } from '~/types'
 import AsistenciaFilters from '~/components/asistencias/AsistenciaFilters.vue'
 import AsistenciaTable from '~/components/asistencias/AsistenciaTable.vue'
+import AsistenciaModal from '~/components/asistencias/AsistenciaModal.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -39,6 +40,7 @@ const toRecord = computed(() => {
 })
 
 
+const openModal = ref(false);
 
 const cargarDatos = async () => {
   await fetchAsistencias(1, filtros.value)
@@ -165,10 +167,14 @@ onMounted(async () => {
       <AsistenciaFilters :filtros="filtros" @apply="aplicarFiltros" />
     </div>
 
+     
+
     <div class="flex-1 overflow-hidden relative">
+      
       <div
         class="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-purple-500 transform origin-left scale-x-0 transition-transform duration-300 z-10 scroll-indicator">
       </div>
+
 
       <div class="h-full overflow-y-auto scroll-container" @scroll="onScroll">
         <div class="p-6">
@@ -235,7 +241,18 @@ onMounted(async () => {
             </div>
 
             <div v-else key="content" class="space-y-4">
-              <UCard >
+              <div class="flex justify-end mb-4">
+
+            <UButton variant="outline" size="sm" class="ml-auto"
+              @click="() => {  openModal = true }" :loading="loading" icon="i-lucide-user-plus">
+              Agregar usuario
+            </UButton>
+
+          </div>
+              <UCard>
+                <div class="flex justify-end mb-4">
+
+          </div>
                 <AsistenciaTable :asistencias="asistencias as AsistenciaRecord[]" :loading="loading"
                   :total-records="total" :current-page="currentPage" :per-page="perPage" :from-record="fromRecord"
                   :to-record="toRecord" :stats="stats" @edit="abrirModalEditarAsistencia" @view="verDetalleAsistencia"
@@ -247,7 +264,24 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+
+    <!-- Modal de detalle de asistencia -->
+    <AsistenciaModal
+     :openModal="openModal"
+      @close="() => { 
+        
+        console.log('Cerrando modal desde page')
+        openModal = false 
+        
+        }"
+    >
+      </AsistenciaModal>
+
   </UDashboardPanel>
+
+
+  
 </template>
 
 

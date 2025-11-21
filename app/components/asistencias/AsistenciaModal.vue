@@ -1,11 +1,25 @@
+
+
+
+
 <template>
   <UModal 
-    v-model="isOpen" 
-    @close="handleClose"
+   :open="openModal" @update:open="(isOpen: boolean) => {
+      if (!isOpen) {
+        emit('close');
+        
+        // showUserPreview = false;
+        // selectedUser = null;
+        // resetForm();
+      }
+    }"
+
+    :title="isEditing ? 'Editar Asistencia' : 'Registrar Nueva Asistencia'"
   >
+  <template #body>
     <div class="p-6">
       <!-- 🎯 Header del Modal -->
-      <div class="flex items-center justify-between mb-6">
+      <!-- <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
             <UIcon 
@@ -29,7 +43,7 @@
           color="error"
           @click="handleClose"
         />
-      </div>
+      </div> -->
 
       <!-- 📝 Formulario -->
       <UForm 
@@ -322,6 +336,7 @@
         </UCollapse>
       </UForm>
     </div>
+    </template>
   </UModal>
 </template>
 
@@ -330,14 +345,16 @@ import { z } from 'zod'
 import type { AsistenciaCreateRequest, AsistenciaRecord, TipoEvento, TipoRegistro, MetodoConexion } from '~/types'
 
 interface Props {
-  modelValue: boolean
+  modelValue?: boolean
   asistencia?: AsistenciaRecord | null
+  openModal: boolean
 }
 
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
   (e: 'success', asistencia: AsistenciaRecord): void
   (e: 'error', error: string): void
+  (e: 'close'): void
 }
 
 const props = defineProps<Props>()
@@ -586,11 +603,15 @@ const handleSubmit = async () => {
 }
 
 const handleClose = () => {
-  if (enviandoFormulario.value) return
+  // if (enviandoFormulario.value) return
   
-  emit('update:modelValue', false)
-  estadoEnvio.value = null
-  mostrarPreview.value = false
+  // emit('update:modelValue', false)
+  // estadoEnvio.value = null
+  // mostrarPreview.value = false
+
+  console.log('Cerrando modal de asistencia')
+
+  emit('close')
   
   // Reset form después de un delay para evitar flash
   setTimeout(() => {

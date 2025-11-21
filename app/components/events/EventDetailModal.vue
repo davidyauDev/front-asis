@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { getEventoStatusOp } from '~/enums/evento'
 
 // Tipo completo del evento
 interface EventoImagen {
@@ -66,27 +67,19 @@ const handleClose = () => {
 
         <!-- Info general -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Categoría</p>
-            <UBadge
-              :color="categoriaColor"
-              variant="soft"
-              size="sm"
-              class="capitalize mt-1"
-            >
-              {{ props.evento?.categoria || 'Sin categoría' }}
-            </UBadge>
-          </div>
+          
 
           <div>
             <p class="text-sm text-gray-500 dark:text-gray-400">Estado</p>
+            
             <UBadge
-              :color="props.evento?.estado === 'activo' ? 'success' : 'neutral'"
-              variant="soft"
+              :color="getEventoStatusOp(props.evento?.estado ?? 0).color"
+              variant="soft" 
               size="sm"
               class="capitalize mt-1"
             >
-              {{ props.evento?.estado || 'No definido' }}
+            
+              {{ getEventoStatusOp(props.evento?.estado ?? 0).label}}
             </UBadge>
           </div>
 

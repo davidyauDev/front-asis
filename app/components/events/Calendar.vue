@@ -21,6 +21,7 @@ const isDetailModalOpen = ref(false)
 const selectedEventoForDetail = ref<EventoCalendario | null>(null)
 
 const openEventDetails = (evento: EventoCalendario) => {
+  console.log('Abriendo detalles para el evento:', evento)
   selectedEventoForDetail.value = evento
   isDetailModalOpen.value = true
 }
