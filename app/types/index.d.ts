@@ -1,4 +1,5 @@
 import type { AvatarProps } from "@nuxt/ui";
+import type { AttendanceType } from "~/enums/attendance";
 
 export type Severity = "primary" | "secondary" | "success" | "info" | "warning" | "error" | "neutral";
 
@@ -168,7 +169,7 @@ export interface UsersResponse {
 }
 
 // 🏢 Tipos para el módulo de asistencias (Nueva API)
-export type AttendanceType = "check_in" | "check_out";
+// export type AttendanceType = "check_in" | "check_out";
 
 export interface AttendanceUser {
   id: number;

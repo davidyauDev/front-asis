@@ -2,22 +2,24 @@ import type {
   AsistenciaRecord, 
   AsistenciaCreateRequest, 
   AsistenciaFilters, 
-  AsistenciasResponse,
+ 
   AsistenciaStats,
   TipoEvento,
   TipoRegistro,
   MetodoConexion,
   AttendanceRecord,
-  AttendanceFilters,
+
   AttendancesResponse,
-  AttendanceStats,
-  AttendanceType
+  
+  
 } from '~/types'
 
+  const asistencias = ref<AsistenciaRecord[]>([])
+  
 // 🏢 Composable para gestionar asistencias (Nueva API)
 export const useAsistencias = () => {
   // 📊 Estados reactivos
-  const asistencias = ref<AsistenciaRecord[]>([])
+
   const loading = ref(false)
   const error = ref<string | null>(null)
   const total = ref(0)
@@ -53,8 +55,8 @@ export const useAsistencias = () => {
   ]
 
   // ⚡ Función para transformar datos de la nueva API a formato compatible (OPTIMIZADA)
-  const transformApiRecord = (record: AttendanceRecord): AsistenciaRecord => {
-    // Crear objeto base eficientemente
+  const transformApiRecord = (data: { data: AttendanceRecord }): AsistenciaRecord => {
+    const record = data.data ?? data;
     return {
       ...record,
       tipo_registro: record.type,
@@ -114,6 +116,7 @@ export const useAsistencias = () => {
         }
       })
 
+   
       // Transformar y actualizar los datos locales
       asistencias.value = response.data.map(transformApiRecord)
       total.value = response.meta.total
@@ -143,7 +146,7 @@ export const useAsistencias = () => {
       // Transformar datos al formato de la nueva API
       const apiData = {
         user_id: data.user_id || data.usuario_id,
-        timestamp: new Date().toISOString(),
+        timestamp: Date.now().toString(),
         latitude: data.latitude || data.latitud,
         longitude: data.longitude || data.longitud,
         notes: data.notes || data.descripcion || '',
@@ -171,8 +174,11 @@ export const useAsistencias = () => {
 
       // Transformar y actualizar la lista local
       const transformedRecord = transformApiRecord(response)
-      asistencias.value.unshift(transformedRecord)
+   
+      asistencias.value = [transformedRecord, ...asistencias.value]
       total.value++
+
+    
       
       return transformedRecord
     } catch (err: any) {
@@ -188,6 +194,8 @@ export const useAsistencias = () => {
     loading.value = true
     error.value = null
 
+    console.log('Actualizando asistencia ID:', id, 'con datos:', data)
+
     try {
       // Obtener token de localStorage
       const token = localStorage.getItem('auth_token')
@@ -195,10 +203,25 @@ export const useAsistencias = () => {
         throw new Error('Token de autenticación no encontrado')
       }
 
+      // const apiData = {
+      //   notes: data.notes || data.descripcion,
+      //   device_model: data.device_model || data.dispositivo,
+      //   battery_percentage: data.battery_percentage || data.bateria
+      // }
+
       const apiData = {
-        notes: data.notes || data.descripcion,
-        device_model: data.device_model || data.dispositivo,
-        battery_percentage: data.battery_percentage || data.bateria
+        user_id: data.user_id || data.usuario_id,
+        timestamp: Date.now().toString(),
+        latitude: data.latitude || data.latitud,
+        longitude: data.longitude || data.longitud,
+        notes: data.notes || data.descripcion || '',
+        device_model: data.device_model || data.dispositivo || 'Unknown Device',
+        battery_percentage: data.battery_percentage || data.bateria || 100,
+        signal_strength: 4,
+        network_type: data.metodo === 'WIFI' ? 'WiFi' : '4G',
+        is_internet_available: true,
+        type: data.type || data.tipo_registro,
+        client_id: crypto.randomUUID()
       }
 
       const config = useRuntimeConfig();

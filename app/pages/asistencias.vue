@@ -74,12 +74,15 @@ const cambiarRegistrosPorPagina = async (nuevoPerPage: number) => {
 }
 
 const abrirModalEditarAsistencia = (asistencia: AsistenciaRecord) => {
-  toast.add({
-    title: 'Función deshabilitada',
-    description: 'La edición de registros está temporalmente deshabilitada',
-    icon: 'i-lucide-info',
-    color: 'warning'
-  })
+  asistenciaDetalle.value = asistencia;
+  openModal.value = true;
+  
+  // toast.add({
+  //   title: 'Función deshabilitada',
+  //   description: 'La edición de registros está temporalmente deshabilitada',
+  //   icon: 'i-lucide-info',
+  //   color: 'warning'
+  // })
 }
 
 
@@ -167,10 +170,10 @@ onMounted(async () => {
       <AsistenciaFilters :filtros="filtros" @apply="aplicarFiltros" />
     </div>
 
-     
+
 
     <div class="flex-1 overflow-hidden relative">
-      
+
       <div
         class="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-purple-500 transform origin-left scale-x-0 transition-transform duration-300 z-10 scroll-indicator">
       </div>
@@ -243,16 +246,17 @@ onMounted(async () => {
             <div v-else key="content" class="space-y-4">
               <div class="flex justify-end mb-4">
 
-            <UButton variant="outline" size="sm" class="ml-auto"
-              @click="() => {  openModal = true }" :loading="loading" icon="i-lucide-user-plus">
-              Agregar usuario
-            </UButton>
+                <UButton variant="outline" size="sm" class="ml-auto" @click="() => { openModal = true }"
+                  :loading="loading" icon="i-lucide-user-plus">
+                  Agregar asistencia
+                </UButton>
 
-          </div>
+              </div>
               <UCard>
                 <div class="flex justify-end mb-4">
 
-          </div>
+                </div>
+                
                 <AsistenciaTable :asistencias="asistencias as AsistenciaRecord[]" :loading="loading"
                   :total-records="total" :current-page="currentPage" :per-page="perPage" :from-record="fromRecord"
                   :to-record="toRecord" :stats="stats" @edit="abrirModalEditarAsistencia" @view="verDetalleAsistencia"
@@ -268,20 +272,18 @@ onMounted(async () => {
 
     <!-- Modal de detalle de asistencia -->
     <AsistenciaModal
-     :openModal="openModal"
-      @close="() => { 
-        
-        console.log('Cerrando modal desde page')
-        openModal = false 
-        
-        }"
-    >
-      </AsistenciaModal>
+    
+      :asistencia="asistenciaDetalle"
+    :openModal="openModal" @close="() => {
+      openModal = false
+
+    }">
+    </AsistenciaModal>
 
   </UDashboardPanel>
 
 
-  
+
 </template>
 
 

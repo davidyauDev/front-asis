@@ -54,16 +54,22 @@
         class="space-y-6"
       >
         <!-- 📊 Grid de campos principales -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="flex flex-wrap gap-6">
           <!-- 👤 Usuario -->
           <UFormGroup 
             label="Usuario *" 
             name="usuario_id"
             description="Selecciona el usuario para este registro"
           >
-            <USelectMenu
-              v-model="formData.usuario_id"
-              :options="usuariosOptions"
+          <!-- :items="usuariosOptions" -->
+          <!-- v-model="formData.usuario_id" -->
+          <!-- :options="usersForAttendances" -->
+          
+            <USelect
+            v-model="formData.usuario_id"
+              :items="usersForAttendances"
+              item-value="value"
+              item-label="label"
               placeholder="Seleccionar usuario"
               searchable
               clear-search-on-close
@@ -73,14 +79,18 @@
           </UFormGroup>
 
           <!-- ✅ Tipo de Registro -->
+          <!-- :options="tiposRegistroOptions" -->
           <UFormGroup 
             label="Tipo de Registro *" 
             name="tipo_registro"
             description="Indica si es entrada o salida"
           >
-            <USelectMenu
+          <!-- v-model="formData.tipo_registro" -->
+            <USelect
+            :items="Object.values(attendanceOptions)"
+              item-value="value"
+              item-label="label"
               v-model="formData.tipo_registro"
-              :options="tiposRegistroOptions"
               placeholder="Seleccionar tipo"
               icon="i-lucide-clock"
             />
@@ -93,9 +103,11 @@
           name="tipo_evento"
           description="Descripción detallada del tipo de evento"
         >
-          <USelectMenu
+          <USelect
             v-model="formData.tipo_evento"
-            :options="tiposEventoOptions"
+            :items="tiposEventoOptions"
+            item-value="value"
+            item-label="label"
             placeholder="Seleccionar tipo de evento"
             icon="i-lucide-calendar"
           />
@@ -342,6 +354,7 @@
 
 <script setup lang="ts">
 import { z } from 'zod'
+import { attendanceOptions, AttendanceType } from '~/enums/attendance'
 import type { AsistenciaCreateRequest, AsistenciaRecord, TipoEvento, TipoRegistro, MetodoConexion } from '~/types'
 
 interface Props {
@@ -372,6 +385,21 @@ const {
   getGoogleMapsUrl
 } = useAsistencias()
 
+const {
+ initializeUsers,
+ users
+} = useUsers()
+
+
+
+const usersForAttendances = computed(() => {
+  return users.value.map(user => ({
+    value: user.id,
+    label: `${user.name}`
+  }));
+});
+
+
 // 📊 Estados
 const isOpen = computed({
   get: () => props.modelValue,
@@ -389,7 +417,7 @@ const loadingUsers = ref(false)
 // 📝 Datos del formulario
 const formData = ref<AsistenciaCreateRequest & { descripcion?: string }>({
   usuario_id: 0,
-  tipo_registro: 'check_in',
+  tipo_registro: AttendanceType.CHECK_IN,
   tipo_evento: 'Inicio de jornada laboral',
   latitud: 0,
   longitud: 0,
@@ -431,7 +459,7 @@ const metodosConexionOptions = computed(() =>
 // 📋 Schema de validación
 const formSchema = z.object({
   usuario_id: z.number().min(1, 'Selecciona un usuario'),
-  tipo_registro: z.enum(['check_in', 'check_out']),
+  tipo_registro: z.nativeEnum(AttendanceType),
   tipo_evento: z.enum(['Inicio de jornada laboral', 'Fin de jornada laboral']),
   latitud: z.number().min(-90).max(90, 'Latitud debe estar entre -90 y 90'),
   longitud: z.number().min(-180).max(180, 'Longitud debe estar entre -180 y 180'),
@@ -619,10 +647,21 @@ const handleClose = () => {
   }, 300)
 }
 
+onMounted(async () => {
+  try {
+    if (!users.value?.length) {
+      await initializeUsers();
+    }
+   
+  } catch (err) {
+    console.error('Error al inicializar usuarios:', err);
+  }
+});
+
 const resetForm = () => {
   formData.value = {
     usuario_id: 0,
-    tipo_registro: 'check_in',
+    tipo_registro: AttendanceType.CHECK_IN,
     tipo_evento: 'Inicio de jornada laboral',
     latitud: 0,
     longitud: 0,
