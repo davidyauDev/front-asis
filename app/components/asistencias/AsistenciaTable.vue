@@ -1,72 +1,67 @@
 <template>
   <div class="overflow-hidden">
-    <div v-if="loading" class="flex items-center justify-center p-">
-      <div class="text-center">
-        <div class="w-8 h-8 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p class="text-sm text-gray-600 dark:text-gray-400">Cargando registros...</p>
-      </div>
-    </div>
 
-    <div v-else-if="asistencias.length > 0" >
+
+    <div>
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                <button 
-                  @click="$emit('sort', 'id')"
-                  class="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                >
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <button @click="$emit('sort', 'id')"
+                  class="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   <span>ID</span>
                   <UIcon name="i-lucide-arrows-up-down" class="w-3 h-3" />
                 </button>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Empleado
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                <button 
-                  @click="$emit('sort', 'type')"
-                  class="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                >
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <button @click="$emit('sort', 'type')"
+                  class="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   <span>Tipo</span>
                   <UIcon name="i-lucide-arrows-up-down" class="w-3 h-3" />
                 </button>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                <button 
-                  @click="$emit('sort', 'timestamp')"
-                  class="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                >
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <button @click="$emit('sort', 'timestamp')"
+                  class="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   <span>Fecha y Hora</span>
                   <UIcon name="i-lucide-arrows-up-down" class="w-3 h-3" />
                 </button>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Ubicación
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Dispositivo
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Estado del Dispositivo
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Imagen
               </th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
           </thead>
 
           <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr
-              v-for="asistencia in asistencias"
-              :key="asistencia.id"
+            <tr v-for="asistencia in asistencias" :key="asistencia.id"
               class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer group"
-              @click="$emit('view', asistencia)"
-            >
+              @click="$emit('view', asistencia)">
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="text-sm font-mono text-gray-900 dark:text-gray-100 font-medium">
                   #{{ asistencia.id }}
@@ -75,11 +70,8 @@
 
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <UAvatar
-                    :alt="asistencia.usuario?.name"
-                    size="sm"
-                    class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600"
-                  >
+                  <UAvatar :alt="asistencia.usuario?.name" size="sm"
+                    class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600">
                     {{ (asistencia.usuario?.name || '?').charAt(0).toUpperCase() }}
                   </UAvatar>
                   <div class="min-w-0">
@@ -94,15 +86,9 @@
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap">
-                <UBadge
-                  :color="asistencia.tipo_registro === 'check_in' ? 'success' : 'error'"
-                  variant="subtle"
-                  class="inline-flex items-center gap-2"
-                >
-                  <UIcon 
-                    :name="getTipoRegistroIcon(asistencia.tipo_registro)" 
-                    class="w-3 h-3"
-                  />
+                <UBadge :color="asistencia.tipo_registro === 'check_in' ? 'success' : 'error'" variant="subtle"
+                  class="inline-flex items-center gap-2">
+                  <UIcon :name="getTipoRegistroIcon(asistencia.tipo_registro)" class="w-3 h-3" />
                   {{ asistencia.tipo_registro === 'check_in' ? 'Entrada' : 'Salida' }}
                 </UBadge>
               </td>
@@ -118,15 +104,8 @@
 
               <td class="px-6 py-4">
                 <div class="flex flex-col space-y-1">
-                  <UButton
-                    :to="getGoogleMapsUrl(asistencia.latitud, asistencia.longitud)"
-                    target="_blank"
-                    size="xs"
-                    variant="outline"
-                    icon="i-lucide-map-pin"
-                    class="self-start"
-                    @click.stop
-                  >
+                  <UButton :to="getGoogleMapsUrl(asistencia.latitud, asistencia.longitud)" target="_blank" size="xs"
+                    variant="outline" icon="i-lucide-map-pin" class="self-start" @click.stop>
                     Ver ubicación
                   </UButton>
                   <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">
@@ -137,10 +116,7 @@
 
               <td class="px-6 py-4">
                 <div class="flex items-center gap-2">
-                  <UIcon 
-                    :name="getDeviceIcon(asistencia.dispositivo)" 
-                    class="w-4 h-4 text-gray-400"
-                  />
+                  <UIcon :name="getDeviceIcon(asistencia.dispositivo)" class="w-4 h-4 text-gray-400" />
                   <div>
                     <div class="text-sm text-gray-900 dark:text-gray-100 truncate max-w-24">
                       {{ asistencia.dispositivo || 'Desconocido' }}
@@ -156,34 +132,25 @@
                 <div class="space-y-2">
                   <!-- Batería -->
                   <div class="flex items-center gap-2">
-                    <UIcon 
-                      :name="getBateriaIcon(asistencia.bateria)" 
-                      :class="getBateriaColor(asistencia.bateria)"
-                      class="w-4 h-4"
-                    />
+                    <UIcon :name="getBateriaIcon(asistencia.bateria)" :class="getBateriaColor(asistencia.bateria)"
+                      class="w-4 h-4" />
                     <span class="text-xs text-gray-600 dark:text-gray-400">
                       {{ asistencia.bateria || 'N/A' }}%
                     </span>
                   </div>
-                  
+
                   <!-- Señal -->
                   <div v-if="asistencia.signal_strength" class="flex items-center gap-2">
-                    <UIcon 
-                      :name="getSignalIcon(asistencia.signal_strength)" 
-                      :class="getSignalColor(asistencia.signal_strength)"
-                      class="w-4 h-4"
-                    />
+                    <UIcon :name="getSignalIcon(asistencia.signal_strength)"
+                      :class="getSignalColor(asistencia.signal_strength)" class="w-4 h-4" />
                     <span class="text-xs text-gray-600 dark:text-gray-400">
                       {{ asistencia.signal_strength }}/5
                     </span>
                   </div>
 
                   <div v-if="asistencia.is_internet_available !== undefined" class="flex items-center gap-2">
-                    <UIcon 
-                      :name="asistencia.is_internet_available ? 'i-lucide-wifi' : 'i-lucide-wifi-off'" 
-                      :class="asistencia.is_internet_available ? 'text-green-500' : 'text-red-500'"
-                      class="w-3 h-3"
-                    />
+                    <UIcon :name="asistencia.is_internet_available ? 'i-lucide-wifi' : 'i-lucide-wifi-off'"
+                      :class="asistencia.is_internet_available ? 'text-green-500' : 'text-red-500'" class="w-3 h-3" />
                     <span class="text-xs text-gray-600 dark:text-gray-400">
                       {{ asistencia.is_internet_available ? 'Online' : 'Offline' }}
                     </span>
@@ -192,50 +159,28 @@
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap">
-                <img
-                  v-if="asistencia.image"
-                  :src="asistencia.image"
-                  alt="Imagen de asistencia"
+                <img v-if="asistencia.image" :src="asistencia.image" alt="Imagen de asistencia"
                   class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer"
-                  @click.stop="openImageModal(asistencia.image)"
-                />
+                  @click.stop="openImageModal(asistencia.image)" />
                 <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin imagen</span>
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end gap-1 transition-all duration-200 hover:gap-2">
                   <UTooltip text="Ver detalles">
-                    <UButton
-                      icon="i-lucide-eye"
-                      size="xs"
-                      variant="ghost"
-                      color="neutral"
+                    <UButton icon="i-lucide-eye" size="xs" variant="ghost" color="neutral"
                       class="hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                      @click.stop="$emit('view', asistencia)"
-                    />
+                      @click.stop="$emit('view', asistencia)" />
                   </UTooltip>
-                  
+
                   <UTooltip text="Editar">
-                    <UButton
-                      icon="i-lucide-edit"
-                      size="xs"
-                      variant="ghost"
-                      color="neutral"
+                    <UButton icon="i-lucide-edit" size="xs" variant="ghost" color="neutral"
                       class="hover:bg-green-50 hover:text-green-600 transition-colors"
-                      @click.stop="$emit('edit', asistencia)"
-                    />
+                      @click.stop="$emit('edit', asistencia)" />
                   </UTooltip>
-                  
-                  <UDropdown
-                    :items="getActionItems(asistencia)"
-                    :popper="{ placement: 'bottom-end' }"
-                  >
-                    <UButton
-                      icon="i-lucide-more-horizontal"
-                      size="xs"
-                      variant="ghost"
-                      @click.stop
-                    />
+
+                  <UDropdown :items="getActionItems(asistencia)" :popper="{ placement: 'bottom-end' }">
+                    <UButton icon="i-lucide-more-horizontal" size="xs" variant="ghost" @click.stop />
                   </UDropdown>
                 </div>
               </td>
@@ -245,23 +190,17 @@
       </div>
     </div>
 
-    <div v-else-if="asistencias.length > 0" class="hidden md:block lg:hidden">
+    <div class="hidden md:block lg:hidden">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
-        <UCard
-          v-for="asistencia in asistencias"
-          :key="asistencia.id"
+        <UCard v-for="asistencia in asistencias" :key="asistencia.id"
           class="hover:shadow-md transition-all duration-200 cursor-pointer border-l-4"
           :class="asistencia.tipo_registro === 'check_in' ? 'border-l-green-500' : 'border-l-red-500'"
-          @click="$emit('view', asistencia)"
-        >
+          @click="$emit('view', asistencia)">
           <template #header>
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <UAvatar
-                  :alt="asistencia.usuario?.name"
-                  size="sm"
-                  class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600"
-                >
+                <UAvatar :alt="asistencia.usuario?.name" size="sm"
+                  class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600">
                   {{ (asistencia.usuario?.name || '?').charAt(0).toUpperCase() }}
                 </UAvatar>
                 <div>
@@ -273,11 +212,8 @@
                   </div>
                 </div>
               </div>
-              
-              <UBadge
-                :color="asistencia.tipo_registro === 'check_in' ? 'success' : 'error'"
-                variant="subtle"
-              >
+
+              <UBadge :color="asistencia.tipo_registro === 'check_in' ? 'success' : 'error'" variant="subtle">
                 {{ asistencia.tipo_registro === 'check_in' ? 'Entrada' : 'Salida' }}
               </UBadge>
             </div>
@@ -296,13 +232,8 @@
             <!-- Ubicación -->
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-map-pin" class="w-4 h-4 text-gray-400" />
-              <UButton
-                :to="getGoogleMapsUrl(asistencia.latitud, asistencia.longitud)"
-                target="_blank"
-                size="xs"
-                variant="outline"
-                @click.stop
-              >
+              <UButton :to="getGoogleMapsUrl(asistencia.latitud, asistencia.longitud)" target="_blank" size="xs"
+                variant="outline" @click.stop>
                 Ver ubicación
               </UButton>
             </div>
@@ -310,20 +241,14 @@
             <!-- Estado del dispositivo -->
             <div class="flex items-center gap-4">
               <div class="flex items-center gap-1">
-                <UIcon 
-                  :name="getBateriaIcon(asistencia.bateria)" 
-                  :class="getBateriaColor(asistencia.bateria)"
-                  class="w-4 h-4"
-                />
+                <UIcon :name="getBateriaIcon(asistencia.bateria)" :class="getBateriaColor(asistencia.bateria)"
+                  class="w-4 h-4" />
                 <span class="text-xs">{{ asistencia.bateria || 'N/A' }}%</span>
               </div>
-              
+
               <div class="flex items-center gap-1">
-                <UIcon 
-                  :name="getMetodoConexionConfig(asistencia.metodo)?.icon || 'i-lucide-wifi'" 
-                  :class="getMetodoConexionConfig(asistencia.metodo)?.color || 'text-gray-500'"
-                  class="w-4 h-4"
-                />
+                <UIcon :name="getMetodoConexionConfig(asistencia.metodo)?.icon || 'i-lucide-wifi'"
+                  :class="getMetodoConexionConfig(asistencia.metodo)?.color || 'text-gray-500'" class="w-4 h-4" />
                 <span class="text-xs">{{ getMetodoConexionConfig(asistencia.metodo)?.label }}</span>
               </div>
             </div>
@@ -331,20 +256,10 @@
 
           <template #footer>
             <div class="flex items-center justify-end gap-2">
-              <UButton
-                icon="i-lucide-eye"
-                size="xs"
-                variant="outline"
-                @click.stop="$emit('view', asistencia)"
-              >
+              <UButton icon="i-lucide-eye" size="xs" variant="outline" @click.stop="$emit('view', asistencia)">
                 Ver
               </UButton>
-              <UButton
-                icon="i-lucide-edit"
-                size="xs"
-                variant="outline"
-                @click.stop="$emit('edit', asistencia)"
-              >
+              <UButton icon="i-lucide-edit" size="xs" variant="outline" @click.stop="$emit('edit', asistencia)">
                 Editar
               </UButton>
             </div>
@@ -354,23 +269,17 @@
     </div>
 
     <!-- 📱 Vista Mobile - Cards apiladas -->
-    <div v-else-if="asistencias.length > 0" class="block md:hidden">
+    <div class="block md:hidden">
       <div class="space-y-4 p-4">
-        <div
-          v-for="asistencia in asistencias"
-          :key="asistencia.id"
+        <div v-for="asistencia in asistencias" :key="asistencia.id"
           class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-all"
           :class="asistencia.tipo_registro === 'check_in' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'"
-          @click="$emit('view', asistencia)"
-        >
+          @click="$emit('view', asistencia)">
           <!-- Header del card móvil -->
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-3">
-              <UAvatar
-                :alt="asistencia.usuario?.name"
-                size="sm"
-                class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600"
-              >
+              <UAvatar :alt="asistencia.usuario?.name" size="sm"
+                class="ring-1 ring-gray-200 dark:ring-gray-700 grayscale bg-gray-200 dark:bg-gray-600">
                 {{ (asistencia.usuario?.name || '?').charAt(0).toUpperCase() }}
               </UAvatar>
               <div>
@@ -382,16 +291,9 @@
                 </div>
               </div>
             </div>
-            
-            <UBadge
-              :color="asistencia.tipo_registro === 'check_in' ? 'success' : 'error'"
-              variant="subtle"
-              size="xs"
-            >
-              <UIcon 
-                :name="getTipoRegistroIcon(asistencia.tipo_registro)" 
-                class="w-3 h-3 mr-1"
-              />
+
+            <UBadge :color="asistencia.tipo_registro === 'check_in' ? 'success' : 'error'" variant="subtle" size="xs">
+              <UIcon :name="getTipoRegistroIcon(asistencia.tipo_registro)" class="w-3 h-3 mr-1" />
               {{ asistencia.tipo_registro === 'check_in' ? 'Entrada' : 'Salida' }}
             </UBadge>
           </div>
@@ -403,20 +305,15 @@
               <UIcon name="i-lucide-clock" class="w-4 h-4 text-gray-400 shrink-0" />
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-medium truncate">{{ formatFecha(asistencia.created_at) }}</div>
-                <div class="text-xs text-gray-500 truncate">{{asistencia.timestamp }}</div>
+                <div class="text-xs text-gray-500 truncate">{{ asistencia.timestamp }}</div>
               </div>
             </div>
 
             <!-- Ubicación -->
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-map-pin" class="w-4 h-4 text-gray-400" />
-              <UButton
-                :to="getGoogleMapsUrl(asistencia.latitud, asistencia.longitud)"
-                target="_blank"
-                size="xs"
-                variant="outline"
-                @click.stop
-              >
+              <UButton :to="getGoogleMapsUrl(asistencia.latitud, asistencia.longitud)" target="_blank" size="xs"
+                variant="outline" @click.stop>
                 Ver ubicación
               </UButton>
             </div>
@@ -424,20 +321,14 @@
             <!-- Estado del dispositivo -->
             <div class="flex items-center gap-4">
               <div class="flex items-center gap-1">
-                <UIcon 
-                  :name="getBateriaIcon(asistencia.bateria)" 
-                  :class="getBateriaColor(asistencia.bateria)"
-                  class="w-4 h-4"
-                />
+                <UIcon :name="getBateriaIcon(asistencia.bateria)" :class="getBateriaColor(asistencia.bateria)"
+                  class="w-4 h-4" />
                 <span class="text-xs">{{ asistencia.bateria || 'N/A' }}%</span>
               </div>
-              
+
               <div class="flex items-center gap-1">
-                <UIcon 
-                  :name="getMetodoConexionConfig(asistencia.metodo)?.icon || 'i-lucide-wifi'" 
-                  :class="getMetodoConexionConfig(asistencia.metodo)?.color || 'text-gray-500'"
-                  class="w-4 h-4"
-                />
+                <UIcon :name="getMetodoConexionConfig(asistencia.metodo)?.icon || 'i-lucide-wifi'"
+                  :class="getMetodoConexionConfig(asistencia.metodo)?.color || 'text-gray-500'" class="w-4 h-4" />
                 <span class="text-xs">{{ getMetodoConexionConfig(asistencia.metodo)?.label }}</span>
               </div>
             </div>
@@ -445,33 +336,19 @@
 
           <!-- Footer con acciones -->
           <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-            <UButton
-              icon="i-lucide-eye"
-              size="xs"
-              variant="outline"
-              @click.stop="$emit('view', asistencia)"
-            />
-            <UButton
-              icon="i-lucide-edit"
-              size="xs"
-              variant="outline"
-              @click.stop="$emit('edit', asistencia)"
-            />
-            <UButton
-              icon="i-lucide-trash"
-              size="xs"
-              variant="outline"
-              color="error"
-              @click.stop="$emit('delete', asistencia)"
-            />
+            <UButton icon="i-lucide-eye" size="xs" variant="outline" @click.stop="$emit('view', asistencia)" />
+            <UButton icon="i-lucide-edit" size="xs" variant="outline" @click.stop="$emit('edit', asistencia)" />
+            <UButton icon="i-lucide-trash" size="xs" variant="outline" color="error"
+              @click.stop="$emit('delete', asistencia)" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- 😕 Estado vacío -->
-    <div v-else-if="!loading" class="p-6">
-      <div class="max-w-xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 text-center">
+    <div v-if="asistencias.length < 0" class="p-6">
+      <div
+        class="max-w-xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 text-center">
         <div class="mx-auto mb-4 w-20 h-20 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
           <UIcon name="i-lucide-inbox" class="w-10 h-10 text-gray-400" />
         </div>
@@ -487,19 +364,10 @@
 
         <!-- Acciones principales -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-          <UButton
-            icon="i-lucide-sliders"
-            variant="outline"
-            @click="$emit('openFilters')"
-          >
+          <UButton icon="i-lucide-sliders" variant="outline" @click="$emit('openFilters')">
             Abrir filtros
           </UButton>
-          <UButton
-            icon="i-lucide-x-circle"
-            variant="outline"
-            color="neutral"
-            @click="$emit('clearFilters')"
-          >
+          <UButton icon="i-lucide-x-circle" variant="outline" color="neutral" @click="$emit('clearFilters')">
             Limpiar filtros
           </UButton>
         </div>
@@ -512,49 +380,39 @@
 
         <!-- Sugerencias rápidas -->
         <div class="mt-5 flex flex-wrap justify-center gap-2">
-          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej: Hoy</span>
-          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej: Empleado</span>
-          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej: Pendientes</span>
+          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej:
+            Hoy</span>
+          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej:
+            Empleado</span>
+          <span class="text-xs px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">Ej:
+            Pendientes</span>
         </div>
       </div>
     </div>
 
     <!-- 🔢 Paginación mejorada y responsive -->
-   
-    <div v-if="totalRecords > 0" class="border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 sm:px-6 py-4">
+    <div v-if="totalRecords > 0"
+      class="border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 sm:px-6 py-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <!-- Info de registros -->
         <div class="text-sm text-gray-600 dark:text-gray-400 order-2 sm:order-1">
-          Mostrando <span class="font-medium">{{ fromRecord }}</span> - <span class="font-medium">{{ toRecord }}</span> 
+          Mostrando <span class="font-medium">{{ fromRecord }}</span> - <span class="font-medium">{{ toRecord }}</span>
           de <span class="font-medium">{{ totalRecords.toLocaleString() }}</span> registros
         </div>
-        
+
         <!-- Controles de paginación -->
-      
         <div class="flex flex-col sm:flex-row items-center gap-4 order-1 sm:order-2">
           <!-- Selector de registros por página -->
           <div class="flex items-center gap-2">
             <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Por página:</span>
-            <USelectMenu
-              v-model="selectedPerPage"
-              :options="perPageOptions"
-              size="sm"
-              class="w-20"
-              @update:model-value="(value: any) => changePerPage(value)"
-            />
+            <USelectMenu v-model="selectedPerPage" :options="perPageOptions" size="sm" class="w-20"
+              @update:model-value="(value: any) => changePerPage(value)" />
           </div>
-          
+
           <!-- Paginación -->
-          
-          <UPagination
-            v-model="currentPageModel"
-            :page-count="perPage"
-            :total="totalRecords"
-            :max="isMobile ? 5 : 7"
-            @update:page="changePage"
-            :disabled="loading"
-            size="sm"
-          />
+
+          <UPagination v-model="currentPageModel" :page-count="perPage" :total="totalRecords" :max="isMobile ? 5 : 7"
+            @update:page="changePage" :disabled="loading" size="sm" />
         </div>
       </div>
     </div>
@@ -563,14 +421,11 @@
     <UModal v-model:open="imageModalOpen" title="Vista previa de la imagen">
       <template #content>
         <div class="flex justify-center items-center">
-        <img 
-          :src="selectedImage" 
-          alt="Imagen ampliada" 
-          class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg border border-gray-300 dark:border-gray-700"
-        />
-      </div>
+          <img :src="selectedImage" alt="Imagen ampliada"
+            class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg border border-gray-300 dark:border-gray-700" />
+        </div>
       </template>
-      
+
     </UModal>
   </div>
 </template>
@@ -613,14 +468,14 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 // 🎯 Composables
-const { 
-  formatFecha, 
-  formatTimestamp, 
-  getGoogleMapsUrl, 
-  getTipoRegistroIcon, 
-  getMetodoConexionConfig, 
-  getBateriaColor, 
-  getBateriaIcon, 
+const {
+  formatFecha,
+  formatTimestamp,
+  getGoogleMapsUrl,
+  getTipoRegistroIcon,
+  getMetodoConexionConfig,
+  getBateriaColor,
+  getBateriaIcon,
   getDeviceIcon,
   getSignalIcon,
   getSignalColor
@@ -677,7 +532,7 @@ onMounted(() => {
   }
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  
+
   onUnmounted(() => {
     window.removeEventListener('resize', checkMobile)
   })
@@ -709,27 +564,27 @@ const getEmployeeAvatar = (user?: AttendanceUser) => {
 const getActionItems = (asistencia: AsistenciaRecord) => {
   return [
     [
-      { 
-        label: 'Ver detalles', 
-        icon: 'i-lucide-eye', 
-        click: () => emit('view', asistencia) 
+      {
+        label: 'Ver detalles',
+        icon: 'i-lucide-eye',
+        click: () => emit('view', asistencia)
       },
-      { 
-        label: 'Duplicar registro', 
-        icon: 'i-lucide-copy', 
-        click: () => emit('duplicate', asistencia) 
+      {
+        label: 'Duplicar registro',
+        icon: 'i-lucide-copy',
+        click: () => emit('duplicate', asistencia)
       }
     ],
     [
-      { 
-        label: 'Forzar sincronización', 
-        icon: 'i-lucide-refresh-cw', 
+      {
+        label: 'Forzar sincronización',
+        icon: 'i-lucide-refresh-cw',
         click: () => emit('sync', asistencia),
         disabled: asistencia.sincronizado === 1
       },
-      { 
-        label: 'Eliminar', 
-        icon: 'i-lucide-trash', 
+      {
+        label: 'Eliminar',
+        icon: 'i-lucide-trash',
         click: () => emit('delete', asistencia),
         class: 'text-red-600 dark:text-red-400'
       }
@@ -773,7 +628,7 @@ const applyFilters = (filters: any) => {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
   }
-  
+
   .card-mobile:hover {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
@@ -799,21 +654,19 @@ const applyFilters = (filters: any) => {
 
 /* Animaciones suaves para loading states */
 .skeleton {
-  background: linear-gradient(90deg, 
-    rgba(229, 231, 235, 1) 25%, 
-    rgba(243, 244, 246, 1) 50%, 
-    rgba(229, 231, 235, 1) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(229, 231, 235, 1) 25%,
+      rgba(243, 244, 246, 1) 50%,
+      rgba(229, 231, 235, 1) 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
 }
 
 .dark .skeleton {
-  background: linear-gradient(90deg, 
-    rgba(55, 65, 81, 1) 25%, 
-    rgba(75, 85, 99, 1) 50%, 
-    rgba(55, 65, 81, 1) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(55, 65, 81, 1) 25%,
+      rgba(75, 85, 99, 1) 50%,
+      rgba(55, 65, 81, 1) 75%);
   background-size: 200% 100%;
 }
 
@@ -821,6 +674,7 @@ const applyFilters = (filters: any) => {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -836,12 +690,13 @@ const applyFilters = (filters: any) => {
 
 /* Mejoras de accesibilidad */
 @media (prefers-reduced-motion: reduce) {
+
   .table-row-hover,
   .card-mobile,
   .badge-bounce {
     transition: none;
   }
-  
+
   .skeleton {
     animation: none;
   }
