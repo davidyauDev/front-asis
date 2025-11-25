@@ -70,7 +70,9 @@ const cambiarPagina = async (pagina: number) => {
 }
 
 const cambiarRegistrosPorPagina = async (nuevoPerPage: number) => {
-  await fetchAsistencias(1, filtros.value)
+  console.log('Cambiando registros por página a:', nuevoPerPage)
+  await fetchAsistencias(
+  nuevoPerPage, filtros.value)
 }
 
 const abrirModalEditarAsistencia = (asistencia: AsistenciaRecord) => {
@@ -262,6 +264,7 @@ onMounted(async () => {
                   :to-record="toRecord" :stats="stats" @edit="abrirModalEditarAsistencia" @view="verDetalleAsistencia"
                   @duplicate="duplicarAsistencia" @sync="forzarSincronizacion" @page-changed="cambiarPagina"
                   @per-page-changed="cambiarRegistrosPorPagina" />
+                  
               </UCard>
             </div>
           </Transition>
@@ -275,7 +278,10 @@ onMounted(async () => {
     
       :asistencia="asistenciaDetalle"
     :openModal="openModal" @close="() => {
+      console.log('Cerrando modal desde asistencias.vue');
+      
       openModal = false
+      asistenciaDetalle = null
 
     }">
     </AsistenciaModal>

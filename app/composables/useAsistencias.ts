@@ -15,6 +15,7 @@ import type {
 } from '~/types'
 
   const asistencias = ref<AsistenciaRecord[]>([])
+  const total = ref(0)
   
 // 🏢 Composable para gestionar asistencias (Nueva API)
 export const useAsistencias = () => {
@@ -22,7 +23,7 @@ export const useAsistencias = () => {
 
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const total = ref(0)
+  // const total = ref(0)
   const currentPage = ref(1)
   const perPage = ref(15)
   const stats = ref<AsistenciaStats>({
@@ -145,7 +146,7 @@ export const useAsistencias = () => {
 
       // Transformar datos al formato de la nueva API
       const apiData = {
-        user_id: data.user_id || data.usuario_id,
+        user_id: data.user_id?.value || data.usuario_id?.value,
         timestamp: Date.now().toString(),
         latitude: data.latitude || data.latitud,
         longitude: data.longitude || data.longitud,
@@ -156,9 +157,12 @@ export const useAsistencias = () => {
         network_type: data.metodo === 'WIFI' ? 'WiFi' : '4G',
         is_internet_available: true,
         type: data.type || data.tipo_registro,
-        client_id: crypto.randomUUID()
+        emp_code: data.emp_code || '',
+        client_id: crypto.randomUUID(),
+        address: data.address || ''
       }
 
+     
       const config = useRuntimeConfig();
       const apiBaseUrl = config.public.apiBaseUrl || 'http://127.0.0.1:8000';
 
@@ -210,7 +214,7 @@ export const useAsistencias = () => {
       // }
 
       const apiData = {
-        user_id: data.user_id || data.usuario_id,
+        user_id: data.user_id.value || data.usuario_id.value,
         timestamp: Date.now().toString(),
         latitude: data.latitude || data.latitud,
         longitude: data.longitude || data.longitud,
@@ -221,7 +225,9 @@ export const useAsistencias = () => {
         network_type: data.metodo === 'WIFI' ? 'WiFi' : '4G',
         is_internet_available: true,
         type: data.type || data.tipo_registro,
-        client_id: crypto.randomUUID()
+        emp_code: data.emp_code || '',
+        client_id: crypto.randomUUID(),
+        address: data.address || ''
       }
 
       const config = useRuntimeConfig();

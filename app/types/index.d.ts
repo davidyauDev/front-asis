@@ -261,6 +261,8 @@ export interface AsistenciaRecord
 }
 
 export interface AsistenciaCreateRequest extends AttendanceCreateRequest {
+  address?: string;
+  emp_code?: string;
   tipo_evento?: TipoEvento;
   dispositivo?: string;
   bateria?: number;

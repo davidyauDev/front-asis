@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <div v-else-if="asistencias.length > 0" class="hidden lg:block">
+    <div v-else-if="asistencias.length > 0" >
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10">
@@ -520,6 +520,7 @@
     </div>
 
     <!-- 🔢 Paginación mejorada y responsive -->
+   
     <div v-if="totalRecords > 0" class="border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 sm:px-6 py-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <!-- Info de registros -->
@@ -529,6 +530,7 @@
         </div>
         
         <!-- Controles de paginación -->
+      
         <div class="flex flex-col sm:flex-row items-center gap-4 order-1 sm:order-2">
           <!-- Selector de registros por página -->
           <div class="flex items-center gap-2">
@@ -543,12 +545,13 @@
           </div>
           
           <!-- Paginación -->
+          
           <UPagination
             v-model="currentPageModel"
             :page-count="perPage"
             :total="totalRecords"
             :max="isMobile ? 5 : 7"
-            @update:model-value="changePage"
+            @update:page="changePage"
             :disabled="loading"
             size="sm"
           />
@@ -682,11 +685,15 @@ onMounted(() => {
 
 // 🎯 Funciones de eventos
 const changePage = (page: number) => {
+  const totalPages = Math.ceil(props.totalRecords / props.perPage)
+  console.log('Cambiando a página:', page);
+  if (page < 1 || page > totalPages) return
   emit('pageChanged', page)
 }
 
 const changePerPage = (option: any) => {
   selectedPerPage.value = option
+  console.log('Cambiando registros por página a:', option.value);
   emit('perPageChanged', option.value)
 }
 

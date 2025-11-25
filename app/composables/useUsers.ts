@@ -1,8 +1,12 @@
 import { createSharedComposable } from "@vueuse/core";
 import type { CreateUserPayload, UserListItem } from "~/types";
 
+
+const allUsers = ref<UserListItem[]>([]);
+
 const _useUsers = () => {
   const users = ref<UserListItem[]>([]);
+  
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -32,6 +36,32 @@ const _useUsers = () => {
     return null;
   };
 
+  const getAllUsers = async (): Promise<UserListItem[]> => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.error("🚫 No hay token de autenticación");
+        throw new Error("No hay token de autenticación");
+      }
+      const response = await $fetch<{ data: { users: UserListItem[] } }>(
+        `${apiBaseUrl}/api/users/all`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+      allUsers.value = response.data.users  ;
+      return response.data.users;
+    }
+    catch (error) {
+      console.error("Error fetching all users:", error);
+      throw error;
+    }
+  };
+
+
   // Fetch usuarios desde la API
   const fetchUsers = async (
     page = 1,
@@ -58,8 +88,7 @@ const _useUsers = () => {
       params.append("sort_order", sortOrderParam || sortOrder.value);
 
       const url = `${apiBaseUrl}/api/users?${params.toString()}`;
-      console.log("Fetching users with URL:", token);
-      console.log(`Bearer ${token}`);
+     
       const response = await $fetch<any>(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -392,6 +421,7 @@ const _useUsers = () => {
 
   return {
     users: readonly(users),
+    allUsers: readonly(allUsers),
     loading: readonly(loading),
     error: readonly(error),
 
@@ -413,6 +443,7 @@ const _useUsers = () => {
     changePerPage,
     changeSorting,
 
+    getAllUsers,
     getUserById,
     getUserByEmpCode,
     formatUserForSelect,
