@@ -1,4 +1,7 @@
+
+
 <script setup lang="ts">
+
 import { sub } from 'date-fns'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Period, Range } from '~/types'
@@ -31,15 +34,10 @@ const period = ref<Period>('daily')
         </template>
 
         <template #right>
-          <UTooltip text="Notifications" :shortcuts="['N']">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              square
-              @click="isNotificationsSlideoverOpen = true"
-            >
+          <UTooltip text="Usuarios sin asistencia completa" :shortcuts="['N']">
+            <UButton color="neutral" variant="ghost" square @click="isNotificationsSlideoverOpen = true">
               <UChip color="error" inset>
-                <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
+                <UIcon name="i-lucide-user-round-x" class="size-5 shrink-0" />
               </UChip>
             </UButton>
           </UTooltip>

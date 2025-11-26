@@ -2,6 +2,8 @@ import { createSharedComposable } from '@vueuse/core'
 import type { AuthUser, LoginResponse } from '~/types'
 import { storage } from '~/utils/storage'
 
+
+
 const _useAuth = () => {
   const user = ref<AuthUser | null>(null)
   const isLoggedIn = computed(() => !!user.value)

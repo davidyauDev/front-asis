@@ -133,6 +133,8 @@ export const useAsistencias = () => {
     }
   }
 
+  
+
   const createAsistencia = async (data: AsistenciaCreateRequest) => {
     loading.value = true
     error.value = null
@@ -198,7 +200,7 @@ export const useAsistencias = () => {
     loading.value = true
     error.value = null
 
-    
+
     try {
       // Obtener token de localStorage
       const token = localStorage.getItem('auth_token')

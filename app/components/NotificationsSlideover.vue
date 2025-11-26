@@ -9,31 +9,17 @@ type AttendanceTypeFilter = AttendanceType.CHECK_IN | AttendanceType.CHECK_OUT |
 const attendanceTypeFilter = ref<AttendanceTypeFilter>(null);
 
 
-const { data, error, refresh } = await useFetch<{
-  data: UserListItem[]
-}>('/api/users/not-checked-in-out-today', {
-  key: 'users-not-checked-in-out-today',
-  baseURL: useRuntimeConfig().public.apiBaseUrl,
-  pick: ['data'],
-  default: () => ({ data: [] }),
+const { data, error, refresh } = await useUsersNotCheckedInOutToday();
 
-  onRequest({ options }) {
+// const { data, error, refresh } = await useFetch<{
+//   data: UserListItem[]
+// }>('/api/users/not-checked-in-out-today', {
+//   key: 'users-not-checked-in-out-today',
+//   pick: ['data'],
+//   default: () => ({ data: [] }),
+//   $fetch: useNuxtApp().$api
+// })
 
-    let token = null;
-
-    if (import.meta.client) {
-      token = localStorage.getItem("auth_token");
-    }
-
-    options.headers.set("Content-Type", "application/json");
-
-    if (token) {
-
-      options.headers.set("Authorization", `Bearer ${token}`);
-    }
-  },
-
-})
 
 const isCheckedIn = (user: UserListItem) => {
   return user.attendances && user.attendances[0]?.type === AttendanceType.CHECK_IN;
@@ -53,8 +39,10 @@ const variant = (type: AttendanceTypeFilter) => {
 }
 
 const users = computed(() => {
+
   const userData = data.value.data;
   if (!userData) return [];
+
 
   if (!attendanceTypeFilter.value) {
     return userData;
@@ -90,13 +78,14 @@ const users = computed(() => {
       <!-- {{ data.data }} -->
       <!-- //    :to="`/inbox?id=${notification.id}`" -->
 
-      <template v-else-if="data && data.data.length === 0">
+      <template v-else-if="users.length === 0">
         <div class="p-4 text-center text-sm text-muted">
-          Todos los usuarios han registrado su entrada y salida hoy.
+          No hay usuarios sin registro de entrada/salida hoy.
         </div>
       </template>
 
       <template v-else>
+        <!-- {{ users.length }} -->
         <UFieldGroup orientation="horizontal" class="w-full mb-4 flex justify-center">
           <UButton color="neutral" :variant="variant('unknown')" label="Sin registro"
             @click="() => toogleAttendanceTypeFilter('unknown')" />
@@ -128,7 +117,8 @@ const users = computed(() => {
             /> -->
               <!-- {{ user. }} -->
 
-              <UBadge v-if="user.attendances && user.attendances.length === 0" label="Sin registro" variant="outline"
+
+              <UBadge v-if="!user.attendances || user.attendances.length === 0" label="Sin registro" variant="outline"
                 color="warning" size="sm" />
               <UBadge v-else-if="user.attendances && user.attendances.length === 1" :label="isCheckedIn(user) ? 'Entrada registrada' : 'Salida registrada'
                 " variant="outline" color="info" size="sm" />
