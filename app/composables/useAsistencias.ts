@@ -198,8 +198,7 @@ export const useAsistencias = () => {
     loading.value = true
     error.value = null
 
-    console.log('Actualizando asistencia ID:', id, 'con datos:', data)
-
+    
     try {
       // Obtener token de localStorage
       const token = localStorage.getItem('auth_token')
