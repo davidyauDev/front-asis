@@ -73,6 +73,14 @@ const users = computed(() => {
       </div>
 
 
+      <UFieldGroup orientation="horizontal" class="w-full mb-4 flex justify-center">
+        <UButton color="neutral" :variant="variant('unknown')" label="Sin registro"
+          @click="() => toogleAttendanceTypeFilter('unknown')" />
+        <UButton color="neutral" :variant="variant(AttendanceType.CHECK_IN)" label="Entrada"
+          @click="() => toogleAttendanceTypeFilter(AttendanceType.CHECK_IN)" />
+        <UButton color="neutral" :variant="variant(AttendanceType.CHECK_OUT)" label="Salida"
+          @click="() => toogleAttendanceTypeFilter(AttendanceType.CHECK_OUT)" />
+      </UFieldGroup>
 
 
       <!-- {{ data.data }} -->
@@ -86,14 +94,6 @@ const users = computed(() => {
 
       <template v-else>
         <!-- {{ users.length }} -->
-        <UFieldGroup orientation="horizontal" class="w-full mb-4 flex justify-center">
-          <UButton color="neutral" :variant="variant('unknown')" label="Sin registro"
-            @click="() => toogleAttendanceTypeFilter('unknown')" />
-          <UButton color="neutral" :variant="variant(AttendanceType.CHECK_IN)" label="Entrada"
-            @click="() => toogleAttendanceTypeFilter(AttendanceType.CHECK_IN)" />
-          <UButton color="neutral" :variant="variant(AttendanceType.CHECK_OUT)" label="Salida"
-            @click="() => toogleAttendanceTypeFilter(AttendanceType.CHECK_OUT)" />
-        </UFieldGroup>
         <NuxtLink v-for="user in users" :key="user.id"
           class="px-3 py-2.5 rounded-md hover:bg-elevated/50 flex items-center gap-3 relative -mx-3 first:-mt-3 last:-mb-3">
           <!-- <UChip
