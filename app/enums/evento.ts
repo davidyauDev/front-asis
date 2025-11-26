@@ -19,7 +19,6 @@ export const statusOptions: Record<number, StatusOption> = {
   },
 };
 export const getEventoStatusOp = (status: number) => {
-  console.log("Status recibido:", status);
   return (
     statusOptions[status] || {
       label: "Desconocido",
