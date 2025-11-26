@@ -309,12 +309,8 @@ const _useUsers = () => {
 
       users.value = [data, ...users.value];
 
-      const { data: notCheckedInOutData } =
-        await useUsersNotCheckedInOutToday();
-      notCheckedInOutData.value.data = [
-        data,
-        ...notCheckedInOutData.value.data,
-      ];
+      const { refresh } = await useUsersNotCheckedInOutToday();
+      await refresh();
 
       toast.add({
         title: "Usuario creado",
