@@ -66,13 +66,6 @@ const users = computed(() => {
 <template>
   <USlideover v-model:open="isNotificationsSlideoverOpen" title="Usuarios sin registro de entrada/salida hoy">
     <template #body>
-
-      <div v-if="error" class="p-4 text-center text-sm text-red-600 flex">
-        Ocurrió un error al cargar los usuarios.
-        <UButton variant="link" class="underline" @click="() => refresh()" />
-      </div>
-
-
       <UFieldGroup orientation="horizontal" class="w-full mb-4 flex justify-center">
         <UButton color="neutral" :variant="variant('unknown')" label="Sin registro"
           @click="() => toogleAttendanceTypeFilter('unknown')" />
@@ -81,6 +74,13 @@ const users = computed(() => {
         <UButton color="neutral" :variant="variant(AttendanceType.CHECK_OUT)" label="Salida"
           @click="() => toogleAttendanceTypeFilter(AttendanceType.CHECK_OUT)" />
       </UFieldGroup>
+
+      <div v-if="error" class="p-4 text-center text-sm text-red-600 flex">
+        Ocurrió un error al cargar los usuarios.
+        <UButton variant="link" class="underline" @click="() => refresh()" />
+      </div>
+
+      
 
 
       <!-- {{ data.data }} -->
