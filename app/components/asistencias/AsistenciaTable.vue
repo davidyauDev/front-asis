@@ -410,8 +410,7 @@
           </div>
 
           <!-- Paginación -->
-
-          <UPagination v-model="currentPageModel" :page-count="perPage" :total="totalRecords" :max="isMobile ? 5 : 7"
+          <UPagination v-model:page="currentPageModel" :itemsPerPage="perPage" :total="137" :max="isMobile ? 5 : 7"
             @update:page="changePage" :disabled="loading" size="sm" />
         </div>
       </div>
@@ -431,7 +430,6 @@
 </template>
 
 <script setup lang="ts">
-import SimpleFilters from './SimpleFilters.vue'
 
 import type { AsistenciaRecord, AsistenciaStats, AttendanceUser } from '~/types'
 
@@ -541,14 +539,12 @@ onMounted(() => {
 // 🎯 Funciones de eventos
 const changePage = (page: number) => {
   const totalPages = Math.ceil(props.totalRecords / props.perPage)
-  console.log('Cambiando a página:', page);
   if (page < 1 || page > totalPages) return
   emit('pageChanged', page)
 }
 
 const changePerPage = (option: any) => {
   selectedPerPage.value = option
-  console.log('Cambiando registros por página a:', option.value);
   emit('perPageChanged', option.value)
 }
 

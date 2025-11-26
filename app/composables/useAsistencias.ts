@@ -214,7 +214,7 @@ export const useAsistencias = () => {
       // }
 
       const apiData = {
-        user_id: data.user_id.value || data.usuario_id.value,
+        user_id: data.user_id?.value || data.usuario_id.value,
         timestamp: Date.now().toString(),
         latitude: data.latitude || data.latitud,
         longitude: data.longitude || data.longitud,

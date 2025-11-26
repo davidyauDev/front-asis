@@ -1,12 +1,11 @@
 import { createSharedComposable } from "@vueuse/core";
 import type { CreateUserPayload, UserListItem } from "~/types";
 
-
 const allUsers = ref<UserListItem[]>([]);
 
 const _useUsers = () => {
   const users = ref<UserListItem[]>([]);
-  
+
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -52,15 +51,35 @@ const _useUsers = () => {
           },
         }
       );
-      allUsers.value = response.data.users  ;
+      allUsers.value = response.data.users;
       return response.data.users;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error fetching all users:", error);
       throw error;
     }
   };
 
+  const getUsersNotCheckedInOutToday = async (): Promise<UserListItem[]> => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No hay token de autenticación");
+      }
+      const response = await $fetch<{ data: { users: UserListItem[] } }>(
+        `${apiBaseUrl}/api/users/not-checked-in-out-today`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+      return response.data.users;
+    } catch (error) {
+      console.error("Error fetching users not checked in/out today:", error);
+      throw error;
+    }
+  };
 
   // Fetch usuarios desde la API
   const fetchUsers = async (
@@ -88,7 +107,7 @@ const _useUsers = () => {
       params.append("sort_order", sortOrderParam || sortOrder.value);
 
       const url = `${apiBaseUrl}/api/users?${params.toString()}`;
-     
+
       const response = await $fetch<any>(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -259,8 +278,6 @@ const _useUsers = () => {
         }.`,
         color: "success",
       });
-
-      
     } catch (err: any) {
       console.error("Error al actualizar el estado del usuario:", err);
       toast.add({
@@ -273,7 +290,6 @@ const _useUsers = () => {
     } finally {
       loading.value = false;
     }
-   
   };
 
   const createUser = async (newUser: CreateUserPayload) => {
@@ -291,8 +307,6 @@ const _useUsers = () => {
         body: JSON.stringify(newUser),
       });
 
-      
-
       users.value = [data, ...users.value];
 
       toast.add({
@@ -305,8 +319,7 @@ const _useUsers = () => {
     } catch (err: any) {
       toast.add({
         title: "Error al crear usuario",
-        description:
-          err.data?.message || "No se pudo crear el usuario.",
+        description: err.data?.message || "No se pudo crear el usuario.",
         color: "error",
         duration: 5000,
       });
@@ -314,7 +327,10 @@ const _useUsers = () => {
     }
   };
 
-  const updateUserInList = async (id: number, updatedUser: CreateUserPayload) => {
+  const updateUserInList = async (
+    id: number,
+    updatedUser: CreateUserPayload
+  ) => {
     const index = users.value.findIndex((user) => user.id === id);
 
     try {
@@ -373,7 +389,6 @@ const _useUsers = () => {
           : user
       );
 
-    
       toast.add({
         title: "Usuario eliminado",
         description: `El usuario ha sido eliminado correctamente.`,
@@ -446,6 +461,7 @@ const _useUsers = () => {
     getAllUsers,
     getUserById,
     getUserByEmpCode,
+    getUsersNotCheckedInOutToday,
     formatUserForSelect,
     getUsersForSelect,
     searchUsersLocal,
