@@ -537,6 +537,7 @@ watch(() => props.asistencia, (newAsistencia) => {
     formData.value = {
       emp_code: newAsistencia.emp_code || '',
       usuario_id: user,
+      address: newAsistencia.address || '',
       tipo_registro: newAsistencia.tipo_registro,
       tipo_evento: newAsistencia.tipo_evento,
       latitud: newAsistencia.latitud,

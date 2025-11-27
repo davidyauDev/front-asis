@@ -29,6 +29,13 @@ const links = [[{
     open.value = false
   }
 }, {
+  label: 'Reporte de Asistencias',
+  icon: 'i-lucide-file-text',
+  to: '/reporte-asistencias',
+  onSelect: () => {
+    open.value = false
+  }
+}, {
   label: 'Inbox',
   icon: 'i-lucide-inbox',
   to: '/inbox',
@@ -176,6 +183,6 @@ onMounted(async () => {
 
     <slot />
 
-    <NotificationsSlideover />
+    <!-- <NotificationsSlideover /> -->
   </UDashboardGroup>
 </template>

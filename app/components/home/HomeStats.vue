@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import type { UserListItem } from '~/types'
 
-const { data, error, refresh, pending } = await useFetch<{
-  data: UserListItem[]
-}>('/users/not-checked-in-out-today', {
-  key: 'users-not-checked-in-out-today',
-  pick: ['data'],
-  default: () => ({ data: [] }),
-  $fetch: useNuxtApp().$api
+// const { data, error, refresh, pending } = await useFetch<{
+//   data: UserListItem[]
+// }>('/users/not-checked-in-out-today', {
+//   key: 'users-not-checked-in-out-today',
+//   pick: ['data'],
+//   default: () => ({ data: [] }),
+//   $fetch: useNuxtApp().$api
 
-})
+// })
 
+const { data, error, refresh, pending } = await useUsersNotCheckedInOutToday();
 
 
 function formatCurrency(value: number): string {

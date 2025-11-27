@@ -194,6 +194,7 @@ export interface AttendanceRecord {
   is_internet_available?: boolean;
   type: AttendanceType;
   image?: string;
+  address?: string;
   created_at: string;
   updated_at: string;
 }
@@ -318,10 +319,14 @@ export interface Route {
   id: string;                   
   user_id: number;
   user: AttendanceUser;
-  date: string;                 
-  check_in?: GPSPoint;          
-  check_out?: GPSPoint;         
-  attendances: GPSPoint[];     
+  date: string;  
+  latitude: number;
+  longitude: number;  
+  image?: string; 
+  type: AttendanceType;            
+  // check_in?: GPSPoint;          
+  // check_out?: GPSPoint;         
+  // attendances: GPSPoint[];     
   points: [number, number][];   
   start_point?: [number, number];
   end_point?: [number, number];

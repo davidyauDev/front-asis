@@ -6,6 +6,8 @@ import type {
   GPSPoint,
   AttendanceUser,
   MapConfig,
+  User,
+  AttendanceRecord,
 } from "~/types";
 
 const ROUTE_COLORS = [
@@ -65,8 +67,9 @@ export const useRutas = () => {
   const mapTargetCenter = ref<[number, number] | null>(null);
 
   const routes = ref<Route[]>([]);
-  const users = ref<AttendanceUser[]>([]);
+  const users = ref<User[]>([]);
   const selectedRoute = ref<Route | null>(null);
+  const selectedUser = ref<User | null>(null);
   const filters = ref<RouteFilters>({});
   const loading = ref(false);
 
@@ -77,9 +80,11 @@ export const useRutas = () => {
   });
 
   async function fetchRoutesFromAPI() {
-  const config = useRuntimeConfig();
-  const apiBaseUrl = config.public.apiBaseUrl;
+    const config = useRuntimeConfig();
+    const apiBaseUrl = config.public.apiBaseUrl;
     loading.value = true;
+
+    console.log("Fetching routes with filters:", loading.value, filters.value);
 
     try {
       const token = localStorage.getItem("auth_token");
@@ -90,61 +95,102 @@ export const useRutas = () => {
 
       const url = `${apiBaseUrl}/api/users/check-in-out?${params.toString()}`;
 
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    },
-  });
+      const res = await fetch(url, {
+        
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        
+      });
 
       const json = await res.json();
       const apiUsers = json.data || [];
 
       users.value = apiUsers;
 
-      routes.value = apiUsers.map((u, index) => {
-        const attendance = u.attendances[0];
-        const baseLat = attendance.latitude;
-        const baseLng = attendance.longitude;
+      // routes.value = apiUsers.map((u, index) => {
+      //   const attendance = u.attendances[0];
+      //   const baseLat = attendance.latitude;
+      //   const baseLng = attendance.longitude;
 
-        const gpsPoints = generateGPSPoints(
-          baseLat,
-          baseLng,
-          25,
-          new Date(attendance.created_at)
-        );
+      //   const gpsPoints = generateGPSPoints(
+      //     baseLat,
+      //     baseLng,
+      //     25,
+      //     new Date(attendance.created_at)
+      //   );
 
-        return {
-          id: `route-${u.id}`,
+      //   return {
+      //     id: `route-${u.id}`,
+      //     user_id: u.id,
+      //     user: u,
+      //     date: attendance.created_at.split(" ")[0],
+      //     start_time: attendance.created_at,
+      //     end_time: attendance.created_at,
+      //     points: gpsPoints,
+      //     stops: [],
+      //     total_distance: 0,
+      //     total_duration: 0,
+      //     average_speed: 0,
+      //     max_speed: 0,
+      //     color: ROUTE_COLORS[index % ROUTE_COLORS.length],
+      //   };
+      // });
+
+      const allAttendances: Route[] = apiUsers.flatMap((u: User) =>
+        u.attendances.map((att: AttendanceRecord) => ({
+          id: `route-${att.id}`,
           user_id: u.id,
           user: u,
-          date: attendance.created_at.split(" ")[0],
-          start_time: attendance.created_at,
-          end_time: attendance.created_at,
-          points: gpsPoints,
-          stops: [], 
-          total_distance: 0, 
-          total_duration: 0,
-          average_speed: 0,
-          max_speed: 0,
-          color: ROUTE_COLORS[index % ROUTE_COLORS.length],
-        };
-      });
+          type: att.type,
+          date: att.created_at,
+          image: att.image,
+          address: att.address,
+          // check_in: {
+          //   id: `checkin-${att.id}`,
+          //   latitude: att.latitude,
+          //   longitude: att.longitude,
+          //   timestamp: att.created_at,
+          // },
+          latitude: att.latitude,
+          longitude: att.longitude,
+          start_time: att.created_at,
+          end_time: att.created_at,
+          points: generateGPSPoints(
+            att.latitude,
+            att.longitude,
+            25,
+            new Date(att.created_at)
+          ),
+          color: ROUTE_COLORS[u.id % ROUTE_COLORS.length],
+        }))
+      );
+
+      routes.value = allAttendances;
     } catch (e) {
       console.error("Error al cargar rutas:", e);
+    } finally {
+
+      loading.value = false;
     }
 
-    loading.value = false;
   }
 
   onMounted(fetchRoutesFromAPI);
-  console.log("tests");
+
+  // watch(filters, fetchRoutesFromAPI);
+
   const filteredRoutes = computed(() => {
     let result = routes.value;
-    if (filters.value.date) {
-      result = result.filter((r) => r.date === filters.value.date);
-    }
-
+    // if (filters.value.date) {
+    //   console.log("Filtering routes by date:", filters.value.date);
+    //   result = result.filter((r) => r.date === filters.value.date);
+    // }
+    if (selectedUser.value) {
+      
+      result = result.filter((r) => r.user_id === selectedUser.value?.id);
+    } 
     return result;
   });
 
@@ -157,30 +203,29 @@ export const useRutas = () => {
   }));
 
   const selectRoute = (routeId: string | null) => {
-  selectedRoute.value = routeId
-    ? routes.value.find((r) => r.id === routeId) || null
-    : null;
+    selectedRoute.value = routeId
+      ? routes.value.find((r) => r.id === routeId) || null
+      : null;
 
-  if (selectedRoute.value) {
-    const lastPoint = selectedRoute.value.points.at(-1);
+    if (selectedRoute.value) {
+      const lastPoint = selectedRoute.value.points.at(-1);
 
-    if (lastPoint) {
-      mapTargetCenter.value = [lastPoint.latitude, lastPoint.longitude];
+      if (lastPoint) {
+        mapTargetCenter.value = [lastPoint.latitude, lastPoint.longitude];
+      }
+    } else {
+      mapTargetCenter.value = null;
     }
-  } else {
-    mapTargetCenter.value = null;
-  }
-};
- const updateFilters = async (newFilters: Partial<RouteFilters>) => {
-  filters.value = { ...filters.value, ...newFilters };
-  await fetchRoutesFromAPI(); // recargar datos con la fecha elegida
-};
-
+  };
+  const updateFilters = async (newFilters: Partial<RouteFilters>) => {
+    filters.value = { ...filters.value, ...newFilters };
+    await fetchRoutesFromAPI(); // recargar datos con la fecha elegida
+  };
 
   const clearFilters = () => {
-     const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
 
-    filters.value = { date: today }; 
+    filters.value = { date: today };
     selectedRoute.value = null;
   };
 
@@ -203,6 +248,7 @@ export const useRutas = () => {
     routes,
     users,
     selectedRoute,
+    selectedUser,
     filters,
     loading,
     mapConfig,

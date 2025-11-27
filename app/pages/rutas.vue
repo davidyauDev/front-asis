@@ -4,6 +4,7 @@
     <div class="flex-1 overflow-hidden">
       <div class="h-full overflow-y-auto">
         <div class="p-6">
+          
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div class="lg:col-span-1">
               <!-- Resumen de usuarios activos -->
@@ -16,10 +17,13 @@
                   </div>
                 </div>
               </div>
+              <!-- <pre>{{ users }}</pre> -->
               <RutasRouteFilters
                 :users="users"
                 :filteredRoutes="filteredRoutes"
                 :selectedRoute="selectedRoute"
+               
+                @selected-user="handleSelectedUser"
                 @selectRoute="handleSelectRoute"
                 @updateFilters="handleUpdateFilters"
                 @clearFilters="handleClearFilters"
@@ -31,6 +35,7 @@
                 class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800"
               >
                 <div class="h-[770px]">
+                  <!-- {{ filteredRoutes }} -->
                   <RutasRouteMap
                     :route="selectedRoute"
                     :config="mapConfig"
@@ -48,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Route, RouteFilters } from "~/types";
+import type { Route, RouteFilters, User } from "~/types";
 
 definePageMeta({
   layout: "default",
@@ -59,6 +64,7 @@ const {
   users,
   filteredRoutes,
   selectedRoute,
+  selectedUser,
   selectRoute,
   updateFilters,
   clearFilters,
@@ -69,9 +75,15 @@ const {
 const handleSelectRoute = (route: Route | null) => {
   if (route) {
     selectRoute(route.id);
+    mapTargetCenter.value = null;
   } else {
     selectRoute(null);
   }
+};
+
+const handleSelectedUser = (user: User | null) => {
+  console.log("Selected user in page:", user);
+  selectedUser.value = user;
 };
 
 const handleUpdateFilters = (newFilters: Partial<RouteFilters>) => {
@@ -79,10 +91,14 @@ const handleUpdateFilters = (newFilters: Partial<RouteFilters>) => {
 };
 
 const handleResetMap = () => {
- mapTargetCenter.value = null;
+  console.log("Resetting map center to default");
+  const defaultCenter: [number, number] = [-9.189967, -75.015152];
+  mapTargetCenter.value = defaultCenter;
+//  mapTargetCenter.value = null;
 };
 
 const handleClearFilters = () => {
   clearFilters();
+  selectedUser.value = null;
 };
 </script>

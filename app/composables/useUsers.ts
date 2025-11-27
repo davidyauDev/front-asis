@@ -309,8 +309,8 @@ const _useUsers = () => {
 
       users.value = [data, ...users.value];
 
-      const { refresh } = await useUsersNotCheckedInOutToday();
-      await refresh();
+      // const { refresh } = await useUsersNotCheckedInOutToday();
+      // await refresh();
 
       toast.add({
         title: "Usuario creado",
@@ -481,11 +481,14 @@ export const useUsers = createSharedComposable(_useUsers);
 const _useUsersNotCheckedInOutToday = async () => {
   return await useFetch<{
     data: UserListItem[];
-  }>("/api/users/not-checked-in-out-today", {
+  }>("/users/not-checked-in-out-today", {
     key: "users-not-checked-in-out-today",
     pick: ["data"],
     default: () => ({ data: [] }),
+    cache: 'reload',
     $fetch: useNuxtApp().$api,
+    lazy: true,
+    dedupe: "defer",
   });
 };
 export const useUsersNotCheckedInOutToday = createSharedComposable(
