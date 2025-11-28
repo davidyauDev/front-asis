@@ -28,7 +28,9 @@
                 </div>
             </div>
             <ResumenEstadisticas />
-            <TabsContainer />
+
+            <TablaReportes />
+            <!-- <TabsContainer /> -->
         </template>
 
 
@@ -45,5 +47,17 @@ import SeleccionarSemanas from '~/components/reporte-asistencias/SeleccionarSema
 import FiltrarEmpleados from '~/components/reporte-asistencias/FiltrarEmpleados.vue';
 
 import ResumenEstadisticas from '~/components/reporte-asistencias/ResumenEstadisticas.vue';
+import TablaReportes from '~/components/reporte-asistencias/TablaReportes.vue';
 import TabsContainer from '~/components/reporte-asistencias/TabsContainer.vue';
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
+
+const { getCompanies, getDepartments } = useAttendanceReportStore()
+
+
+onMounted(() => {
+    getCompanies();
+    getDepartments();
+});
+
+
 </script>

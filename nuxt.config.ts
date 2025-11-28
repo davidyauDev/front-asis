@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@vueuse/nuxt',
     '@nuxtjs/leaflet',
+    '@pinia/nuxt'
   ],
 
   devtools: {
