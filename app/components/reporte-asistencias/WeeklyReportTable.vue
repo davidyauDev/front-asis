@@ -29,12 +29,12 @@
         </div>
     </div>
 
-    {{ pagination }} {{ table?.tableApi?.getState().pagination.pageSize }}
+    {{ pagination }} {{ table?.tableApi?.getState() }}
 </template>
 
 <script setup lang="ts">
-import TableHeaderUserFieldsGroup from './TableHeaderUserFieldsGroup.vue';
 import TableCellUserFieldsGroup from './TableCellUserFieldsGroup.vue';
+import TableHeaderUserFieldsGroup from './TableHeaderUserFieldsGroup.vue';
 import TableHeaderWeekGroup from './TableHeaderWeekGroup.vue';
 // import { h } from 'vue'
 // import type { TableColumn } from '@nuxt/ui';
@@ -77,19 +77,27 @@ import TableHeaderWeekGroup from './TableHeaderWeekGroup.vue';
 //     { accessorKey: 'total_trabajado', header: 'TRABAJADO' },
 // ]
 
-import { getPaginationRowModel } from '@tanstack/vue-table'
-import { h, } from 'vue'
 import type { TableColumn } from '@nuxt/ui';
+import { getPaginationRowModel } from '@tanstack/vue-table';
+import { h, } from 'vue';
 
 const pagination = ref({
     pageIndex: 0,
     pageSize: 1
 })
 
+import { computed, ref } from 'vue';
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
+
+
+const store = useAttendanceReportStore()
+const { getEmployeesByDepartment } = store;
+const { department, employee, week } = storeToRefs(store)
+
 
 const table = useTemplateRef('table')
 
-const columns: TableColumn<any>[] = [
+const columns = computed<TableColumn<any>[]>(() => [
     // ==== COLUMNA 1: PERÍODO ====
     {
         accessorKey: 'user-fieds',
@@ -106,77 +114,8 @@ const columns: TableColumn<any>[] = [
             );
         }
     },
-
+    ...getDinamickWeeks.value,
     {
-
-        accessorKey: 'week-one',
-        id: 'week-one',
-        header: () =>
-            h(
-                TableHeaderWeekGroup, {
-                week: '1era Semana',
-                gradiantBackgroundColor: 'from-rose-500 to-rose-600',
-                date: '23/10 - 01/11',
-                firstBackgroundColor: 'bg-rose-100',
-                secondBackgroundColor: 'bg-rose-50',
-                firstColor: 'text-rose-700',
-                secondColor: 'text-rose-800'
-
-            }
-            ),
-    },
-
-    {
-        accessorKey: 'week-two',
-        id: 'week-two',
-        header: () =>
-            h(
-                TableHeaderWeekGroup, {
-                week: '2da Semana',
-                gradiantBackgroundColor: 'from-amber-500 to-amber-600',
-                date: '02/11 - 08/11',
-                firstBackgroundColor: 'bg-amber-100',
-                secondBackgroundColor: 'bg-amber-50',
-                firstColor: 'text-amber-700',
-                secondColor: 'text-amber-800'
-            }
-            ),
-    },
-
-    {
-        accessorKey: 'week-three',
-        id: 'week-three',
-        header: () =>
-            h(
-                TableHeaderWeekGroup, {
-                week: '3ra Semana',
-                gradiantBackgroundColor: 'from-emerald-500 to-emerald-600',
-                date: '02/11 - 08/11',
-                firstBackgroundColor: 'bg-emerald-100',
-                secondBackgroundColor: 'bg-emerald-50',
-                firstColor: 'text-emerald-700',
-                secondColor: 'text-emerald-800'
-            }
-            ),
-    },
-
-    {
-        accessorKey: 'week-four',
-        id: 'week-four',
-        header: () =>
-            h(
-                TableHeaderWeekGroup, {
-                week: '4ta Semana',
-                gradiantBackgroundColor: 'from-fuchsia-500 to-fuchsia-600',
-                date: '02/11 - 08/11',
-                firstBackgroundColor: 'bg-fuchsia-100',
-                secondBackgroundColor: 'bg-fuchsia-50',
-                firstColor: 'text-fuchsia-700',
-                secondColor: 'text-fuchsia-800'
-            }
-            ),
-    },
-     {
         accessorKey: 'totals',
         id: 'totas',
         header: () =>
@@ -193,36 +132,89 @@ const columns: TableColumn<any>[] = [
             ),
     },
 
+]);
+
+
+const getDinamickWeeks = computed(() => {
+  const selectedWeeks = week.value.selecteds;
+
+
+  return headerWeeks.filter(header =>
+    selectedWeeks.some(week => Number(week.id) === Number(header.id))
+  );
+});
+
+const headerWeeks = [
+    {
+
+        accessorKey: '1',
+        id: '1',
+        header: () =>
+            h(
+                TableHeaderWeekGroup, {
+                week: '1era Semana',
+                gradiantBackgroundColor: 'from-rose-500 to-rose-600',
+                date: '23/10 - 01/11',
+                firstBackgroundColor: 'bg-rose-100',
+                secondBackgroundColor: 'bg-rose-50',
+                firstColor: 'text-rose-700',
+                secondColor: 'text-rose-800'
+
+            }
+            ),
+    },
+
+    {
+        accessorKey: '2',
+        id: '2',
+        header: () =>
+            h(
+                TableHeaderWeekGroup, {
+                week: '2da Semana',
+                gradiantBackgroundColor: 'from-amber-500 to-amber-600',
+                date: '02/11 - 08/11',
+                firstBackgroundColor: 'bg-amber-100',
+                secondBackgroundColor: 'bg-amber-50',
+                firstColor: 'text-amber-700',
+                secondColor: 'text-amber-800'
+            }
+            ),
+    },
+
+    {
+        accessorKey: '3',
+        id: '3',
+        header: () =>
+            h(
+                TableHeaderWeekGroup, {
+                week: '3ra Semana',
+                gradiantBackgroundColor: 'from-emerald-500 to-emerald-600',
+                date: '02/11 - 08/11',
+                firstBackgroundColor: 'bg-emerald-100',
+                secondBackgroundColor: 'bg-emerald-50',
+                firstColor: 'text-emerald-700',
+                secondColor: 'text-emerald-800'
+            }
+            ),
+    },
+
+    {
+        accessorKey: '4',
+        id: '4',
+        header: () =>
+            h(
+                TableHeaderWeekGroup, {
+                week: '4ta Semana',
+                gradiantBackgroundColor: 'from-fuchsia-500 to-fuchsia-600',
+                date: '02/11 - 08/11',
+                firstBackgroundColor: 'bg-fuchsia-100',
+                secondBackgroundColor: 'bg-fuchsia-50',
+                firstColor: 'text-fuchsia-700',
+                secondColor: 'text-fuchsia-800'
+            }
+            ),
+    },
 ]
-
-//  <div class="w-full h-full">
-
-
-//         <div
-//             class="bg-gradient-to-r h-12 from-amber-500 w-full to-amber-600 text-white text-center py-3 font-bold text-xs tracking-wide">
-//             2da Semana
-//         </div>
-//         <div class="bg-amber-100   text-center p-2">
-
-//             <span class="w-full text-xs text-amber-700">
-
-//                 02/11 - 08/11
-//             </span>
-
-//         </div>
-//         <div class="w-full flex">
-
-//             <span
-//                 class="w-1/2 block px-2 py-5 text-center bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
-//                 Tardanza</span>
-//             <span
-//                 class="w-1/2 block px-2 py-5 text-center bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
-//                 Trabajado</span>
-
-//         </div>
-
-//     </div>
-
 
 
 const rows = [

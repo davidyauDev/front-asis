@@ -1,13 +1,8 @@
 <template>
-
     <div class="w-full h-full">
-
-
-        <div
-            class="bg-gradient-to-r h-12 text-white text-center py-3 font-bold text-xs tracking-wide"
-             :class="gradiantBackgroundColor"
-            >
-            {{ week }}
+        <div class="bg-linear-to-r h-12 text-white text-center py-3 font-bold text-xs tracking-wide"
+            :class="gradiantBackgroundColor">
+            {{ week }} 
         </div>
         <div class="text-center p-2" :class="firstBackgroundColor">
 
@@ -18,20 +13,18 @@
 
         </div>
         <div class="w-full flex">
-
-            <span
-                class="w-1/2 block px-2 py-5 text-center bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider" :class="firstColor">
+            <span class="w-1/2 block px-2 py-5 text-center text-[10px] font-bold uppercase tracking-wider"
+                :class="[firstColor, secondBackgroundColor]">
                 Tardanza</span>
-            <span
-                class="w-1/2 block px-2 py-5 text-center bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider" :class="firstColor">
+            <span class="w-1/2 block px-2 py-5 text-center text-[10px] font-bold uppercase tracking-wider"
+                :class="[firstColor, firstBackgroundColor]">
                 Trabajado</span>
-
         </div>
-
     </div>
 </template>
 
 <script setup lang="ts">
+
 defineProps<{
     week: string,
     date: string,
