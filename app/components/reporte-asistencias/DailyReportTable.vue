@@ -102,7 +102,7 @@ const columns: TableColumn<Payment>[] = [
         accessorKey: 'dni',
         // header: 'DNI',
         header: ({ column }) => sortColumButton(column, 'DNI'),
-        cell: ({ row }) => `${row.getValue('id')}`
+        cell: ({ row }) => `${row.getValue('dni')}`
     },
     {
         accessorKey: 'lastname',

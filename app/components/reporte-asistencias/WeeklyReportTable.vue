@@ -1,19 +1,23 @@
 <template>
 
+    <DataState :error="attendance.summary.isError" :loading="attendance.summary.loading"
+        error-message="No se pudó cagar el reporte semanal" @retry="getAttendanceSummaryParams">
 
-    <!-- Tabla -->
-    <UTable sticky :data="rows" :columns="columns" ref="table" :ui="{
-        th: 'p-0 w-1',
-        td: 'p-0'
+        <!-- Tabla -->
+        {{ attendance.summary.list.length }}
+        <UTable sticky :data="attendance.summary.list" :columns="columns" ref="table" :ui="{
+            th: 'p-0 w-1',
+            td: 'p-0'
+
+        }" v-model:pagination="pagination" :pagination-options="{
+            getPaginationRowModel: getPaginationRowModel()
+        }">
 
 
+        </UTable>
 
-    }" v-model:pagination="pagination" :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel()
-    }">
+    </DataState>
 
-
-    </UTable>
     <!-- Info de registros -->
     <div class="flex items-center justify-between p-4">
 
@@ -29,13 +33,15 @@
         </div>
     </div>
 
-    {{ pagination }} {{ table?.tableApi?.getState() }}
+    <!-- {{ pagination }} {{ table?.tableApi?.getState() }} -->
 </template>
 
 <script setup lang="ts">
+import DataState from '../common/DataState.vue';
 import TableCellUserFieldsGroup from './TableCellUserFieldsGroup.vue';
 import TableHeaderUserFieldsGroup from './TableHeaderUserFieldsGroup.vue';
 import TableHeaderWeekGroup from './TableHeaderWeekGroup.vue';
+import TableCellWeekGroup from './TableCellWeekGroup.vue';
 // import { h } from 'vue'
 // import type { TableColumn } from '@nuxt/ui';
 // const columns: TableColumn<any>[] = [
@@ -83,7 +89,7 @@ import { h, } from 'vue';
 
 const pagination = ref({
     pageIndex: 0,
-    pageSize: 1
+    pageSize: 10
 })
 
 import { computed, ref } from 'vue';
@@ -91,13 +97,20 @@ import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 
 const store = useAttendanceReportStore()
-const { getEmployeesByDepartment } = store;
-const { department, employee, week } = storeToRefs(store)
+const { getEmployeesByDepartment, getAttendanceSummary } = store;
+const { department, employee, week, attendance } = storeToRefs(store)
 
 
 const table = useTemplateRef('table')
 
-const columns = computed<TableColumn<any>[]>(() => [
+onMounted(() => {
+    if (attendance.value.summary.list.length) return;
+    getAttendanceSummary()
+})
+
+
+
+const columns = computed<TableColumn<AttendanceSummary>[]>(() => [
     // ==== COLUMNA 1: PERÍODO ====
     {
         accessorKey: 'user-fieds',
@@ -109,7 +122,7 @@ const columns = computed<TableColumn<any>[]>(() => [
         cell: (row) => {
             return h(
                 TableCellUserFieldsGroup, {
-                user: row.cell.row.original
+                attendance: row.cell.row.original
             }
             );
         }
@@ -130,21 +143,42 @@ const columns = computed<TableColumn<any>[]>(() => [
                 secondColor: 'text-slate-800'
             }
             ),
+
+        cell: (row) => {
+            const attendance = row.cell.row.original;
+            return h(
+                TableCellWeekGroup, {
+                attendance: {
+                    delay: attendance.s1_tardanza,
+                    worked: attendance.s1_trabajadas
+                },
+                firstBackgroundColor: 'bg-slate-100',
+                secondBackgroundColor: 'bg-slate-50',
+                firstColor: 'text-slate-700',
+                secondColor: 'text-slate-800'
+
+
+            }
+            );
+        }
     },
 
 ]);
 
+// const totalAttendance: { delay: string,  }
+
+
 
 const getDinamickWeeks = computed(() => {
-  const selectedWeeks = week.value.selecteds;
+    const selectedWeeks = week.value.selecteds;
 
 
-  return headerWeeks.filter(header =>
-    selectedWeeks.some(week => Number(week.id) === Number(header.id))
-  );
+    return headerWeeks.filter(header =>
+        selectedWeeks.some(week => Number(week.id) === Number(header.id))
+    );
 });
 
-const headerWeeks = [
+const headerWeeks: TableColumn<AttendanceSummary>[] = [
     {
 
         accessorKey: '1',
@@ -162,6 +196,24 @@ const headerWeeks = [
 
             }
             ),
+        cell: (row) => {
+            const attendance = row.cell.row.original;
+            return h(
+                TableCellWeekGroup, {
+                attendance: {
+                    delay: attendance.s1_tardanza,
+                    worked: attendance.s1_trabajadas
+                },
+                firstBackgroundColor: 'bg-rose-100',
+                secondBackgroundColor: 'bg-rose-50',
+                firstColor: 'text-rose-700',
+                secondColor: 'text-rose-800'
+
+
+            }
+            );
+        }
+
     },
 
     {
@@ -179,6 +231,24 @@ const headerWeeks = [
                 secondColor: 'text-amber-800'
             }
             ),
+
+        cell: (row) => {
+            const attendance = row.cell.row.original;
+            return h(
+                TableCellWeekGroup, {
+                attendance: {
+                    delay: attendance.s2_tardanza,
+                    worked: attendance.s2_trabajadas
+                },
+                firstBackgroundColor: 'bg-amber-100',
+                secondBackgroundColor: 'bg-amber-50',
+                firstColor: 'text-amber-700',
+                secondColor: 'text-amber-800'
+
+
+            }
+            );
+        }
     },
 
     {
@@ -196,6 +266,23 @@ const headerWeeks = [
                 secondColor: 'text-emerald-800'
             }
             ),
+        cell: (row) => {
+            const attendance = row.cell.row.original;
+            return h(
+                TableCellWeekGroup, {
+                attendance: {
+                    delay: attendance.s3_tardanza,
+                    worked: attendance.s3_trabajadas
+                },
+                firstBackgroundColor: 'bg-emerald-100',
+                secondBackgroundColor: 'bg-emerald-50',
+                firstColor: 'text-emerald-700',
+                secondColor: 'text-emerald-800'
+
+
+            }
+            );
+        }
     },
 
     {
@@ -213,6 +300,23 @@ const headerWeeks = [
                 secondColor: 'text-fuchsia-800'
             }
             ),
+        cell: (row) => {
+            const attendance = row.cell.row.original;
+            return h(
+                TableCellWeekGroup, {
+                attendance: {
+                    delay: attendance.s4_tardanza,
+                    worked: attendance.s4_trabajadas
+                },
+                firstBackgroundColor: 'bg-fuchsia-100',
+                secondBackgroundColor: 'bg-fuchsia-50',
+                firstColor: 'text-fuchsia-700',
+                secondColor: 'text-fuchsia-800'
+
+
+            }
+            );
+        }
     },
 ]
 

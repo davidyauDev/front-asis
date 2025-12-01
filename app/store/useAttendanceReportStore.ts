@@ -1,18 +1,31 @@
 import {
   useAttendanceReport,
+  type AttendanceParams,
+  type AttendaceDetails,
+  type AttendanceSummary,
   type Company,
   type Department,
   type Employee,
 } from "~/composables/useAttendanceReport";
 
 export interface Week {
-  id: number,
-  label: string,
-  color: string,
+  id: number;
+  label: string;
+  color: string;
 }
 
-const { fetchCompanies, fetchDepartments, fetchEmployeesByDepartment } =
-  useAttendanceReport();
+export enum ReportType {
+  WEEKLY = "WEEKLY",
+  DAYLY = "DAYLY",
+}
+
+const {
+  fetchCompanies,
+  fetchDepartments,
+  fetchEmployeesByDepartment,
+  fetchAttendancesSummary,
+  fetchAttendacesDetails,
+} = useAttendanceReport();
 
 export const useAttendanceReportStore = defineStore("attendance-report", {
   state: () => ({
@@ -43,10 +56,27 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       },
     },
 
-
     week: {
-      selecteds: [] as Week[]
-    }
+      selecteds: [] as Week[],
+    },
+
+    attendance: {
+      type: ReportType.WEEKLY,
+      params: {} as AttendanceParams,
+      summary: {
+        // params: {} as AttendanceSummaryParams,
+        list: [] as AttendanceSummary[],
+        loading: false,
+        isError: false,
+      },
+
+      details: {
+        // params: {} as AttendanceDetailsParams,
+        list: [] as AttendaceDetails[],
+        loading: false,
+        isError: false,
+      },
+    },
 
     // ...
   }),
@@ -82,10 +112,12 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
-    async getEmployeesByDepartment(departmentId: number) {
+    async getEmployeesByDepartment() {
       this.employee.department.loading = true;
       try {
-        const employees = await fetchEmployeesByDepartment(departmentId);
+        const employees = await fetchEmployeesByDepartment(
+          this.attendance.params.departamento_ids
+        );
         this.employee.department.list = employees;
 
         this.employee.department.isError = false;
@@ -93,6 +125,39 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         this.employee.department.isError = true;
       } finally {
         this.employee.department.loading = false;
+      }
+    },
+
+    async getAttendanceSummary() {
+      this.attendance.summary.loading = true;
+      try {
+        const attendances = await fetchAttendancesSummary(
+          this.attendance.params
+        );
+        this.attendance.summary.list = attendances;
+
+        this.attendance.summary.isError = false;
+      } catch (error) {
+        this.attendance.summary.isError = true;
+      } finally {
+        this.attendance.summary.loading = false;
+      }
+    },
+
+    async getAttendanceDetails() {
+      this.attendance.details.loading = true;
+
+      try {
+        const attendances = await fetchAttendacesDetails(
+          this.attendance.params
+        );
+        this.attendance.details.list = attendances;
+
+        this.attendance.details.isError = false;
+      } catch (error) {
+        this.attendance.details.isError = true;
+      } finally {
+        this.attendance.details.loading = false;
       }
     },
   },

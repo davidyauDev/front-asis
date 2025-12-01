@@ -18,31 +18,6 @@
                     },
                 ]">
 
-                <!-- <template #semanal>
-                    <WeeklyReportTable />
-                </template>
-
-<template #diario>
-        <UTable ref="table" v-model:global-filter="globalFilter" :data="data" :columns="columns" />
-                </template> -->
-
-                <!-- <template #entrada>
-      <TabHoraEntrada />
-    </template>
-
-<template #salida>
-      <TabHoraSalida />
-    </template>
-
-<template #ubicacion>
-      <TabUbicaciones />
-    </template>
-
-<template #retrasos>
-      <TabRetrasos />
-    </template> -->
- 
-
 
             </UTabs>
             <div class="flex max-lg:flex-wrap max-sm:justify-end items-center gap-2">
@@ -67,17 +42,21 @@
 <script setup lang="ts">
 import WeeklyReportTable from './WeeklyReportTable.vue'
 import DailyReportTable from './DailyReportTable.vue'
+import { ReportType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const { width } = useWindowSize()
 
-enum ReportType {
-    WEEKLY = 'WEEKLY',
-    DAYLY = 'DAYLY'
-}
+const store = useAttendanceReportStore()
+// const { getEmployeesByDepartment, getAttendanceSummaryParams } = store;
+const { attendance } = storeToRefs(store)
 
 
 const currentReportType = ref<ReportType | null | undefined>(ReportType.WEEKLY)
 
+
+watch(currentReportType, (reportType) => {
+    attendance.value.type = reportType || ReportType.WEEKLY
+})
 
 
 const globalFilter = ref('')

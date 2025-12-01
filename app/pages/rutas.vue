@@ -101,4 +101,5 @@ const handleClearFilters = () => {
   clearFilters();
   selectedUser.value = null;
 };
+
 </script>

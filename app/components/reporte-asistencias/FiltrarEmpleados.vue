@@ -12,15 +12,15 @@
       class="border border-green-300 rounded-xl" />
 
     <div class="flex flex-wrap gap-2">
-      <UButton @click="handleRemoveSelect(sel)" variant="outline" v-for="sel in selecteds" trailing-icon="i-lucide-x"
+      <UButton class="cursor-pointer" @click="handleRemoveSelect(sel)" variant="outline" v-for="sel in selecteds" trailing-icon="i-lucide-x"
         size="xs">
         {{ sel.first_name }} {{ sel.last_name }}
       </UButton>
     </div>
 
     <DataState :loading="employee.department.loading" :error="employee.department.isError"
-      :error-message="`No se pudieron cargar los empleados para ${department.current?.dept_name}`"
-      :show-retry="!!department.current?.id" @retry="getEmployeesByDepartment(department.current!.id)">
+      :error-message="`No se pudieron cargar los empleados para ${departmentsByAttendanceParams.join(', ')}`"
+      :show-retry="departmentsByAttendanceParams.length > 0" @retry="getEmployeesByDepartment()">
 
       <template #loading>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 max-h-48 overflow-y-auto"
@@ -62,7 +62,7 @@ import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const store = useAttendanceReportStore()
 const { getEmployeesByDepartment } = store;
-const { department, employee } = storeToRefs(store)
+const { department, employee, attendance } = storeToRefs(store)
 
 const search = ref('')
 
@@ -75,6 +75,12 @@ const filteredEmployees = computed(() => {
   )
 })
 
+const departmentsByAttendanceParams = computed(() => {
+  const ids = new Set(attendance.value.params.departamento_ids || [])
+
+  return department.value.list.filter(d => ids.has(d.id)).map((d) => d.dept_name)
+})
+
 const selecteds = computed({
   get() {
     return employee.value.department.selecteds;
@@ -83,8 +89,6 @@ const selecteds = computed({
     employee.value.department.selecteds = value;
   }
 })
-
-
 
 
 const handleSelectEmployee = (newEmployee: Employee) => {

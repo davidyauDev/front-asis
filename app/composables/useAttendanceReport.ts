@@ -38,6 +38,51 @@ export interface Employee {
   last_name: string;
 }
 
+export interface AttendanceSummary {
+  dni: string;
+  apellidos: string;
+  nombres: string;
+  departamento: string;
+  empresa: string;
+  s1_tardanza: string | null;
+  s1_trabajadas: string | null;
+  s2_tardanza: string | null;
+  s2_trabajadas: string | null;
+  s3_tardanza: string | null;
+  s3_trabajadas: string | null;
+  s4_tardanza: string | null;
+  s4_trabajadas: string | null;
+}
+
+export interface AttendaceDetails {
+  dni: string;
+  apellidos: string;
+  nombres: string;
+  departamento: string;
+  empresa: string;
+  fecha: string;
+  h_ingreso: string;
+  h_salida: string;
+  m_ingreso: string;
+  m_salida: string;
+  tardanza: string;
+  total_trabajado: string;
+}
+
+
+// export type AttendanceSummaryParams = {
+//   empresa_id?: number;
+//   departmento_id?: number;
+//   fecha_inicio: string;
+// };
+
+export type AttendanceParams = {
+  fecha_inicio: string;
+  fecha_fin?: string;
+  empresa_ids: number[];
+  departamento_ids: number[];
+};
+
 
 const _useAttendanceReport = () => {
   const fetchCompanies = async (): Promise<Company[]> => {
@@ -76,13 +121,18 @@ const _useAttendanceReport = () => {
     }
   };
 
-  const fetchEmployeesByDepartment = async (departmentId: number) => {
+  const fetchEmployeesByDepartment = async (departmentIds: number[]) => {
     try {
       const res = await $fetch<{
         data: Employee[];
       }>(
-        `${biotimePrefix}/empleados-por-departamento?department_id=${departmentId}`,
+        `${biotimePrefix}/empleados-por-departamento`,
+      
         {
+          method: 'POST',
+          body: {
+            department_ids: departmentIds
+          },
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -97,10 +147,59 @@ const _useAttendanceReport = () => {
     }
   };
 
+  const fetchAttendancesSummary = async (
+    params: AttendanceParams
+  ): Promise<AttendanceSummary[]> => {
+    try {
+      const res = await $fetch<{
+        data: AttendanceSummary[];
+      }>(`${reportPrefix}/resumen`, {
+        body: {
+          ...params,
+          fecha_inicio: params.fecha_inicio || new Date().toDateString()
+        },
+         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      return res.data;
+    } catch (error: any) {
+      console.error({ error: error });
+      throw error;
+    }
+  };
+
+  const fetchAttendacesDetails = async (
+    params: AttendanceParams
+  ): Promise<any> => {
+    try {
+      const res = await $fetch<{
+        data: AttendanceSummary[];
+      }>(`${reportPrefix}/detalle`, {
+        body: params,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      return res.data;
+    } catch (error) {
+      console.error({ error });
+      throw error;
+    }
+  };
+
   return {
     fetchCompanies,
     fetchDepartments,
-    fetchEmployeesByDepartment
+    fetchEmployeesByDepartment,
+    fetchAttendancesSummary,
+    fetchAttendacesDetails
   };
 };
 
