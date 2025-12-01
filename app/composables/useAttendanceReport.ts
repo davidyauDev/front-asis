@@ -54,7 +54,25 @@ export interface AttendanceSummary {
   s4_trabajadas: string | null;
 }
 
-export interface AttendaceDetails {
+export interface AttendaceWeeksDates {
+  s1: {
+    inicio: string;
+    fin: string;
+  };
+  s2: {
+    inicio: string;
+    fin: string;
+  };
+  s3: {
+    inicio: string;
+    fin: string;
+  };
+  s4: {
+    inicio: string;
+    fin: string;
+  };
+}
+export interface AttendanceDetails {
   dni: string;
   apellidos: string;
   nombres: string;
@@ -69,7 +87,6 @@ export interface AttendaceDetails {
   total_trabajado: string;
 }
 
-
 // export type AttendanceSummaryParams = {
 //   empresa_id?: number;
 //   departmento_id?: number;
@@ -82,7 +99,6 @@ export type AttendanceParams = {
   empresa_ids: number[];
   departamento_ids: number[];
 };
-
 
 const _useAttendanceReport = () => {
   const fetchCompanies = async (): Promise<Company[]> => {
@@ -127,11 +143,11 @@ const _useAttendanceReport = () => {
         data: Employee[];
       }>(
         `${biotimePrefix}/empleados-por-departamento`,
-      
+
         {
-          method: 'POST',
+          method: "POST",
           body: {
-            department_ids: departmentIds
+            department_ids: departmentIds,
           },
           headers: {
             Authorization: `Bearer ${token}`,
@@ -149,23 +165,27 @@ const _useAttendanceReport = () => {
 
   const fetchAttendancesSummary = async (
     params: AttendanceParams
-  ): Promise<AttendanceSummary[]> => {
+  ): Promise<{
+    data: AttendanceSummary[];
+    semanas: AttendaceWeeksDates;
+  }> => {
     try {
       const res = await $fetch<{
         data: AttendanceSummary[];
+        semanas: AttendaceWeeksDates;
       }>(`${reportPrefix}/resumen`, {
         body: {
           ...params,
-          fecha_inicio: params.fecha_inicio || new Date().toDateString()
+          fecha_inicio: params.fecha_inicio || new Date().toDateString(),
         },
-         method: "POST",
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
       });
 
-      return res.data;
+      return res;
     } catch (error: any) {
       console.error({ error: error });
       throw error;
@@ -199,7 +219,7 @@ const _useAttendanceReport = () => {
     fetchDepartments,
     fetchEmployeesByDepartment,
     fetchAttendancesSummary,
-    fetchAttendacesDetails
+    fetchAttendacesDetails,
   };
 };
 

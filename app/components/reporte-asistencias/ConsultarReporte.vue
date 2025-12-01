@@ -64,7 +64,7 @@ import { ReportType, useAttendanceReportStore } from "~/store/useAttendanceRepor
 
 const store = useAttendanceReportStore()
 
-const { getEmployeesByDepartment, getCompanies, getDepartments, getAttendanceSummary } = store;
+const { getEmployeesByDepartment, getCompanies, getDepartments, getAttendanceSummary, getAttendanceDetails } = store;
 const { company, department, attendance } = storeToRefs(store)
 
 const startDate = computed({
@@ -82,8 +82,12 @@ const startDate = computed({
 
 
 const handleSubmit = async () => {
-  await getEmployeesByDepartment();
-  await getAttendanceSummary();
+
+  await Promise.all([
+    getEmployeesByDepartment(),
+    getAttendanceSummary(),
+    getAttendanceDetails()
+  ])
 
 
 }

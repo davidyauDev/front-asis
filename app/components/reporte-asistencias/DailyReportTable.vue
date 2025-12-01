@@ -1,8 +1,18 @@
 <template>
-    <UTable ref="table" v-model:global-filter="globalFilter" :data="data" :columns="columns"
-        v-model:pagination="pagination" :pagination-options="{
-            getPaginationRowModel: getPaginationRowModel()
-        }" />
+    <DataState
+     :error="attendance.details.isError"
+     :loading="attendance.details.loading"
+     @retry="getAttendanceDetails()"
+     error-message="No se pudo cargar los detalles diarios"
+    >
+
+        <UTable ref="table" v-model:global-filter="attendance.globalFilter" :data="dailyReportList" :columns="columns"
+            v-model:pagination="pagination" :pagination-options="{
+                getPaginationRowModel: getPaginationRowModel()
+            }" />
+
+
+    </DataState>
     <div class="flex items-center justify-between p-4">
 
         <div class="text-sm text-gray-600 dark:text-gray-400">
@@ -19,17 +29,65 @@
 </template>
 
 <script setup lang="ts">
+
+
 import { h, resolveComponent } from 'vue'
 import { getPaginationRowModel, type Column } from '@tanstack/vue-table';
 import type { TableColumn } from '@nuxt/ui'
+import DataState from '../common/DataState.vue';
+import { useAttendanceReportStore, } from '~/store/useAttendanceReportStore';
+import { type AttendanceDetails } from '~/composables/useAttendanceReport';
+const store = useAttendanceReportStore()
+const { getEmployeesByDepartment, getAttendanceDetails } = store;
+const { department, employee, attendance } = storeToRefs(store)
+
 
 const pagination = ref({
     pageIndex: 0,
-    pageSize: 1
+    pageSize: 10
 })
 
 
 const table = useTemplateRef('table')
+
+const dailyReportList = computed(() => {
+    let reportList: AttendanceDetails[] = attendance.value.details.list;
+
+    const selectedEmployees = employee.value.department.selecteds
+
+    if (selectedEmployees.length) {
+        const codeSet = new Set(selectedEmployees.map(e => e.emp_code))
+        reportList = reportList.filter(atten =>
+            codeSet.has(atten.dni)
+        )
+    }
+
+    if (attendance.value.globalFilter) {
+        const search = attendance.value.globalFilter.toLowerCase().trim()
+
+        reportList = reportList.filter(atten => {
+            const nombre = (atten.nombres || "").toLowerCase()
+            const apellido = (atten.apellidos || "").toLowerCase()
+            const dni = (atten.dni || "").toString().toLowerCase()
+
+            return (
+                nombre.includes(search) ||
+                apellido.includes(search) ||
+                dni.includes(search)
+            )
+        })
+    }
+
+
+    return reportList;
+})
+
+
+onMounted(() => {
+    console.log(attendance.value.details.list.length)
+    if (attendance.value.details.list.length) return;
+    getAttendanceDetails();
+})
 
 const UBadge = resolveComponent('UBadge')
 
@@ -97,7 +155,7 @@ const sortColumButton = (column: any, label: string) => {
     })
 }
 
-const columns: TableColumn<Payment>[] = [
+const columns: TableColumn<AttendanceDetails>[] = [
     {
         accessorKey: 'dni',
         // header: 'DNI',
@@ -163,5 +221,5 @@ const columns: TableColumn<Payment>[] = [
     },
 ]
 
-const globalFilter = ref('')
+
 </script>

@@ -21,15 +21,12 @@
 
             </UTabs>
             <div class="flex max-lg:flex-wrap max-sm:justify-end items-center gap-2">
-                <UInput icon="i-lucide-search" v-model="globalFilter" class="max-w-sm"
+                <UInput icon="i-lucide-search" v-model="attendance.globalFilter" class="max-w-sm"
                     placeholder="Buscar por nombre, apellido o DNI..." />
                 <UButton icon="i-lucide-file-spreadsheet" class="cursor-pointer">
                     Excel
                 </UButton>
 
-                <UButton icon="i-lucide-download" class="cursor-pointer">
-                    PDF
-                </UButton>
             </div>
         </div>
 
@@ -59,5 +56,5 @@ watch(currentReportType, (reportType) => {
 })
 
 
-const globalFilter = ref('')
+
 </script>

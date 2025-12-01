@@ -2,13 +2,19 @@
     <div class="w-full h-full">
         <div class="bg-linear-to-r h-12 text-white text-center py-3 font-bold text-xs tracking-wide"
             :class="gradiantBackgroundColor">
-            {{ week }} 
+            {{ week }}
         </div>
         <div class="text-center p-2" :class="firstBackgroundColor">
 
             <span class="w-full text-xs" :class="firstColor">
+                <template v-if="date">
 
-                02/11 - 08/11
+                    {{ date.inicio }} - {{ date.fin }}
+                </template>
+                <template v-else>
+
+                    Acumulado
+                </template>
             </span>
 
         </div>
@@ -24,10 +30,12 @@
 </template>
 
 <script setup lang="ts">
+import type { AttendaceWeeksDates } from '../../composables/useAttendanceReport';
+
 
 defineProps<{
     week: string,
-    date: string,
+    date?: AttendaceWeeksDates['s1'],
     gradiantBackgroundColor: string,
     firstBackgroundColor: string,
     secondBackgroundColor: string,

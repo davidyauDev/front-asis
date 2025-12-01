@@ -1,11 +1,12 @@
 import {
   useAttendanceReport,
   type AttendanceParams,
-  type AttendaceDetails,
+  type AttendanceDetails,
   type AttendanceSummary,
   type Company,
   type Department,
   type Employee,
+  type AttendaceWeeksDates,
 } from "~/composables/useAttendanceReport";
 
 export interface Week {
@@ -62,9 +63,14 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
 
     attendance: {
       type: ReportType.WEEKLY,
-      params: {} as AttendanceParams,
+      globalFilter: '',
+      params: {
+        empresa_ids: [2],
+        departamento_ids: [8],
+      } as AttendanceParams,
       summary: {
         // params: {} as AttendanceSummaryParams,
+        weeks: {} as AttendaceWeeksDates,
         list: [] as AttendanceSummary[],
         loading: false,
         isError: false,
@@ -72,7 +78,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
 
       details: {
         // params: {} as AttendanceDetailsParams,
-        list: [] as AttendaceDetails[],
+        list: [] as AttendanceDetails[],
         loading: false,
         isError: false,
       },
@@ -80,6 +86,14 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
 
     // ...
   }),
+
+  //  $empresaIds = $request->input('empresa_ids', [2]);
+  //       if (!is_array($empresaIds)) {
+  //           $empresaIds = [$empresaIds];
+  //       }
+  //       $empresaIdsStr = implode(',', $empresaIds);
+
+  //       $departamentoIds = $request->input('departamento_ids', [8]);
 
   actions: {
     async getCompanies(force = false) {
@@ -134,7 +148,8 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         const attendances = await fetchAttendancesSummary(
           this.attendance.params
         );
-        this.attendance.summary.list = attendances;
+        this.attendance.summary.list = attendances.data;
+        this.attendance.summary.weeks = attendances.semanas;
 
         this.attendance.summary.isError = false;
       } catch (error) {

@@ -66,7 +66,6 @@ const { department, employee, attendance } = storeToRefs(store)
 
 const search = ref('')
 
-
 const filteredEmployees = computed(() => {
   const employeesByDepartments = employee.value.department.list;
   if (!search.value) return employeesByDepartments;
@@ -89,6 +88,14 @@ const selecteds = computed({
     employee.value.department.selecteds = value;
   }
 })
+
+
+onMounted(() => {
+    // if (attendance.value.summary.list.length) return;
+    if (employee.value.department.list.length) return;
+    getEmployeesByDepartment()
+})
+
 
 
 const handleSelectEmployee = (newEmployee: Employee) => {
