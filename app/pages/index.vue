@@ -1,30 +1,3 @@
-
-
-<script setup lang="ts">
-
-import { sub } from 'date-fns'
-import type { DropdownMenuItem } from '@nuxt/ui'
-import type { Period, Range } from '~/types'
-
-const { isNotificationsSlideoverOpen } = useDashboard()
-
-const items = [[{
-  label: 'New mail',
-  icon: 'i-lucide-send',
-  to: '/inbox'
-}, {
-  label: 'New customer',
-  icon: 'i-lucide-user-plus',
-  to: '/customers'
-}]] satisfies DropdownMenuItem[][]
-
-const range = shallowRef<Range>({
-  start: sub(new Date(), { days: 14 }),
-  end: new Date()
-})
-const period = ref<Period>('daily')
-</script>
-
 <template>
   <UDashboardPanel id="home">
     <template #header>
@@ -49,21 +22,109 @@ const period = ref<Period>('daily')
       </UDashboardNavbar>
 
       <UDashboardToolbar>
+
+        <UTabs :items="tabItems" :orientation="width < 500 ? 'vertical' : 'horizontal'"
+         
+        class="flex-1 p-3 mx-auto" v-model="currentTabType" @update:model-value="(value) => {
+          currentTabType = value as ItemType
+        }">
+
+        </UTabs>
+
+
+
+      </UDashboardToolbar>
+
+      <!-- <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
         <template #left>
-          <!-- NOTE: The `-ms-1` class is used to align with the `DashboardSidebarCollapse` button here. -->
+          
           <HomeDateRangePicker v-model="range" class="-ms-1" />
 
           <HomePeriodSelect v-model="period" :range="range" />
         </template>
-      </UDashboardToolbar>
+      </UDashboardToolbar> -->
     </template>
 
     <template #body>
-      <HomeStats :period="period" :range="range" />
-      <HomeChart :period="period" :range="range" />
-      <HomeSales :period="period" :range="range" />
+
+      <ReporteAsistenciasAdministrators v-if="currentTabType === ItemType.ADMINISTRATORS" />
+
+      <Today v-else-if="currentTabType === ItemType.TODAY" />
+
+
+      <!-- <HomeStats :period="period" :range="range" />
+      <HomeChart :period="period" :range="range" /> -->
+      <!-- <HomeSales :period="period" :range="range" /> -->
     </template>
 
   </UDashboardPanel>
   <NotificationsSlideover />
 </template>
+
+
+<script setup lang="ts">
+
+import { sub, format } from 'date-fns'
+import { es } from 'date-fns/locale';
+
+import type { DropdownMenuItem } from '@nuxt/ui'
+import type { Period, Range } from '~/types'
+
+import type { TabsItem } from '@nuxt/ui'
+
+import Today from '~/components/reporte-asistencias/today/Today.vue'
+import ReporteAsistenciasAdministrators
+  from '~/components/reporte-asistencias/Administrators.vue'
+
+
+  const { width } = useWindowSize();
+
+const { isNotificationsSlideoverOpen } = useDashboard()
+
+
+
+enum ItemType {
+  TODAY = 'TODAY',
+  TECHNICIANS = 'TECHNICIANS',
+  ADMINISTRATORS = 'ADMINISTRATORS'
+}
+
+const currentTabType = ref<ItemType>(ItemType.TODAY);
+
+const fechaActual = new Date();
+const fechaFormateada = format(fechaActual, 'dd MMMM yyyy', {
+  locale: es
+});
+
+const tabItems: TabsItem[] = [
+  {
+    label: fechaFormateada,
+    value: ItemType.TODAY
+  },
+  {
+    label: "Reporte de asistencia de técnicos",
+    value: ItemType.TECHNICIANS,
+
+  }, {
+    label: "Reporte de asistencia de administrativos",
+    value: ItemType.ADMINISTRATORS
+  }
+]
+
+
+const items = [[{
+  label: 'New mail',
+  icon: 'i-lucide-send',
+  to: '/inbox'
+}, {
+  label: 'New customer',
+  icon: 'i-lucide-user-plus',
+  to: '/customers'
+}]] satisfies DropdownMenuItem[][]
+
+const range = shallowRef<Range>({
+  start: sub(new Date(), { days: 14 }),
+  end: new Date()
+})
+const period = ref<Period>('daily')
+</script>

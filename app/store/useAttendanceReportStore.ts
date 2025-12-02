@@ -63,13 +63,14 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
 
     attendance: {
       type: ReportType.WEEKLY,
-      globalFilter: '',
+      globalFilter: "",
       params: {
-        empresa_ids: [2],
+        empresa_ids: [1, 2],
         departamento_ids: [8],
+        fecha_inicio: formatToYMD(),
+        fecha_fin: formatToYMD(undefined, true),
       } as AttendanceParams,
       summary: {
-        // params: {} as AttendanceSummaryParams,
         weeks: {} as AttendaceWeeksDates,
         list: [] as AttendanceSummary[],
         loading: false,
@@ -77,7 +78,6 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       },
 
       details: {
-        // params: {} as AttendanceDetailsParams,
         list: [] as AttendanceDetails[],
         loading: false,
         isError: false,
@@ -86,14 +86,6 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
 
     // ...
   }),
-
-  //  $empresaIds = $request->input('empresa_ids', [2]);
-  //       if (!is_array($empresaIds)) {
-  //           $empresaIds = [$empresaIds];
-  //       }
-  //       $empresaIdsStr = implode(',', $empresaIds);
-
-  //       $departamentoIds = $request->input('departamento_ids', [8]);
 
   actions: {
     async getCompanies(force = false) {
@@ -148,8 +140,8 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         const attendances = await fetchAttendancesSummary(
           this.attendance.params
         );
-        this.attendance.summary.list = attendances.data;
-        this.attendance.summary.weeks = attendances.semanas;
+        this.attendance.summary.list = attendances!.data;
+        this.attendance.summary.weeks = attendances!.semanas;
 
         this.attendance.summary.isError = false;
       } catch (error) {
@@ -159,14 +151,14 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
-    async getAttendanceDetails() {
+    async getAttendanceDetails(exportExcel = null) {
       this.attendance.details.loading = true;
 
       try {
         const attendances = await fetchAttendacesDetails(
           this.attendance.params
         );
-        this.attendance.details.list = attendances;
+        this.attendance.details.list = attendances!;
 
         this.attendance.details.isError = false;
       } catch (error) {

@@ -1,23 +1,19 @@
 <template>
-    <DataState
-     :error="attendance.details.isError"
-     :loading="attendance.details.loading"
-     @retry="getAttendanceDetails()"
-     error-message="No se pudo cargar los detalles diarios"
-    >
+    <DataState :error="attendance.details.isError" :loading="attendance.details.loading" @retry="getAttendanceDetails()"
+        error-message="No se pudo cargar los detalles diarios">
 
-        <UTable ref="table" v-model:global-filter="attendance.globalFilter" :data="dailyReportList" :columns="columns"
-            v-model:pagination="pagination" :pagination-options="{
+        <UTable ref="table" :data="dailyReportList" :columns="columns" v-model:pagination="pagination"
+            :pagination-options="{
                 getPaginationRowModel: getPaginationRowModel()
-            }" />
-
+            }" empty="Sin registro diario" />
 
     </DataState>
     <div class="flex items-center justify-between p-4">
 
         <div class="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando <span class="font-medium">1</span> - <span class="font-medium">1</span>
-            de <span class="font-medium">2</span> registros
+            Mostrando <span class="font-medium">{{ getStats().start }}</span> - <span class="font-medium">{{
+                getStats().end }}</span>
+            de <span class="font-medium">{{ getStats().total }}</span> registros
         </div>
         <div class="flex justify-end border-t border-default">
             <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
@@ -31,15 +27,15 @@
 <script setup lang="ts">
 
 
-import { h, resolveComponent } from 'vue'
-import { getPaginationRowModel, type Column } from '@tanstack/vue-table';
-import type { TableColumn } from '@nuxt/ui'
-import DataState from '../common/DataState.vue';
-import { useAttendanceReportStore, } from '~/store/useAttendanceReportStore';
+import type { TableColumn } from '@nuxt/ui';
+import { getPaginationRowModel } from '@tanstack/vue-table';
+import { h, resolveComponent } from 'vue';
 import { type AttendanceDetails } from '~/composables/useAttendanceReport';
+import { useAttendanceReportStore, } from '~/store/useAttendanceReportStore';
+import DataState from '../common/DataState.vue';
 const store = useAttendanceReportStore()
-const { getEmployeesByDepartment, getAttendanceDetails } = store;
-const { department, employee, attendance } = storeToRefs(store)
+const { getAttendanceDetails } = store;
+const { employee, attendance } = storeToRefs(store)
 
 
 const pagination = ref({
@@ -49,6 +45,7 @@ const pagination = ref({
 
 
 const table = useTemplateRef('table')
+
 
 const dailyReportList = computed(() => {
     let reportList: AttendanceDetails[] = attendance.value.details.list;
@@ -78,64 +75,30 @@ const dailyReportList = computed(() => {
         })
     }
 
-
     return reportList;
 })
 
 
 onMounted(() => {
-    console.log(attendance.value.details.list.length)
     if (attendance.value.details.list.length) return;
     getAttendanceDetails();
 })
 
-const UBadge = resolveComponent('UBadge')
+const getStats = () => {
+    const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0;
+    const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10;
+    const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0;
 
-type Payment = {
-    id: string
-    date: string
-    status: 'paid' | 'failed' | 'refunded'
-    email: string
-    amount: number
+    const start = total === 0 ? 0 : pageIndex * pageSize + 1;
+    const end = Math.min((pageIndex + 1) * pageSize, total);
+    return {
+        total,
+        end,
+        start
+    }
 }
 
-const data = ref<Payment[]>([
-    {
-        id: '4600',
-        date: '2024-03-11T15:30:00',
-        status: 'paid',
-        email: 'james.anderson@example.com',
-        amount: 594
-    },
-    {
-        id: '4599',
-        date: '2024-03-11T10:10:00',
-        status: 'failed',
-        email: 'mia.white@example.com',
-        amount: 276
-    },
-    {
-        id: '4598',
-        date: '2024-03-11T08:50:00',
-        status: 'refunded',
-        email: 'william.brown@example.com',
-        amount: 315
-    },
-    {
-        id: '4597',
-        date: '2024-03-10T19:45:00',
-        status: 'paid',
-        email: 'emma.davis@example.com',
-        amount: 529
-    },
-    {
-        id: '4596',
-        date: '2024-03-10T15:55:00',
-        status: 'paid',
-        email: 'ethan.harris@example.com',
-        amount: 639
-    }
-])
+const UBadge = resolveComponent('UBadge')
 
 const UButton = resolveComponent('UButton');
 
@@ -163,61 +126,82 @@ const columns: TableColumn<AttendanceDetails>[] = [
         cell: ({ row }) => `${row.getValue('dni')}`
     },
     {
-        accessorKey: 'lastname',
+        accessorKey: 'apellidos',
         header: ({ column }) => sortColumButton(column, 'Apellidos'),
-        cell: ({ row }) => `${row.getValue('lastname')}`
+        cell: ({ row }) => `${row.getValue('apellidos')}`
     },
     {
-        accessorKey: 'firstname',
+        accessorKey: 'nombres',
         header: ({ column }) => sortColumButton(column, 'Nombres'),
-        cell: ({ row }) => `${row.getValue('firstname')}`
+        cell: ({ row }) => `${row.getValue('nombres')}`
     },
     {
-        accessorKey: 'department',
+        accessorKey: 'departamento',
         header: ({ column }) => sortColumButton(column, 'Departamento'),
-        cell: ({ row }) => `${row.getValue('department')}`
+        cell: ({ row }) => `${row.getValue('departamento')}`
     },
     {
-        accessorKey: 'company',
+        accessorKey: 'empresa',
         header: ({ column }) => sortColumButton(column, 'Empresa'),
-        cell: ({ row }) => `${row.getValue('company')}`
+        cell: ({ row }) => `${row.getValue('empresa')}`
     },
     {
-        accessorKey: 'date',
+        accessorKey: 'fecha',
         header: ({ column }) => sortColumButton(column, 'Fecha'),
-        cell: ({ row }) => `${row.getValue('date')}`
+        cell: ({ row }) => `${row.getValue('fecha')}`
     },
     {
-        accessorKey: 'check-in',
+        accessorKey: 'h_ingreso',
         header: ({ column }) => sortColumButton(column, 'H. Ingreso'),
-        cell: ({ row }) => `${row.getValue('check-in')}`
+        cell: ({ row }) => `${row.getValue('h_ingreso')}`
     },
     {
-        accessorKey: 'check-out',
+        accessorKey: 'h_salida',
         header: ({ column }) => sortColumButton(column, 'H. Salida'),
-        cell: ({ row }) => `${row.getValue('check-out')}`
+        cell: ({ row }) => `${row.getValue('h_salida')}`
     },
 
     {
-        accessorKey: 'mark-check-in',
+        accessorKey: 'm_ingreso',
         header: ({ column }) => sortColumButton(column, 'M. Ingreso'),
-        cell: ({ row }) => `${row.getValue('mark-check-in')}`
+        cell: ({ row }) => {
+            const salida = row.getValue('m_ingreso')
+            return salida || h(
+                UBadge, {
+                class: 'capitalize', variant: 'subtle', color: 'error'
+            }, () => "No marco entrada"
+            )
+        }
     },
     {
-        accessorKey: 'mark-check-out',
+        accessorKey: 'm_salida',
         header: ({ column }) => sortColumButton(column, 'M. Salida'),
-        cell: ({ row }) => `${row.getValue('check-out')}`
+        cell: ({ row }) => {
+            const salida = row.getValue('m_salida')
+            return salida || h(
+                UBadge, {
+                class: 'capitalize', variant: 'subtle', color: 'error'
+            }, () => "No marco salida"
+            )
+        }
     },
 
     {
-        accessorKey: 'tardy',
+        accessorKey: 'tardanza',
         header: ({ column }) => sortColumButton(column, 'Tardanza'),
-        cell: ({ row }) => `${row.getValue('tardy')}`
+        cell: ({ row }) => {
+            const tardanza = row.getValue('tardanza')
+            return tardanza || h(
+                UBadge, {
+                class: 'capitalize', variant: 'subtle', color: 'info'
+            }, () => "Sin tardanza"
+            )
+        }
     },
     {
-        accessorKey: 'work-time',
+        accessorKey: 'total_trabajado',
         header: ({ column }) => sortColumButton(column, 'T. Trabajado'),
-        cell: ({ row }) => `${row.getValue('work-time')}`
+        cell: ({ row }) => `${row.getValue('total_trabajado')}`
     },
 ]
 

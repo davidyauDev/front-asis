@@ -27,10 +27,10 @@
                     <FiltrarEmpleados />
                 </div>
             </div>
-            <ResumenEstadisticas />
+        
 
             <TablaReportes />
-            <!-- <TabsContainer /> -->
+         
         </template>
 
 
@@ -45,10 +45,7 @@
 import ConsultarReporte from '~/components/reporte-asistencias/ConsultarReporte.vue';
 import SeleccionarSemanas from '~/components/reporte-asistencias/SeleccionarSemanas.vue';
 import FiltrarEmpleados from '~/components/reporte-asistencias/FiltrarEmpleados.vue';
-
-import ResumenEstadisticas from '~/components/reporte-asistencias/ResumenEstadisticas.vue';
 import TablaReportes from '~/components/reporte-asistencias/TablaReportes.vue';
-import TabsContainer from '~/components/reporte-asistencias/TabsContainer.vue';
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const { getCompanies, getDepartments } = useAttendanceReportStore()

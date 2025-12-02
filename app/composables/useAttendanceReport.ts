@@ -15,11 +15,6 @@ const getAuthToken = (): string | null => {
 
 const token = getAuthToken();
 
-//  {
-//             "id": 2,
-//             "company_code": "20330799073",
-//             "company_name": "Cechriza SAC"
-//         },
 export interface Company {
   id: number;
   company_code: string;
@@ -29,6 +24,7 @@ export interface Company {
 export interface Department {
   id: number;
   dept_name: string;
+  company_id: number;
 }
 
 export interface Employee {
@@ -86,12 +82,6 @@ export interface AttendanceDetails {
   tardanza: string;
   total_trabajado: string;
 }
-
-// export type AttendanceSummaryParams = {
-//   empresa_id?: number;
-//   departmento_id?: number;
-//   fecha_inicio: string;
-// };
 
 export type AttendanceParams = {
   fecha_inicio: string;
@@ -164,19 +154,24 @@ const _useAttendanceReport = () => {
   };
 
   const fetchAttendancesSummary = async (
-    params: AttendanceParams
+    params: AttendanceParams,
+    exportExcel: string | null = null
   ): Promise<{
     data: AttendanceSummary[];
     semanas: AttendaceWeeksDates;
-  }> => {
+  } | void> => {
     try {
-      const res = await $fetch<{
-        data: AttendanceSummary[];
-        semanas: AttendaceWeeksDates;
-      }>(`${reportPrefix}/resumen`, {
+      const res = await $fetch<
+        | {
+            data: AttendanceSummary[];
+            semanas: AttendaceWeeksDates;
+          }
+        | Blob
+      >(`${reportPrefix}/resumen`, {
         body: {
           ...params,
           fecha_inicio: params.fecha_inicio || new Date().toDateString(),
+          export: exportExcel,
         },
         method: "POST",
         headers: {
@@ -185,7 +180,16 @@ const _useAttendanceReport = () => {
         },
       });
 
-      return res;
+      if (exportExcel) {
+        const fieldName = `Reporte semanal ( Desde ${params.fecha_inicio} )`;
+        descargarBlob(res as Blob, fieldName);
+        return;
+      }
+
+      return res as {
+        data: AttendanceSummary[];
+        semanas: AttendaceWeeksDates;
+      };
     } catch (error: any) {
       console.error({ error: error });
       throw error;
@@ -193,21 +197,33 @@ const _useAttendanceReport = () => {
   };
 
   const fetchAttendacesDetails = async (
-    params: AttendanceParams
-  ): Promise<any> => {
+    params: AttendanceParams,
+    exportExcel: string | null = null
+  ): Promise<AttendanceDetails[] | void> => {
     try {
-      const res = await $fetch<{
-        data: AttendanceSummary[];
-      }>(`${reportPrefix}/detalle`, {
-        body: params,
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+      const res = await $fetch<AttendanceDetails[] | Blob>(
+        `${reportPrefix}/detalle`,
+        {
+          body: {
+            ...params,
+            fecha_fin: params.fecha_fin || undefined,
+            export: exportExcel,
+          },
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
 
-      return res.data;
+      if (exportExcel) {
+        const fieldName = params.fecha_fin ? `Reporte diario ( ${params.fecha_inicio} - ${params.fecha_fin} )` : `Reporte diario ( Desde ${params.fecha_inicio} )`
+        descargarBlob(res as Blob, fieldName);
+        return;
+      }
+
+      return res as AttendanceDetails[];
     } catch (error) {
       console.error({ error });
       throw error;
@@ -224,3 +240,21 @@ const _useAttendanceReport = () => {
 };
 
 export const useAttendanceReport = createSharedComposable(_useAttendanceReport);
+
+function descargarBlob(blob: Blob, fieldName: string) {
+  // Crear un objeto URL para el blob
+  const urlObjeto = window.URL.createObjectURL(blob);
+
+  // Crear un elemento de anclaje
+  const enlaceDescarga = document.createElement("a");
+  enlaceDescarga.href = urlObjeto;
+  enlaceDescarga.download = fieldName;
+
+  // Añadir el enlace al cuerpo del documento y hacer clic en él
+  document.body.appendChild(enlaceDescarga);
+  enlaceDescarga.click();
+
+  // Limpiar el objeto URL para liberar memoria
+  document.body.removeChild(enlaceDescarga);
+  window.URL.revokeObjectURL(urlObjeto);
+}

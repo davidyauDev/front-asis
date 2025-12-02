@@ -40,7 +40,7 @@
        
         transition font-medium " :class="{
           'bg-primary text-gray-700': hasEmployee(emp),
-          'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700': !hasEmployee(emp)
+          'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-2': !hasEmployee(emp)
         }">
           {{ emp.first_name }} {{ emp.last_name }}
         </button>

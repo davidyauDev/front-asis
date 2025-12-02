@@ -10,7 +10,7 @@
 
         }" v-model:pagination="pagination" :pagination-options="{
             getPaginationRowModel: getPaginationRowModel()
-        }">
+        }" empty="Sin registro semanal">
 
 
         </UTable>
@@ -21,8 +21,9 @@
     <div class="flex items-center justify-between p-4">
 
         <div class="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando <span class="font-medium">1</span> - <span class="font-medium">1</span>
-            de <span class="font-medium">2</span> registros
+            Mostrando <span class="font-medium">{{ getStats().start }}</span> - <span class="font-medium">{{
+                getStats().end }}</span>
+            de <span class="font-medium">{{ getStats().total }}</span> registros
         </div>
         <div class="flex justify-end border-t border-default">
             <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
@@ -58,14 +59,30 @@ const store = useAttendanceReportStore()
 const { getAttendanceSummary } = store;
 const { employee, week, attendance } = storeToRefs(store)
 
+
+
+
 const table = useTemplateRef('table')
 
 onMounted(() => {
     if (attendance.value.summary.list.length) return;
     getAttendanceSummary()
-})
+},)
 
 
+const getStats = () => {
+    const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0;
+    const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10;
+    const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0;
+
+    const start = total === 0 ? 0 : pageIndex * pageSize + 1;
+    const end = Math.min((pageIndex + 1) * pageSize, total);
+    return {
+        total,
+        end,
+        start
+    }
+}
 
 const weeklyReportList = computed(() => {
     let reportList: AttendanceSummary[] = attendance.value.summary.list;
@@ -100,6 +117,7 @@ const weeklyReportList = computed(() => {
 
     return reportList;
 })
+
 
 
 const columns = computed<TableColumn<AttendanceSummary>[]>(() => [

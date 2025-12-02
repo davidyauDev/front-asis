@@ -1,0 +1,39 @@
+<template>
+  <UCard class="lg:max-w-1/3">
+    <div class="flex items-center justify-between mb-2">
+      <span class="font-semibold text-sm">Departamento</span>
+    </div>
+
+    <div class="flex flex-wrap max-h-48 overflow-y-auto gap-2">
+       <UButton v-for="item in departments" :key="item.id" class="cursor-pointer"
+                :class="!selected.includes(item) && 'bg-gray-100 dark:bg-gray-800 dark:text-gray-100  text-gray-700 border transition'"
+                @click="selected = selected.includes(item)
+                    ? selected.filter(s => s?.id !== item.id)
+                    : [...selected, item]">
+
+
+                {{ item.name }}
+            </UButton>
+    </div>
+  </UCard>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const departments = ref([
+  { id: 1, name: "ADM_Cech..." },
+  { id: 2, name: "Ingenieros_C" },
+  { id: 3, name: "Operacion..." },
+  { id: 4, name: "Sistemas_C" },
+  { id: 5, name: "SSGG_C" },
+  { id: 6, name: "TEC_Lima_C" },
+  { id: 7, name: "TEC_Provin..." },
+  { id: 8, name: "TEC_Taller_C" },
+])
+
+const selected = ref([
+  departments.value[0],
+  departments.value[2],
+])
+</script>

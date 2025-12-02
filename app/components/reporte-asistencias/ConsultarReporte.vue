@@ -15,7 +15,6 @@
       </DataState>
     </UFormField>
 
-
     <UFormField label="Departamento" name="departamento_ids">
       <DataState :loading="department.loading" :error="department.isError"
         error-message="Hubo un error al cargar los departamentos" @retry="getDepartments(true)">
@@ -24,8 +23,8 @@
           <USelectMenu placeholder="Selecciona un departamento" class="w-full" :loading="department.loading" />
         </template>
 
-        <USelectMenu placeholder="Selecciona un departamento" class="w-full" :items="department.list"
-          label-key="dept_name" value-key="id" multiple v-model="attendance.params.departamento_ids" />
+        <USelectMenu placeholder="Selecciona un departamento" class="w-full" :items="departments" label-key="dept_name"
+          value-key="id" multiple v-model="attendance.params.departamento_ids" />
       </DataState>
     </UFormField>
 
@@ -33,7 +32,7 @@
 
     <div class="grid lg:grid-cols-2 gap-2">
       <UFormField label="Fecha de inicio" name="fecha_inicio">
-        <UInput type="date" class="w-full" v-model="startDate" />
+        <UInput type="date" class="w-full" v-model="attendance.params.fecha_inicio" />
       </UFormField>
 
       <UFormField v-if="attendance.type === ReportType.DAYLY" label="Fecha de fin" name="fecha_fin">
@@ -67,18 +66,52 @@ const store = useAttendanceReportStore()
 const { getEmployeesByDepartment, getCompanies, getDepartments, getAttendanceSummary, getAttendanceDetails } = store;
 const { company, department, attendance } = storeToRefs(store)
 
-const startDate = computed({
-  get() {
-    const date = attendance.value.params.fecha_inicio
-      ? new Date(attendance.value.params.fecha_inicio)
-      : new Date();
 
-    return date.toISOString().split("T")[0]; // → "2025-12-01"
-  },
-  set(val) {
-    attendance.value.params.fecha_inicio = val!;
+const departments = computed(() => {
+  console.log(department.value.loading)
+  let list = department.value.list;
+  if (!department.value.list.length) return [];
+
+  const companiesSelected = attendance.value.params.empresa_ids;
+
+
+  if (companiesSelected.length) {
+    const idSet = new Set(companiesSelected);
+
+    // Filtrar departamentos por las empresas seleccionadas
+    list = list.filter(dep => idSet.has(dep.company_id));
   }
+
+  return list;
 });
+
+watch(
+  () => attendance.value.params.empresa_ids,
+  (newCompanies) => {
+    const departments = department.value.list;
+    if (!newCompanies.length || !departments.length) return;
+
+    const idSet = new Set(newCompanies);
+    const newDepartments = departments.filter(dep => idSet.has(dep.company_id));
+
+
+    // Remover departamentos seleccionados que no existen en la empresa nueva
+    const validDepartmentIds = new Set(newDepartments.map(d => d.id));
+    const selectedDepartmentIds = attendance.value.params.departamento_ids;
+
+    const cleanedSelection = selectedDepartmentIds.filter(id =>
+      validDepartmentIds.has(id)
+    );
+
+    // Guardar la lista limpia
+    attendance.value.params.departamento_ids = cleanedSelection;
+
+
+
+  },
+  { immediate: true }
+);
+
 
 
 const handleSubmit = async () => {

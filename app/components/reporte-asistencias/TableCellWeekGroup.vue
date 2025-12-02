@@ -20,7 +20,7 @@ const { attendance, firstBackgroundColor, secondBackgroundColor, firstColor, sec
     firstColor: string,
     secondColor: string,
 
-}>()
+}>();
 
 
 
