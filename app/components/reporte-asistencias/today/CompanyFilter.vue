@@ -1,9 +1,11 @@
 <template>
-    <UCard class="lg:max-w-1/3">
-        <div class="flex items-center justify-between mb-2">
-            <span class="font-semibold text-sm">Empresa</span>
-
-        </div>
+    <UCard :ui="{
+        header: 'p-2'
+    }">
+        <template #header>
+            Empresa
+        </template>
+       
 
         <div class="space-y-2 max-h-48 overflow-y-auto flex flex-wrap gap-2">
 

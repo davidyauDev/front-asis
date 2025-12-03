@@ -78,8 +78,8 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
 </script>
 
 <template>
-  <UPopover :content="{ align: 'start' }" :modal="true">
-    <UButton
+  <!-- <UPopover :content="{ align: 'start' }" :modal="true"> -->
+    <!-- <UButton
       color="neutral"
       variant="ghost"
       icon="i-lucide-calendar"
@@ -102,11 +102,12 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
       <template #trailing>
         <UIcon name="i-lucide-chevron-down" class="shrink-0 text-dimmed size-5 group-data-[state=open]:rotate-180 transition-transform duration-200" />
       </template>
-    </UButton>
+    </UButton> -->
 
-    <template #content>
+    <!-- <template #content> -->
       <div class="flex items-stretch sm:divide-x divide-default">
         <div class="hidden sm:flex flex-col justify-center">
+          
           <UButton
             v-for="(range, index) in ranges"
             :key="index"
@@ -127,6 +128,6 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
           range
         />
       </div>
-    </template>
-  </UPopover>
+    <!-- </template> -->
+  <!-- </UPopover> -->
 </template>

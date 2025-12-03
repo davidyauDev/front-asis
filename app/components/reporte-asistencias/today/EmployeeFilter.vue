@@ -1,10 +1,12 @@
 <template>
-    <UCard class="lg:max-w-1/3">
-        <div class="flex items-center justify-between mb-2">
-            <span class="font-semibold text-sm">Nombres</span>
-        </div>
+    <UCard :ui="{
+        header: 'p-2'
+    }">
+        <template #header>
+            Nombres
+        </template>
 
-        <div class="max-h-48 overflow-y-auto flex gap-2 flex-wrap items-center">
+        <div class="max-h-48 overflow-y-auto flex gap-2 flex-wrap items-center" :class="extraClass">
             <UButton v-for="item in employees" :key="item.id" class="cursor-pointer"
                 :class="!selected.includes(item) && 'bg-gray-100 dark:bg-gray-800 dark:text-gray-100  text-gray-700 border transition'"
                 @click="selected = selected.includes(item)
@@ -21,6 +23,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+
+const { class: extraClass } = defineProps({
+    class: String,
+})
 
 const employees = ref([
     { id: 1, name: "Adrián Lenny" },

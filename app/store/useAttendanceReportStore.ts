@@ -20,6 +20,11 @@ export enum ReportType {
   DAYLY = "DAYLY",
 }
 
+export enum EmployeeType {
+  TECHNICIANS = 'TECHNICIANS',
+  ADMINISTRATORS = 'ADMINISTRATORS'
+}
+
 const {
   fetchCompanies,
   fetchDepartments,

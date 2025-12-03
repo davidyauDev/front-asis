@@ -1,5 +1,6 @@
 <template>
-  <UTable :data="data" :columns="columns" class="shrink-0" :ui="{
+  {{ employeeType }}
+  <UTable :data="data" :columns="dinamicColumns" class="shrink-0" :ui="{
     base: 'table-fixed border-separate border-spacing-0',
     thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
     tbody: '[&>tr]:last:[&>td]:border-b-0',
@@ -14,11 +15,11 @@ import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { Period, Range, Sale } from '~/types'
 import { sub } from 'date-fns'
+import { EmployeeType } from '~/store/useAttendanceReportStore';
 
-// const props = defineProps<{
-//   period: Period
-//   range: Range
-// }>()
+const { employeeType } = defineProps<{
+  employeeType: EmployeeType
+}>()
 
 const range = shallowRef<Range>({
   start: sub(new Date(), { days: 14 }),
@@ -27,6 +28,8 @@ const range = shallowRef<Range>({
 const period = ref<Period>('daily')
 
 const UBadge = resolveComponent('UBadge')
+
+
 
 const sampleEmails = [
   'james.anderson@example.com',
@@ -61,6 +64,8 @@ const { data } = await useAsyncData('sales', async () => {
 
 const UButton = resolveComponent('UButton');
 
+const UIcon = resolveComponent('UIcon');
+
 const sortColumButton = (column: any, label: string) => {
   const isSorted = column.getIsSorted();
   return h(UButton, {
@@ -77,6 +82,8 @@ const sortColumButton = (column: any, label: string) => {
   })
 }
 
+const dinamicColumns = computed<TableColumn<Sale>[]>(() => [...columns, ...(employeeType === EmployeeType.TECHNICIANS ? [...technicianColumns.value] : [])]);
+
 
 const columns: TableColumn<Sale>[] = [
   {
@@ -91,7 +98,7 @@ const columns: TableColumn<Sale>[] = [
   },
   {
     accessorKey: 'nombres',
-   header: ({ column }) => sortColumButton(column, 'Nombres'),
+    header: ({ column }) => sortColumButton(column, 'Nombres'),
     cell: ({ row }) => row.getValue('nombres')
   },
   {
@@ -104,64 +111,29 @@ const columns: TableColumn<Sale>[] = [
     header: ({ column }) => sortColumButton(column, 'Empresa'),
     cell: ({ row }) => row.getValue('empresa')
   },
-  {
-    accessorKey: 'horario',
-    header: ({ column }) => sortColumButton(column, 'Horario'),
-    cell: ({ row }) => row.getValue('horario')
-  },
-  {
-    accessorKey: 'ingreso',
-    header: ({ column }) => sortColumButton(column, 'Ingreso'),
-    cell: ({ row }) => {
-      const ingreso = row.getValue('ingreso');
-      return ingreso || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'error' }, () =>
-        'Sin ingreso'
-      )
-    }
-  },
-  {
-    accessorKey: 'salida',
-    header: ({ column }) => sortColumButton(column, 'Salida'),
-    cell: ({ row }) => {
-      const salida = row.getValue('salida');
-      return salida || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'error' }, () =>
-        'Sin salida'
-      )
-    }
-  },
-
-  // {
-  //   accessorKey: 'status',
-  //   header: 'Status',
-  //   cell: ({ row }) => {
-  //     const color = {
-  //       paid: 'success' as const,
-  //       failed: 'error' as const,
-  //       refunded: 'neutral' as const
-  //     }[row.getValue('status') as string]
-
-  //     return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-  //       row.getValue('status')
-  //     )
-  //   }
-  // },
-  // {
-  //   accessorKey: 'email',
-  //   header: 'Email'
-  // },
-  // {
-  //   accessorKey: 'amount',
-  //   header: () => h('div', { class: 'text-right' }, 'Amount'),
-  //   cell: ({ row }) => {
-  //     const amount = Number.parseFloat(row.getValue('amount'))
-
-  //     const formatted = new Intl.NumberFormat('en-US', {
-  //       style: 'currency',
-  //       currency: 'EUR'
-  //     }).format(amount)
-
-  //     return h('div', { class: 'text-right font-medium' }, formatted)
-  //   }
-  // }
 ]
+
+const technicianColumns = computed<TableColumn<Sale>[]>(() => ([{
+  accessorKey: 'tipo',
+  header: ({ column }) => sortColumButton(column, 'Tipo'),
+  cell: ({ row }) => row.getValue('tipo')
+}, {
+  accessorKey: 'fecha',
+  header: ({ column }) => sortColumButton(column, 'Fecha'),
+  cell: ({ row }) => row.getValue('fecha')
+}, {
+  accessorKey: 'hora',
+  header: ({ column }) => sortColumButton(column, 'Hora'),
+  cell: ({ row }) => row.getValue('hora')
+}, {
+  accessorKey: 'direccion',
+  header: ({ column }) => sortColumButton(column, 'Dirección'),
+  cell: ({ row }) => row.getValue('direccion')
+}, {
+  accessorKey: 'mapa',
+  header: ({ column }) => sortColumButton(column, 'Map'),
+  // cell: ({ row }) => h(UIcon, {
+  //   name: 
+  // })
+}]))
 </script>
