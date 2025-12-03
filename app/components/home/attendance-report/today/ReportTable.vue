@@ -131,7 +131,7 @@ const columns: TableColumn<TakenAttendace>[] = [
     header: ({ column }) => sortColumButton(column, 'Ingreso'),
     cell: ({ row }) => {
       const ingreso = row.getValue('Ingreso');
-      return ingreso || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'error' }, () =>
+      return ingreso || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
         'Sin ingreso'
       )
     }
@@ -141,7 +141,7 @@ const columns: TableColumn<TakenAttendace>[] = [
     header: ({ column }) => sortColumButton(column, 'Salida'),
     cell: ({ row }) => {
       const salida = row.getValue('Salida');
-      return salida || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'error' }, () =>
+      return salida || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
         'Sin salida'
       )
     }
