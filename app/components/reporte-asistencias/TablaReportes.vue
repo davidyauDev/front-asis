@@ -2,7 +2,7 @@
     <div class="flex flex-col flex-1 w-full">
         <div class="flex max-sm:flex-wrap justify-between px-4 py-3.5 gap-2 border-b border-accented">
             <!-- orientation="vertical" -->
-            <UTabs :orientation="width < 400 ? 'vertical' : 'horizontal'" v-model="currentReportType!"
+            <UTabs :orientation="width < 400 ? 'vertical' : 'horizontal'" v-model="currentReportType"
                 @update:model-value="(value) => {
                     currentReportType = value as ReportType;
                 }" :items="[
@@ -24,7 +24,8 @@
                 <UInput icon="i-lucide-search" v-model="attendance.globalFilter" class="max-w-sm"
                     placeholder="Buscar por nombre, apellido o DNI..." />
                 <UButton :loading="loading" icon="i-lucide-file-spreadsheet" class="cursor-pointer"
-                    @click="handleDownloadExcel">
+                    @click="handleDownloadExcel"
+                    >
                     Excel
                 </UButton>
 
