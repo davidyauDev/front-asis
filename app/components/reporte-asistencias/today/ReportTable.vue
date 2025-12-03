@@ -10,21 +10,10 @@
 
 
 <script setup lang="ts">
-import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import type { Period, Range, Sale } from '~/types'
-import { sub } from 'date-fns'
+import { h, resolveComponent } from 'vue'
+import type { Sale } from '~/types'
 
-// const props = defineProps<{
-//   period: Period
-//   range: Range
-// }>()
-
-const range = shallowRef<Range>({
-  start: sub(new Date(), { days: 14 }),
-  end: new Date()
-})
-const period = ref<Period>('daily')
 
 const UBadge = resolveComponent('UBadge')
 
@@ -55,7 +44,7 @@ const { data } = await useAsyncData('sales', async () => {
 
   return sales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 }, {
-  watch: [() => range.value.start, () => range.value.end],
+  // watch: [() => range.value.start, () => range.value.end],
   default: () => []
 })
 

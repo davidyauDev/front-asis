@@ -23,17 +23,17 @@ import SeleccionarSemanas from './SeleccionarSemanas.vue';
 import FiltrarEmpleados from './FiltrarEmpleados.vue';
 import TablaReportes from './TablaReportes.vue';
 
-const store = useAttendanceReportStore();
-const { getCompanies, getDepartments } = store;
-const { company, department } = storeToRefs(store);
+// const store = useAttendanceReportStore();
+// const { getCompanies, getDepartments } = store;
+// const { company, department } = storeToRefs(store);
 
-onMounted(
-    () => {
-        if (!company.value.list.length && !department.value.list.length) {
-            getCompanies();
-            getDepartments();
-        }
-    });
+// onMounted(
+//     () => {
+//         if (!company.value.list.length && !department.value.list.length) {
+//             getCompanies();
+//             getDepartments();
+//         }
+//     });
 
 
 </script>

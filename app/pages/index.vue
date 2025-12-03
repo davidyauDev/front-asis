@@ -31,8 +31,8 @@
       </UDashboardToolbar>
 
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
-        <UTabs :items="employeeItems" :orientation="width < 500 ? 'vertical' : 'horizontal'" variant="link"
-          class="flex-1 p-3 mx-auto" v-model="currentEmployeeType" @update:model-value="(value) => {
+        <UTabs :items="employeeItems" variant="link" class="flex-1 p-3 mx-auto" v-model="currentEmployeeType"
+          @update:model-value="(value) => {
             currentEmployeeType = value as EmployeeType
           }">
 
@@ -43,34 +43,12 @@
 
     <template #body>
 
-      <ReporteAsistenciasAdministrators v-if="currentTabType === ItemType.ADMINISTRATORS" />
-
-      <Today v-else-if="currentTabType === ItemType.TODAY" />
-
-      <template v-else>
-        <div class="flex gap-6 flex-wrap justify-center ">
-
-          <div class="xl:basis-[calc(15%-1.5rem)]">
-            <CompanyFilter />
-          </div>
-          <div class="xl:basis-[calc(55%-1.5rem)]">
-            <DateRangePicker />
-          </div>
-
-          <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
-            <DepartmentFilter class="max-h-72" />
-          </div>
-
-          <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
-            <EmployeeFilter class="max-h-72" />
-          </div>
-
-        </div>
-
-        <ReportTable :employee-type="currentEmployeeType" />
+      <DailyAttendanceReport v-if="currentTabType === ItemType.TODAY" />
+      <MonthlyAttendanceReport v-else-if="currentTabType === ItemType.TECHNICIANS"
+        :employee-type="currentEmployeeType" />
+      <ReporteAsistenciasAdministrators v-else="currentTabType === ItemType.ADMINISTRATORS" />
 
 
-      </template>
 
     </template>
 
@@ -81,38 +59,23 @@
 
 <script setup lang="ts">
 
-import { format } from 'date-fns'
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import type { DropdownMenuItem } from '@nuxt/ui'
-import type { Period } from '~/types'
+import type { DropdownMenuItem, TabsItem } from '@nuxt/ui';
 
-import type { TabsItem } from '@nuxt/ui'
+import MonthlyAttendanceReport from '~/components/home/attendance-report/month/AttendaceReport.vue';
+import DailyAttendanceReport from '~/components/home/attendance-report/today/Today.vue';
+import ReporteAsistenciasAdministrators from '~/components/reporte-asistencias/Administrators.vue';
 
-import Today from '~/components/reporte-asistencias/today/Today.vue'
-import ReporteAsistenciasAdministrators
-  from '~/components/reporte-asistencias/Administrators.vue'
-import DateRangePicker from '~/components/reporte-asistencias/DateRangePicker.vue';
-import CompanyFilter from '~/components/reporte-asistencias/today/CompanyFilter.vue';
-import DepartmentFilter from '~/components/reporte-asistencias/today/DepartmentFilter.vue';
-import EmployeeFilter from '~/components/reporte-asistencias/today/EmployeeFilter.vue';
-import ReportTable from '~/components/reporte-asistencias/ReportTable.vue';
-import { EmployeeType } from '~/store/useAttendanceReportStore';
+
+import { EmployeeType, ItemType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const { width } = useWindowSize();
 
 const { isNotificationsSlideoverOpen } = useDashboard()
 
-
-
-enum ItemType {
-  TODAY = 'TODAY',
-  TECHNICIANS = 'TECHNICIANS',
-  ADMINISTRATORS = 'ADMINISTRATORS'
-}
-
-
-const currentTabType = ref<ItemType>(ItemType.TECHNICIANS);
+const currentTabType = ref<ItemType>(ItemType.TODAY);
 
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS);
 
@@ -120,6 +83,19 @@ const fechaActual = new Date();
 const fechaFormateada = format(fechaActual, 'dd MMMM yyyy', {
   locale: es
 });
+
+
+const store = useAttendanceReportStore();
+const { getCompanies, getDepartments } = store;
+const { company, department } = storeToRefs(store);
+
+onMounted(
+    () => {
+        if (!company.value.list.length && !department.value.list.length) {
+            getCompanies();
+            getDepartments();
+        }
+    });
 
 const tabItems: TabsItem[] = [
   {
@@ -142,8 +118,8 @@ const employeeItems: TabsItem[] = [
     value: EmployeeType.TECHNICIANS,
 
   }, {
-    label: "Personal administrativo",
-    value: EmployeeType.ADMINISTRATORS
+    label: "Todos",
+    value: EmployeeType.ALL
   }
 ]
 
@@ -156,7 +132,4 @@ const items = [[{
   icon: 'i-lucide-user-plus',
   to: '/customers'
 }]] satisfies DropdownMenuItem[][]
-
-
-const period = ref<Period>('daily')
 </script>

@@ -83,6 +83,31 @@ export interface AttendanceDetails {
   total_trabajado: string;
 }
 
+export interface TakenAttendace {
+  Ubicacion: string;
+  Imagen: string | null;
+  map_url: string | null;
+  DNI: string;
+  Apellidos: string;
+  Nombres: string;
+  Departamento: string;
+  Horario: string;
+  Ingreso: string | null;
+  Salida: string | null;
+  Tardanza: number;
+  Ausencia: number;
+}
+
+type TakenAttendanceSummary = {
+  asistencias: number;
+  ausencias: number;
+  tardanzas: number;
+};
+
+export type TakenAttendaceParams = {
+  empresa_id?: number;
+}
+
 export type AttendanceParams = {
   fecha_inicio: string;
   fecha_fin?: string;
@@ -218,12 +243,43 @@ const _useAttendanceReport = () => {
       );
 
       if (exportExcel) {
-        const fieldName = params.fecha_fin ? `Reporte diario ( ${params.fecha_inicio} - ${params.fecha_fin} )` : `Reporte diario ( Desde ${params.fecha_inicio} )`
+        const fieldName = params.fecha_fin
+          ? `Reporte diario ( ${params.fecha_inicio} - ${params.fecha_fin} )`
+          : `Reporte diario ( Desde ${params.fecha_inicio} )`;
         descargarBlob(res as Blob, fieldName);
         return;
       }
 
       return res as AttendanceDetails[];
+    } catch (error) {
+      console.error({ error });
+      throw error;
+    }
+  };
+
+  const fetchTakenAttandances = async (params: TakenAttendaceParams): Promise<{
+    data: TakenAttendace[];
+    resumen: TakenAttendanceSummary;
+  }> => {
+    try {
+      const res = await $fetch<{
+        data: TakenAttendace[];
+        resumen: TakenAttendanceSummary;
+      }>(`${reportPrefix}/marcacion`, {
+        // body: {
+        //   ...params,
+        //   fecha_fin: params.fecha_fin || undefined,
+        //   export: exportExcel,
+        // },
+        body: params,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      return res;
     } catch (error) {
       console.error({ error });
       throw error;
@@ -236,6 +292,7 @@ const _useAttendanceReport = () => {
     fetchEmployeesByDepartment,
     fetchAttendancesSummary,
     fetchAttendacesDetails,
+    fetchTakenAttandances,
   };
 };
 

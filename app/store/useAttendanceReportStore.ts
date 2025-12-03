@@ -7,6 +7,8 @@ import {
   type Department,
   type Employee,
   type AttendaceWeeksDates,
+  type TakenAttendace,
+  type TakenAttendaceParams,
 } from "~/composables/useAttendanceReport";
 
 export interface Week {
@@ -20,9 +22,15 @@ export enum ReportType {
   DAYLY = "DAYLY",
 }
 
+export enum ItemType {
+  TODAY = "TODAY",
+  TECHNICIANS = "TECHNICIANS",
+  ADMINISTRATORS = "ADMINISTRATORS",
+}
+
 export enum EmployeeType {
-  TECHNICIANS = 'TECHNICIANS',
-  ADMINISTRATORS = 'ADMINISTRATORS'
+  TECHNICIANS = "TECHNICIANS",
+  ALL = "ALL",
 }
 
 const {
@@ -31,12 +39,16 @@ const {
   fetchEmployeesByDepartment,
   fetchAttendancesSummary,
   fetchAttendacesDetails,
+  fetchTakenAttandances,
 } = useAttendanceReport();
 
 export const useAttendanceReportStore = defineStore("attendance-report", {
   state: () => ({
     company: {
       list: [] as Company[],
+      dailySelecteds: [] as Company[],
+      techMonthlySelecteds: [] as Company[],
+      allMonthlySelecteds: [] as Company[],
       loading: false,
       isError: false,
     },
@@ -69,12 +81,23 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
     attendance: {
       type: ReportType.WEEKLY,
       globalFilter: "",
+
       params: {
         empresa_ids: [1, 2],
         departamento_ids: [8],
         fecha_inicio: formatToYMD(),
         fecha_fin: formatToYMD(undefined, true),
       } as AttendanceParams,
+
+      taken: {
+        daily: {
+          loading: false,
+          params: {}  as TakenAttendaceParams,
+          list: [] as TakenAttendace[],
+          isError: false,
+        },
+      },
+
       summary: {
         weeks: {} as AttendaceWeeksDates,
         list: [] as AttendanceSummary[],
@@ -156,7 +179,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
-    async getAttendanceDetails(exportExcel = null) {
+    async getAttendanceDetails() {
       this.attendance.details.loading = true;
 
       try {
@@ -170,6 +193,21 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         this.attendance.details.isError = true;
       } finally {
         this.attendance.details.loading = false;
+      }
+    },
+
+    async getDailyTakenAttendances() {
+      this.attendance.taken.daily.loading = true;
+
+      try {
+        const attendances = await fetchTakenAttandances(this.attendance.taken.daily.params);
+        this.attendance.taken.daily.list = attendances.data;
+
+        this.attendance.taken.daily.isError = false;
+      } catch (error) {
+        this.attendance.taken.daily.isError = true;
+      } finally {
+        this.attendance.taken.daily.loading = false;
       }
     },
   },

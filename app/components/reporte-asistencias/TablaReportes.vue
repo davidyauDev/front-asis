@@ -79,6 +79,4 @@ const handleDownloadExcel = async () => {
 
 }
 
-
-
 </script>

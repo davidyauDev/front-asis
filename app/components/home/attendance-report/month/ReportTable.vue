@@ -95,7 +95,7 @@ const sortColumButton = (column: any, label: string) => {
   })
 }
 
-const dinamicColumns = computed<TableColumn<Sale>[]>(() => [...columns, ...(employeeType === EmployeeType.TECHNICIANS ? [...technicianColumns.value] : [])]);
+const dinamicColumns = computed<TableColumn<Sale>[]>(() => [...columns, ...(employeeType === EmployeeType.TECHNICIANS ? [...technicianColumns.value] : [...administratorsColumns.value])]);
 
 
 const columns: TableColumn<Sale>[] = [
@@ -125,6 +125,8 @@ const columns: TableColumn<Sale>[] = [
     cell: ({ row }) => row.getValue('empresa')
   },
 ]
+
+
 
 const technicianColumns = computed<TableColumn<Sale>[]>(() => ([{
   accessorKey: 'tipo',
@@ -175,4 +177,27 @@ const technicianColumns = computed<TableColumn<Sale>[]>(() => ([{
     }, 'Sin imagen')
   }
 }]))
+
+const administratorsColumns = computed<TableColumn<Sale>[]>(() => [
+  {
+    accessorKey: 'fecha',
+    header: ({ column }) => sortColumButton(column, 'Fecha'),
+    cell: ({ row }) => row.getValue('fecha')
+  },
+  {
+    accessorKey: 'hora',
+    header: ({ column }) => sortColumButton(column, 'Hora'),
+    cell: ({ row }) => row.getValue('hora')
+  },
+  {
+    accessorKey: 'anio',
+    header: ({ column }) => sortColumButton(column, 'Año'),
+    cell: ({ row }) => row.getValue('anio')
+  },
+  {
+    accessorKey: 'dia',
+    header: ({ column }) => sortColumButton(column, 'Día'),
+    cell: ({ row }) => row.getValue('dia')
+  }
+]);
 </script>

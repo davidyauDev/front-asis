@@ -249,7 +249,7 @@ const headerWeeks: TableColumn<AttendanceSummary>[] = [
                 secondBackgroundColor: 'bg-rose-50',
                 firstColor: 'text-rose-700',
                 secondColor: 'text-rose-800'
-
+                
             }
             ),
         cell: (row) => {
