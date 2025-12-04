@@ -20,8 +20,7 @@
         <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
             <EmployeeFilter :loading="employeeResponse.loading" :is-error="employeeResponse.isError"
                 :list="employeeResponse.list" class="max-h-72" v-model:employee="currentEmployeeSelected"
-                 v-model:param="currentParams.empleado_id"
-                />
+                v-model:param="currentParams.empleado_id" />
         </div>
 
     </div>
@@ -222,11 +221,11 @@ watch(() => attendance.value.taken.all.params.department_id, (departmentId) => {
     getAllTakenAttendances();
     const currDep = department.value.list.find((dep) => dep.id === departmentId);
     if (currDep) {
-        company.value.tech.list = company.value.list.filter((com) => com.id === currDep.company_id)
-        employee.value.tech.list = employee.value.list.filter((dep) => dep.department_id === currDep.id);
+        company.value.all.list = company.value.list.filter((com) => com.id === currDep.company_id)
+        employee.value.all.list = employee.value.list.filter((dep) => dep.department_id === currDep.id);
     } else {
-        company.value.tech.list = company.value.list
-        employee.value.tech.list = employee.value.list
+        company.value.all.list = company.value.list
+        employee.value.all.list = employee.value.list
     }
 })
 

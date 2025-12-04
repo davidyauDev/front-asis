@@ -34,16 +34,13 @@
 
     </div>
 
-
-
-
     <!-- CALENDARIO -->
     <UCard class="w-full" :ui="{
       header: 'py-2'
     }">
-
+      {{ calendar }}
       <template #header>Días</template>
-      <UCalendar v-model="calendarRange" class="w-full" range locale="es" :year-controls="false" @update:placeholder="(value) => {
+      <UCalendar v-model="calendar" class="w-full" locale="es" :year-controls="false" @update:placeholder="(value) => {
         selectedMonth = value.month.toString()
       }" />
 
@@ -54,16 +51,12 @@
 
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone } from '@internationalized/date'
-import { format, lastDayOfMonth, startOfMonth } from 'date-fns'
-import type { Range } from '~/types'
+import { format, startOfMonth } from 'date-fns'
 
 
-// Modelo del rango
-// const selected = defineModel<Range>({ required: true })
-const selected = ref<Range>({
-  start: startOfMonth(new Date()),
-  end: startOfMonth(new Date())
-})
+
+
+const selected = ref<Date>(startOfMonth(new Date()))
 
 // Convert Date → CalendarDate
 const toCalendarDate = (date: Date) => {
@@ -75,16 +68,10 @@ const toCalendarDate = (date: Date) => {
 }
 
 // Rango vinculado al calendario
-const calendarRange = computed({
-  get: () => ({
-    start: selected.value.start ? toCalendarDate(selected.value.start) : undefined,
-    end: selected.value.end ? toCalendarDate(selected.value.end) : undefined
-  }),
+const calendar = computed({
+  get: () => selected ? toCalendarDate(selected.value) : undefined,
   set: (newValue) => {
-    selected.value = {
-      start: newValue.start ? newValue.start.toDate(getLocalTimeZone()) : new Date(),
-      end: newValue.end ? newValue.end.toDate(getLocalTimeZone()) : new Date()
-    }
+    selected.value = newValue ? newValue.toDate(getLocalTimeZone()) : new Date()
   }
 })
 
@@ -113,25 +100,15 @@ const selectedMonth = ref((new Date().getMonth() + 1).toString())
 // --- Cambiar año ---
 const selectYear = (year: string) => {
   selectedYear.value = year
-
   // si ya hay un mes seleccionado: mantenerlo
   const month = Number(selectedMonth.value) || 1
-
-  calendarRange.value = {
-    start: new CalendarDate(Number(year), month, 1),
-    end: new CalendarDate(Number(year), month, 1)
-  }
+  calendar.value = new CalendarDate(Number(year), month, 1)
 }
 
 // --- Cambiar mes ---
 const selectMonth = (month: number) => {
   selectedMonth.value = month.toString()
-
   const year = Number(selectedYear.value)
-
-  calendarRange.value = {
-    start: new CalendarDate(year, month, 1),
-    end: new CalendarDate(year, month, 1)
-  }
+  calendar.value = new CalendarDate(Number(year), month, 1)
 }
 </script>

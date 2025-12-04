@@ -46,9 +46,6 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
   state: () => ({
     company: {
       list: [] as Company[],
-      dailySelecteds: [] as Company[],
-      techMonthlySelecteds: [] as Company[],
-      allMonthlySelecteds: [] as Company[],
       loading: false,
       isError: false,
 
@@ -78,9 +75,9 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       list: [] as Department[],
       loading: false,
       isError: false,
-      dailySelecteds: [] as Department[],
-      techMonthlySelecteds: [] as Department[],
-      allMonthlySelecteds: [] as Department[],
+      // dailySelecteds: [] as Department[],
+      // techMonthlySelecteds: [] as Department[],
+      // allMonthlySelecteds: [] as Department[],
 
       loadingEmployees: false,
       employees: [] as Employee[],
