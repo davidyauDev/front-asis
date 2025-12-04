@@ -86,16 +86,18 @@ const fechaFormateada = format(fechaActual, 'dd MMMM yyyy', {
 
 
 const store = useAttendanceReportStore();
-const { getCompanies, getDepartments } = store;
+const { getCompanies, getDepartments, getTakenAttendances } = store;
 const { company, department } = storeToRefs(store);
 
 onMounted(
-    () => {
-        if (!company.value.list.length && !department.value.list.length) {
-            getCompanies();
-            getDepartments();
-        }
-    });
+  () => {
+    if (!company.value.list.length && !department.value.list.length) {
+      getCompanies();
+      getDepartments();
+    }
+  });
+
+onMounted(getTakenAttendances)
 
 const tabItems: TabsItem[] = [
   {

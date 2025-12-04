@@ -7,19 +7,31 @@
 <script setup lang="ts">
 import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 
 const colorMode = useColorMode();
 
-// Datos simulados (puedes reemplazarlo con props)
-const points = [
-    { x: '05:45', y: '05:45:36' },
-    { x: '06:05', y: '06:05:26' },
-    { x: '06:14', y: '06:14:24' },
-    { x: '06:43', y: '06:43:12' },
-    { x: '07:40', y: '07:40:48' },
-    { x: '08:09', y: '08:09:36' },
-]
+const store = useAttendanceReportStore();
+const { attendance } = storeToRefs(store);
+
+
+const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
+
+const points = computed<{
+    x: string,
+    y: string
+}[]>(() => {
+    const list = dailyTakenAttendace.value.list
+    return list
+        .filter((att) => att.Ingreso)
+        .map((att) => ({
+            x: att.Ingreso || '',
+            y: att.Salida || ''
+        }))
+})
+
+
 
 // Convertimos HH:mm:ss → segundos para graficarlo
 const timeToSeconds = (t: string) => {
@@ -27,15 +39,21 @@ const timeToSeconds = (t: string) => {
     return h * 3600 + m * 60 + s
 }
 
-const series = [
+const series = computed(() => [
     {
         name: 'Horas',
-        data: points.map(p => ({
+        data: points.value.map(p => ({
             x: p.x,
-            y: timeToSeconds(p.y)
+            y: timeToSeconds(p.x)
         }))
     }
-]
+])
+
+
+const maxValue = computed(() => {
+  const arr = series.value[0]?.data.map(d => d.y)
+  return  Math.max(...arr!)
+})
 
 
 
@@ -54,9 +72,10 @@ const chartOptions = computed<ApexOptions>(() => ({
 
     yaxis: {
         min: timeToSeconds('05:30:00'),
-        max: timeToSeconds('09:00:00'),
+        max: maxValue.value,
         labels: {
             formatter: (value: number) => {
+                value = Math.round(value);
                 const h = Math.floor(value / 3600)
                 const m = Math.floor((value % 3600) / 60)
                 const s = value % 60

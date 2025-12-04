@@ -2,7 +2,10 @@
   <DataState :loading="dailyTakenAttendaces.loading" :error="dailyTakenAttendaces.isError"
     error-message="No se pudo cargar los reportes de hoy">
 
-    <UTable ref="table" :data="dailyTakenAttendaces.list" :columns="columns" class="shrink-0" :ui="{
+    <UInput icon="i-lucide-search" v-model="dailyTakenAttendaces.globalFilter" class="w-full"
+      placeholder="Buscar por nombre, apellido o DNI..." />
+
+    <UTable ref="table" :data="dailyListAttendaces" :columns="columns" class="shrink-0" :ui="{
       base: 'table-fixed border-separate border-spacing-0',
       thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
       tbody: '[&>tr]:last:[&>td]:border-b-0',
@@ -32,28 +35,47 @@
 
 
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
-import { h, resolveComponent } from 'vue'
-import DataState from '~/components/common/DataState.vue'
-import { useAttendanceReportStore } from '~/store/useAttendanceReportStore'
+import type { TableColumn } from '@nuxt/ui';
 import { getPaginationRowModel } from '@tanstack/vue-table';
-import type { Sale } from '~/types'
+import { parse } from 'date-fns';
+import { h, resolveComponent } from 'vue';
+import DataState from '~/components/common/DataState.vue';
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const store = useAttendanceReportStore();
 const { attendance } = storeToRefs(store);
-const { getDailyTakenAttendances } = store;
+
 
 const dailyTakenAttendaces = computed(() => attendance.value.taken.daily);
+
+const dailyListAttendaces = computed<TakenAttendace[]>(() => {
+  let reportList: TakenAttendace[] = dailyTakenAttendaces.value.list;
+
+
+  if (dailyTakenAttendaces.value.globalFilter) {
+    const search = dailyTakenAttendaces.value.globalFilter.toLowerCase().trim()
+
+    reportList = reportList.filter(atten => {
+      const nombre = (atten.Nombres || "").toLowerCase()
+      const apellido = (atten.Apellidos || "").toLowerCase()
+      const dni = (atten.DNI || "").toString().toLowerCase()
+
+      return (
+        nombre.includes(search) ||
+        apellido.includes(search) ||
+        dni.includes(search)
+      )
+    })
+  }
+
+
+  return reportList;
+})
 
 const table = useTemplateRef('table')
 
 const UBadge = resolveComponent('UBadge')
 
-
-watch(() => attendance.value.taken.daily.params, () => {
-  console.log("From herfe")
-  getDailyTakenAttendances();
-})
 
 
 
@@ -124,16 +146,23 @@ const columns: TableColumn<TakenAttendace>[] = [
   {
     accessorKey: 'Horario',
     header: ({ column }) => sortColumButton(column, 'Horario'),
-    cell: ({ row }) => row.getValue('Horario')
+    cell: ({ row }) => row.getValue('Horario') || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
+      'Sin horario'
+    )
   },
   {
     accessorKey: 'Ingreso',
     header: ({ column }) => sortColumButton(column, 'Ingreso'),
     cell: ({ row }) => {
-      const ingreso = row.getValue('Ingreso');
-      return ingreso || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
+      const ingreso = row.getValue('Ingreso') as string;
+      if (!ingreso) return h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
         'Sin ingreso'
-      )
+      );
+      const horario = row.getValue('Horario') as string;
+
+      const h1 = parse(ingreso, "HH:mm:ss", new Date())
+      const h2 = parse(horario, "HH:mm:ss", new Date())
+      return h2 > h1 ? ingreso : h('span', { class: 'text-red-500' }, ingreso)
     }
   },
   {
@@ -141,44 +170,11 @@ const columns: TableColumn<TakenAttendace>[] = [
     header: ({ column }) => sortColumButton(column, 'Salida'),
     cell: ({ row }) => {
       const salida = row.getValue('Salida');
+
       return salida || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
         'Sin salida'
       )
     }
   },
-
-  // {
-  //   accessorKey: 'status',
-  //   header: 'Status',
-  //   cell: ({ row }) => {
-  //     const color = {
-  //       paid: 'success' as const,
-  //       failed: 'error' as const,
-  //       refunded: 'neutral' as const
-  //     }[row.getValue('status') as string]
-
-  //     return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-  //       row.getValue('status')
-  //     )
-  //   }
-  // },
-  // {
-  //   accessorKey: 'email',
-  //   header: 'Email'
-  // },
-  // {
-  //   accessorKey: 'amount',
-  //   header: () => h('div', { class: 'text-right' }, 'Amount'),
-  //   cell: ({ row }) => {
-  //     const amount = Number.parseFloat(row.getValue('amount'))
-
-  //     const formatted = new Intl.NumberFormat('en-US', {
-  //       style: 'currency',
-  //       currency: 'EUR'
-  //     }).format(amount)
-
-  //     return h('div', { class: 'text-right font-medium' }, formatted)
-  //   }
-  // }
 ]
 </script>

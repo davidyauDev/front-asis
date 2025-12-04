@@ -98,14 +98,15 @@ export interface TakenAttendace {
   Ausencia: number;
 }
 
-type TakenAttendanceSummary = {
+export type TakenAttendanceSummary = {
   asistencias: number;
   ausencias: number;
   tardanzas: number;
 };
 
 export type TakenAttendaceParams = {
-  empresa_id?: number;
+  company_id?: number;
+  department_id?: number;
 }
 
 export type AttendanceParams = {

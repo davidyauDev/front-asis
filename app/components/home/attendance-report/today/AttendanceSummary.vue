@@ -1,17 +1,3 @@
-<script setup lang="ts">
-interface Row {
-    label: string
-    value: number
-    color: string
-}
-
-const rows: Row[] = [
-    { label: 'Asistencia', value: 8, color: 'bg-blue-700' },
-    { label: 'Ausencias', value: 137, color: 'bg-gray-400' },
-    { label: 'Tardanzas', value: 0, color: 'bg-red-600' },
-]
-</script>
-
 <template>
     <div class="mx-auto max-w-sm rounded-md overflow-hidden border border-gray-300 dark:border-gray-700">
 
@@ -32,6 +18,30 @@ const rows: Row[] = [
 
     </div>
 </template>
+
+<script setup lang="ts">
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore'
+
+
+
+interface Row {
+    label: string
+    value: number
+    color: string
+}
+
+const store = useAttendanceReportStore();
+const { attendance } = storeToRefs(store);
+
+const rows = computed<Row[]>(() => {
+    const dailySummary = attendance.value.taken.daily.summary;
+    return [
+        { label: 'Asistencia', value: dailySummary.asistencias, color: 'bg-blue-700' },
+        { label: 'Ausencias', value: dailySummary.ausencias, color: 'bg-gray-400' },
+        { label: 'Tardanzas', value: dailySummary.tardanzas, color: 'bg-red-600' },
+    ]
+})
+</script>
 
 <style scoped>
 /* Hover opcional */

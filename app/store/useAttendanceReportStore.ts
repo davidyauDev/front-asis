@@ -51,12 +51,22 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       allMonthlySelecteds: [] as Company[],
       loading: false,
       isError: false,
+
+      daily: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Company[],
+        list: [] as Company[],
+      },
     },
 
     department: {
       list: [] as Department[],
       loading: false,
       isError: false,
+      dailySelecteds: [] as Department[],
+      techMonthlySelecteds: [] as Department[],
+      allMonthlySelecteds: [] as Department[],
 
       loadingEmployees: false,
       employees: [] as Employee[],
@@ -92,7 +102,25 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       taken: {
         daily: {
           loading: false,
-          params: {}  as TakenAttendaceParams,
+          globalFilter: "",
+          params: {} as TakenAttendaceParams,
+          list: [] as TakenAttendace[],
+          summary: {
+            asistencias: 0,
+            ausencias: 0,
+            tardanzas: 0,
+          } as TakenAttendanceSummary,
+          isError: false,
+        },
+        tech: {
+          loading: false,
+          params: {} as TakenAttendaceParams,
+          list: [] as TakenAttendace[],
+          isError: false,
+        },
+        all: {
+          loading: false,
+          params: {} as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           isError: false,
         },
@@ -128,6 +156,21 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         this.company.isError = true;
       } finally {
         this.company.loading = false;
+      }
+    },
+
+     async getDailyCompanies(force = false) {
+      if (this.company.daily.list.length && !force) return;
+      this.company.daily.loading = true;
+      try {
+        const companies = await fetchCompanies();
+        this.company.daily.list = companies;
+
+        this.company.daily.isError = false;
+      } catch (error) {
+        this.company.daily.isError = true;
+      } finally {
+        this.company.daily.loading = false;
       }
     },
 
@@ -196,12 +239,50 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
+    async getTakenAttendances() {
+      if (
+        this.attendance.taken.daily.list.length ||
+        this.attendance.taken.tech.list.length ||
+        this.attendance.taken.all.list.length
+      )
+        return;
+
+      this.attendance.taken.daily.loading = true;
+      this.attendance.taken.tech.loading = true;
+      this.attendance.taken.all.loading = true;
+
+      try {
+        const attendances = await fetchTakenAttandances(
+          this.attendance.taken.daily.params
+        );
+        this.attendance.taken.daily.list = attendances.data;
+        this.attendance.taken.daily.summary = attendances.resumen;
+        this.attendance.taken.tech.list = attendances.data;
+        this.attendance.taken.all.list = attendances.data;
+
+        this.attendance.taken.daily.isError = false;
+        this.attendance.taken.tech.isError = false;
+        this.attendance.taken.all.isError = false;
+      } catch (error) {
+        this.attendance.taken.daily.isError = true;
+        this.attendance.taken.tech.isError = true;
+        this.attendance.taken.all.isError = true;
+      } finally {
+        this.attendance.taken.daily.loading = false;
+        this.attendance.taken.tech.loading = false;
+        this.attendance.taken.all.loading = false;
+      }
+    },
+
     async getDailyTakenAttendances() {
       this.attendance.taken.daily.loading = true;
 
       try {
-        const attendances = await fetchTakenAttandances(this.attendance.taken.daily.params);
+        const attendances = await fetchTakenAttandances(
+          this.attendance.taken.daily.params
+        );
         this.attendance.taken.daily.list = attendances.data;
+        this.attendance.taken.daily.summary = attendances.resumen;
 
         this.attendance.taken.daily.isError = false;
       } catch (error) {

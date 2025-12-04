@@ -1,13 +1,16 @@
 <template>
 
+    {{dailyTakenAttendace.params}}
     <div class="max-md:flex-col flex justify-center gap-4">
+
         <div class="min-w">
 
-            <CompanyFilter />
+            <CompanyFilter v-model:company="company.dailySelecteds"
+                v-model:param="dailyTakenAttendace.params.company_id" />
         </div>
-        <DepartmentFilter />
+        <DepartmentFilter v-model:department="department.dailySelecteds"
+            v-model:param="dailyTakenAttendace.params.department_id" />
         <EmployeeFilter />
-
     </div>
 
     <div class="flex w-full max-lg:gap-y-4 flex-wrap justify-center items-center">
@@ -24,6 +27,8 @@
 
     <ReportTable :taken-attendaces="dailyTakenAttendace.list" />
 
+
+
 </template>
 
 
@@ -35,17 +40,22 @@ import DepartmentFilter from '../DepartmentFilter.vue';
 import EmployeeFilter from '../EmployeeFilter.vue';
 import ReportTable from './ReportTable.vue';
 import ScatterTimeChart from './ScatterTimeChart.vue';
-import { ItemType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const store = useAttendanceReportStore();
-const { attendance } = storeToRefs(store);
+const { attendance, company, department } = storeToRefs(store);
 const { getDailyTakenAttendances } = store;
 
 const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
 
-onMounted(() => {
-    if (!dailyTakenAttendace.value.list.length) {
-        getDailyTakenAttendances()
-    }
+watch(() => dailyTakenAttendace.value.params.company_id, () => {
+    getDailyTakenAttendances();
 })
+
+watch(() => dailyTakenAttendace.value.params.department_id, () => {
+    getDailyTakenAttendances();
+})
+
+
+
 </script>
