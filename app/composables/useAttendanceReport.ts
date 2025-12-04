@@ -33,8 +33,7 @@ export interface Employee {
   first_name: string;
   last_name: string;
   department_id: number;
-  company_id: number
-
+  company_id: number;
 }
 
 export interface AttendanceSummary {
@@ -93,12 +92,17 @@ export interface TakenAttendace {
   DNI: string;
   Apellidos: string;
   Nombres: string;
+  Empleado_id: number;
   Departamento: string;
+  Departamento_id: number;
+  Empresa: string;
+  Empresa_id: number;
   Horario: string;
   Ingreso: string | null;
   Salida: string | null;
   Tardanza: number;
   Ausencia: number;
+  Tecnico: boolean;
 }
 
 export type TakenAttendanceSummary = {
@@ -110,8 +114,8 @@ export type TakenAttendanceSummary = {
 export type TakenAttendaceParams = {
   company_id?: number;
   department_id?: number;
-  empleado_id?: number
-}
+  empleado_id?: number;
+};
 
 export type AttendanceParams = {
   fecha_inicio: string;
@@ -262,7 +266,9 @@ const _useAttendanceReport = () => {
     }
   };
 
-  const fetchTakenAttandances = async (params: TakenAttendaceParams): Promise<{
+  const fetchTakenAttandances = async (
+    params: TakenAttendaceParams
+  ): Promise<{
     data: TakenAttendace[];
     resumen: TakenAttendanceSummary;
   }> => {

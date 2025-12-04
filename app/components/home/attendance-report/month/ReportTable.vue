@@ -5,7 +5,7 @@
     <UInput icon="i-lucide-search" v-model="attendances.globalFilter" class="w-full"
       placeholder="Buscar por nombre, apellido o DNI..." />
 
-    <UTable ref="table" :data="attendances.list" :columns="dinamicColumns" class="shrink-0" :ui="{
+    <UTable ref="table" :data="attendances.listFiltered" :columns="dinamicColumns" class="shrink-0" :ui="{
       base: 'table-fixed border-separate border-spacing-0',
       thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
       tbody: '[&>tr]:last:[&>td]:border-b-0',

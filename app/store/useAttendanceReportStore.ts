@@ -177,6 +177,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           globalFilter: "",
           params: {} as TakenAttendaceParams,
           list: [] as TakenAttendace[],
+          listFiltered: [] as TakenAttendace[],
           isError: false,
           pagination: {
             pageIndex: 0,
@@ -188,6 +189,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           globalFilter: "",
           params: {} as TakenAttendaceParams,
           list: [] as TakenAttendace[],
+          listFiltered: [] as TakenAttendace[],
           isError: false,
           pagination: {
             pageIndex: 0,
@@ -386,10 +388,15 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         const attendances = await fetchTakenAttandances(
           this.attendance.taken.daily.params
         );
+
+    
         this.attendance.taken.daily.list = attendances.data;
         this.attendance.taken.daily.summary = attendances.resumen;
-        this.attendance.taken.tech.list = attendances.data;
+        this.attendance.taken.tech.list = attendances.data.filter((att) => att.Tecnico);
+        this.attendance.taken.tech.listFiltered = attendances.data.filter((att) => att.Tecnico);
+
         this.attendance.taken.all.list = attendances.data;
+        this.attendance.taken.all.listFiltered = attendances.data;
 
         this.attendance.taken.daily.isError = false;
         this.attendance.taken.tech.isError = false;
@@ -430,7 +437,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         const attendances = await fetchTakenAttandances(
           this.attendance.taken.tech.params
         );
-        this.attendance.taken.tech.list = attendances.data;
+        this.attendance.taken.tech.listFiltered = attendances.data.filter((att) => att.Tecnico);
 
         this.attendance.taken.tech.isError = false;
       } catch (error) {
@@ -448,6 +455,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           this.attendance.taken.all.params
         );
         this.attendance.taken.all.list = attendances.data;
+         this.attendance.taken.all.listFiltered = attendances.data;
         // this.attendance.taken.all.summary = attendances.resumen;
 
         this.attendance.taken.all.isError = false;

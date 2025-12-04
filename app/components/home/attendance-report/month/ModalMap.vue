@@ -1,51 +1,38 @@
 <template>
+  <UModal v-model:open="open" title="Vista previa del mapa">
+    <template #content>
+      <div class="p-4 h-screen">
+        <h2 class="text-lg font-bold mb-3">Ubicación</h2>
 
-    <UModal v-model:open="open" title="Vista previa del mapa">
-        <template #content>
+        <LMap v-if="latLng" :zoom="20" :center="latLng">
+          <LTileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
+          />
+          <LMarker :lat-lng="latLng" />
+        </LMap>
 
-            <div class="p-4 h-72" >
-                <h2 class="text-lg font-bold mb-3">Ubicación</h2>
-
-                <!-- <iframe :src="mapUrl" width="100%" height="450" style="border:0;" allowfullscreen loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade">
-                </iframe> -->
-
-                <LMap :zoom="9" style="height: 100%; width: 100%;">
-                    >
-                    <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-                    <LMarker :lat-lng="[latLng[0], latLng[1]]">
-
-
-
-                    </LMarker>
-
-                </LMap>
-
-            </div>
-        </template>
-    </UModal>
-
+        <p v-else class="text-red-500 text-sm">
+          No se pudo obtener la ubicación.
+        </p>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
+const open = defineModel<boolean>('open', { required: true });
 
-
-const open = defineModel < boolean > ('open', {
-    required: true
-});
-
-const { mapUrl } = defineProps({
-    mapUrl: String,
-
-});
+const { mapUrl } = defineProps<{ mapUrl: string }>();
 
 const latLng = computed(() => {
-    if (!mapUrl) return;
-    const params = new URL(mapUrl).searchParams.get("q") as string;
-    const [lat, lng] = params?.split(",");
-    return [+lat!, +lng!]
-})
+  if (!mapUrl) return null;
 
+  const q = new URL(mapUrl).searchParams.get("q");
+  if (!q) return null;
 
+  const [lat, lng] = q.split(",").map(Number);
+
+  return (isNaN(lat) || isNaN(lng)) ? null : [lat, lng];
+});
 </script>

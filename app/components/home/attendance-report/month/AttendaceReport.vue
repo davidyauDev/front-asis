@@ -4,7 +4,8 @@
 
         <div class="xl:basis-[calc(15%-1.5rem)]">
             <CompanyFilter :loading="companyResponse.loading" :is-error="companyResponse.isError"
-                :list="companyResponse.list" v-model:company="currentCompanySelected" />
+                :list="companyResponse.list" v-model:company="currentCompanySelected"
+                v-model:param="currentParams.company_id" />
         </div>
         <div class="xl:basis-[calc(55%-1.5rem)]">
             <DateRangePicker />
@@ -12,12 +13,15 @@
 
         <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
             <DepartmentFilter :loading="departmentResponse.loading" :is-error="departmentResponse.isError"
-                :list="departmentResponse.list" class="max-h-72" v-model:department="currentDepartmentSelected" />
+                :list="departmentResponse.list" class="max-h-72" v-model:department="currentDepartmentSelected"
+                v-model:param="currentParams.department_id" />
         </div>
 
         <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
             <EmployeeFilter :loading="employeeResponse.loading" :is-error="employeeResponse.isError"
-                :list="employeeResponse.list" class="max-h-72" v-model:employee="currentEmployeeSelected" />
+                :list="employeeResponse.list" class="max-h-72" v-model:employee="currentEmployeeSelected"
+                 v-model:param="currentParams.empleado_id"
+                />
         </div>
 
     </div>
@@ -36,19 +40,34 @@ import EmployeeFilter from '../EmployeeFilter.vue';
 import ReportTable from './ReportTable.vue';
 
 const store = useAttendanceReportStore();
-const { company, department, employee } = storeToRefs(store);
+const { getAllTakenAttendances, getTechTakenAttendances } = store;
+const { company, department, employee, attendance } = storeToRefs(store);
 
 const { employeeType } = defineProps<{
     employeeType: EmployeeType
 }>()
 
+const currentParams = computed(() => {
+    if (employeeType === EmployeeType.TECHNICIANS) {
+        return attendance.value.taken.tech.params;
+    }
+    return attendance.value.taken.all.params;
+});
 
 const companyResponse = computed(() => {
     if (employeeType === EmployeeType.TECHNICIANS) {
+        const employeeCompanies = new Set(
+            attendance.value.taken.tech.list.map(e => e.Empresa_id)
+        )
+
+        const filteredCompany = company.value.tech.list.filter(
+            com => employeeCompanies.has(com.id)
+        )
+
         return {
             loading: company.value.tech.loading,
             isError: company.value.tech.isError,
-            list: company.value.tech.list
+            list: filteredCompany
         }
     }
 
@@ -61,10 +80,18 @@ const companyResponse = computed(() => {
 
 const departmentResponse = computed(() => {
     if (employeeType === EmployeeType.TECHNICIANS) {
+        const employeeDeparments = new Set(
+            attendance.value.taken.tech.list.map(e => e.Departamento_id)
+        )
+
+        const filteredDepartments = department.value.tech.list.filter(
+            com => employeeDeparments.has(com.id)
+        )
+
         return {
             loading: department.value.tech.loading,
             isError: department.value.tech.isError,
-            list: department.value.tech.list
+            list: filteredDepartments
         }
     }
 
@@ -77,10 +104,19 @@ const departmentResponse = computed(() => {
 
 const employeeResponse = computed(() => {
     if (employeeType === EmployeeType.TECHNICIANS) {
+
+        const employees = new Set(
+            attendance.value.taken.tech.list.map(e => e.Empleado_id)
+        )
+
+        const filteredEmployees = employee.value.tech.list.filter(
+            com => employees.has(com.id)
+        )
+
         return {
             loading: employee.value.tech.loading,
             isError: employee.value.tech.isError,
-            list: employee.value.tech.list
+            list: filteredEmployees
         }
     }
 
@@ -127,10 +163,85 @@ const currentEmployeeSelected = computed<Employee[]>({
         if (employeeType === EmployeeType.TECHNICIANS) {
             employee.value.tech.selecteds = newSelecteds
         } else {
-            employee.value.tech.selecteds = newSelecteds
+            employee.value.all.selecteds = newSelecteds
         }
     }
 })
+
+
+//* TECH
+watch(() => attendance.value.taken.tech.params.company_id, (companyId) => {
+    getTechTakenAttendances()
+    if (companyId) {
+        department.value.tech.list = department.value.list.filter((dep) => dep.company_id === companyId);
+        employee.value.tech.list = employee.value.list.filter((dep) => dep.company_id === companyId);
+    } else {
+        department.value.tech.list = department.value.list
+        employee.value.tech.list = employee.value.list
+    }
+})
+
+watch(() => attendance.value.taken.tech.params.department_id, (departmentId) => {
+    getTechTakenAttendances();
+    const currDep = department.value.list.find((dep) => dep.id === departmentId);
+    if (currDep) {
+        company.value.tech.list = company.value.list.filter((com) => com.id === currDep.company_id)
+        employee.value.tech.list = employee.value.list.filter((dep) => dep.department_id === currDep.id);
+    } else {
+        company.value.tech.list = company.value.list
+        employee.value.tech.list = employee.value.list
+    }
+})
+
+watch(() => attendance.value.taken.tech.params.empleado_id, (employeeId) => {
+    getTechTakenAttendances();
+    const currEmp = employee.value.list.find((em) => em.id === employeeId);
+    if (currEmp) {
+        company.value.tech.list = company.value.list.filter((com) => com.id === currEmp.company_id)
+        department.value.tech.list = department.value.list.filter((dep) => dep.id === currEmp.department_id);
+    } else {
+        company.value.tech.list = company.value.list
+        department.value.tech.list = department.value.list
+    }
+})
+
+
+//* ALL
+watch(() => attendance.value.taken.all.params.company_id, (companyId) => {
+    getAllTakenAttendances()
+    if (companyId) {
+        department.value.all.list = department.value.list.filter((dep) => dep.company_id === companyId);
+        employee.value.all.list = employee.value.list.filter((dep) => dep.company_id === companyId);
+    } else {
+        department.value.all.list = department.value.list
+        employee.value.all.list = employee.value.list
+    }
+})
+
+watch(() => attendance.value.taken.all.params.department_id, (departmentId) => {
+    getAllTakenAttendances();
+    const currDep = department.value.list.find((dep) => dep.id === departmentId);
+    if (currDep) {
+        company.value.tech.list = company.value.list.filter((com) => com.id === currDep.company_id)
+        employee.value.tech.list = employee.value.list.filter((dep) => dep.department_id === currDep.id);
+    } else {
+        company.value.tech.list = company.value.list
+        employee.value.tech.list = employee.value.list
+    }
+})
+
+watch(() => attendance.value.taken.all.params.empleado_id, (employeeId) => {
+    getAllTakenAttendances();
+    const currEmp = employee.value.list.find((em) => em.id === employeeId);
+    if (currEmp) {
+        company.value.all.list = company.value.list.filter((com) => com.id === currEmp.company_id)
+        department.value.all.list = department.value.list.filter((dep) => dep.id === currEmp.department_id);
+    } else {
+        company.value.all.list = company.value.list
+        department.value.all.list = department.value.list
+    }
+})
+
 
 
 
