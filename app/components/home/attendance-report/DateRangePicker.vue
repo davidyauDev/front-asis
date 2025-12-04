@@ -62,7 +62,7 @@ import type { Range } from '~/types'
 // const selected = defineModel<Range>({ required: true })
 const selected = ref<Range>({
   start: startOfMonth(new Date()),
-  end: lastDayOfMonth(new Date())
+  end: startOfMonth(new Date())
 })
 
 // Convert Date → CalendarDate

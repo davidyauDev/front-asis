@@ -32,6 +32,9 @@ export interface Employee {
   emp_code: string;
   first_name: string;
   last_name: string;
+  department_id: number;
+  company_id: number
+
 }
 
 export interface AttendanceSummary {
@@ -107,6 +110,7 @@ export type TakenAttendanceSummary = {
 export type TakenAttendaceParams = {
   company_id?: number;
   department_id?: number;
+  empleado_id?: number
 }
 
 export type AttendanceParams = {
@@ -153,7 +157,7 @@ const _useAttendanceReport = () => {
     }
   };
 
-  const fetchEmployeesByDepartment = async (departmentIds: number[]) => {
+  const fetchEmployeesByDepartment = async (departmentIds?: number[]) => {
     try {
       const res = await $fetch<{
         data: Employee[];

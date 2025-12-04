@@ -75,7 +75,7 @@ const { width } = useWindowSize();
 
 const { isNotificationsSlideoverOpen } = useDashboard()
 
-const currentTabType = ref<ItemType>(ItemType.TODAY);
+const currentTabType = ref<ItemType>(ItemType.TECHNICIANS);
 
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS);
 
@@ -86,7 +86,7 @@ const fechaFormateada = format(fechaActual, 'dd MMMM yyyy', {
 
 
 const store = useAttendanceReportStore();
-const { getCompanies, getDepartments, getTakenAttendances } = store;
+const { getCompanies, getDepartments, getTakenAttendances, getEmployees } = store;
 const { company, department } = storeToRefs(store);
 
 onMounted(
@@ -97,7 +97,9 @@ onMounted(
     }
   });
 
+  onMounted(getEmployees);
 onMounted(getTakenAttendances)
+
 
 const tabItems: TabsItem[] = [
   {

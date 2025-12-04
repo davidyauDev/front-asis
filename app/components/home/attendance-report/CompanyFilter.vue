@@ -4,14 +4,14 @@
     }">
         <template #header>
             Empresa
-            <UButton :disabled="selecteds.length === company.list.length" v-if="!company.isError" class="cursor-pointer" icon="i-lucide-funnel"
-                variant="link" @click="handleResertFilter" />
+            <UButton :disabled="selecteds.length === company.list.length" v-if="!isError" class="cursor-pointer"
+                icon="i-lucide-funnel" variant="link" @click="handleResertFilter" />
         </template>
 
 
         <div class="space-y-2 max-h-48 overflow-y-auto flex flex-wrap gap-2">
 
-            <DataState :loading="company.loading" :error="company.isError"
+            <DataState :loading="loading" :error="isError"
                 error-message="No se pudo cargas las empresas" @retry="getCompanies(true)">
 
                 <template #loading>
@@ -19,7 +19,7 @@
                 </template>
 
 
-                <UButton v-for="item in company.list" :key="item.id" class="cursor-pointer" :class="!selecteds.some(s => s.id === item.id) &&
+                <UButton v-for="item in list" :key="item.id" class="cursor-pointer" :class="!selecteds.some(s => s.id === item.id) &&
                     'bg-gray-100 dark:bg-gray-800 dark:text-gray-100 text-gray-700 border transition'"
                     @click="handleSelectCompany(item)">
                     {{ item.company_name }}
@@ -40,7 +40,11 @@ const store = useAttendanceReportStore();
 const { getCompanies } = store;
 const { company } = storeToRefs(store);
 
-
+const { loading, isError, list } = defineProps<{
+    loading: boolean,
+    isError: boolean,
+    list: Company[],
+}>()
 
 const storeSelecteds = defineModel<Company[]>('company', {
     required: true

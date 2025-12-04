@@ -58,6 +58,20 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         selecteds: [] as Company[],
         list: [] as Company[],
       },
+
+      tech: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Company[],
+        list: [] as Company[],
+      },
+
+      all: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Company[],
+        list: [] as Company[],
+      },
     },
 
     department: {
@@ -73,14 +87,60 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       isEmployeeError: false,
 
       current: undefined as Department | undefined,
+
+      daily: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Department[],
+        list: [] as Department[],
+      },
+
+      tech: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Department[],
+        list: [] as Department[],
+      },
+
+      all: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Department[],
+        list: [] as Department[],
+      },
     },
 
     employee: {
+      list: [] as Employee[],
+      loading: false,
+      isError: false,
+
       department: {
         selecteds: [] as Employee[],
         list: [] as Employee[],
         loading: false,
         isError: false,
+      },
+
+      daily: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Employee[],
+        list: [] as Employee[],
+      },
+
+      tech: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Employee[],
+        list: [] as Employee[],
+      },
+
+      all: {
+        loading: false,
+        isError: false,
+        selecteds: [] as Employee[],
+        list: [] as Employee[],
       },
     },
 
@@ -114,15 +174,25 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         },
         tech: {
           loading: false,
+          globalFilter: "",
           params: {} as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           isError: false,
+          pagination: {
+            pageIndex: 0,
+            pageSize: 10,
+          },
         },
         all: {
           loading: false,
+          globalFilter: "",
           params: {} as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           isError: false,
+          pagination: {
+            pageIndex: 0,
+            pageSize: 10,
+          },
         },
       },
 
@@ -147,19 +217,34 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
     async getCompanies(force = false) {
       if (this.company.list.length && !force) return;
       this.company.loading = true;
+      this.company.daily.loading = true;
+      this.company.tech.loading = true;
+      this.company.all.loading = true;
       try {
         const companies = await fetchCompanies();
         this.company.list = companies;
+        this.company.daily.list = companies;
+        this.company.tech.list = companies;
+        this.company.all.list = companies;
 
         this.company.isError = false;
+        this.company.daily.isError = false;
+        this.company.tech.isError = false;
+        this.company.all.isError = false;
       } catch (error) {
         this.company.isError = true;
+        this.company.daily.isError = true;
+        this.company.tech.isError = true;
+        this.company.all.isError = true;
       } finally {
         this.company.loading = false;
+        this.company.daily.loading = false;
+        this.company.tech.loading = false;
+        this.company.all.loading = false;
       }
     },
 
-     async getDailyCompanies(force = false) {
+    async getDailyCompanies(force = false) {
       if (this.company.daily.list.length && !force) return;
       this.company.daily.loading = true;
       try {
@@ -177,15 +262,61 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
     async getDepartments(force = false) {
       if (this.department.list.length && !force) return;
       this.department.loading = true;
+      this.department.daily.loading = true;
+      this.department.tech.loading = true;
+      this.department.all.loading = true;
       try {
-        const deportments = await fetchDepartments();
-        this.department.list = deportments;
+        const departments = await fetchDepartments();
+        this.department.list = departments;
+        this.department.daily.list = departments;
+        this.department.tech.list = departments;
+        this.department.all.list = departments;
 
         this.department.isError = false;
+        this.department.daily.isError = false;
+        this.department.tech.isError = false;
+        this.department.all.isError = false;
       } catch (error) {
         this.department.isError = true;
+        this.department.daily.isError = true;
+        this.department.tech.isError = true;
+        this.department.all.isError = true;
       } finally {
         this.department.loading = false;
+        this.department.daily.loading = false;
+        this.department.tech.loading = false;
+        this.department.all.loading = false;
+      }
+    },
+
+    async getEmployees() {
+      if (this.employee.list.length) return;
+
+      this.employee.loading = true;
+      this.employee.daily.loading = true;
+      this.employee.tech.loading = true;
+      this.employee.all.loading = true;
+      try {
+        const employees = await fetchEmployeesByDepartment();
+        this.employee.list = employees;
+        this.employee.daily.list = employees;
+        this.employee.tech.list = employees;
+        this.employee.all.list = employees;
+
+        this.employee.isError = false;
+        this.employee.daily.isError = false;
+        this.employee.tech.isError = false;
+        this.employee.all.isError = false;
+      } catch (error) {
+        this.employee.isError = true;
+        this.employee.daily.isError = true;
+        this.employee.tech.isError = true;
+        this.employee.all.isError = true;
+      } finally {
+        this.employee.loading = false;
+        this.employee.daily.loading = false;
+        this.employee.tech.loading = false;
+        this.employee.all.loading = false;
       }
     },
 
@@ -289,6 +420,41 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         this.attendance.taken.daily.isError = true;
       } finally {
         this.attendance.taken.daily.loading = false;
+      }
+    },
+
+    async getTechTakenAttendances() {
+      this.attendance.taken.tech.loading = true;
+
+      try {
+        const attendances = await fetchTakenAttandances(
+          this.attendance.taken.tech.params
+        );
+        this.attendance.taken.tech.list = attendances.data;
+
+        this.attendance.taken.tech.isError = false;
+      } catch (error) {
+        this.attendance.taken.tech.isError = true;
+      } finally {
+        this.attendance.taken.tech.loading = false;
+      }
+    },
+
+    async getAllTakenAttendances() {
+      this.attendance.taken.all.loading = true;
+
+      try {
+        const attendances = await fetchTakenAttandances(
+          this.attendance.taken.all.params
+        );
+        this.attendance.taken.all.list = attendances.data;
+        // this.attendance.taken.all.summary = attendances.resumen;
+
+        this.attendance.taken.all.isError = false;
+      } catch (error) {
+        this.attendance.taken.all.isError = true;
+      } finally {
+        this.attendance.taken.all.loading = false;
       }
     },
   },

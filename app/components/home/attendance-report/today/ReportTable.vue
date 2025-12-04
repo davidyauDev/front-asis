@@ -1,6 +1,6 @@
 <template>
   <DataState :loading="dailyTakenAttendaces.loading" :error="dailyTakenAttendaces.isError"
-    error-message="No se pudo cargar los reportes de hoy">
+    error-message="No se pudo cargar los reportes de hoy" @retry="getDailyTakenAttendances">
 
     <UInput icon="i-lucide-search" v-model="dailyTakenAttendaces.globalFilter" class="w-full"
       placeholder="Buscar por nombre, apellido o DNI..." />
@@ -43,6 +43,7 @@ import DataState from '~/components/common/DataState.vue';
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const store = useAttendanceReportStore();
+const { getDailyTakenAttendances } = store;
 const { attendance } = storeToRefs(store);
 
 
@@ -158,7 +159,8 @@ const columns: TableColumn<TakenAttendace>[] = [
       if (!ingreso) return h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
         'Sin ingreso'
       );
-      const horario = row.getValue('Horario') as string;
+      const horario = row.getValue('Horario') as string | null;
+      if (!horario) return ingreso;
 
       const h1 = parse(ingreso, "HH:mm:ss", new Date())
       const h2 = parse(horario, "HH:mm:ss", new Date())
