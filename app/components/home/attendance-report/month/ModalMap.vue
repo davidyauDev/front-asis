@@ -3,7 +3,7 @@
     <UModal v-model:open="open" title="Vista previa del mapa">
         <template #content>
 
-            <div class="p-4">
+            <div class="p-4 h-72" >
                 <h2 class="text-lg font-bold mb-3">Ubicación</h2>
 
                 <!-- <iframe :src="mapUrl" width="100%" height="450" style="border:0;" allowfullscreen loading="lazy"
