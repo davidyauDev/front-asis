@@ -1,5 +1,10 @@
 <template>
-    <!-- {{ daysFromMonth }} -->
+    <!-- {{ holidays }} -->
+
+
+
+
+    <!-- {{ eachDayOfInterval(rangeDate) }}  -->
     <UTable :data="data" :columns="columns" class="flex-1">
         <template #name-cell="{ row }">
             <div class="flex items-center gap-3">
@@ -15,7 +20,8 @@
                 </div>
 
                 <!-- @click="copy(row.original.email)" -->
-                <UButton icon="i-lucide-eye" variant="link" size="sm" class="ml-auto cursor-pointer" @click="open = true" />
+                <UButton icon="i-lucide-eye" variant="link" size="sm" class="ml-auto cursor-pointer"
+                    @click="open = true" />
             </div>
         </template>
         <template #action-cell="{ row }">
@@ -30,7 +36,7 @@
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui';
 import type { Column } from '@tanstack/vue-table';
 import { useClipboard } from '@vueuse/core';
-import { eachDayOfInterval, format } from 'date-fns';
+import { eachDayOfInterval, format, isEqual } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface User {
@@ -53,7 +59,12 @@ const { rangeDate } = defineProps<{
     }
 }>()
 
+const holidays = ref<Date[]>();
+
 // const datesArray = eachDayOfInterval(rangeDate);
+const currentYearFromMonth = computed(() => format(rangeDate.start, 'yyyy', {
+    locale: es
+}))
 
 const daysFromMonth = computed(() => eachDayOfInterval(rangeDate).map((date) => ({
     day: format(date, 'eee', {
@@ -61,8 +72,32 @@ const daysFromMonth = computed(() => eachDayOfInterval(rangeDate).map((date) => 
     }).toUpperCase(),
     number: format(date, 'dd', {
         locale: es
-    })
-})))
+    }),
+    isHoliday: holidays.value?.some(holiday =>
+        isEqual(holiday, date)) ?? false
+})));
+
+
+
+type Holiday = {
+    date: string
+    localName: string
+    name: string
+    countryCode: string
+    fixed: boolean
+    global: boolean
+    counties: string[] | null
+    launchYear: number | null
+    types: string[]
+}
+
+watch(currentYearFromMonth, async (year) => {
+    const res = await $fetch<Holiday[]>(`https://date.nager.at/api/v3/PublicHolidays/${year}/PE`);
+    holidays.value = res.map(d => new Date(d.date));
+}, {
+    immediate: true
+})
+
 
 const toast = useToast()
 const { copy } = useClipboard()
@@ -149,10 +184,13 @@ const columns = computed<TableColumn<User>[]>(() => [{
     header: 'Empresa',
 
 },
-...daysFromMonth.value.map(({ day, number }) => ({
+...daysFromMonth.value.map(({ day, number, isHoliday }) => ({
     accessorKey: `${day}-${number}`,
 
-    header: () => h('div', { class: 'flex p-1 rounded flex-col mx-auto text-xs w-full items-center' }, [
+    header: () => h('div', {
+        class:
+            `flex p-1 rounded flex-col mx-auto text-xs w-full items-center ${isHoliday ? 'bg-red-200' : ''}`
+    }, [
         h('span', { class: 'text-xs' }, day),
         h('span', { class: 'text-xs font-medium' }, number)
     ])
