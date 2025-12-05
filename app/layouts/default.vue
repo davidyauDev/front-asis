@@ -15,7 +15,7 @@ const toast = useToast()
 const open = ref(false)
 
 const links = [[{
-  label: 'Home',
+  label: 'Inicio',
   icon: 'i-lucide-house',
   to: '/',
   onSelect: () => {
@@ -28,14 +28,26 @@ const links = [[{
   onSelect: () => {
     open.value = false
   }
-}, {
-  label: 'Reporte de Asistencias',
-  icon: 'i-lucide-file-text',
-  to: '/reporte-asistencias',
+},
+{
+  label: 'Vacaciones',
+  icon: 'i-lucide-luggage',
+  to: '/vacations-report',
   onSelect: () => {
     open.value = false
   }
-}, {
+},
+
+// {
+//   label: 'Reporte de Asistencias',
+//   icon: 'i-lucide-file-text',
+//   to: '/reporte-asistencias',
+//   onSelect: () => {
+//     open.value = false
+//   }
+// }, 
+
+{
   label: 'Inbox',
   icon: 'i-lucide-inbox',
   to: '/inbox',

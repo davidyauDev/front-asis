@@ -1,22 +1,30 @@
 <template>
-  <UModal v-model:open="open" title="Vista previa del mapa">
-    <template #content>
-      <div class="p-4 h-screen">
-        <h2 class="text-lg font-bold mb-3">Ubicación</h2>
+  <UModal v-model:open="open" title="Vista previa del mapa" :ui="{
+    content: 'p-4 h-screen'
+  }">
 
-        <LMap v-if="latLng" :zoom="20" :center="latLng">
-          <LTileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-          />
-          <LMarker :lat-lng="latLng" />
-        </LMap>
+    <template #title>
 
-        <p v-else class="text-red-500 text-sm">
-          No se pudo obtener la ubicación.
-        </p>
+      <div class="flex justify-between gap-2 items-center w-full">
+        Ubicación
+        <UButton class="cursor-pointer" icon="i-lucide-link" :to="mapUrl"  target="_blank" />
       </div>
     </template>
+
+    <template #body>
+
+      <LMap v-if="latLng" :zoom="20" :center="latLng">
+        <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors" />
+        <LMarker :lat-lng="latLng" />
+      </LMap>
+
+      <p v-else class="text-red-500 text-sm">
+        No se pudo obtener la ubicación.
+      </p>
+
+    </template>
+
   </UModal>
 </template>
 

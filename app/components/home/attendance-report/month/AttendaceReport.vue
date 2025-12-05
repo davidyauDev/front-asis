@@ -1,14 +1,12 @@
 <template>
-
     <div class="flex gap-6 flex-wrap justify-center ">
-
         <div class="xl:basis-[calc(15%-1.5rem)]">
             <CompanyFilter :loading="companyResponse.loading" :is-error="companyResponse.isError"
                 :list="companyResponse.list" v-model:company="currentCompanySelected"
                 v-model:param="currentParams.company_id" />
         </div>
         <div class="xl:basis-[calc(55%-1.5rem)]">
-            <DateRangePicker />
+            <DateRangePicker v-model:date="currentParams.fecha" />
         </div>
 
         <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
@@ -204,6 +202,14 @@ watch(() => attendance.value.taken.tech.params.empleado_id, (employeeId) => {
     }
 })
 
+watch(
+  () => attendance.value.taken.tech.params.fecha,
+  (newFecha, oldFecha) => {
+    if (newFecha?.toISOString() === oldFecha?.toISOString()) return;
+    getTechTakenAttendances()
+  }
+);
+
 
 //* ALL
 watch(() => attendance.value.taken.all.params.company_id, (companyId) => {
@@ -240,6 +246,14 @@ watch(() => attendance.value.taken.all.params.empleado_id, (employeeId) => {
         department.value.all.list = department.value.list
     }
 })
+
+watch(
+  () => attendance.value.taken.tech.params.fecha,
+  (newFecha, oldFecha) => {
+    if (newFecha?.toISOString() === oldFecha?.toISOString()) return;
+    getAllTakenAttendances()
+  }
+);
 
 
 

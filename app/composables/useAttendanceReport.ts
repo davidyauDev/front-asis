@@ -115,6 +115,7 @@ export type TakenAttendaceParams = {
   company_id?: number;
   department_id?: number;
   empleado_id?: number;
+  fecha?: Date;
 };
 
 export type AttendanceParams = {

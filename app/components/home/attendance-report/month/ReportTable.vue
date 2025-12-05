@@ -1,6 +1,6 @@
 <template>
   <DataState :loading="attendances.loading" :error="attendances.isError" error-message="No se pudo cargar los reportes"
-    @retry="employeeType === EmployeeType.TECHNICIANS ? getAllTakenAttendances() : getTechTakenAttendances()">
+    @retry="employeeType === EmployeeType.TECHNICIANS ? getTechTakenAttendances() : getAllTakenAttendances()">
 
     <UInput icon="i-lucide-search" v-model="attendances.globalFilter" class="w-full"
       placeholder="Buscar por nombre, apellido o DNI..." />

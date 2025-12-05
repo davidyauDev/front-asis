@@ -42,7 +42,6 @@
     </template>
 
     <template #body>
-
       <DailyAttendanceReport v-if="currentTabType === ItemType.TODAY" />
       <MonthlyAttendanceReport v-else-if="currentTabType === ItemType.TECHNICIANS"
         :employee-type="currentEmployeeType" />
@@ -66,7 +65,7 @@ import type { DropdownMenuItem, TabsItem } from '@nuxt/ui';
 
 import MonthlyAttendanceReport from '~/components/home/attendance-report/month/AttendaceReport.vue';
 import DailyAttendanceReport from '~/components/home/attendance-report/today/Today.vue';
-import ReporteAsistenciasAdministrators from '~/components/reporte-asistencias/Administrators.vue';
+import ReporteAsistenciasAdministrators from '~/components/home/attendance-report/summary/Administrators.vue';
 
 
 import { EmployeeType, ItemType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
@@ -75,7 +74,7 @@ const { width } = useWindowSize();
 
 const { isNotificationsSlideoverOpen } = useDashboard()
 
-const currentTabType = ref<ItemType>(ItemType.TECHNICIANS);
+const currentTabType = ref<ItemType>(ItemType.TODAY);
 
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS);
 
@@ -97,7 +96,7 @@ onMounted(
     }
   });
 
-  onMounted(getEmployees);
+onMounted(getEmployees);
 onMounted(getTakenAttendances)
 
 

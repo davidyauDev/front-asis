@@ -1,3 +1,4 @@
+import { startOfMonth } from 'date-fns';
 import {
   useAttendanceReport,
   type AttendanceParams,
@@ -172,7 +173,9 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         tech: {
           loading: false,
           globalFilter: "",
-          params: {} as TakenAttendaceParams,
+          params: {
+            fecha: startOfMonth(new Date()),
+          } as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           listFiltered: [] as TakenAttendace[],
           isError: false,
@@ -184,7 +187,9 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         all: {
           loading: false,
           globalFilter: "",
-          params: {} as TakenAttendaceParams,
+          params: {
+            fecha: startOfMonth(new Date()),
+          } as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           listFiltered: [] as TakenAttendace[],
           isError: false,
@@ -429,6 +434,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
 
     async getTechTakenAttendances() {
       this.attendance.taken.tech.loading = true;
+      this.attendance.taken.tech.isError = false;
 
       try {
         const attendances = await fetchTakenAttandances(

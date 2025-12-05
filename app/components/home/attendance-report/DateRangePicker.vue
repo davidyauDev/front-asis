@@ -38,10 +38,10 @@
     <UCard class="w-full" :ui="{
       header: 'py-2'
     }">
-      {{ calendar }}
       <template #header>Días</template>
       <UCalendar v-model="calendar" class="w-full" locale="es" :year-controls="false" @update:placeholder="(value) => {
         selectedMonth = value.month.toString()
+        currentDateModel = value.toDate(getLocalTimeZone())
       }" />
 
     </UCard>
@@ -50,13 +50,19 @@
 
 
 <script setup lang="ts">
-import { CalendarDate, getLocalTimeZone } from '@internationalized/date'
-import { format, startOfMonth } from 'date-fns'
+import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
+import { format } from 'date-fns';
 
 
 
 
-const selected = ref<Date>(startOfMonth(new Date()))
+const currentDateModel = defineModel<Date>('date', {
+  required: true,
+  // default: startOfMonth(new Date())
+});
+
+
+// const selected = ref<Date>(startOfMonth(new Date()))
 
 // Convert Date → CalendarDate
 const toCalendarDate = (date: Date) => {
@@ -69,11 +75,18 @@ const toCalendarDate = (date: Date) => {
 
 // Rango vinculado al calendario
 const calendar = computed({
-  get: () => selected ? toCalendarDate(selected.value) : undefined,
+  get: () => currentDateModel.value ? toCalendarDate(currentDateModel.value) : undefined,
   set: (newValue) => {
-    selected.value = newValue ? newValue.toDate(getLocalTimeZone()) : new Date()
+    currentDateModel.value = newValue ? newValue.toDate(getLocalTimeZone()) : new Date()
   }
 })
+
+
+// watch(() => calendar.value, () => {
+//   // console.log(calendar.value?.calendar)
+//   currentDateModel.value = calendar?.value?.toDate(getLocalTimeZone()) 
+// })
+
 
 // --- AÑOS ---
 const years = ['2025', '2024']

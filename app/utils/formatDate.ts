@@ -1,3 +1,4 @@
+import { CalendarDate, getLocalTimeZone } from "@internationalized/date";
 export function formatToYMD(
   input: string | number | Date = new Date(),
   lastDay = false
@@ -30,4 +31,16 @@ export function getLastDayOfMonth(
 
   // Día 0 del siguiente mes = último día del mes actual
   return new Date(year, month + 1, 0);
+}
+
+export function toCalendarDate(date: Date) {
+  return new CalendarDate(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    date.getDate()
+  );
+}
+
+export function fromCalToDate(calendar: CalendarDate) {
+  return calendar.toDate(getLocalTimeZone())
 }
