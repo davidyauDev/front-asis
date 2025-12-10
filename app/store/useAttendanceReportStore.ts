@@ -163,6 +163,10 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           globalFilter: "",
           params: {} as TakenAttendaceParams,
           list: [] as TakenAttendace[],
+          pagination: {
+            pageIndex: 0,
+            pageSize: 10,
+          },
           summary: {
             asistencias: 0,
             ausencias: 0,

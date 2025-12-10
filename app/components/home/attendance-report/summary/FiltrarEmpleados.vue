@@ -8,12 +8,11 @@
     </div>
 
     <!-- Input de búsqueda -->
-    <UInput v-model="search" icon="i-heroicons-magnifying-glass-20-solid" placeholder="Buscar empleado..."
-      class="border border-green-300 rounded-xl" />
+    <UInput v-model="search" icon="i-heroicons-magnifying-glass-20-solid" placeholder="Buscar empleado..." />
 
     <div class="flex flex-wrap gap-2">
-      <UButton class="cursor-pointer" @click="handleRemoveSelect(sel)" variant="outline" v-for="sel in selecteds" trailing-icon="i-lucide-x"
-        size="xs">
+      <UButton class="cursor-pointer" @click="handleRemoveSelect(sel)" variant="outline" v-for="sel in selecteds"
+        trailing-icon="i-lucide-x" size="xs">
         {{ sel.first_name }} {{ sel.last_name }}
       </UButton>
     </div>
@@ -91,9 +90,9 @@ const selecteds = computed({
 
 
 onMounted(() => {
-    // if (attendance.value.summary.list.length) return;
-    if (employee.value.department.list.length) return;
-    getEmployeesByDepartment()
+  // if (attendance.value.summary.list.length) return;
+  if (employee.value.department.list.length) return;
+  getEmployeesByDepartment()
 })
 
 

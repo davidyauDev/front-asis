@@ -12,10 +12,11 @@
       th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
       td: 'border-b border-default'
     }" :loading="dailyTakenAttendaces.loading" empty="No se encontraron reportes de hoy"
-      v-model:pagination="pagination" :pagination-options="{
+      v-model:pagination="dailyTakenAttendaces.pagination" :pagination-options="{
         getPaginationRowModel: getPaginationRowModel()
       }" />
 
+  
     <div class="flex items-center justify-between p-4">
 
       <div class="text-sm text-gray-600 dark:text-gray-400">
@@ -78,12 +79,6 @@ const table = useTemplateRef('table')
 const UBadge = resolveComponent('UBadge')
 
 
-
-
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
 
 const getStats = () => {
   const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0;

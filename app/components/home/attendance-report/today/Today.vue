@@ -1,16 +1,16 @@
 <template>
-    <div class="max-md:flex-col flex justify-center gap-4">
+    <div class="max-md:flex-col flex-wrap flex justify-center gap-4">
 
         <div class="min-w">
 
             <CompanyFilter :loading="company.daily.loading" :is-error="company.daily.isError" :list="company.daily.list"
                 v-model:company="company.daily.selecteds" v-model:param="dailyTakenAttendace.params.company_id" />
         </div>
-        <DepartmentFilter :loading="department.daily.loading" :is-error="department.daily.isError"
+        <DepartmentFilter class="md:w-72" :loading="department.daily.loading" :is-error="department.daily.isError"
             :list="department.daily.list" v-model:department="department.daily.selecteds"
             v-model:param="dailyTakenAttendace.params.department_id" />
 
-        <EmployeeFilter class="max-w-2xl min-w-72" :loading="employee.daily.loading" :is-error="employee.daily.isError"
+        <EmployeeFilter class="lg:w-72" :loading="employee.daily.loading" :is-error="employee.daily.isError"
             :list="employee.daily.list" v-model:employee="employee.daily.selecteds"
             v-model:param="dailyTakenAttendace.params.empleado_id" />
     </div>
@@ -54,11 +54,30 @@ watch(() => dailyTakenAttendace.value.params.company_id, (companyId) => {
     getDailyTakenAttendances();
     if (companyId) {
         department.value.daily.list = department.value.list.filter((dep) => dep.company_id === companyId);
-        employee.value.daily.list = employee.value.list.filter((dep) => dep.company_id === companyId);
+        if (!dailyTakenAttendace.value.params.department_id) {
+            // const currDep = department.value.list.find((dep) => dep.id === dailyTakenAttendace.value.params.department_id);
+            // if (currDep && currDep.company_id !== companyId) {
+            //     dailyTakenAttendace.value.params.department_id = null;
+            // }
+            employee.value.daily.list = employee.value.list.filter((dep) => dep.company_id === companyId);
+        }
     } else {
+        const departmentId = dailyTakenAttendace.value.params.department_id;
+
+        if (departmentId) {
+            employee.value.daily.list = employee.value.list.filter((dep) => dep.department_id === departmentId);
+
+        } else {
+            employee.value.daily.list = employee.value.list
+
+        }
+
         department.value.daily.list = department.value.list
-        employee.value.daily.list = employee.value.list
+
     }
+
+    dailyTakenAttendace.value.pagination.pageIndex = 0;
+
 })
 
 watch(() => dailyTakenAttendace.value.params.department_id, (departmentId) => {
@@ -71,6 +90,8 @@ watch(() => dailyTakenAttendace.value.params.department_id, (departmentId) => {
         company.value.daily.list = company.value.list
         employee.value.daily.list = employee.value.list
     }
+
+    dailyTakenAttendace.value.pagination.pageIndex = 0;
 })
 
 watch(() => dailyTakenAttendace.value.params.empleado_id, (employeeId) => {
@@ -81,9 +102,19 @@ watch(() => dailyTakenAttendace.value.params.empleado_id, (employeeId) => {
         company.value.daily.list = company.value.list.filter((com) => com.id === currEmp.company_id)
         department.value.daily.list = department.value.list.filter((dep) => dep.id === currEmp.department_id);
     } else {
-        company.value.daily.list = company.value.list
+        const companyId = dailyTakenAttendace.value.params.company_id;
+        if (companyId) {
+            department.value.daily.list = department.value.list.filter((dep) => dep.company_id === companyId);
+            return;
+        } else {
+            company.value.daily.list = company.value.list
+        }
+
         department.value.daily.list = department.value.list
     }
+
+
+    dailyTakenAttendace.value.pagination.pageIndex = 0;
 
 })
 

@@ -15,7 +15,7 @@
                 error-message="No se pudo cargas las empresas" @retry="getEmployees()">
 
                 <template #loading>
-                    <USkeleton v-for="_ in Array.from({ length: 2 })" class="h-8 w-36" />
+                    <USkeleton v-for="_ in Array.from({ length: 10 })" class="h-8 w-36" />
                 </template>
 
 

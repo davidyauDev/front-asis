@@ -12,7 +12,7 @@
         error-message="No se pudo cargas los departamentos" @retry="getDepartments(true)">
 
         <template #loading>
-          <USkeleton v-for="_ in Array.from({ length: 14 })" class="h-8 w-36" />
+          <USkeleton v-for="_ in Array.from({ length: 14 })" class="h-8 w-32" />
         </template>
 
         <UButton v-for="item in list" :key="item.id" class="cursor-pointer" :class="!selecteds.some(s => s.id === item.id) &&
