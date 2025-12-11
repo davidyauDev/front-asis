@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EventoCalendario } from '~/composables/useEventos'
+import BirthDaysList from '~/components/events/BirthDaysList.vue';
 
 definePageMeta({ middleware: "auth" });
 
@@ -618,6 +619,28 @@ useHead({ title: "Eventos Especiales - Asisten" });
                 class="ml-2"
               />
             </button>
+
+
+            <button
+              @click="selectedTab = 'birthdays'"
+              :class="[
+                'py-2 px-1 border-b-2 font-medium text-sm',
+                selectedTab === 'birthdays' 
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
+              ]"
+            >
+              <UIcon name="i-lucide-calendar-check" class="w-4 h-4 mr-2 inline" />
+              Cumpleaños
+              <UBadge 
+                v-if="eventosProgramados.length > 0"
+                :label="eventosProgramados.length" 
+                color="success" 
+                variant="soft" 
+                size="xs" 
+                class="ml-2"
+              />
+            </button>
           </nav>
         </div>
 
@@ -840,6 +863,9 @@ useHead({ title: "Eventos Especiales - Asisten" });
             />
           </div>
         </div>
+
+        <!-- Cumpleaños -->
+        <BirthDaysList v-else-if="selectedTab === 'birthdays'" />
       </div>
     </template>
   </UDashboardPanel>
