@@ -21,18 +21,11 @@ const links = [[{
   onSelect: () => {
     open.value = false
   }
-}, {
-  label: 'Asistencias',
-  icon: 'i-lucide-clipboard-check',
-  to: '/asistencias',
-  onSelect: () => {
-    open.value = false
-  }
 },
 {
-  label: 'Vacaciones',
+  label: 'Movilidad',
   icon: 'i-lucide-luggage',
-  to: '/vacations-report',
+  to: '/movility-report',
   onSelect: () => {
     open.value = false
   }
@@ -47,15 +40,17 @@ const links = [[{
 //   }
 // }, 
 
+// {
+//   label: 'Inbox',
+//   icon: 'i-lucide-inbox',
+//   to: '/inbox',
+//   badge: '4',
+//   onSelect: () => {
+//     open.value = false
+//   }
+// },
+
 {
-  label: 'Inbox',
-  icon: 'i-lucide-inbox',
-  to: '/inbox',
-  badge: '4',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
   label: 'Usuarios',
   icon: 'i-lucide-users',
   to: '/users',
@@ -76,39 +71,44 @@ const links = [[{
   onSelect: () => {
     open.value = false
   }
-}, {
-  label: 'Settings',
-  to: '/settings',
-  icon: 'i-lucide-settings',
-  defaultOpen: true,
-  type: 'trigger',
-  children: [{
-    label: 'General',
-    to: '/settings',
-    exact: true,
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: 'Members',
-    to: '/settings/members',
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: 'Notifications',
-    to: '/settings/notifications',
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: 'Security',
-    to: '/settings/security',
-    onSelect: () => {
-      open.value = false
-    }
-  }]
-}]] satisfies NavigationMenuItem[][]
+},
+
+// {
+//   label: 'Settings',
+//   to: '/settings',
+//   icon: 'i-lucide-settings',
+//   defaultOpen: true,
+//   type: 'trigger',
+//   children: [{
+//     label: 'General',
+//     to: '/settings',
+//     exact: true,
+//     onSelect: () => {
+//       open.value = false
+//     }
+//   }, {
+//     label: 'Members',
+//     to: '/settings/members',
+//     onSelect: () => {
+//       open.value = false
+//     }
+//   }, {
+//     label: 'Notifications',
+//     to: '/settings/notifications',
+//     onSelect: () => {
+//       open.value = false
+//     }
+//   }, {
+//     label: 'Security',
+//     to: '/settings/security',
+//     onSelect: () => {
+//       open.value = false
+//     }
+//   }]
+// }
+
+
+]] satisfies NavigationMenuItem[][]
 
 const groups = computed(() => [{
   id: 'links',

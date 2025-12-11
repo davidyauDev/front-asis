@@ -81,20 +81,21 @@ const chartOptions = computed<ApexOptions>(() => ({
                 const s = value % 60
                 return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
             },
+            
 
         }
     },
 
-    tooltip: {
-        y: {
-            formatter: (value) => {
-                const h = Math.floor(value / 3600)
-                const m = Math.floor((value % 3600) / 60)
-                const s = value % 60
-                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-            }
-        }
-    },
+    // tooltip: {
+    //     y: {
+    //         formatter: (value) => {
+    //             const h = Math.floor(value / 3600)
+    //             const m = Math.floor((value % 3600) / 60)
+    //             const s = value % 60
+    //             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    //         }
+    //     }
+    // },
     theme: {
         mode: colorMode.value as 'dark' | 'light'
     }

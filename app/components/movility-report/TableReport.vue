@@ -91,7 +91,7 @@ const currentYearFromMonth = computed(() => format(rangeDate.start, 'yyyy', {
 const daysFromMonth = computed(() => eachDayOfInterval(rangeDate).map((date) => ({
     day: format(date, 'eee', {
         locale: es
-    }).toUpperCase(),
+    }).toUpperCase().slice(0, 1),
     number: format(date, 'dd', {
         locale: es
     }),

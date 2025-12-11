@@ -39,7 +39,7 @@
       header: 'py-2'
     }">
       <template #header>Días</template>
-      <UCalendar v-model="calendar" class="w-full" locale="es" :year-controls="false" @update:placeholder="(value) => {
+      <UCalendar v-model="calendar" class="w-full" locale="es" :year-controls="false"  @update:placeholder="(value) => {
         selectedMonth = value.month.toString()
         currentDateModel = value.toDate(getLocalTimeZone())
       }" />

@@ -70,6 +70,8 @@ import ReporteAsistenciasAdministrators from '~/components/home/attendance-repor
 
 import { EmployeeType, ItemType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
+definePageMeta({ middleware: "auth" });
+
 const { width } = useWindowSize();
 
 const { isNotificationsSlideoverOpen } = useDashboard()

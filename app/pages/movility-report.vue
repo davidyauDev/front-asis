@@ -122,11 +122,13 @@
 <script setup lang="ts">
 import { endOfMonth, startOfMonth } from 'date-fns';
 import DataState from '~/components/common/DataState.vue';
-import DetailModal from '~/components/vacations-report/DetailModal.vue';
-import PickMonth from '~/components/vacations-report/PickMonth.vue';
-import TableReport from '~/components/vacations-report/TableReport.vue';
+import DetailModal from '~/components/movility-report/DetailModal.vue';
+import PickMonth from '~/components/movility-report/PickMonth.vue';
+import TableReport from '~/components/movility-report/TableReport.vue';
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 import { type Department } from '~/composables/useAttendanceReport';
+
+definePageMeta({ middleware: "auth" });
 
 const store = useAttendanceReportStore();
 const { getDepartments } = store;
