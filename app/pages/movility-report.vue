@@ -52,7 +52,8 @@
 
                     <div class="flex gap-2">
 
-                        <UInput v-model="searchTerm" icon="i-heroicons-magnifying-glass" placeholder="Buscar empleado..." class="w-64" />
+                        <UInput v-model="searchTerm" icon="i-heroicons-magnifying-glass"
+                            placeholder="Buscar empleado..." class="w-64" />
 
                         <!-- <USelect :items="['Todos', 'Cechriza SAC', 'Otra Empresa']" class="w-48" /> -->
                         <DataState :loading="department.loading" :error="department.isError"
@@ -76,35 +77,18 @@
                     body: 'flex w-full p-4! gap-4'
                 }" class="flex gap-4 mb-3">
 
-
-                    <div class="flex items-center gap-2">
-                        <span class="size-6 rounded bg-green-500 flex items-center justify-center text-xs">✓</span>
-                        Presente
+                    <div v-for="item in movilityReportCodeOp" :key="item.value" class="flex items-center gap-2">
+                        <UBadge class="text-sm" :class="item.bg">
+                            {{ item.value }}
+                        </UBadge>
+                        {{ item.label }}
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="size-6 rounded bg-yellow-500 flex items-center justify-center text-xs">V</span>
-                        Vacaciones
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="size-6 rounded bg-red-500 flex items-center justify-center text-xs">DM</span>
-                        Descanso Médico
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="size-6 rounded bg-gray-500 flex items-center justify-center text-xs">-</span>
-                        Ausente
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="size-6 rounded bg-blue-500 flex items-center justify-center text-xs">D</span>
-                        Domingo
-                    </div>
-
                 </UCard>
 
                 <!-- TABLA -->
-                <TableReport :range-date="rangeDate" v-model:open="openDetailModal" :search-term="searchTerm" />
+                <TableReport :range-date="rangeDate" v-model:open="openDetailModal" :search-term="searchTerm" @select:movility-report="selectedMovilityReport = $event, openDetailModal = true" />
 
-                <DetailModal v-model:open="openDetailModal" :range-date="modelValue" />
+                <DetailModal v-model:open="openDetailModal" :range-date="modelValue" :selected-movility-report="selectedMovilityReport" />
 
             </div>
 
@@ -127,6 +111,7 @@ import PickMonth from '~/components/movility-report/PickMonth.vue';
 import TableReport from '~/components/movility-report/TableReport.vue';
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 import { type Department } from '~/composables/useAttendanceReport';
+import { movilityReportCodeOp, type MovilityReport } from '~/interfaces/movility-report';
 
 definePageMeta({ middleware: "auth" });
 
@@ -136,11 +121,12 @@ const { department } = storeToRefs(store);
 
 const openDetailModal = ref(false);
 
+const selectedMovilityReport = ref<null | MovilityReport>(null);
+
 const modelValue = shallowRef({
     start: toCalendarDate(startOfMonth(new Date())),
     end: toCalendarDate(endOfMonth(new Date()))
 })
-
 
 const searchTerm = ref('');
 
@@ -173,6 +159,7 @@ const rangeDate = computed(() => ({
     start: fromCalToDate(modelValue.value.start),
     end: fromCalToDate(modelValue.value.end)
 }))
+
 
 
 

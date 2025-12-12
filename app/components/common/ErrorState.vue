@@ -24,7 +24,9 @@ const emit = defineEmits(["retry"]);
         <slot name="description" />
 
         <div v-if="showRetry" class="mt-5">
-            <UButton color="error" variant="solid" @click="emit('retry')">
+            <UButton color="error" variant="solid"
+            
+            @click="emit('retry')">
                 Reintentar
             </UButton>
         </div>

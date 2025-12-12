@@ -40,7 +40,9 @@ const emit = defineEmits(["retry"]);
                     {{ errorMessage }}
                 </h2>
 
-                <UButton v-if="showRetry" color="error" variant="link" icon="i-lucide-refresh-cw" class="cursor-pointer" @click="emit('retry')" />
+                <UButton v-if="showRetry"
+                 :loading="loading"
+                color="error" variant="link" icon="i-lucide-refresh-cw" class="cursor-pointer" @click="emit('retry')" />
             </div>
 
         </slot>
