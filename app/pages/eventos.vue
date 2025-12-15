@@ -780,6 +780,10 @@ useHead({ title: "Eventos Especiales - Asisten" });
             </div>
           </UCard>
         </div>
+
+        <!-- Cumpleaños -->
+        <BirthDaysList v-else-if="selectedTab === 'birthdays'"  />
+        
         <!-- Vista Calendario -->
         <div v-else-if="selectedTab === 'calendar'" class="space-y-6">
           
@@ -864,8 +868,7 @@ useHead({ title: "Eventos Especiales - Asisten" });
           </div>
         </div>
 
-        <!-- Cumpleaños -->
-        <BirthDaysList v-else-if="selectedTab === 'birthdays'" />
+        
       </div>
     </template>
   </UDashboardPanel>

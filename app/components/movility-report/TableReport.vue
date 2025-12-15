@@ -1,12 +1,32 @@
 <template>
-    <UTable :data="data" :columns="columns" class="flex-1" ref="table" v-model:pagination="pagination"
-        :pagination-options="{
-            getPaginationRowModel: getPaginationRowModel()
-        }">
-        <template v-for="{ day, isHoliday, number } in daysFromMonth" #[`${day}_${number}-header`]>
+    <UTable sticky     :loading="loading" :ui="{
+        th: 'px-1',
+        td: 'px-1'
+    }" :data="movilityReportList" :columns="columns" class="flex-1 h-[60vh]">
+
+
+        <template #empty>
+            <div v-if="error" class="w-full flex gap-4 justify-center items-center text-center">
+                <Icon name="lucide:alert-triangle" class="text-red-500" size="20" />
+
+                <h2 class="text-sm font-semibold  text-red-600">
+                    No se pudo cargar el reporte de movilidad
+                </h2>
+
+                <UButton color="error" variant="link" icon="i-lucide-refresh-cw" class="cursor-pointer" @click="refresh"
+                    :loading="loading" />
+            </div>
+
+            <div v-else class="flex flex-col items-center justify-center p-6">
+                <UIcon name="i-lucide-inbox" size="48" class="mb-4 text-gray-400" />
+                <p class="text-gray-500">No se encontraron registros para los criterios seleccionados.</p>
+            </div>
+        </template>
+
+        <template v-for="{ day, isHoliday, number, date } in daysFromMonth" #[`${date}-header`]>
             <div class="flex p-1 rounded flex-col mx-auto text-xs w-full items-center" :class="{
                 'bg-red-500/20 border border-red-500/30': isHoliday,
-                'bg-blue-500/20 border border-blue-500/30': day === 'DOM'
+                'bg-blue-500/20 border border-blue-500/30': day === 'D'
             }">
                 <span class="text-xs">
                     {{ day }}
@@ -17,27 +37,40 @@
             </div>
         </template>
 
-        <template #name-cell="{ row }">
-            <div class="flex items-center gap-3">
-                <UAvatar size="lg" :alt="row.original.name" />
-                <div>
-                    <p class="font-medium text-highlighted">
-                        {{ row.original.name }}
-                    </p>
-                    <p>
-                        {{ row.original.position }}
-                    </p>
-                </div>
+        <template v-for="{ day, isHoliday, date } in daysFromMonth" #[`${date}-cell`]="{ row }">
+            <div class="flex items-center justify-center w-full h-full" :class="{
+                'bg-red-500/20': isHoliday,
+                'bg-blue-500/20': day === 'D'
+            }">
+
+
+                <UBadge class="text-sm" color="undefined" :class="getCodeOp(row.original[date]?.code).bg">
+
+                    {{ getCodeOp(row.original[date]?.code).value }}
+
+                </UBadge>
+            </div>
+        </template>
+
+        <template #employee-cell="{ row }">
+            <div class="flex items-center gap-3 max-w-fit">
+
+                <UUser :name="row.original.employee.last_name" :description="row.original.employee.first_name" :avatar="{
+                    alt: row.original.employee.first_name,
+
+                }" />
 
                 <!-- @click="copy(row.original.email)" -->
                 <UButton icon="i-lucide-eye" variant="link" size="sm" class="ml-auto cursor-pointer"
-                    @click="open = true" />
+                    @click="open = true, $emit('select:movility-report', row.original)" />
             </div>
         </template>
     </UTable>
 
 
-    <div class="flex items-center justify-between p-4">
+
+
+    <!-- <div class="flex items-center justify-between p-4">
 
         <div class="text-sm text-gray-600 dark:text-gray-400">
             Mostrando <span class="font-medium">{{ getStats().start }}</span> - <span class="font-medium">{{
@@ -50,28 +83,23 @@
                 :total="table?.tableApi?.getFilteredRowModel().rows.length"
                 @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)" />
         </div>
-    </div>
+    </div> -->
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui';
-import { getPaginationRowModel, type Column } from '@tanstack/vue-table';
+import { type Column } from '@tanstack/vue-table';
 import { eachDayOfInterval, format } from 'date-fns';
-import { es } from 'date-fns/locale';
-interface User {
-    id: number
-    name: string
-    position: string
-    email: string
-    role: string
-}
+import { es, se } from 'date-fns/locale';
+import { getCodeOp, type MovilityReport } from '~/interfaces/movility-report';
+
 
 const open = defineModel('open', {
     type: Boolean,
     required: true
 })
 
-const { rangeDate } = defineProps<{
+const { rangeDate, searchTerm } = defineProps<{
     rangeDate: {
         start: Date,
         end: Date
@@ -79,16 +107,58 @@ const { rangeDate } = defineProps<{
     searchTerm: string
 }>()
 
+defineEmits<{
+    (e: 'select:movility-report', movilityReport: MovilityReport): void
+}>()
+
 
 
 const holidays = ref<string[]>();
 
 // const datesArray = eachDayOfInterval(rangeDate);
-const currentYearFromMonth = computed(() => format(rangeDate.start, 'yyyy', {
-    locale: es
-}))
+const currentYear = computed(() => format(rangeDate.start, 'yyyy'));
+const currentMonth = computed(() => format(rangeDate.start, 'MM'));
+
+
+const {
+    data, pending: loading, error, refresh } = await useFetch<MovilityReport[]>('/daily-records/monthly-summary', {
+        method: 'POST',
+        $fetch: useNuxtApp().$api,
+        body: computed(() => ({
+            year: Number(currentYear.value),
+            month: Number(currentMonth.value)
+        })
+        ),
+        default: () => [],
+
+
+
+
+        watch: [currentYear, currentMonth],
+    });
+
+    
+
+const movilityReportList = computed<MovilityReport[]>(() => {
+    let filtered = data.value;
+
+    if (searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        filtered = filtered.filter(item =>
+            item.employee.first_name.toLowerCase().includes(term) ||
+            item.employee.last_name.toLowerCase().includes(term) ||
+            item.employee.position_name.toLowerCase().includes(term)
+            //  ||item.provincia.toLowerCase().includes(term) 
+            //  || item.empresa.toLowerCase().includes(term)
+        );
+    }
+
+    return filtered;
+})
+
 
 const daysFromMonth = computed(() => eachDayOfInterval(rangeDate).map((date) => ({
+    date: format(date, 'yyyy-MM-dd'),
     day: format(date, 'eee', {
         locale: es
     }).toUpperCase().slice(0, 1),
@@ -116,30 +186,9 @@ type Holiday = {
 }
 
 
-const pagination = ref({
-    pageIndex: 0,
-    pageSize: 10
-})
 
 
-const table = useTemplateRef('table');
-
-const getStats = () => {
-    const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0;
-    const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10;
-    const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0;
-
-    const start = total === 0 ? 0 : pageIndex * pageSize + 1;
-    const end = Math.min((pageIndex + 1) * pageSize, total);
-    return {
-        total,
-        end,
-        start
-    }
-}
-
-
-watch(currentYearFromMonth, async (year) => {
+watch(currentYear, async (year) => {
     const res = await $fetch<Holiday[]>(`https://date.nager.at/api/v4/PublicHolidays/${year}/PE`);
     holidays.value = res.map(d => d.date);
 }, {
@@ -147,74 +196,41 @@ watch(currentYearFromMonth, async (year) => {
 })
 
 
-const UButton = resolveComponent('UButton')
+const UButton = resolveComponent('UButton');
 
-
-const data = ref<User[]>([
-    {
-        id: 1,
-        name: 'Lindsay Walton',
-        position: 'Front-end Developer',
-        email: 'lindsay.walton@example.com',
-        role: 'Member'
-    },
-    {
-        id: 2,
-        name: 'Courtney Henry',
-        position: 'Designer',
-        email: 'courtney.henry@example.com',
-        role: 'Admin'
-    },
-    {
-        id: 3,
-        name: 'Tom Cook',
-        position: 'Director of Product',
-        email: 'tom.cook@example.com',
-        role: 'Member'
-    },
-    {
-        id: 4,
-        name: 'Whitney Francis',
-        position: 'Copywriter',
-        email: 'whitney.francis@example.com',
-        role: 'Admin'
-    },
-    {
-        id: 5,
-        name: 'Leonard Krasner',
-        position: 'Senior Designer',
-        email: 'leonard.krasner@example.com',
-        role: 'Owner'
-    },
-    {
-        id: 6,
-        name: 'Floyd Miles',
-        position: 'Principal Designer',
-        email: 'floyd.miles@example.com',
-        role: 'Member'
-    }
-])
-
-const columns = computed<TableColumn<User>[]>(() => {
-    const base: TableColumn<User>[] = [
-        { accessorKey: 'id', header: '#' },
-        { accessorKey: 'name', header: ({ column }) => getHeader(column, 'Empleado', 'left') },
-        { accessorKey: 'cargo', header: ({ column }) => getHeader(column, 'Cargo', 'left') },
+const columns = computed<TableColumn<MovilityReport>[]>(() => {
+    const base: TableColumn<MovilityReport>[] = [
+        { accessorKey: 'employee.id', header: '#' },
+        { accessorKey: 'employee', header: ({ column }) => getHeader(column, 'Empleado', 'left') },
+        { accessorKey: 'employee.position_name', header: ({ column }) => getHeader(column, 'Cargo', 'left') },
         { accessorKey: 'fechaIngreso', header: 'F. Ingreso' },
         { accessorKey: 'movilidad', header: 'Movilidad' },
         { accessorKey: 'provincia', header: 'Provincia' },
         { accessorKey: 'empresa', header: 'Empresa' },
+
+        // { accessorKey: 'debug_details', header: 'Sede' },
+        { accessorKey: 'summary.total_days', header: 'Total' },
+        { accessorKey: 'summary.vacation_days', header: 'Vacaciones' },
+        { accessorKey: 'summary.no_mark_days', header: 'No Marco' },
+        { accessorKey: 'summary.days_with_mobility', header: 'DM' },
+        // { accessorKey: 'summary.days_without_mobility', header: 'DSM' },
+        // { accessorKey: 'summary.days_on_leave', header: 'DL' },
+        // { accessorKey: 'summary.days_worked_remotely', header: 'DTR' },
     ]
 
     // FORZAR reevaluación
     const days = daysFromMonth.value
 
-    const dynamicCols = days.map(({ day, number }) => ({
-        accessorKey: `${day}_${number}`,
+    const dynamicCols = days.map(({ day, number, date }) => ({
+        accessorKey: date,
         header: `${day} ${number}`,
+
     }))
 
-    return [...base, ...dynamicCols]
+
+
+    return [...base.slice(0, 7), ...dynamicCols, ...base.slice(7)]
+    // return [...base]
 })
 
 

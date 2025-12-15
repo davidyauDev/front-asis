@@ -1,7 +1,8 @@
 <template>
     <UModal v-model:open="open" :ui="{
-        title: 'py-6'
-    }">
+        title: 'py-6',
+        content: 'max-w-2xl',
+    }" >
         <template #title>
             <div class="flex items-center gap-4">
                 <UAvatar size="xl" alt="Reyna, Fredy Kenlly" />
@@ -36,9 +37,10 @@
 
         </template>
         <template #body>
+            
             <div class="p-6">
-                <div class="flex flex-col gap-6">
-                    <div class="flex-1">
+                <div class="flex max-md:flex-col gap-6">
+                    <div class="flex-1 max-md:order-2">
                         <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Calendario
                             de Asistencia</h3>
                         <UCalendar variant="soft" disabled locale="es" :model-value="rangeDate" range>
@@ -62,37 +64,39 @@
                         <div class="p-4 rounded-xl bg-primary/5 border border-primary/20">
                             <div class="flex items-center justify-between mb-2"><span
                                     class="text-xs text-muted-foreground">Asistencia</span><span
-                                    class="text-lg font-bold text-foreground">26<span
-                                        class="text-muted-foreground text-sm">/31</span></span></div>
+                                    class="text-lg font-bold text-foreground">{{selectedMR?.summary.total_days || 0 }}<span
+                                        class="text-muted-foreground text-sm">/{{ endDayOfMonth }}</span></span></div>
                             <div aria-valuemax="100" aria-valuemin="0" role="progressbar" data-state="indeterminate"
                                 data-max="100" data-slot="progress"
                                 class="bg-primary/20 relative w-full overflow-hidden rounded-full h-2">
                                 <div data-state="indeterminate" data-max="100" data-slot="progress-indicator"
                                     class="bg-primary h-full w-full flex-1 transition-all"
-                                    style="transform: translateX(-16%);"></div>
+                                    :style="`transform: translateX(-${100 - percent}%);`"></div>
                             </div>
-                            <p class="text-xs text-muted-foreground mt-2 text-center">84%</p>
+                            <p class="text-xs text-muted-foreground mt-2 text-center">
+                                {{ percent }}% de asistencia
+                            </p>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             <div
                                 class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-present">26</span><span
+                                <span class="text-xl font-bold text-present">{{ selectedMR?.summary.total_days || 0 }}</span><span
                                     class="text-[10px] text-muted-foreground">Trabajados</span>
                             </div>
                             <div
                                 class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-vacation">0</span><span
+                                <span class="text-xl font-bold text-vacation">{{ selectedMR?.summary.vacation_days || 0 }}</span><span
                                     class="text-[10px] text-muted-foreground">Vacaciones</span>
                             </div>
                             <div
                                 class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-medical">0</span><span
+                                <span class="text-xl font-bold text-medical">{{ selectedMR?.summary.medical_leave_days || 0 }}</span><span
                                     class="text-[10px] text-muted-foreground">D.
                                     Médico</span>
                             </div>
                             <div
                                 class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-foreground">0</span><span
+                                <span class="text-xl font-bold text-foreground">{{ selectedMR?.summary.no_mark_days || 0 }}</span><span
                                     class="text-[10px] text-muted-foreground">No
                                     Marcó</span>
                             </div>
@@ -115,9 +119,11 @@
                                     <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
                                     <polyline points="16 7 22 7 22 13"></polyline>
                                 </svg><span class="text-xs text-muted-foreground">Monto a Depositar</span></div>
-                            <p class="text-3xl font-bold text-present">S/ 73</p><span data-slot="badge"
+                            <p class="text-3xl font-bold text-present">S/ {{ selectedMR?.summary.total_mobility_to_pay || 0 }}</p>
+                            
+                            <!-- <span data-slot="badge"
                                 class="inline-flex items-center justify-center rounded-md px-2 py-0.5 font-medium w-fit whitespace-nowrap shrink-0 [&amp;&gt;svg]:size-3 gap-1 [&amp;&gt;svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent [a&amp;]:hover:bg-primary/90 mt-2 bg-sunday/20 text-sunday border-0 text-xs">+S/
-                                8 bono Vac &gt;23</span>
+                                8 bono Vac &gt;23</span> -->
                         </div>
                     </div>
                 </div>
@@ -128,6 +134,8 @@
 
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
+import type { MovilityReport } from '~/interfaces/movility-report';
+import { endOfMonth } from 'date-fns';
 
 const open = defineModel('open', {
     type: Boolean,
@@ -135,14 +143,25 @@ const open = defineModel('open', {
 })
 
 
-const { rangeDate } = defineProps<{
+const { rangeDate, selectedMovilityReport:selectedMR } = defineProps<{
     rangeDate: {
         start: CalendarDate,
         end: CalendarDate
-    }
+    },
+    selectedMovilityReport: MovilityReport | null
 }>()
 
+const endDayOfMonth = endOfMonth(fromCalToDate(rangeDate.end)).getDate();
 
+const percent = computed(() => {
+    if (!selectedMR) return 0;
+    return calcPercent(selectedMR.summary.total_days || 0, endDayOfMonth);
+});
+
+const calcPercent = (part: number, total: number) => {
+    if (total === 0) return 0;
+    return Math.round((part / total) * 100);
+}
 // const modelValue = shallowRef(new CalendarDate(2022, 1, 10))
 
 function getColorByDate(date: Date) {
