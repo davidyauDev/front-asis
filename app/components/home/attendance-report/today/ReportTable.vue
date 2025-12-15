@@ -8,7 +8,13 @@
     <UTable ref="table" :data="dailyListAttendaces" :columns="columns" class="shrink-0" :ui="{
       base: 'table-fixed border-separate border-spacing-0',
       thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-      tbody: '[&>tr]:last:[&>td]:border-b-0',
+      tbody: `
+  [&>tr:nth-child(even)]:bg-gray-50
+  dark:[&>tr:nth-child(even)]:bg-gray-900
+  [&>tr:hover]:bg-primary-50
+  dark:[&>tr:hover]:bg-primary-900/20
+`,
+
       th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
       td: 'border-b border-default'
     }" :loading="dailyTakenAttendaces.loading" empty="No se encontraron reportes de hoy"
@@ -16,7 +22,7 @@
         getPaginationRowModel: getPaginationRowModel()
       }" />
 
-  
+
     <div class="flex items-center justify-between p-4">
 
       <div class="text-sm text-gray-600 dark:text-gray-400">
@@ -122,7 +128,9 @@ const columns: TableColumn<TakenAttendace>[] = [
   {
     accessorKey: 'Apellidos',
     header: ({ column }) => sortColumButton(column, 'Apellidos'),
-    cell: ({ row }) => row.getValue('Apellidos')
+    cell: ({ row }) =>
+      h('span', { class: 'font-medium text-gray-900 dark:text-gray-100' }, row.getValue('Apellidos'))
+
   },
   {
     accessorKey: 'Nombres',
@@ -137,7 +145,9 @@ const columns: TableColumn<TakenAttendace>[] = [
   {
     accessorKey: 'Empresa',
     header: ({ column }) => sortColumButton(column, 'Empresa'),
-    cell: ({ row }) => row.getValue('Empresa')
+    cell: ({ row }) =>
+      h('span', { class: 'text-sm text-gray-500' }, row.getValue('Empresa'))
+
   },
   {
     accessorKey: 'Horario',
@@ -150,28 +160,95 @@ const columns: TableColumn<TakenAttendace>[] = [
     accessorKey: 'Ingreso',
     header: ({ column }) => sortColumButton(column, 'Ingreso'),
     cell: ({ row }) => {
-      const ingreso = row.getValue('Ingreso') as string;
-      if (!ingreso) return h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
-        'Sin ingreso'
-      );
-      const horario = row.getValue('Horario') as string | null;
-      if (!horario) return ingreso;
+      const ingreso = row.getValue('Ingreso') as string | null
 
-      const h1 = parse(ingreso, "HH:mm:ss", new Date())
-      const h2 = parse(horario, "HH:mm:ss", new Date())
-      return h2 > h1 ? ingreso : h('span', { class: 'text-red-500' }, ingreso)
+      if (!ingreso) {
+        return h(
+          UBadge,
+          { variant: 'subtle', color: 'info' },
+          () => 'Sin ingreso'
+        )
+      }
+
+      const horario = row.getValue('Horario') as string | null
+
+      if (!horario) {
+        return h(
+          UBadge,
+          { variant: 'subtle', color: 'neutral' },
+          () => ingreso
+        )
+      }
+
+      const hIngreso = parse(ingreso, 'HH:mm:ss', new Date())
+      const hHorario = parse(horario, 'HH:mm:ss', new Date())
+
+      const isLate = hIngreso > hHorario
+
+      return h(
+        UBadge,
+        {
+          variant: 'subtle',
+          color: isLate ? 'error' : 'success',
+          class: 'inline-flex items-center gap-1 whitespace-nowrap',
+          title: isLate ? 'Ingreso fuera de horario' : 'Ingreso a tiempo'
+        },
+        () => [
+          h(UIcon, {
+            name: isLate ? 'i-lucide-alert-circle' : 'i-lucide-check-circle',
+            class: 'w-4 h-4'
+          }),
+          ingreso
+        ]
+      )
+
+
     }
   },
-  {
-    accessorKey: 'Salida',
-    header: ({ column }) => sortColumButton(column, 'Salida'),
-    cell: ({ row }) => {
-      const salida = row.getValue('Salida');
 
-      return salida || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
-        'Sin salida'
+  {
+  accessorKey: 'Salida',
+  header: ({ column }) => sortColumButton(column, 'Salida'),
+  cell: ({ row }) => {
+    const salida = row.getValue('Salida') as string | null
+
+    if (!salida) {
+      return h(
+        UBadge,
+        {
+          variant: 'subtle',
+          color: 'info',
+          class: 'inline-flex items-center gap-1 whitespace-nowrap',
+          title: 'Aún no registra salida'
+        },
+        () => [
+          h(UIcon, {
+            name: 'i-lucide-clock',
+            class: 'w-4 h-4'
+          }),
+          'Sin salida'
+        ]
       )
     }
-  },
+
+    return h(
+      UBadge,
+      {
+        variant: 'subtle',
+        color: 'neutral',
+        class: 'inline-flex items-center gap-1 whitespace-nowrap',
+        title: 'Hora de salida registrada'
+      },
+      () => [
+        h(UIcon, {
+          name: 'i-lucide-log-out',
+          class: 'w-4 h-4'
+        }),
+        salida
+      ]
+    )
+  }
+}
+,
 ]
 </script>

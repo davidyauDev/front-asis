@@ -155,7 +155,7 @@ const columns: TableColumn<TakenAttendace>[] = [
 
 
 const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
-  accessorKey: 'tipo',
+  accessorKey: 'tipo_marcacion',
   header: ({ column }) => sortColumButton(column, 'Tipo'),
   cell: ({ row }) => row.getValue('tipo')
 }, {

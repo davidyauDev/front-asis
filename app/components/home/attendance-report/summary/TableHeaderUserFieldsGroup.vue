@@ -1,33 +1,42 @@
 <template>
     <div class="w-full">
-        <!-- <tr> -->
-        <div class="w-full  h-12"></div>
+        <!-- Spacer -->
+        <div class="w-full h-12"></div>
 
-        <!-- </tr> -->
-        <div class="bg-slate-800 w-full p-2">
-            <span class="w-full text-xs text-slate-400 font-medium">Período de consulta</span>
-
+        <!-- Subheader -->
+        <div class="w-full px-4 py-2 bg-slate-100 dark:bg-slate-900">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Período de consulta
+            </span>
         </div>
 
-
-        <div class="bg-linear-to-r from-emerald-700 to-emerald-600 flex p-2 justify-evenly">
-            <div class="py-2 px-3 text-left transition-colors w-24">
+        <!-- Header columnas -->
+        <div class="
+    w-full flex justify-evenly items-center
+    px-2 py-2
+    bg-slate-50 dark:bg-slate-900
+    border-y border-slate-200 dark:border-slate-800
+  ">
+            <div class="py-2 px-3 w-24 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 DNI
             </div>
-            <div class="py-2 px-3 text-left transition-colors w-36">
+
+            <div class="py-2 px-3 w-36 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Apellidos
             </div>
-            <div class="py-2 px-3 text-left transition-colors w-32">
+
+            <div class="py-2 px-3 w-32 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Nombre
             </div>
-            <div class="py-2 px-3 text-left  transition-colors w-28">
+
+            <div class="py-2 px-3 w-28 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Departamento
             </div>
-            <div class="py-2 px-3 text-left transition-colors w-28">
+
+            <div class="py-2 px-3 w-28 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Empresa
             </div>
-
         </div>
-    </div>
 
+    </div>
 </template>
