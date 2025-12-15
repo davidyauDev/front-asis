@@ -5,7 +5,7 @@
     <UInput icon="i-lucide-search" v-model="attendances.globalFilter" class="w-full"
       placeholder="Buscar por nombre, apellido o DNI..." />
 
-    <UTable ref="table" :data="attendances.listFiltered" :columns="dinamicColumns" class="shrink-0" :ui="{
+    <UTable  ref="table" :data="attendances.listFiltered" :columns="dinamicColumns" class="shrink-0" :ui="{
       base: 'table-fixed border-separate border-spacing-0',
       thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
       tbody: '[&>tr]:last:[&>td]:border-b-0',
@@ -155,22 +155,72 @@ const columns: TableColumn<TakenAttendace>[] = [
 
 
 const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
-  accessorKey: 'tipo_marcacion',
-  header: ({ column }) => sortColumButton(column, 'Tipo'),
-  cell: ({ row }) => row.getValue('tipo')
-}, {
-  accessorKey: 'fecha',
-  header: ({ column }) => sortColumButton(column, 'Fecha'),
-  cell: ({ row }) => row.getValue('fecha')
-}, {
-  accessorKey: 'hora',
-  header: ({ column }) => sortColumButton(column, 'Hora'),
-  cell: ({ row }) => row.getValue('hora')
-}, {
+  accessorKey: 'Tipo_Marcacion',
+  header: ({ column }) => sortColumButton(column, 'Tipo de marcación'),
+  cell: ({ row }) => {
+    const value = row.getValue('Tipo_Marcacion');
+
+    if (parseInt(value) === 0) return 'Entrada';
+    if (parseInt(value) === 1) return 'Salida';
+    return 'Otro';
+  }
+}
+, {
+  accessorKey: 'Fecha_Hora_Marcacion',
+  header: ({ column }) => sortColumButton(column, 'Fecha y hora de marcación'),
+  cell: ({ row }) => {
+    const raw = row.getValue('Fecha_Hora_Marcacion');
+    if (!raw) return 'Sin fecha';
+
+    const date = new Date(raw);
+
+    const fecha = new Intl.DateTimeFormat('es-PE', {
+      dateStyle: 'long',
+      timeZone: 'America/Lima'
+    }).format(date);
+
+    const hora = new Intl.DateTimeFormat('es-PE', {
+      timeStyle: 'short',
+      timeZone: 'America/Lima'
+    }).format(date);
+
+    return h('div', { class: 'flex flex-col leading-tight' }, [
+      h('span', { class: 'text-sm font-medium text-gray-800 dark:text-gray-200' }, fecha),
+      h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, hora)
+    ]);
+  }
+}
+
+, {
   accessorKey: 'Ubicacion',
   header: ({ column }) => sortColumButton(column, 'Dirección'),
-  cell: ({ row }) => row.getValue('Ubicacion') || "Sin Ubicación"
-}, {
+  cell: ({ row }) => {
+    const value = row.getValue('Ubicacion') as string | null;
+
+    if (!value) {
+      return h('span', {
+        class: 'text-xs text-gray-400 italic'
+      }, 'Sin dirección');
+    }
+
+    return h(
+      'div',
+      {
+        class: `
+          max-w-[220px]
+          truncate
+          text-sm
+          text-gray-700
+          dark:text-gray-300
+          cursor-help
+        `,
+        title: value
+      },
+      value
+    );
+  }
+}
+, {
   accessorKey: 'map_url',
   header: "Mapa",
   cell: ({ row }) => {
@@ -214,25 +264,32 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
 }]))
 
 const administratorsColumns = computed<TableColumn<TakenAttendace>[]>(() => [
+  
   {
-    accessorKey: 'fecha',
-    header: ({ column }) => sortColumButton(column, 'Fecha'),
-    cell: ({ row }) => row.getValue('fecha')
-  },
-  {
-    accessorKey: 'hora',
-    header: ({ column }) => sortColumButton(column, 'Hora'),
-    cell: ({ row }) => row.getValue('hora')
-  },
-  {
-    accessorKey: 'anio',
-    header: ({ column }) => sortColumButton(column, 'Año'),
-    cell: ({ row }) => row.getValue('anio')
-  },
-  {
-    accessorKey: 'dia',
-    header: ({ column }) => sortColumButton(column, 'Día'),
-    cell: ({ row }) => row.getValue('dia')
+  accessorKey: 'Fecha_Hora_Marcacion',
+  header: ({ column }) => sortColumButton(column, 'Fecha y hora de marcación'),
+  cell: ({ row }) => {
+    const raw = row.getValue('Fecha_Hora_Marcacion');
+    if (!raw) return 'Sin fecha';
+
+    const date = new Date(raw);
+
+    const fecha = new Intl.DateTimeFormat('es-PE', {
+      dateStyle: 'long',
+      timeZone: 'America/Lima'
+    }).format(date);
+
+    const hora = new Intl.DateTimeFormat('es-PE', {
+      timeStyle: 'short',
+      timeZone: 'America/Lima'
+    }).format(date);
+
+    return h('div', { class: 'flex flex-col leading-tight' }, [
+      h('span', { class: 'text-sm font-medium text-gray-800 dark:text-gray-200' }, fecha),
+      h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, hora)
+    ]);
   }
+},
+  
 ]);
 </script>

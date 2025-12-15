@@ -232,11 +232,20 @@ watch(
     (newFecha, oldFecha) => {
         if (newFecha?.toISOString() === oldFecha?.toISOString()) return;
         getTechTakenAttendances()
-
         attendance.value.taken.tech.pagination.pageIndex = 0;
     }
 
 
+);
+
+watch(
+  () => attendance.value.taken.all.params.fecha,
+  (fecha) => {
+    if (!fecha) return;
+
+    getAllTakenAttendances();
+    attendance.value.taken.all.pagination.pageIndex = 0;
+  }
 );
 
 

@@ -53,9 +53,6 @@
 import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
 
-
-
-
 const currentDateModel = defineModel<Date>('date', {
   required: true,
   // default: startOfMonth(new Date())
