@@ -1,68 +1,77 @@
 <script setup lang="ts">
-import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalized/date';
-import { endOfMonth } from 'date-fns';
-import { fromCalToDate, toCalendarDate } from '~/utils/formatDate';
-
-const df = new DateFormatter('es-ES', {
-    dateStyle: 'medium'
-})
+import { CalendarDate } from '@internationalized/date'
+import { addMonths, endOfMonth, format, getDaysInMonth, startOfMonth } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { toCalendarDate } from '~/utils/formatDate'
 
 const modelValue = defineModel<{
-    start: CalendarDate,
-    end: CalendarDate
+  start: CalendarDate
+  end: CalendarDate
 }>({
-    required: true
+  required: true
 })
 
-const onUpdateRange = (value: any) => {
-    const startDate = fromCalToDate(value.start);
-    const endDate = value?.end ? fromCalToDate(value.end) : null;
+const currentMonth = computed(() =>
+  startOfMonth(modelValue.value.start.toDate('UTC'))
+)
 
-    const endOfStartMonth = endOfMonth(startDate);
+const monthLabel = computed(() =>
+  format(currentMonth.value, 'MMMM yyyy', { locale: es })
+)
 
-    // Nuevo endDate = endDate limitado al fin de mes del start
-    const limitedEnd = endDate > endOfStartMonth ? endOfStartMonth : endDate;
+const daysInMonth = computed(() =>
+  getDaysInMonth(currentMonth.value)
+)
 
+function updateMonth(date: Date) {
+  modelValue.value = {
+    start: toCalendarDate(startOfMonth(date)),
+    end: toCalendarDate(endOfMonth(date))
+  }
+}
 
-    modelValue.value = {
-        start: value.start,
-        end: value.end ? toCalendarDate(limitedEnd) : null
-    };
-};
+function prevMonth() {
+  updateMonth(addMonths(currentMonth.value, -1))
+}
 
-
-const maxDate = computed<CalendarDate>(() => {
-    const date = endOfMonth(modelValue.value.start.toDate(getLocalTimeZone()));
-    return toCalendarDate(date)
-})
+function nextMonth() {
+  updateMonth(addMonths(currentMonth.value, 1))
+}
 </script>
 
 <template>
-    <UPopover>
-        <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
-            <template v-if="modelValue.start">
-                <template v-if="modelValue.end">
-                    {{ df.format(modelValue.start.toDate(getLocalTimeZone())) }} - {{
-                        df.format(modelValue.end.toDate(getLocalTimeZone())) }}
-                </template>
+  <div
+    class="flex items-center gap-3
+           px-4 py-2
+           border border-gray-200
+           rounded-lg
+           bg-white"
+  >
+    <!-- PREV -->
+    <UButton
+      icon="i-heroicons-chevron-left"
+      variant="ghost"
+      size="sm"
+      @click="prevMonth"
+    />
 
-                <template v-else>
-                    {{ df.format(modelValue.start.toDate(getLocalTimeZone())) }}
-                </template>
-            </template>
-            <template v-else>
-                Selecciona una fecha
-            </template>
-        </UButton>
+    <!-- LABEL -->
+    <div class="flex items-center gap-2 text-sm font-medium text-gray-800">
+      <UIcon name="i-lucide-calendar" class="text-gray-500" />
+      <span class="capitalize">
+        {{ monthLabel }}
+      </span>
+      <span class="text-gray-400">
+        ({{ daysInMonth }} días)
+      </span>
+    </div>
 
-        <template #content>
-
-            <UCalendar :ui="{
-                heading: 'px-2'
-            }" :model-value="modelValue" @update:model-value="onUpdateRange" class="p-2" range locale="es">
-
-            </UCalendar>
-
-        </template>
-    </UPopover>
+    <!-- NEXT -->
+    <UButton
+      icon="i-heroicons-chevron-right"
+      variant="ghost"
+      size="sm"
+      @click="nextMonth"
+    />
+  </div>
 </template>

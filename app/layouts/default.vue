@@ -24,12 +24,13 @@ const links = [[{
 },
 {
   label: 'Movilidad',
-  icon: 'i-lucide-luggage',
+  icon: 'i-lucide-car',
   to: '/movility-report',
   onSelect: () => {
-    open.value = false
+    open.value = false;
   }
-},
+}
+,
 
 // {
 //   label: 'Reporte de Asistencias',
