@@ -1,4 +1,4 @@
-<template>
+``<template>
     <UCard :ui="{
         header: 'p-2 flex items-center justify-between'
     }">
@@ -67,12 +67,37 @@ const selecteds = computed<Employee[]>({
     }
 })
 
-const handleSelectEmployee = (employee: Employee) => {
-    param.value = employee.id;
-    selecteds.value = selecteds.value.some(s => s.id === employee.id)
-        ? selecteds.value.filter(s => s.id === employee.id) // remover
-        : [employee]
-}
+const handleSelectEmployee = (employeeItem: Employee) => {
+  // 1️⃣ Detectar estado inicial (todos seleccionados)
+  const allSelected =
+    selecteds.value.length === employee.value.list.length;
+
+  // Primer click: romper "todos"
+  if (allSelected) {
+    selecteds.value = [employeeItem];
+    param.value = employeeItem.id;
+    return;
+  }
+
+  // 2️⃣ Multiselección normal
+  const exists = selecteds.value.some(
+    s => s.id === employeeItem.id
+  );
+
+  if (exists) {
+    // quitar solo el clickeado
+    selecteds.value = selecteds.value.filter(
+      s => s.id !== employeeItem.id
+    );
+  } else {
+    // agregar sin perder los demás
+    selecteds.value = [...selecteds.value, employeeItem];
+  }
+
+  // opcional: último clickeado
+  param.value = employeeItem.id;
+};
+
 
 const handleResertFilter = () => {
     selecteds.value = employee.value.list

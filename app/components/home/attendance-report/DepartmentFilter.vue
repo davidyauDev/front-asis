@@ -51,7 +51,7 @@ const storeSelecteds = defineModel<Department[]>('department', {
   required: true
 });
 
-const param = defineModel<number | undefined>('param');
+//const param = defineModel<number | undefined>('param');
 
 
 const selecteds = computed<Department[]>({
@@ -63,17 +63,36 @@ const selecteds = computed<Department[]>({
     storeSelecteds.value = newSelecteds
   }
 })
+const handleSelectDepartment = (departmentItem: Department) => {
+  const allSelected =
+    selecteds.value.length === department.value.list.length;
 
-const handleSelectDepartment = (department: Department) => {
-  param.value = department.id;
-  selecteds.value = selecteds.value.some(s => s.id === department.id)
-    ? selecteds.value.filter(s => s.id === department.id) // remover
-    : [department]
-}
+  // Primer click: romper "todos"
+  if (allSelected) {
+    selecteds.value = [departmentItem];
+    return;
+  }
+
+  const exists = selecteds.value.some(
+    s => s.id === departmentItem.id
+  );
+
+  if (exists) {
+    selecteds.value = selecteds.value.filter(
+      s => s.id !== departmentItem.id
+    );
+  } else {
+    selecteds.value = [...selecteds.value, departmentItem];
+  }
+};
+
+
+
+
 
 const handleResertFilter = () => {
   selecteds.value = department.value.list
-  param.value = undefined;
+  //param.value = undefined;
 }
 
 

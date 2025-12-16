@@ -152,7 +152,8 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
 
       params: {
         empresa_ids: [1, 2],
-        departamento_ids: [8],
+        departamento_ids: [],
+        empleado_ids: [] as number[],
         fecha_inicio: formatToYMD(),
         fecha_fin: formatToYMD(undefined, true),
       } as AttendanceParams,
@@ -178,7 +179,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           loading: false,
           globalFilter: "",
           params: {
-            fecha: startOfMonth(new Date()),
+            fechas: [startOfMonth(new Date())],
           } as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           listFiltered: [] as TakenAttendace[],
@@ -192,7 +193,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           loading: false,
           globalFilter: "",
           params: {
-            fecha: startOfMonth(new Date()),
+            fechas: [startOfMonth(new Date())],
           } as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           listFiltered: [] as TakenAttendace[],

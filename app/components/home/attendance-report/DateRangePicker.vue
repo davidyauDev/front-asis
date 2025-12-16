@@ -39,10 +39,13 @@
       header: 'py-2'
     }">
       <template #header>Días</template>
-      <UCalendar v-model="calendar" class="w-full" locale="es" :year-controls="false"  @update:placeholder="(value) => {
-        selectedMonth = value.month.toString()
-        currentDateModel = value.toDate(getLocalTimeZone())
-      }" />
+      
+
+       <UCalendar multiple v-model="calendar" locale="es" :year-controls="false"  @update:placeholder="(value) => {
+  selectedMonth = value.month.toString()
+  selectedYear = value.year.toString()
+}"
+/>
 
     </UCard>
   </div>
@@ -53,15 +56,15 @@
 import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
 
-const currentDateModel = defineModel<Date>('date', {
+const currentDateModel = defineModel<Date[]>('dates', {
   required: true,
-  // default: startOfMonth(new Date())
-});
+  default: () => []
+})
 
 
-// const selected = ref<Date>(startOfMonth(new Date()))
 
-// Convert Date → CalendarDate
+
+
 const toCalendarDate = (date: Date) => {
   return new CalendarDate(
     date.getFullYear(),
@@ -70,19 +73,31 @@ const toCalendarDate = (date: Date) => {
   )
 }
 
-// Rango vinculado al calendario
-const calendar = computed({
-  get: () => currentDateModel.value ? toCalendarDate(currentDateModel.value) : undefined,
-  set: (newValue) => {
-    currentDateModel.value = newValue ? newValue.toDate(getLocalTimeZone()) : new Date()
+
+const calendar = computed<CalendarDate[]>({
+  get: () => {
+    if (!Array.isArray(currentDateModel.value)) return []
+
+    return currentDateModel.value.map(date =>
+      new CalendarDate(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        date.getDate()
+      )
+    )
+  },
+
+  set: (newValues) => {
+    if (!Array.isArray(newValues)) {
+      currentDateModel.value = []
+      return
+    }
+
+    currentDateModel.value = newValues.map(cd =>
+      cd.toDate(getLocalTimeZone())
+    )
   }
 })
-
-
-// watch(() => calendar.value, () => {
-//   // console.log(calendar.value?.calendar)
-//   currentDateModel.value = calendar?.value?.toDate(getLocalTimeZone()) 
-// })
 
 
 // --- AÑOS ---

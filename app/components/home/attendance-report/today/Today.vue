@@ -19,12 +19,12 @@
     />
 
     <EmployeeFilter
-      :loading="employee.daily.loading"
-      :is-error="employee.daily.isError"
-      :list="employee.daily.list"
-      v-model:employee="employee.daily.selecteds"
-      v-model:param="dailyTakenAttendace.params.empleado_id"
-    />
+  :loading="employee.department.loading"
+  :is-error="employee.department.isError"
+  :list="employee.department.list"
+  v-model:employee="employee.department.selecteds"
+/>
+
   </div>
 
   <section class="w-full mb-4">
@@ -96,6 +96,39 @@ watch(
     dailyTakenAttendace.value.pagination.pageIndex = 0;
   }
 );
+
+watch(
+  () => store.department.daily.selecteds,
+  (departments) => {
+    const ids = departments.map(d => d.id);
+
+    // 1️⃣ Params para EMPLEADOS
+    store.attendance.params.departamento_ids = ids;
+
+    // 2️⃣ Params para TABLA / RESUMEN
+    store.attendance.taken.daily.params.departamento_ids = ids;
+
+    // 3️⃣ Actualizar empleados
+    store.getEmployeesByDepartment();
+
+    // 4️⃣ Actualizar tabla + resumen
+    store.getDailyTakenAttendances();
+  },
+  { deep: true, immediate: true }
+);
+
+watch(
+  () => store.employee.department.selecteds,
+  (employees) => {
+    store.attendance.taken.daily.params.empleado_ids =
+      employees.map(e => e.id);
+
+    store.getDailyTakenAttendances();
+  },
+  { deep: true }
+);
+
+
 
 watch(
   () => dailyTakenAttendace.value.params.department_id,

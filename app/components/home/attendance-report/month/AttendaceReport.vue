@@ -6,7 +6,7 @@
                 v-model:param="currentParams.company_id" />
         </div>
         <div class="xl:basis-[calc(55%-1.5rem)]">
-            <DateRangePicker v-model:date="currentParams.fecha" />
+            <DateRangePicker v-model:date="currentParams.fechas" />
         </div>
 
         <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
