@@ -22,13 +22,43 @@
       </UDashboardNavbar>
 
       <UDashboardToolbar>
-        <UTabs :items="tabItems" :orientation="width < 500 ? 'vertical' : 'horizontal'" class="flex-1 p-3 mx-auto"
-          v-model="currentTabType" @update:model-value="(value) => {
-            currentTabType = value as ItemType
-          }">
-
-        </UTabs>
+        <UTabs v-model="currentTabType" :items="tabItems" :orientation="width < 500 ? 'vertical' : 'horizontal'"
+          class="flex-1 flex justify-center mt-2" :ui="{
+            list: `
+        flex gap-2 p-1 rounded-xl
+        bg-gray-100 dark:bg-gray-900
+        border border-gray-200 dark:border-gray-800
+      `,
+            item: {
+              base: `
+          px-6 py-2
+          text-sm font-semibold
+          rounded-lg
+          cursor-pointer
+          transition-all duration-200 ease-out
+          focus:outline-none
+          focus-visible:ring-2 focus-visible:ring-green-500
+        `,
+              active: `
+          bg-green-500 text-white
+          shadow-md
+          scale-[1.02]
+        `,
+              inactive: `
+          text-gray-600 dark:text-gray-400
+          hover:bg-white dark:hover:bg-gray-800
+          hover:text-gray-800 dark:hover:text-gray-200
+          hover:shadow
+          hover:-translate-y-[1px]
+        `
+            },
+            marker: 'hidden'
+          }" />
       </UDashboardToolbar>
+
+
+
+
 
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
         <UTabs :items="employeeItems" variant="link" class="flex-1 p-3 mx-auto" v-model="currentEmployeeType"

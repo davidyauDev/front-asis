@@ -1,37 +1,81 @@
-``<template>
-    <UCard :ui="{
-        header: 'p-2 flex items-center justify-between'
-    }">
-        <template #header>
-            Nombres
-            <UButton :disabled="selecteds.length === employee.list.length" v-if="!isError" class="cursor-pointer"
-                icon="i-lucide-funnel" variant="link" @click="handleResertFilter" />
+<template>
+  <UCard
+    :ui="{
+      header: 'px-3 py-2 flex items-center justify-between border-b'
+    }"
+  >
+    <!-- HEADER -->
+    <template #header>
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-user" class="size-4 text-primary" />
+        <span class="font-semibold text-sm">Nombres</span>
+      </div>
+
+      <UButton
+        v-if="!isError && selecteds.length !== employee.list.length"
+        icon="i-lucide-rotate-ccw"
+        size="xs"
+        variant="ghost"
+        color="gray"
+        class="cursor-pointer"
+        @click="handleResertFilter"
+      >
+        Limpiar
+      </UButton>
+    </template>
+
+    <!-- BODY -->
+    <div
+      class="max-h-48 overflow-y-auto flex flex-wrap gap-2 items-center pr-1"
+      :class="extraClass"
+    >
+      <DataState
+        :loading="loading"
+        :error="isError"
+        error-message="No se pudo cargar los empleados"
+        @retry="getEmployees()"
+      >
+        <!-- LOADING -->
+        <template #loading>
+          <USkeleton
+            v-for="_ in 8"
+            :key="_"
+            class="h-8 w-36 rounded-full"
+          />
         </template>
 
-        <div class="max-h-48 overflow-y-auto flex gap-2  flex-wrap items-center" :class="extraClass">
-            
+        <!-- LIST -->
+        <template v-if="list.length">
+          <UButton
+            v-for="item in list"
+            :key="item.id"
+            size="xs"
+            class="rounded-full transition-all cursor-pointer"
+            :variant="selecteds.some(s => s.id === item.id) ? 'solid' : 'outline'"
+            :color="selecteds.some(s => s.id === item.id) ? 'primary' : 'gray'"
+            @click="handleSelectEmployee(item)"
+          >
+            <UIcon
+              v-if="selecteds.some(s => s.id === item.id)"
+              name="i-lucide-check"
+              class="size-3 mr-1"
+            />
+            {{ item.first_name }} {{ item.last_name }}
+          </UButton>
+        </template>
 
-             <DataState :loading="loading" :error="isError"
-                error-message="No se pudo cargas las empresas" @retry="getEmployees()">
-
-                <template #loading>
-                    <USkeleton v-for="_ in Array.from({ length: 10 })" class="h-8 w-36" />
-                </template>
-
-
-                <UButton
-                v-if="list.length"
-                v-for="item in list" :key="item.id" class="cursor-pointer" :class="!selecteds.some(s => s.id === item.id) &&
-                    'bg-gray-100 dark:bg-gray-800 dark:text-gray-100 text-gray-700 border transition'"
-                    @click="handleSelectEmployee(item)">
-                    {{ item.first_name }}  {{ item.last_name }}
-                </UButton>
-                <small v-else class="text-center">No se encontraron empleados</small>
-
-            </DataState>
-        </div>
-    </UCard>
+        <!-- EMPTY -->
+        <p
+          v-else
+          class="w-full text-center text-xs text-muted-foreground py-3"
+        >
+          No se encontraron empleados
+        </p>
+      </DataState>
+    </div>
+  </UCard>
 </template>
+
 
 
 <script setup lang="ts">

@@ -6,7 +6,7 @@
                 v-model:param="currentParams.company_id" />
         </div>
         <div class="xl:basis-[calc(55%-1.5rem)]">
-            <DateRangePicker v-model:date="currentParams.fechas" />
+            <DateRangePicker v-model:dates="currentParams.fechas" />
         </div>
 
         <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
@@ -193,18 +193,38 @@ watch(() => attendance.value.taken.tech.params.company_id, (companyId) => {
     attendance.value.taken.tech.pagination.pageIndex = 0;
 })
 
-watch(() => attendance.value.taken.tech.params.department_id, (departmentId) => {
-    getTechTakenAttendances();
-    const currDep = department.value.list.find((dep) => dep.id === departmentId);
-    if (currDep) {
-        company.value.tech.list = company.value.list.filter((com) => com.id === currDep.company_id)
-        employee.value.tech.list = employee.value.list.filter((dep) => dep.department_id === currDep.id);
+watch(
+  () => department.value.tech.selecteds,
+  (departments) => {
+    const ids = departments.map(d => d.id);
+    attendance.value.taken.tech.params.departamento_ids = ids;
+    store.attendance.params.departamento_ids = ids;
+    if (ids.length) {
+      employee.value.tech.list = employee.value.list.filter(emp =>
+        ids.includes(emp.department_id)
+      );
     } else {
-        company.value.tech.list = company.value.list
-        employee.value.tech.list = employee.value.list
+      employee.value.tech.list = employee.value.list;
     }
-})
+    getTechTakenAttendances();
+    attendance.value.taken.tech.pagination.pageIndex = 0;
+  },
+  { deep: true, immediate: true }
+);
 
+watch(
+  () => employee.value.tech.selecteds,
+  (empleado_ids) => {
+    const ids = empleado_ids.map(d => d.id);
+    attendance.value.taken.tech.params.empleado_ids = ids;
+    store.attendance.params.empleado_ids = ids;
+    getTechTakenAttendances();
+    attendance.value.taken.tech.pagination.pageIndex = 0;
+  },
+  { deep: true, immediate: true }
+);
+
+/*
 watch(() => attendance.value.taken.tech.params.empleado_id, (employeeId) => {
     getTechTakenAttendances();
     const currEmp = employee.value.list.find((em) => em.id === employeeId);
@@ -225,28 +245,28 @@ watch(() => attendance.value.taken.tech.params.empleado_id, (employeeId) => {
     }
 
     attendance.value.taken.tech.pagination.pageIndex = 0;
-})
+})*/
+
+ watch(
+     () => attendance.value.taken.tech.params.fechas,
+     () => {
+         getTechTakenAttendances()
+         attendance.value.taken.tech.pagination.pageIndex = 0;
+     }
+
+
+ );
 
 watch(
-    () => attendance.value.taken.tech.params.fecha,
-    (newFecha, oldFecha) => {
-        if (newFecha?.toISOString() === oldFecha?.toISOString()) return;
-        getTechTakenAttendances()
-        attendance.value.taken.tech.pagination.pageIndex = 0;
-    }
-
-
-);
-
-watch(
-  () => attendance.value.taken.all.params.fecha,
-  (fecha) => {
-    if (!fecha) return;
-
+  () => attendance.value.taken.all.params.fechas,
+  (fechas) => {
+    if (!fechas?.length) return;
     getAllTakenAttendances();
     attendance.value.taken.all.pagination.pageIndex = 0;
-  }
+  },
+  { deep: true }
 );
+
 
 
 //* ALL
@@ -266,19 +286,34 @@ watch(() => attendance.value.taken.all.params.company_id, (companyId) => {
     attendance.value.taken.all.pagination.pageIndex = 0;
 })
 
-watch(() => attendance.value.taken.all.params.department_id, (departmentId) => {
-    getAllTakenAttendances();
-    const currDep = department.value.list.find((dep) => dep.id === departmentId);
-    if (currDep) {
-        company.value.all.list = company.value.list.filter((com) => com.id === currDep.company_id)
-        employee.value.all.list = employee.value.list.filter((dep) => dep.department_id === currDep.id);
+
+department.value.all.selecteds
+
+
+watch(() => department.value.all.selecteds , (departments) => {
+    const ids = departments.map(d => d.id);
+    store.attendance.taken.all.params.departamento_ids = ids;
+    if (ids.length) {
+      employee.value.all.list = employee.value.list.filter(emp =>
+        ids.includes(emp.department_id)
+      );
     } else {
-        company.value.all.list = company.value.list
-        employee.value.all.list = employee.value.list
+      employee.value.all.list = employee.value.list;
     }
+    getAllTakenAttendances();
 
     attendance.value.taken.all.pagination.pageIndex = 0;
-})
+}, { deep: true, immediate: true })
+
+watch(() => employee.value.all.selecteds , (empleado_ids) => {
+    const ids = empleado_ids.map(d => d.id);
+    store.attendance.taken.all.params.empleado_ids = ids;
+    getAllTakenAttendances();
+    attendance.value.taken.all.pagination.pageIndex = 0;
+}, { deep: true, immediate: true })
+
+
+/*
 
 watch(() => attendance.value.taken.all.params.empleado_id, (employeeId) => {
     getAllTakenAttendances();
@@ -293,24 +328,17 @@ watch(() => attendance.value.taken.all.params.empleado_id, (employeeId) => {
             department.value.all.list = department.value.list.filter((dep) => dep.company_id === companyId);
             return;
         }
-
         department.value.all.list = department.value.list
     }
-
     attendance.value.taken.all.pagination.pageIndex = 0;
-})
+})*/
 
 watch(
-    () => attendance.value.taken.tech.params.fecha,
-    (newFecha, oldFecha) => {
-        if (newFecha?.toISOString() === oldFecha?.toISOString()) return;
+    () => attendance.value.taken.tech.params.fechas,
+    () => {
         getAllTakenAttendances()
-
         attendance.value.taken.all.pagination.pageIndex = 0;
     }
 );
-
-
-
 
 </script>

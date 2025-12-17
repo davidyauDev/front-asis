@@ -24,32 +24,25 @@ const links = [[{
 },
 {
   label: 'Movilidad',
-  icon: 'i-lucide-car',
+  icon: 'i-lucide-wallet',
   to: '/movility-report',
   onSelect: () => {
     open.value = false;
   }
 }
+
+
 ,
 
-// {
-//   label: 'Reporte de Asistencias',
-//   icon: 'i-lucide-file-text',
-//   to: '/reporte-asistencias',
-//   onSelect: () => {
-//     open.value = false
-//   }
-// }, 
-
-// {
-//   label: 'Inbox',
-//   icon: 'i-lucide-inbox',
-//   to: '/inbox',
-//   badge: '4',
-//   onSelect: () => {
-//     open.value = false
-//   }
-// },
+{
+  label: 'Incidencias',
+  icon: 'i-lucide-clock-alert',
+  to: '/incidencias',
+  onSelect: () => {
+    open.value = false;
+  }
+}
+,
 
 {
   label: 'Usuarios',
@@ -74,39 +67,6 @@ const links = [[{
   }
 },
 
-// {
-//   label: 'Settings',
-//   to: '/settings',
-//   icon: 'i-lucide-settings',
-//   defaultOpen: true,
-//   type: 'trigger',
-//   children: [{
-//     label: 'General',
-//     to: '/settings',
-//     exact: true,
-//     onSelect: () => {
-//       open.value = false
-//     }
-//   }, {
-//     label: 'Members',
-//     to: '/settings/members',
-//     onSelect: () => {
-//       open.value = false
-//     }
-//   }, {
-//     label: 'Notifications',
-//     to: '/settings/notifications',
-//     onSelect: () => {
-//       open.value = false
-//     }
-//   }, {
-//     label: 'Security',
-//     to: '/settings/security',
-//     onSelect: () => {
-//       open.value = false
-//     }
-//   }]
-// }
 
 
 ]] satisfies NavigationMenuItem[][]

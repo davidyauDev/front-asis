@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="vacations">
     <template #header>
-      <UDashboardNavbar title="Vacaciones" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="Movilidad" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>

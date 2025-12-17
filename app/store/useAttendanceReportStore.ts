@@ -1,4 +1,4 @@
-import { startOfMonth } from 'date-fns';
+import { startOfDay, startOfMonth } from 'date-fns';
 import {
   useAttendanceReport,
   type AttendanceParams,
@@ -179,7 +179,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           loading: false,
           globalFilter: "",
           params: {
-            fechas: [startOfMonth(new Date())],
+            fechas: [startOfDay(new Date())],
           } as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           listFiltered: [] as TakenAttendace[],
@@ -193,7 +193,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
           loading: false,
           globalFilter: "",
           params: {
-            fechas: [startOfMonth(new Date())],
+            fechas: [startOfDay(new Date())],
           } as TakenAttendaceParams,
           list: [] as TakenAttendace[],
           listFiltered: [] as TakenAttendace[],

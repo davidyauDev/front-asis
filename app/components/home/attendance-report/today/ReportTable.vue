@@ -1,134 +1,152 @@
 <template>
-  <DataState :loading="dailyTakenAttendaces.loading" :error="dailyTakenAttendaces.isError"
-    error-message="No se pudo cargar los reportes de hoy" @retry="getDailyTakenAttendances">
+  <DataState
+    :loading="dailyTakenAttendaces.loading"
+    :error="dailyTakenAttendaces.isError"
+    error-message="No se pudo cargar los reportes de hoy"
+    @retry="getDailyTakenAttendances"
+  >
 
-    <div class="flex gap-2 mb-4">
-  <UInput
-    icon="i-lucide-search"
-    v-model="dailyTakenAttendaces.globalFilter"
-    class="w-full"
-    placeholder="Buscar por nombre, apellido o DNI..."
-  />
+    <!-- TOOLBAR -->
+    <div
+      class="
+        flex flex-wrap items-center justify-between gap-3 p-4 mb-4
+        rounded-lg
+        bg-gray-50 dark:bg-gray-900
+        border border-gray-200 dark:border-gray-800
+      "
+    >
+      <UInput
+        icon="i-lucide-search"
+        v-model="dailyTakenAttendaces.globalFilter"
+        class="w-full sm:max-w-sm"
+        placeholder="Buscar por nombre, apellido o DNI..."
+      />
 
-<UButton
-  variant="solid"
-  icon="i-lucide-file-spreadsheet"
-  class="
-    whitespace-nowrap
-    bg-green-500
-    hover:bg-green-600
-    active:bg-green-700
-    text-white
-  "
->
-  Exportar Excel
-</UButton>
-
-
-
-
-</div>
-
-
-    <UTable ref="table" :data="dailyListAttendaces" :columns="columns" class="shrink-0" :ui="{
-      base: 'table-fixed border-separate border-spacing-0',
-      thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-      tbody: `
-  [&>tr:nth-child(even)]:bg-gray-50
-  dark:[&>tr:nth-child(even)]:bg-gray-900
-  [&>tr:hover]:bg-primary-50
-  dark:[&>tr:hover]:bg-primary-900/20
-`,
-
-      th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-      td: 'border-b border-default'
-    }" :loading="dailyTakenAttendaces.loading" empty="No se encontraron reportes de hoy"
-      v-model:pagination="dailyTakenAttendaces.pagination" :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel()
-      }" />
-
-
-    <div class="flex items-center justify-between p-4">
-
-      <div class="text-sm text-gray-600 dark:text-gray-400">
-        Mostrando <span class="font-medium">{{ getStats().start }}</span> - <span class="font-medium">{{
-          getStats().end }}</span>
-        de <span class="font-medium">{{ getStats().total }}</span> registros
-      </div>
-      <div class="flex justify-end border-t border-default">
-        <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-          :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-          :total="table?.tableApi?.getFilteredRowModel().rows.length"
-          @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)" />
-      </div>
+      <UButton
+        icon="i-lucide-file-spreadsheet"
+        class="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
+      >
+        Exportar Excel
+      </UButton>
     </div>
+
+    <!-- TABLE -->
+    <UTable
+      ref="table"
+      :data="dailyListAttendaces"
+      :columns="columns"
+      :loading="dailyTakenAttendaces.loading"
+      empty="No se encontraron reportes de hoy"
+      v-model:pagination="dailyTakenAttendaces.pagination"
+      :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+      :ui="{
+        base: 'table-fixed border-separate border-spacing-y-1',
+        thead: '[&>tr]:bg-transparent',
+        th: `
+          px-3 py-2 text-xs font-semibold uppercase tracking-wide
+          text-gray-600 dark:text-gray-400
+        `,
+        td: `
+          px-3 py-2 text-sm
+          text-gray-800 dark:text-gray-200
+        `,
+        tbody: `
+          [&>tr]:bg-white
+          dark:[&>tr]:bg-gray-950
+          [&>tr]:rounded-lg
+          [&>tr:hover]:bg-primary-50
+          dark:[&>tr:hover]:bg-primary-900/20
+        `
+      }"
+    />
+
+    <!-- FOOTER -->
+    <div
+      class="
+        flex flex-wrap items-center justify-between gap-3 p-4
+        border-t border-gray-200 dark:border-gray-800
+      "
+    >
+      <div class="text-xs text-gray-600 dark:text-gray-400">
+        Mostrando
+        <strong>{{ getStats().start }}</strong> –
+        <strong>{{ getStats().end }}</strong>
+        de
+        <strong>{{ getStats().total }}</strong>
+        registros
+      </div>
+
+      <UPagination
+        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
+        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
+        :total="table?.tableApi?.getFilteredRowModel().rows.length"
+        @update:page="p => table?.tableApi?.setPageIndex(p - 1)"
+      />
+    </div>
+
   </DataState>
 </template>
 
-
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui';
-import { getPaginationRowModel } from '@tanstack/vue-table';
-import { parse } from 'date-fns';
-import { h, resolveComponent } from 'vue';
-import DataState from '~/components/common/DataState.vue';
-import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
+import type { TableColumn } from '@nuxt/ui'
+import { getPaginationRowModel } from '@tanstack/vue-table'
+import { parse } from 'date-fns'
+import { h, resolveComponent } from 'vue'
+import DataState from '~/components/common/DataState.vue'
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore'
 
-const store = useAttendanceReportStore();
-const { getDailyTakenAttendances } = store;
-const { attendance } = storeToRefs(store);
+const store = useAttendanceReportStore()
+const { getDailyTakenAttendances } = store
+const { attendance } = storeToRefs(store)
 
-
-const dailyTakenAttendaces = computed(() => attendance.value.taken.daily);
+const dailyTakenAttendaces = computed(() => attendance.value.taken.daily)
 
 const dailyListAttendaces = computed<TakenAttendace[]>(() => {
-  let reportList: TakenAttendace[] = dailyTakenAttendaces.value.list;
-
+  let list = dailyTakenAttendaces.value.list
 
   if (dailyTakenAttendaces.value.globalFilter) {
     const search = dailyTakenAttendaces.value.globalFilter.toLowerCase().trim()
 
-    reportList = reportList.filter(atten => {
-      const nombre = (atten.Nombres || "").toLowerCase()
-      const apellido = (atten.Apellidos || "").toLowerCase()
-      const dni = (atten.DNI || "").toString().toLowerCase()
+    list = list.filter(a => {
+      const nombres = (a.Nombres || '').toLowerCase()
+      const apellidos = (a.Apellidos || '').toLowerCase()
+      const dni = (a.DNI || '').toString().toLowerCase()
 
       return (
-        nombre.includes(search) ||
-        apellido.includes(search) ||
+        nombres.includes(search) ||
+        apellidos.includes(search) ||
         dni.includes(search)
       )
     })
   }
 
-
-  return reportList;
+  return list
 })
 
 const table = useTemplateRef('table')
-
 const UBadge = resolveComponent('UBadge')
+const UButton = resolveComponent('UButton')
 
-
-
+/* =========================
+   STATS
+========================= */
 const getStats = () => {
-  const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0;
-  const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10;
-  const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0;
+  const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0
+  const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10
+  const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0
 
-  const start = total === 0 ? 0 : pageIndex * pageSize + 1;
-  const end = Math.min((pageIndex + 1) * pageSize, total);
   return {
-    total,
-    end,
-    start
+    start: total === 0 ? 0 : pageIndex * pageSize + 1,
+    end: Math.min((pageIndex + 1) * pageSize, total),
+    total
   }
 }
 
-const UButton = resolveComponent('UButton');
-
+/* =========================
+   SORT BUTTON
+========================= */
 const sortColumButton = (column: any, label: string) => {
-  const isSorted = column.getIsSorted();
+  const isSorted = column.getIsSorted()
   return h(UButton, {
     color: 'neutral',
     variant: 'ghost',
@@ -139,84 +157,69 @@ const sortColumButton = (column: any, label: string) => {
         : 'i-lucide-arrow-down-wide-narrow'
       : 'i-lucide-arrow-up-down',
     class: '-mx-2.5',
-    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
+    onClick: () => column.toggleSorting(isSorted === 'asc')
   })
 }
 
-
+/* =========================
+   COLUMNS
+========================= */
 const columns: TableColumn<TakenAttendace>[] = [
   {
     accessorKey: 'DNI',
-    header: ({ column }) => sortColumButton(column, 'DNI'),
-    cell: ({ row }) => row.getValue('DNI')
+    header: ({ column }) => sortColumButton(column, 'DNI')
   },
   {
     accessorKey: 'Apellidos',
-    header: ({ column }) => sortColumButton(column, 'Apellidos'),
+    header: ({ column }) => sortColumButton(column, 'Empleado'),
     cell: ({ row }) =>
-      h('span', { class: 'font-medium text-gray-900 dark:text-gray-100' }, row.getValue('Apellidos'))
-
-  },
-  {
-    accessorKey: 'Nombres',
-    header: ({ column }) => sortColumButton(column, 'Nombres'),
-    cell: ({ row }) => row.getValue('Nombres')
+      h('div', { class: 'flex flex-col' }, [
+        h('span', { class: 'font-medium text-gray-900 dark:text-gray-100' }, row.getValue('Apellidos')),
+        h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, row.getValue('Nombres'))
+      ])
   },
   {
     accessorKey: 'Departamento',
-    header: ({ column }) => sortColumButton(column, 'Departamento'),
-    cell: ({ row }) => row.getValue('Departamento')
+    header: ({ column }) => sortColumButton(column, 'Departamento')
   },
   {
     accessorKey: 'Empresa',
     header: ({ column }) => sortColumButton(column, 'Empresa'),
     cell: ({ row }) =>
-      h('span', { class: 'text-sm text-gray-500' }, row.getValue('Empresa'))
-
+      h('span', { class: 'text-sm text-gray-500 dark:text-gray-400' }, row.getValue('Empresa'))
   },
   {
     accessorKey: 'Horario',
     header: ({ column }) => sortColumButton(column, 'Horario'),
-    cell: ({ row }) => row.getValue('Horario') || h(UBadge, { class: 'capitalize', variant: 'subtle', color: 'info' }, () =>
-      'Sin horario'
-    )
+    cell: ({ row }) =>
+      row.getValue('Horario') ||
+      h(UBadge, { variant: 'subtle', color: 'info' }, () => 'Sin horario')
   },
   {
     accessorKey: 'Ingreso',
     header: ({ column }) => sortColumButton(column, 'Ingreso'),
     cell: ({ row }) => {
       const ingreso = row.getValue('Ingreso') as string | null
-
-      if (!ingreso) {
-        return h(
-          UBadge,
-          { variant: 'subtle', color: 'info' },
-          () => 'Sin ingreso'
-        )
-      }
-
       const horario = row.getValue('Horario') as string | null
 
-      if (!horario) {
-        return h(
-          UBadge,
-          { variant: 'subtle', color: 'neutral' },
-          () => ingreso
-        )
+      if (!ingreso) {
+        return h(UBadge, { variant: 'subtle', color: 'info' }, () => 'Sin ingreso')
       }
 
-      const hIngreso = parse(ingreso, 'HH:mm:ss', new Date())
-      const hHorario = parse(horario, 'HH:mm:ss', new Date())
+      if (!horario) {
+        return h(UBadge, { variant: 'subtle', color: 'neutral' }, () => ingreso)
+      }
 
-      const isLate = hIngreso > hHorario
+      const isLate =
+        parse(ingreso, 'HH:mm:ss', new Date()) >
+        parse(horario, 'HH:mm:ss', new Date())
 
       return h(
         UBadge,
         {
           variant: 'subtle',
           color: isLate ? 'error' : 'success',
-          class: 'inline-flex items-center gap-1 whitespace-nowrap',
-          title: isLate ? 'Ingreso fuera de horario' : 'Ingreso a tiempo'
+          class: 'inline-flex items-center gap-1 whitespace-nowrap'
         },
         () => [
           h(UIcon, {
@@ -226,54 +229,34 @@ const columns: TableColumn<TakenAttendace>[] = [
           ingreso
         ]
       )
-
-
     }
   },
-
   {
-  accessorKey: 'Salida',
-  header: ({ column }) => sortColumButton(column, 'Salida'),
-  cell: ({ row }) => {
-    const salida = row.getValue('Salida') as string | null
+    accessorKey: 'Salida',
+    header: ({ column }) => sortColumButton(column, 'Salida'),
+    cell: ({ row }) => {
+      const salida = row.getValue('Salida') as string | null
 
-    if (!salida) {
+      if (!salida) {
+        return h(
+          UBadge,
+          { variant: 'subtle', color: 'info', class: 'inline-flex gap-1' },
+          () => [
+            h(UIcon, { name: 'i-lucide-clock', class: 'w-4 h-4' }),
+            'Sin salida'
+          ]
+        )
+      }
+
       return h(
         UBadge,
-        {
-          variant: 'subtle',
-          color: 'info',
-          class: 'inline-flex items-center gap-1 whitespace-nowrap',
-          title: 'Aún no registra salida'
-        },
+        { variant: 'subtle', color: 'neutral', class: 'inline-flex gap-1' },
         () => [
-          h(UIcon, {
-            name: 'i-lucide-clock',
-            class: 'w-4 h-4'
-          }),
-          'Sin salida'
+          h(UIcon, { name: 'i-lucide-log-out', class: 'w-4 h-4' }),
+          salida
         ]
       )
     }
-
-    return h(
-      UBadge,
-      {
-        variant: 'subtle',
-        color: 'neutral',
-        class: 'inline-flex items-center gap-1 whitespace-nowrap',
-        title: 'Hora de salida registrada'
-      },
-      () => [
-        h(UIcon, {
-          name: 'i-lucide-log-out',
-          class: 'w-4 h-4'
-        }),
-        salida
-      ]
-    )
   }
-}
-,
 ]
 </script>

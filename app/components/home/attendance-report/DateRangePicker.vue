@@ -1,139 +1,145 @@
 <template>
-  <div class="flex items-center gap-2 sm:divide-x divide-default">
+  <div class="flex flex-col lg:flex-row gap-4">
 
-
-    <div class="flex flex-col w-full md:max-w-xs xl:max-w-md gap-2 justify-center">
+    <!-- PANEL IZQUIERDO: AÑO + MES -->
+    <div class="flex flex-col w-full lg:max-w-sm gap-4">
 
       <!-- AÑOS -->
-      <UCard :ui="{
-        header: 'py-2'
-      }">
+      <UCard :ui="{ header: 'py-2' }">
         <template #header>Año</template>
-        <div class="flex gap-2 flex-wrap">
-          <UButton v-for="y in years" :key="y" class="cursor-pointer"
-            :class="selectedYear !== y && 'bg-gray-100 dark:bg-gray-800 dark:text-gray-100  text-gray-700 border transition'"
-            @click="selectYear(y)">
+
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-for="y in years"
+            :key="y"
+            size="sm"
+            :variant="calendarYear === Number(y) ? 'solid' : 'outline'"
+            :color="calendarYear === Number(y) ? 'primary' : 'neutral'"
+            @click="goToYear(Number(y))"
+          >
             {{ y }}
           </UButton>
         </div>
       </UCard>
 
       <!-- MESES -->
-      <UCard :ui="{
-        header: 'py-2'
-      }">
+      <UCard :ui="{ header: 'py-2' }">
         <template #header>Mes</template>
-        <div class="flex gap-2 flex-wrap">
-          <UButton v-for="month in months" :key="month.value" class="cursor-pointer"
-            :class="selectedMonth !== month.value.toString() && 'bg-gray-100 dark:bg-gray-800 dark:text-gray-100  text-gray-700 border transition'"
-            @click="selectMonth(month.value)">
-            {{ month.label }}
+
+        <div class="grid grid-cols-3 gap-2">
+          <UButton
+            v-for="m in months"
+            :key="m.value"
+            size="xs"
+            :variant="calendarMonth === m.value ? 'solid' : 'outline'"
+            :color="calendarMonth === m.value ? 'primary' : 'neutral'"
+            @click="goToMonth(m.value)"
+          >
+            {{ m.label }}
           </UButton>
         </div>
       </UCard>
-
     </div>
 
     <!-- CALENDARIO -->
-    <UCard class="w-full" :ui="{
-      header: 'py-2'
-    }">
+    <UCard class="flex-1" :ui="{ header: 'py-2' }">
       <template #header>Días</template>
-      
 
-       <UCalendar multiple v-model="calendar" locale="es" :year-controls="false"  @update:placeholder="(value) => {
-  selectedMonth = value.month.toString()
-  selectedYear = value.year.toString()
-}"
-/>
-
+      <UCalendar
+        multiple
+        locale="es"
+        :year-controls="false"
+        v-model="calendar"
+        v-model:placeholder="placeholder"
+      />
     </UCard>
   </div>
 </template>
 
 
 <script setup lang="ts">
-import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
-import { format } from 'date-fns';
+import { CalendarDate, getLocalTimeZone } from '@internationalized/date'
+import { format } from 'date-fns'
 
-const currentDateModel = defineModel<Date[]>('dates', {
+/* =========================
+   MODEL (ÚNICA FUENTE)
+========================= */
+const modelDates = defineModel<Date[]>('dates', {
   required: true,
   default: () => []
 })
 
+/* =========================
+   PLACEHOLDER CALENDAR
+========================= */
+const today = new Date()
 
-
-
-
-const toCalendarDate = (date: Date) => {
-  return new CalendarDate(
-    date.getFullYear(),
-    date.getMonth() + 1,
-    date.getDate()
+const placeholder = ref(
+  new CalendarDate(
+    today.getFullYear(),
+    today.getMonth() + 1,
+    1
   )
-}
+)
 
-
+/* =========================
+   CALENDAR BINDING
+========================= */
 const calendar = computed<CalendarDate[]>({
-  get: () => {
-    if (!Array.isArray(currentDateModel.value)) return []
-
-    return currentDateModel.value.map(date =>
-      new CalendarDate(
-        date.getFullYear(),
-        date.getMonth() + 1,
-        date.getDate()
-      )
+  get() {
+    return modelDates.value.map(
+      d => new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate())
     )
   },
-
-  set: (newValues) => {
-    if (!Array.isArray(newValues)) {
-      currentDateModel.value = []
-      return
-    }
-
-    currentDateModel.value = newValues.map(cd =>
-      cd.toDate(getLocalTimeZone())
+  set(values) {
+    modelDates.value = values.map(v =>
+      v.toDate(getLocalTimeZone())
     )
   }
 })
 
+/* =========================
+   DERIVED STATE (NO DUPLICADO)
+========================= */
+const calendarYear = computed(() => placeholder.value.year)
+const calendarMonth = computed(() => placeholder.value.month)
 
-// --- AÑOS ---
+/* =========================
+   CONTROLS DATA
+========================= */
 const years = ['2025', '2024']
-const selectedYear = ref(format(new Date(), 'yyyy'))
 
-// --- MESES ---
 const months = [
-  { label: 'Enero', value: 1 },
-  { label: 'Febrero', value: 2 },
-  { label: 'Marzo', value: 3 },
-  { label: 'Abril', value: 4 },
-  { label: 'Mayo', value: 5 },
-  { label: 'Junio', value: 6 },
-  { label: 'Julio', value: 7 },
-  { label: 'Agosto', value: 8 },
-  { label: 'Septiembre', value: 9 },
-  { label: 'Octubre', value: 10 },
-  { label: 'Noviembre', value: 11 },
-  { label: 'Diciembre', value: 12 }
+  { label: 'Ene', value: 1 },
+  { label: 'Feb', value: 2 },
+  { label: 'Mar', value: 3 },
+  { label: 'Abr', value: 4 },
+  { label: 'May', value: 5 },
+  { label: 'Jun', value: 6 },
+  { label: 'Jul', value: 7 },
+  { label: 'Ago', value: 8 },
+  { label: 'Sep', value: 9 },
+  { label: 'Oct', value: 10 },
+  { label: 'Nov', value: 11 },
+  { label: 'Dic', value: 12 }
 ]
 
-const selectedMonth = ref((new Date().getMonth() + 1).toString())
-
-// --- Cambiar año ---
-const selectYear = (year: string) => {
-  selectedYear.value = year
-  // si ya hay un mes seleccionado: mantenerlo
-  const month = Number(selectedMonth.value) || 1
-  calendar.value = new CalendarDate(Number(year), month, 1)
+/* =========================
+   NAVIGATION HELPERS
+========================= */
+const goToYear = (year: number) => {
+  placeholder.value = new CalendarDate(
+    year,
+    placeholder.value.month,
+    1
+  )
 }
 
-// --- Cambiar mes ---
-const selectMonth = (month: number) => {
-  selectedMonth.value = month.toString()
-  const year = Number(selectedYear.value)
-  calendar.value = new CalendarDate(Number(year), month, 1)
+const goToMonth = (month: number) => {
+  placeholder.value = new CalendarDate(
+    placeholder.value.year,
+    month,
+    1
+  )
 }
 </script>

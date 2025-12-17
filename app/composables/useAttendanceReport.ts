@@ -113,9 +113,9 @@ export type TakenAttendanceSummary = {
 
 export type TakenAttendaceParams = {
   company_id?: number;
-  department_id?: number;
+  departamento_ids?: number[];
   empleado_id?: number;
-  fecha?: Date;
+  fechas: Date[];
 };
 
 export type AttendanceParams = {

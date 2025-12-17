@@ -1,34 +1,72 @@
 <template>
-    <UCard :ui="{
-        header: 'p-2 flex items-center justify-between'
-    }">
-        <template #header>
-            Empresa
-            <UButton :disabled="selecteds.length === company.list.length" v-if="!isError" class="cursor-pointer"
-                icon="i-lucide-funnel" variant="link" @click="handleResertFilter" />
+  <UCard
+    :ui="{
+      header: 'px-3 py-2 flex items-center justify-between border-b'
+    }"
+  >
+    <!-- HEADER -->
+    <template #header>
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-building-2" class="size-4 text-primary" />
+        <span class="font-semibold text-sm">Empresa</span>
+      </div>
+
+      <UButton
+        v-if="!isError && selecteds.length !== company.list.length"
+        icon="i-lucide-rotate-ccw"
+        size="xs"
+        variant="ghost"
+        color="gray"
+        class="cursor-pointer"
+        @click="handleResertFilter"
+      >
+        Limpiar
+      </UButton>
+    </template>
+
+    <!-- BODY -->
+    <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+      <DataState
+        :loading="loading"
+        :error="isError"
+        error-message="No se pudo cargar las empresas"
+        @retry="getCompanies(true)"
+      >
+        <!-- LOADING -->
+        <template #loading>
+          <div class="flex flex-wrap gap-2">
+            <USkeleton
+              v-for="_ in 4"
+              :key="_"
+              class="h-8 w-32 rounded-full"
+            />
+          </div>
         </template>
 
-
-        <div class="space-y-2 max-h-48 overflow-y-auto flex flex-wrap gap-2">
-
-            <DataState :loading="loading" :error="isError"
-                error-message="No se pudo cargas las empresas" @retry="getCompanies(true)">
-
-                <template #loading>
-                    <USkeleton v-for="_ in Array.from({ length: 2 })" class="h-8 w-36" />
-                </template>
-
-
-                <UButton v-for="item in list" :key="item.id" class="cursor-pointer" :class="!selecteds.some(s => s.id === item.id) &&
-                    'bg-gray-100 dark:bg-gray-800 dark:text-gray-100 text-gray-700 border transition'"
-                    @click="handleSelectCompany(item)">
-                    {{ item.company_name }}
-                </UButton>
-
-            </DataState>
+        <!-- LIST -->
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-for="item in list"
+            :key="item.id"
+            size="xs"
+            class="rounded-full transition-all"
+            :variant="selecteds.some(s => s.id === item.id) ? 'solid' : 'outline'"
+            :color="selecteds.some(s => s.id === item.id) ? 'primary' : 'gray'"
+            @click="handleSelectCompany(item)"
+          >
+            <UIcon
+              v-if="selecteds.some(s => s.id === item.id)"
+              name="i-lucide-check"
+              class="size-3 mr-1"
+            />
+            {{ item.company_name }}
+          </UButton>
         </div>
-    </UCard>
+      </DataState>
+    </div>
+  </UCard>
 </template>
+
 
 
 <script setup lang="ts">

@@ -23,7 +23,7 @@
           <USelectMenu placeholder="Selecciona un departamento" class="w-full" :loading="department.loading" />
         </template>
 
-        <USelectMenu placeholder="Selecciona un departamento" class="w-full" :items="departments" label-key="dept_name"
+        <USelectMenu placeholder="Selecciona un departamento" class="w-full" :items="departmentOptions" label-key="dept_name"
           value-key="id" multiple v-model="attendance.params.departamento_ids" />
       </DataState>
     </UFormField>
@@ -66,7 +66,17 @@ const store = useAttendanceReportStore()
 const { getEmployeesByDepartment, getCompanies, getDepartments, getAttendanceSummary, getAttendanceDetails } = store;
 const { company, department, attendance } = storeToRefs(store)
 
+const SELECT_ALL_ID = -1
 
+
+const departmentOptions = computed(() => {
+  if (!departments.value.length) return []
+
+  return [
+    { id: SELECT_ALL_ID, dept_name: 'Seleccionar todos' },
+    ...departments.value
+  ]
+})
 const departments = computed(() => {
   console.log(department.value.loading)
   let list = department.value.list;
@@ -111,6 +121,19 @@ watch(
   },
   { immediate: true }
 );
+
+watch(
+  () => attendance.value.params.departamento_ids,
+  (ids) => {
+    if (!ids.includes(SELECT_ALL_ID)) return
+
+    // Quitar el marcador "Seleccionar todos"
+    attendance.value.params.departamento_ids = departments.value.map(
+      d => d.id
+    )
+  }
+)
+
 
 
 
