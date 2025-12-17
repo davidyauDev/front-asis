@@ -2,8 +2,33 @@
   <DataState :loading="dailyTakenAttendaces.loading" :error="dailyTakenAttendaces.isError"
     error-message="No se pudo cargar los reportes de hoy" @retry="getDailyTakenAttendances">
 
-    <UInput icon="i-lucide-search" v-model="dailyTakenAttendaces.globalFilter" class="w-full"
-      placeholder="Buscar por nombre, apellido o DNI..." />
+    <div class="flex gap-2 mb-4">
+  <UInput
+    icon="i-lucide-search"
+    v-model="dailyTakenAttendaces.globalFilter"
+    class="w-full"
+    placeholder="Buscar por nombre, apellido o DNI..."
+  />
+
+<UButton
+  variant="solid"
+  icon="i-lucide-file-spreadsheet"
+  class="
+    whitespace-nowrap
+    bg-green-500
+    hover:bg-green-600
+    active:bg-green-700
+    text-white
+  "
+>
+  Exportar Excel
+</UButton>
+
+
+
+
+</div>
+
 
     <UTable ref="table" :data="dailyListAttendaces" :columns="columns" class="shrink-0" :ui="{
       base: 'table-fixed border-separate border-spacing-0',
