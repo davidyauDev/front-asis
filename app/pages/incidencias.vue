@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, nextTick } from "vue";
 
+
+
 const tabActivo = ref<"incidencias" | "calculo">("incidencias");
 const mesSeleccionado = ref(12);
 const añoSeleccionado = ref(2024);

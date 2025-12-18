@@ -337,13 +337,6 @@ onMounted(async () => {
       </Transition>
     </template>
   </UDashboardPanel>
-
-  <!-- Modal de vista previa -->
-  <!-- <USlideover v-model="showUserPreview">
-    <template #header>
-      <h3 class="text-lg font-semibold">Detalles del Usuario</h3>
-    </template> -->
-
   <UModal v-model:open="showUserPreview" @update:open="(isOpen: boolean) => {
     if (!isOpen) {
       
@@ -467,10 +460,4 @@ onMounted(async () => {
       </UCard>
     </template>
   </UModal>
-
-
-
-
-
-  <!-- </USlideover> -->
 </template>

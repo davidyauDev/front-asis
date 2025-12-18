@@ -1,45 +1,25 @@
 <template>
-  <DataState
-    :loading="dailyTakenAttendaces.loading"
-    :error="dailyTakenAttendaces.isError"
-    error-message="No se pudo cargar los reportes de hoy"
-    @retry="getDailyTakenAttendances"
-  >
+  <DataState :loading="dailyTakenAttendaces.loading" :error="dailyTakenAttendaces.isError"
+    error-message="No se pudo cargar los reportes de hoy" @retry="getDailyTakenAttendances">
 
-    <!-- TOOLBAR -->
-    <div
-      class="
+
+    <div class="
         flex flex-wrap items-center justify-between gap-3 p-4 mb-4
         rounded-lg
         bg-gray-50 dark:bg-gray-900
         border border-gray-200 dark:border-gray-800
-      "
-    >
-      <UInput
-        icon="i-lucide-search"
-        v-model="dailyTakenAttendaces.globalFilter"
-        class="w-full sm:max-w-sm"
-        placeholder="Buscar por nombre, apellido o DNI..."
-      />
+      ">
+      <UInput icon="i-lucide-search" v-model="dailyTakenAttendaces.globalFilter" class="w-full sm:max-w-sm"
+        placeholder="Buscar por nombre, apellido o DNI..." />
 
-      <UButton
-        icon="i-lucide-file-spreadsheet"
-        class="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
-      >
+      <UButton icon="i-lucide-file-spreadsheet" class="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap">
         Exportar Excel
       </UButton>
     </div>
 
-    <!-- TABLE -->
-    <UTable
-      ref="table"
-      :data="dailyListAttendaces"
-      :columns="columns"
-      :loading="dailyTakenAttendaces.loading"
-      empty="No se encontraron reportes de hoy"
-      v-model:pagination="dailyTakenAttendaces.pagination"
-      :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-      :ui="{
+    <UTable ref="table" :data="dailyListAttendaces" :columns="columns" :loading="dailyTakenAttendaces.loading"
+      empty="No se encontraron reportes de hoy" v-model:pagination="dailyTakenAttendaces.pagination"
+      :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }" :ui="{
         base: 'table-fixed border-separate border-spacing-y-1',
         thead: '[&>tr]:bg-transparent',
         th: `
@@ -57,16 +37,12 @@
           [&>tr:hover]:bg-primary-50
           dark:[&>tr:hover]:bg-primary-900/20
         `
-      }"
-    />
+      }" />
 
-    <!-- FOOTER -->
-    <div
-      class="
+    <div class="
         flex flex-wrap items-center justify-between gap-3 p-4
         border-t border-gray-200 dark:border-gray-800
-      "
-    >
+      ">
       <div class="text-xs text-gray-600 dark:text-gray-400">
         Mostrando
         <strong>{{ getStats().start }}</strong> –
@@ -76,22 +52,90 @@
         registros
       </div>
 
-      <UPagination
-        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
+      <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
         :items-per-page="table?.tableApi?.getState().pagination.pageSize"
         :total="table?.tableApi?.getFilteredRowModel().rows.length"
-        @update:page="p => table?.tableApi?.setPageIndex(p - 1)"
-      />
+        @update:page="p => table?.tableApi?.setPageIndex(p - 1)" />
     </div>
 
   </DataState>
+  <UAlert
+  v-if="selectedRow?.Tardanza"
+  color="warning"
+  variant="subtle"
+>
+  Se detectó una tardanza. El tiempo fue calculado automáticamente.
+</UAlert>
+
+<UAlert
+  v-else
+  color="success"
+  variant="subtle"
+>
+  No se detectó tardanza según el horario registrado.
+</UAlert>
+
+  <UModal v-model:open="isIncidenciaOpen" :title="modalTitle" :transition="true">
+    <template #body>
+      <div class="space-y-6">
+
+  
+
+  <!-- Detalle de la incidencia -->
+  <section class="space-y-3">
+    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      Detalle de la incidencia
+    </h4>
+
+    <UFormGroup label="Fecha">
+      <UInput type="date" v-model="incidenciaForm.fecha" disabled />
+    </UFormGroup>
+
+    <UFormGroup label="Tiempo de tardanza">
+      <UInput
+        :model-value="`${incidenciaForm.minutosTardanza} minutos`"
+        disabled
+      />
+    </UFormGroup>
+
+    <UFormGroup
+      label="Motivo"
+      description="Describe brevemente la causa de la incidencia"
+      required
+    >
+      <UTextarea
+        v-model="incidenciaForm.motivo"
+        placeholder="Ej. tráfico, transporte público, clima, etc."
+        :rows="3"
+      />
+    </UFormGroup>
+  </section>
+
+</div>
+
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton variant="ghost" color="neutral" @click="isIncidenciaOpen = false">
+          Cancelar
+        </UButton>
+
+        <UButton color="primary" :disabled="!incidenciaForm.motivo" @click="guardarIncidencia">
+          Guardar incidencia
+        </UButton>
+      </div>
+    </template>
+  </UModal>
+
+
 </template>
 
 <script setup lang="ts">
+
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { parse } from 'date-fns'
-import { h, resolveComponent } from 'vue'
 import DataState from '~/components/common/DataState.vue'
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore'
 
@@ -123,13 +167,81 @@ const dailyListAttendaces = computed<TakenAttendace[]>(() => {
   return list
 })
 
+const modalTitle = computed(() => {
+  if (!selectedRow.value) return 'Incidencia'
+
+  return `Incidencia – ${selectedRow.value.Apellidos} ${selectedRow.value.Nombres}`
+})
+
+
 const table = useTemplateRef('table')
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
+const UIcon = resolveComponent('UIcon')
+const UTooltip = resolveComponent('UTooltip')
 
-/* =========================
-   STATS
-========================= */
+const isIncidenciaOpen = ref(false)
+const incidenciaForm = reactive({
+  fecha: '',
+  minutosTardanza: 0,
+  motivo: ''
+})
+
+
+const selectedRow = ref<TakenAttendace | null>(null)
+
+
+const openIncidenciaModal = (row: TakenAttendace) => {
+  selectedRow.value = row
+
+  incidenciaForm.fecha = new Date().toISOString().slice(0, 10)
+
+  incidenciaForm.minutosTardanza = row.Tardanza
+    ? calcularTardanza(row.Ingreso, row.Horario)
+    : 0
+
+  incidenciaForm.motivo = ''
+
+  isIncidenciaOpen.value = true
+}
+
+
+const calcularTardanza = (
+  ingreso: string | null,
+  horario: string | null
+): number => {
+  if (!ingreso || !horario) return 0
+
+  const ingresoDate = parse(ingreso, 'HH:mm:ss', new Date())
+  const horarioDate = parse(horario, 'HH:mm:ss', new Date())
+
+  if (ingresoDate <= horarioDate) return 0
+
+  return Math.floor(
+    (ingresoDate.getTime() - horarioDate.getTime()) / 60000
+  )
+}
+
+
+
+const guardarIncidencia = () => {
+  if (!selectedRow.value) return
+
+  const payload = {
+    dni: selectedRow.value.DNI,
+    fecha: incidenciaForm.fecha,
+    minutos: incidenciaForm.minutosTardanza,
+    motivo: incidenciaForm.motivo
+  }
+
+  console.log('Incidencia a guardar:', payload)
+
+  // aquí llamarías a tu API / store
+  isIncidenciaOpen.value = false
+}
+
+
+
 const getStats = () => {
   const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0
   const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10
@@ -142,9 +254,7 @@ const getStats = () => {
   }
 }
 
-/* =========================
-   SORT BUTTON
-========================= */
+
 const sortColumButton = (column: any, label: string) => {
   const isSorted = column.getIsSorted()
   return h(UButton, {
@@ -161,9 +271,9 @@ const sortColumButton = (column: any, label: string) => {
   })
 }
 
-/* =========================
-   COLUMNS
-========================= */
+
+
+
 const columns: TableColumn<TakenAttendace>[] = [
   {
     accessorKey: 'DNI',
@@ -242,7 +352,7 @@ const columns: TableColumn<TakenAttendace>[] = [
           UBadge,
           { variant: 'subtle', color: 'info', class: 'inline-flex gap-1' },
           () => [
-            h(resolveComponent('UIcon'), { name: 'i-lucide-clock', class: 'w-4 h-4' }),
+            h(UIcon, { name: 'i-lucide-clock', class: 'w-4 h-4' }),
             'Sin salida'
           ]
         )
@@ -252,50 +362,37 @@ const columns: TableColumn<TakenAttendace>[] = [
         UBadge,
         { variant: 'subtle', color: 'neutral', class: 'inline-flex gap-1' },
         () => [
-          h(resolveComponent('UIcon'), { name: 'i-lucide-log-out', class: 'w-4 h-4' }),
+          h(UIcon, { name: 'i-lucide-log-out', class: 'w-4 h-4' }),
           salida
         ]
       )
     }
   },
   {
-    id: 'acciones',
-    header: () => h('div', { class: 'text-center w-full' }, 'Acciones'),
-    cell: ({ row }) => {
-      // 1. Extraemos los valores necesarios para la lógica
-      const ingreso = row.getValue('Ingreso') as string | null
-      const horario = row.getValue('Horario') as string | null
+  id: 'acciones',
+  header: 'Acciones',
+  cell: ({ row }) => {
+  const hasTardanza = Boolean(row.original.Tardanza)
 
-      // 2. Calculamos si es tardanza (misma lógica que usas en la columna Ingreso)
-      const isLate = (ingreso && horario) 
-        ? parse(ingreso, 'HH:mm:ss', new Date()) > parse(horario, 'HH:mm:ss', new Date())
-        : false
+  const button = h(
+    UButton,
+    {
+      icon: 'i-lucide-alert-circle',
+      size: 'xs',
+      color: 'warning',
+      variant: 'ghost',
+      disabled: !hasTardanza,
+      onClick: () => hasTardanza && openIncidenciaModal(row.original)
+    },
+    () => 'Incidencia'
+  )
 
-      return h('div', { class: 'flex items-center justify-center w-full' }, [
-        h(UButton, {
-          label: 'Incidencia',
-          icon: 'i-lucide-clipboard-plus',
-          size: 'xs',
-          color: 'primary',
-          variant: 'solid',
-          // 3. Deshabilitar si NO es tardanza o si no hay ingreso
-          disabled: !isLate, 
-          class: `
-            font-bold px-3 py-1.5
-            shadow-md transition-all
-            ${isLate 
-              ? 'hover:shadow-lg active:scale-95 ring-1 ring-primary-600 dark:ring-primary-400' 
-              : 'opacity-50 cursor-not-allowed grayscale'}
-          `,
-          onClick: (e: MouseEvent) => {
-            e.stopPropagation();
-            if (isLate) {
-              console.log('Registrando incidencia por tardanza para:', row.original.DNI);
-            }
-          }
-        })
-      ])
-    }
+  return !hasTardanza
+    ? h(UTooltip, { text: 'El empleado no presenta tardanza' }, () => button)
+    : button
+},
   }
+
+
 ]
 </script>
