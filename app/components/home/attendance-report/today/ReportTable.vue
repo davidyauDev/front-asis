@@ -242,7 +242,7 @@ const columns: TableColumn<TakenAttendace>[] = [
           UBadge,
           { variant: 'subtle', color: 'info', class: 'inline-flex gap-1' },
           () => [
-            h(UIcon, { name: 'i-lucide-clock', class: 'w-4 h-4' }),
+            h(resolveComponent('UIcon'), { name: 'i-lucide-clock', class: 'w-4 h-4' }),
             'Sin salida'
           ]
         )
@@ -252,10 +252,49 @@ const columns: TableColumn<TakenAttendace>[] = [
         UBadge,
         { variant: 'subtle', color: 'neutral', class: 'inline-flex gap-1' },
         () => [
-          h(UIcon, { name: 'i-lucide-log-out', class: 'w-4 h-4' }),
+          h(resolveComponent('UIcon'), { name: 'i-lucide-log-out', class: 'w-4 h-4' }),
           salida
         ]
       )
+    }
+  },
+  {
+    id: 'acciones',
+    header: () => h('div', { class: 'text-center w-full' }, 'Acciones'),
+    cell: ({ row }) => {
+      // 1. Extraemos los valores necesarios para la lógica
+      const ingreso = row.getValue('Ingreso') as string | null
+      const horario = row.getValue('Horario') as string | null
+
+      // 2. Calculamos si es tardanza (misma lógica que usas en la columna Ingreso)
+      const isLate = (ingreso && horario) 
+        ? parse(ingreso, 'HH:mm:ss', new Date()) > parse(horario, 'HH:mm:ss', new Date())
+        : false
+
+      return h('div', { class: 'flex items-center justify-center w-full' }, [
+        h(UButton, {
+          label: 'Incidencia',
+          icon: 'i-lucide-clipboard-plus',
+          size: 'xs',
+          color: 'primary',
+          variant: 'solid',
+          // 3. Deshabilitar si NO es tardanza o si no hay ingreso
+          disabled: !isLate, 
+          class: `
+            font-bold px-3 py-1.5
+            shadow-md transition-all
+            ${isLate 
+              ? 'hover:shadow-lg active:scale-95 ring-1 ring-primary-600 dark:ring-primary-400' 
+              : 'opacity-50 cursor-not-allowed grayscale'}
+          `,
+          onClick: (e: MouseEvent) => {
+            e.stopPropagation();
+            if (isLate) {
+              console.log('Registrando incidencia por tardanza para:', row.original.DNI);
+            }
+          }
+        })
+      ])
     }
   }
 ]

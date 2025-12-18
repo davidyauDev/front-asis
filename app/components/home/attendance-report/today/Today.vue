@@ -1,16 +1,12 @@
 <template>
   <div class="space-y-6 text-gray-900 dark:text-gray-100">
-
-    <!-- BLOQUE SUPERIOR: FILTROS + GRÁFICO -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-
-      <!-- FILTROS -->
       <div
         class="
           rounded-lg
           flex flex-col gap-4
           bg-white dark:bg-gray-900
-          border border-gray-200 dark:border-gray-800
+           border-gray-200 dark:border-gray-800
         "
       >
         <CompanyFilter
