@@ -9,7 +9,7 @@ const { user, logout } = useAuth()
 const router = useRouter()
 const toast = useToast()
 const colorMode = useColorMode()
-const appConfig = useAppConfig()
+const appConfig = useAppConfig()  
 
 const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
 const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']

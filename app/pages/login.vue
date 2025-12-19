@@ -4,7 +4,7 @@ definePageMeta({
   middleware: 'guest'
 })
 
-const { login, demoCredentials } = useAuth()
+const { login } = useAuth()
 const router = useRouter()
 const toast = useToast()
 

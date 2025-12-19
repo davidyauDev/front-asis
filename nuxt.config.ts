@@ -30,9 +30,7 @@ export default defineNuxtConfig({
     
     // Public keys (exposed to client-side)
     public: {
-      // apiBaseUrl: 'http://172.19.0.17',
-      apiBaseUrl: 'http://localhost:8000',
-      baseURL: 'http://localhost:8000', 
+      apiBaseUrl: '',
       appName: 'Asisten',
       appVersion: '1.0.0'
     }

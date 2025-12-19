@@ -1,15 +1,23 @@
 import { createSharedComposable } from '@vueuse/core'
 import type { AuthUser, LoginResponse } from '~/types'
-import { storage } from '~/utils/storage'
-
-
 
 const _useAuth = () => {
   const user = ref<AuthUser | null>(null)
   const isLoggedIn = computed(() => !!user.value)
   const loading = ref(false)
+
   const config = useRuntimeConfig()
   const apiBaseUrl = config.public.apiBaseUrl
+
+  // Cookies (persistentes)
+  const authUserCookie = useCookie<AuthUser | null>('auth_user', {
+    sameSite: 'lax'
+  })
+
+  const authTokenCookie = useCookie<string | null>('auth_token', {
+    sameSite: 'lax'
+  })
+
 
   const login = async (emp_code: string, password: string): Promise<void> => {
     loading.value = true
@@ -29,25 +37,23 @@ const _useAuth = () => {
       }
 
       const { user: u } = response.data
+
       const authUser: AuthUser = {
         id: u.id,
         name: u.name,
         email: u.email,
         emp_code: u.emp_code,
-        role: 'user', // Puedes ajustarlo si tu API devuelve roles
+        role: 'user',
         avatar: {
           alt: u.name
         }
       }
 
       user.value = authUser
+      authUserCookie.value = authUser
+      authTokenCookie.value = response.data.access_token
 
-      if (import.meta.client) {
-        storage.set('auth_user', authUser)
-        storage.set('auth_token', response.data.access_token)
-      }
-
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error de login:', error)
       throw new Error('Credenciales incorrectas')
     } finally {
@@ -55,19 +61,18 @@ const _useAuth = () => {
     }
   }
 
+
   const logout = async (): Promise<void> => {
     loading.value = true
 
     try {
-      const token = import.meta.client ? storage.get<string>('auth_token') : null
-
-      if (token && !token.startsWith('demo_token_')) {
+      if (authTokenCookie.value) {
         try {
           await $fetch(`${apiBaseUrl}/api/logout`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
+              Authorization: `Bearer ${authTokenCookie.value}`,
+              Accept: 'application/json'
             }
           })
         } catch (error) {
@@ -76,30 +81,24 @@ const _useAuth = () => {
       }
 
       user.value = null
+      authUserCookie.value = null
+      authTokenCookie.value = null
 
-      if (import.meta.client) {
-        storage.remove('auth_user')
-        storage.remove('auth_token')
-      }
     } finally {
       loading.value = false
     }
   }
 
   const checkAuth = (): void => {
-    if (!import.meta.client) return
-
-    const savedUser = storage.get<AuthUser>('auth_user')
-    const savedToken = storage.get<string>('auth_token')
-
-    if (savedUser && savedToken) {
-      user.value = savedUser
+    if (authUserCookie.value && authTokenCookie.value) {
+      user.value = authUserCookie.value
     } else {
-      storage.remove('auth_user')
-      storage.remove('auth_token')
       user.value = null
+      authUserCookie.value = null
+      authTokenCookie.value = null
     }
   }
+
 
   const updateProfile = async (userData: Partial<AuthUser>): Promise<void> => {
     if (!user.value) return
@@ -107,21 +106,17 @@ const _useAuth = () => {
     loading.value = true
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 800)) 
-      user.value = { ...user.value, ...userData }
+      await new Promise(resolve => setTimeout(resolve, 800))
 
-      if (import.meta.client) {
-        storage.set('auth_user', user.value)
-      }
+      user.value = { ...user.value, ...userData }
+      authUserCookie.value = user.value
+
     } finally {
       loading.value = false
     }
   }
 
-  // Inicializa estado auth al crear el composable
-  if (import.meta.client) {
-    checkAuth()
-  }
+  checkAuth()
 
   return {
     user: readonly(user),
@@ -130,7 +125,7 @@ const _useAuth = () => {
     login,
     logout,
     checkAuth,
-    updateProfile,
+    updateProfile
   }
 }
 

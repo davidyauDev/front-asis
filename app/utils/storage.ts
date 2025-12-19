@@ -2,6 +2,7 @@ export const storage = {
   set(key: string, value: any) {
     if (typeof value === "string") {
       // Guardar strings SIN JSON.stringify
+      console.log("Guardando token:", value);
       localStorage.setItem(key, value)
     } else {
       // Guardar objetos como JSON

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, nextTick } from "vue";
-
-
+import { apiFetch } from "~/services/api";
 
 const tabActivo = ref<"incidencias" | "calculo">("incidencias");
 const mesSeleccionado = ref(12);
-const añoSeleccionado = ref(2024);
+const añoSeleccionado = ref(2025);
 const filaSeleccionada = ref<number | null>(null);
 const filaRef = ref<HTMLElement | null>(null);
 const toast = useToast();
@@ -15,30 +14,7 @@ const tardanzaBruta = reactive<Record<number, string>>({
   3: "00:10:24",
 });
 
-const datosEmpleados = ref<any[]>([
-  {
-    id: 1,
-    dni: "72048645",
-    apellidos: "Camacho Caceda",
-    nombre: "Johana Cecilia",
-    dias: {},
-  },
-  {
-    id: 2,
-    dni: "43291311",
-    apellidos: "Julian Iturbe",
-    nombre: "Emma Soledad",
-    dias: { "5-Dic": "00:33", "13-Dic": "00:19" },
-  },
-  {
-    id: 3,
-    dni: "77335709",
-    apellidos: "Orozco Guerrero",
-    nombre: "Karen Aylen",
-    dias: {},
-  },
-  
-]);
+const datosEmpleados = ref<any[]>([])
 
 const mostrarToastExito = () => {
   toast.add({
@@ -60,6 +36,33 @@ watch(
   }, 
   { deep: true }
 );
+
+const cargarIncidencias = async () => {
+  try {
+    const response = await apiFetch(
+      `/api/incidencias`,
+      { method: 'GET' }
+    )
+
+    // El backend ya devuelve el formato exacto
+    datosEmpleados.value = response
+    console.log('log:', response)
+    console.log('Incidencias cargadas:', datosEmpleados.value)
+
+  } catch (error) {
+    console.error('Error al cargar incidencias:', error)
+
+    toast.add({
+      title: 'Error',
+      description: 'No se pudo cargar las incidencias',
+      color: 'red'
+    })
+  }
+}
+onMounted(() => {
+  cargarIncidencias()
+})
+
 
 watch(
   () => tardanzaBruta,
@@ -296,6 +299,7 @@ const notificarPorCorreo = () => {
                   <input v-if="filaSeleccionada === emp.id" v-model="emp.dias[f]"
                     class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded" />
                   <span v-else class="font-medium">
+                    
                     {{ emp.dias[f] || "" }}
                   </span>
                 </td>
