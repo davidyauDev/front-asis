@@ -26,25 +26,15 @@ const mostrarToastExito = () => {
   });
 };
 
-watch(
-  () => datosEmpleados.value, 
-  (newVal, oldVal) => {
-    // Solo disparamos si no es la carga inicial (cuando ya hay datos)
-    if (oldVal.length > 0) {
-      mostrarToastExito();
-    }
-  }, 
-  { deep: true }
-);
+
 
 const cargarIncidencias = async () => {
   try {
     const response = await apiFetch(
-      `/api/incidencias`,
+      `/api/incidencias?mes=${mesSeleccionado.value}&anio=${añoSeleccionado.value}`,
       { method: 'GET' }
-    )
+    );
 
-    // El backend ya devuelve el formato exacto
     datosEmpleados.value = response
     console.log('log:', response)
     console.log('Incidencias cargadas:', datosEmpleados.value)
@@ -64,17 +54,14 @@ onMounted(() => {
 })
 
 
-watch(
-  () => tardanzaBruta,
-  () => {
-    mostrarToastExito();
-  },
-  { deep: true }
-);
+
 
 watch(filaSeleccionada, async () => {
   await nextTick();
   filaRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+watch([mesSeleccionado, añoSeleccionado], () => {
+  cargarIncidencias();
 });
 
 
@@ -180,51 +167,72 @@ const notificarPorCorreo = () => {
       </UDashboardNavbar>
     </template>
     <template #body>
-      <div class="space-y-6">
+      <div class="mt-2">
         <!-- TABS -->
-        <div class="flex border-b">
-          <button @click="tabActivo = 'incidencias'" class="px-6 py-3 font-semibold transition-colors" :class="tabActivo === 'incidencias'
-              ? 'bg-[#1f4e78] text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        <div class="flex border-b border-gray-200 bg-white">
+          <button @click="tabActivo = 'incidencias'" class="px-6 py-4 text-sm font-semibold transition-colors" :class="tabActivo === 'incidencias'
+            ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30'
+            : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'
             ">
             Incidencias Justificadas
           </button>
 
-          <button @click="tabActivo = 'calculo'" class="px-6 py-3 font-semibold transition-colors" :class="tabActivo === 'calculo'
-              ? 'bg-[#1f4e78] text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          <button @click="tabActivo = 'calculo'" class="px-6 py-4 text-sm font-semibold transition-colors" :class="tabActivo === 'calculo'
+            ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30'
+            : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'
             ">
             Cálculo de Tardanzas
           </button>
         </div>
-        <div class="flex gap-4 items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <label class="font-semibold text-gray-700">Seleccionar Mes:</label>
 
-          <select v-model="mesSeleccionado"
-            class="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option v-for="mes in [
-              { valor: 1, nombre: 'Enero' },
-              { valor: 2, nombre: 'Febrero' },
-              { valor: 3, nombre: 'Marzo' },
-              { valor: 4, nombre: 'Abril' },
-              { valor: 5, nombre: 'Mayo' },
-              { valor: 6, nombre: 'Junio' },
-              { valor: 7, nombre: 'Julio' },
-              { valor: 8, nombre: 'Agosto' },
-              { valor: 9, nombre: 'Septiembre' },
-              { valor: 10, nombre: 'Octubre' },
-              { valor: 11, nombre: 'Noviembre' },
-              { valor: 12, nombre: 'Diciembre' },
-            ]" :key="mes.valor" :value="mes.valor">
-              {{ mes.nombre }}
-            </option>
-          </select>
+        <!-- FILTROS -->
+        <div class="p-4 bg-slate-50/50 flex items-center gap-4 flex-wrap border-b">
 
-          <label class="font-semibold text-gray-700">Año:</label>
+          <!-- MES -->
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-600">
+              Seleccionar Mes:
+            </label>
+            <select v-model="mesSeleccionado" class="border rounded-md px-3 py-1.5 bg-white text-sm
+             focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option v-for="mes in [
+                { valor: 1, nombre: 'Enero' },
+                { valor: 2, nombre: 'Febrero' },
+                { valor: 3, nombre: 'Marzo' },
+                { valor: 4, nombre: 'Abril' },
+                { valor: 5, nombre: 'Mayo' },
+                { valor: 6, nombre: 'Junio' },
+                { valor: 7, nombre: 'Julio' },
+                { valor: 8, nombre: 'Agosto' },
+                { valor: 9, nombre: 'Septiembre' },
+                { valor: 10, nombre: 'Octubre' },
+                { valor: 11, nombre: 'Noviembre' },
+                { valor: 12, nombre: 'Diciembre' },
+              ]" :key="mes.valor" :value="mes.valor">
+                {{ mes.nombre }}
+              </option>
+            </select>
+          </div>
 
-          <input type="number" v-model.number="añoSeleccionado" min="2020" max="2030"
-            class="border border-gray-300 rounded-md px-4 py-2 w-24 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <!-- AÑO -->
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-600">
+              Año:
+            </label>
+            <input type="number" v-model.number="añoSeleccionado" min="2020" max="2030" class="border rounded-md px-3 py-1.5 bg-white text-sm w-24 text-center
+             focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+
+          <!-- BADGE INFO -->
+          <div class="ml-auto flex items-center gap-2 bg-indigo-50
+           border border-indigo-100 rounded-lg px-4 py-2">
+            <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-indigo-600" />
+            <p class="text-xs text-indigo-700 font-medium italic">
+              Haz clic en un registro para ver el tracking de quién lo registró y el motivo.
+            </p>
+          </div>
         </div>
+
 
         <!-- INCIDENCIAS -->
         <div v-if="tabActivo === 'incidencias'" class="overflow-x-auto rounded-lg shadow border">
@@ -238,8 +246,8 @@ const notificarPorCorreo = () => {
 
                 <th v-for="f in columnasFechas" :key="f" class="border border-gray-400 text-center font-semibold"
                   :class="esFinDeSemana(Number(f.split('-')[0]))
-                      ? 'bg-yellow-200'
-                      : 'bg-gray-50'
+                    ? 'bg-yellow-200'
+                    : 'bg-gray-50'
                     ">
                   {{ f }}
                 </th>
@@ -265,8 +273,8 @@ const notificarPorCorreo = () => {
                 </th>
 
                 <th v-for="f in columnasFechas" :key="f" class="border border-gray-400 px-2 py-2 text-center" :class="esFinDeSemana(Number(f.split('-')[0]))
-                    ? 'bg-yellow-100'
-                    : ''
+                  ? 'bg-yellow-100'
+                  : ''
                   ">
                   {{ Number(f.split("-")[0]) }}
                 </th>
@@ -281,8 +289,8 @@ const notificarPorCorreo = () => {
             <tbody>
               <tr v-for="emp in datosEmpleados" :key="emp.id" @click="filaSeleccionada = emp.id" :ref="filaSeleccionada === emp.id ? (el) => (filaRef = el) : null
                 " class="cursor-pointer transition-colors" :class="filaSeleccionada === emp.id
-                    ? 'bg-blue-100 ring-2 ring-blue-500 ring-inset'
-                    : 'hover:bg-gray-50'
+                  ? 'bg-blue-100 ring-2 ring-blue-500 ring-inset'
+                  : 'hover:bg-gray-50'
                   ">
                 <td class="border px-2 text-center">{{ emp.id }}</td>
                 <td class="border px-2 text-center">{{ emp.dni }}</td>
@@ -299,7 +307,7 @@ const notificarPorCorreo = () => {
                   <input v-if="filaSeleccionada === emp.id" v-model="emp.dias[f]"
                     class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded" />
                   <span v-else class="font-medium">
-                    
+
                     {{ emp.dias[f] || "" }}
                   </span>
                 </td>
@@ -350,8 +358,8 @@ const notificarPorCorreo = () => {
                 </td>
 
                 <td class="border px-2 text-center font-bold" :class="convertirAMinutos(calcularTardanzaNeta(emp.id)) > 0
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-green-100 text-green-800'
+                  ? 'bg-red-100 text-red-800'
+                  : 'bg-green-100 text-green-800'
                   ">
                   {{ calcularTardanzaNeta(emp.id) }}
                 </td>
@@ -363,3 +371,4 @@ const notificarPorCorreo = () => {
     </template>
   </UDashboardPanel>
 </template>
+
