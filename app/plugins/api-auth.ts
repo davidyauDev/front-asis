@@ -7,7 +7,8 @@ export default defineNuxtPlugin(() => {
       let token = null;
 
       if (import.meta.client) {
-        token = localStorage.getItem("auth_token");
+         const token1 = useCookie<string | null>('auth_token')
+        token = token1.value;
       }
 
       options.headers.set("Content-Type", "application/json");

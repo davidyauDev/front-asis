@@ -16,11 +16,13 @@
       />
 
       <UButton
-        icon="i-lucide-file-spreadsheet"
-        class="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
-      >
-        Exportar Excel
-      </UButton>
+  icon="i-lucide-file-spreadsheet"
+  class="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
+  @click="exportarExcel"
+>
+  Exportar Excel
+</UButton>
+
     </div>
 
     <UTable
@@ -190,6 +192,50 @@ const dailyListAttendaces = computed<TakenAttendace[]>(() => {
 
   return list;
 });
+
+const token = useCookie<string | null>('auth_token')
+
+
+const exportarExcel = async () => {
+  try {
+    if (!token.value) {
+      throw new Error('Token no disponible')
+    }
+    const response = await fetch(
+      'http://127.0.0.1:8000/api/reporte-asistencia/marcacion',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token.value}`,
+          'Accept':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        },
+        body: JSON.stringify({ export: 'excel' })
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP ${response.status}`)
+    }
+
+    const blob = await response.blob()
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'detalle_marcacion.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+
+  } catch (error) {
+    console.error('Error exportando Excel:', error)
+  }
+}
+
+
 
 const modalTitle = computed(() => {
   if (!selectedRow.value) return "Incidencia";

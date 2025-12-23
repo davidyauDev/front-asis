@@ -9,7 +9,6 @@ const _useAuth = () => {
   const config = useRuntimeConfig()
   const apiBaseUrl = config.public.apiBaseUrl
 
-  // Cookies (persistentes)
   const authUserCookie = useCookie<AuthUser | null>('auth_user', {
     sameSite: 'lax'
   })

@@ -6,14 +6,14 @@ const reportPrefix = `${apiBaseUrl}/api/reporte-asistencia`;
 
 const biotimePrefix = `${apiBaseUrl}/api/biotime`;
 
-const getAuthToken = (): string | null => {
-  if (import.meta.client) {
-    return localStorage.getItem("auth_token");
-  }
-  return null;
-};
+// const getAuthToken = (): string | null => {
+//   if (import.meta.client) {
+//     return localStorage.getItem("auth_token");
+//   }
+//   return null;
+// };
 
-const token = getAuthToken();
+// const token = getAuthToken();
 
 export interface Company {
   id: number;
@@ -125,6 +125,8 @@ export type AttendanceParams = {
   departamento_ids: number[];
 };
 
+const token = useCookie<string | null>('auth_token')
+
 const _useAttendanceReport = () => {
   const fetchCompanies = async (): Promise<Company[]> => {
     try {
@@ -132,7 +134,7 @@ const _useAttendanceReport = () => {
         data: Company[];
       }>(`${biotimePrefix}/empresas`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
           Accept: "application/json",
         },
       });
@@ -150,7 +152,7 @@ const _useAttendanceReport = () => {
         data: Department[];
       }>(`${biotimePrefix}/departamentos`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
           Accept: "application/json",
         },
       });
@@ -175,7 +177,7 @@ const _useAttendanceReport = () => {
             department_ids: departmentIds,
           },
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token.value}`,
             Accept: "application/json",
           },
         }
@@ -210,7 +212,7 @@ const _useAttendanceReport = () => {
         },
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
           Accept: "application/json",
         },
       });
@@ -246,7 +248,7 @@ const _useAttendanceReport = () => {
           },
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token.value}`,
             Accept: "application/json",
           },
         }
@@ -286,7 +288,7 @@ const _useAttendanceReport = () => {
         body: params,
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
           Accept: "application/json",
         },
       });

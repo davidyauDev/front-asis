@@ -26,9 +26,18 @@
 
     <!-- BODY -->
     <div
-      class="max-h-48 overflow-y-auto flex flex-wrap gap-2 items-center pr-1"
+      class="max-h-48 overflow-y-auto flex flex-wrap gap-2 items-start pr-1"
       :class="extraClass"
     >
+      <!-- SEARCH -->
+      <UInput
+        v-model="search"
+        size="sm"
+        icon="i-lucide-search"
+        placeholder="Buscar empleado..."
+        class="w-full mb-2"
+      />
+
       <DataState
         :loading="loading"
         :error="isError"
@@ -45,9 +54,9 @@
         </template>
 
         <!-- LIST -->
-        <template v-if="list.length">
+        <template v-if="filteredList.length">
           <UButton
-            v-for="item in list"
+            v-for="item in filteredList"
             :key="item.id"
             size="xs"
             class="rounded-full transition-all cursor-pointer"
@@ -76,8 +85,6 @@
   </UCard>
 </template>
 
-
-
 <script setup lang="ts">
 import DataState from '~/components/common/DataState.vue';
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
@@ -87,64 +94,71 @@ const { getEmployees } = store;
 const { employee } = storeToRefs(store);
 
 const { loading, isError, list, class: extraClass } = defineProps<{
-    loading: boolean,
-    isError: boolean,
-    list: Employee[],
-    class?: string
-}>()
-
+  loading: boolean;
+  isError: boolean;
+  list: Employee[];
+  class?: string;
+}>();
 
 const storeSelecteds = defineModel<Employee[]>('employee', {
-    required: true
+  required: true
 });
 
 const param = defineModel<number | undefined>('param');
 
+const search = ref('');
 
 const selecteds = computed<Employee[]>({
-    get() {
-        return storeSelecteds.value.length ? storeSelecteds.value : employee.value.list
-    },
+  get() {
+    return storeSelecteds.value.length
+      ? storeSelecteds.value
+      : employee.value.list;
+  },
+  set(newSelecteds) {
+    storeSelecteds.value = newSelecteds;
+  }
+});
 
-    set(newSelecteds) {
-        storeSelecteds.value = newSelecteds
-    }
-})
+const filteredList = computed(() => {
+  if (!search.value.trim()) return list;
+
+  const term = search.value.toLowerCase();
+
+  return list.filter(emp =>
+    `${emp.first_name} ${emp.last_name}`
+      .toLowerCase()
+      .includes(term)
+  );
+});
 
 const handleSelectEmployee = (employeeItem: Employee) => {
-  // 1️⃣ Detectar estado inicial (todos seleccionados)
   const allSelected =
     selecteds.value.length === employee.value.list.length;
 
-  // Primer click: romper "todos"
   if (allSelected) {
     selecteds.value = [employeeItem];
     param.value = employeeItem.id;
     return;
   }
 
-  // 2️⃣ Multiselección normal
   const exists = selecteds.value.some(
     s => s.id === employeeItem.id
   );
 
   if (exists) {
-    // quitar solo el clickeado
     selecteds.value = selecteds.value.filter(
       s => s.id !== employeeItem.id
     );
   } else {
-    // agregar sin perder los demás
     selecteds.value = [...selecteds.value, employeeItem];
   }
 
-  // opcional: último clickeado
   param.value = employeeItem.id;
 };
 
-
 const handleResertFilter = () => {
-    selecteds.value = employee.value.list
-    param.value = undefined;
-}
+  selecteds.value = employee.value.list;
+  param.value = undefined;
+  search.value = '';
+};
 </script>

@@ -40,19 +40,14 @@ export const useEventos = () => {
   const config = useRuntimeConfig();
   const baseUrl = config.public.apiBaseUrl;
 
-  const getAuthToken = (): string | null => {
-    if (import.meta.client) {
-      return localStorage.getItem("auth_token");
-    }
-    return null;
-  };
+  
 
   const obtenerEventosPorMes = async (
     año: number,
     mes: number
   ): Promise<EventoAPI[]> => {
     try {
-      const token = getAuthToken();
+      const token = useCookie<string | null>('auth_token')
       if (!token) {
         console.error("🚫 No hay token de autenticación");
         throw new Error("No hay token de autenticación");
@@ -61,7 +56,7 @@ export const useEventos = () => {
         `${baseUrl}/api/eventos/mes/${año}/${mes}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token.value}`,
             Accept: "application/json",
           },
         }

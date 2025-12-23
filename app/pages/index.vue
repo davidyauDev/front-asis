@@ -55,37 +55,24 @@
             marker: 'hidden'
           }" />
       </UDashboardToolbar>
-
-
-
-
-
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
         <UTabs :items="employeeItems" variant="link" class="flex-1 p-3 mx-auto" v-model="currentEmployeeType"
           @update:model-value="(value) => {
             currentEmployeeType = value as EmployeeType
           }">
-
         </UTabs>
       </UDashboardToolbar>
 
     </template>
-
     <template #body>
       <DailyAttendanceReport v-if="currentTabType === ItemType.TODAY" />
       <MonthlyAttendanceReport v-else-if="currentTabType === ItemType.TECHNICIANS"
         :employee-type="currentEmployeeType" />
       <ReporteAsistenciasAdministrators v-else="currentTabType === ItemType.ADMINISTRATORS" />
-
-
-
     </template>
-
   </UDashboardPanel>
   <NotificationsSlideover />
 </template>
-
-
 <script setup lang="ts">
 
 import { format } from 'date-fns';

@@ -87,7 +87,7 @@ export const useRutas = () => {
     console.log("Fetching routes with filters:", loading.value, filters.value);
 
     try {
-      const token = localStorage.getItem("auth_token");
+        const token = useCookie<string | null>('auth_token')
       const params = new URLSearchParams();
       if (filters.value.date) {
         params.append("date", filters.value.date);
@@ -98,7 +98,7 @@ export const useRutas = () => {
       const res = await fetch(url, {
         
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
           Accept: "application/json",
         },
         

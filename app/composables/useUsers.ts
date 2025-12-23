@@ -28,11 +28,11 @@ const _useUsers = () => {
   const apiBaseUrl = config.public.apiBaseUrl;
 
   // Obtener token de autenticación
-  const getAuthToken = (): string | null => {
-    if (import.meta.client) {
-      return localStorage.getItem("auth_token");
+  const getAuthToken = () => {
+    const token = useCookie<string | null>('auth_token')
+    if (token.value) {
+      return token.value;
     }
-    return null;
   };
 
   const getAllUsers = async (): Promise<UserListItem[]> => {
@@ -92,11 +92,7 @@ const _useUsers = () => {
     error.value = null;
 
     try {
-      const token = getAuthToken();
-      if (!token) {
-        error.value = "Token de autenticación no encontrado";
-        return;
-      }
+      const token = useCookie<string | null>('auth_token')
 
       const params = new URLSearchParams();
       params.append("page", page.toString());
@@ -110,7 +106,7 @@ const _useUsers = () => {
 
       const response = await $fetch<any>(url, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
           Accept: "application/json",
           // "Content-Type": "application/json",
         },
@@ -262,11 +258,12 @@ const _useUsers = () => {
 
     try {
       const url = `${apiBaseUrl}/api/users/${userId}/toggle-active`;
-      const token = getAuthToken();
+      const token = useCookie<string | null>('auth_token')
+
       await $fetch(url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
         },
       });
       user.active = !user.active;
@@ -295,14 +292,15 @@ const _useUsers = () => {
   const createUser = async (newUser: CreateUserPayload) => {
     try {
       const url = `${apiBaseUrl}/api/users`;
-      const token = getAuthToken();
+      const token = useCookie<string | null>('auth_token')
+     
       const { data } = await $fetch<{
         data: UserListItem;
       }>(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
         },
         body: JSON.stringify(newUser),
       });
@@ -340,13 +338,14 @@ const _useUsers = () => {
       if (index === -1) return false;
 
       const url = `${apiBaseUrl}/api/users/${id}`;
-      const token = getAuthToken();
+      const token = useCookie<string | null>('auth_token')
+      
 
       const { data } = await $fetch<{ data: UserListItem }>(url, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
         },
         body: JSON.stringify(updatedUser),
       });

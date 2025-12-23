@@ -104,20 +104,16 @@ const chartOptions = computed<ApexOptions>(() => ({
   },
 
   plotOptions: {
-    pie: {
-      donut: {
-        size: '55%',
-        labels: {
-          show: true,
-          total: {
-            show: true,
-            label: 'Total',
-            formatter: () => total.value.toString()
-          }
-        }
+  pie: {
+    donut: {
+      size: '55%',
+      labels: {
+        show: false 
       }
     }
-  },
+  }
+}
+,
 
   theme: {
     mode: colorMode.value as 'dark' | 'light'
