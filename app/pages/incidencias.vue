@@ -96,8 +96,7 @@ const formIncidencia = reactive({
   motivo: '',
 })
 
-// tipos que NO requieren minutos
-const tiposSinMinutos = ['DESCANSO_MEDICO', 'FALTA_JUSTIFICADA']
+const tiposSinMinutos = ['DESCANSO_MEDICO', 'FALTA', 'TRABAJO_EN_CAMPO']
 
 const requiereMinutos = computed(() => {
   return formIncidencia.tipo && !tiposSinMinutos.includes(formIncidencia.tipo)
@@ -153,7 +152,6 @@ watch([mesSeleccionado, añoSeleccionado], () => {
 });
 
 const guardarIncidencia = async () => {
-  console.log("Guardando incidencia:", usuasioSeleccionado.value);
   const payload = {
     usuario_id: usuasioSeleccionado.value,
     tipo: formIncidencia.tipo,
@@ -185,6 +183,7 @@ const guardarIncidencia = async () => {
       color: 'red'
     })
   } finally {
+    cargarIncidencias()
   }
 }
 

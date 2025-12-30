@@ -1,183 +1,164 @@
 <template>
-  <UTable sticky :loading="loading" :data="movilityReportList" :columns="columns" class="flex-1 bg-white" 
-  ">
-    <template #empty>
-      <div v-if="error" class="w-full flex gap-4 justify-center items-center text-center">
-        <Icon name="lucide:alert-triangle" class="text-red-500" size="20" />
-        <h2 class="text-sm font-semibold text-red-600">No se pudo cargar el reporte de movilidad</h2>
-        <UButton color="error" variant="link" icon="i-lucide-refresh-cw" class="cursor-pointer" @click="refresh"
-          :loading="loading" />
+  <div class="flex flex-col h-full">
+    <!-- FILTROS -->
+    <div class="bg-white border-b shadow-sm">
+      <div class="p-4 flex flex-wrap gap-4 items-end">
+
+        <!-- BUSCADOR -->
+        <div class="flex flex-col">
+          <label class="text-xs font-semibold text-slate-500 mb-1">
+            Buscar usuario
+          </label>
+          <input v-model="filtroUsuario" type="text" placeholder="DNI, apellido o nombre" class="border rounded-md px-3 py-2 text-sm w-64
+               focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+
+        <!-- MES -->
+        <div class="flex flex-col">
+          <label class="text-xs font-semibold text-slate-500 mb-1">
+            Mes
+          </label>
+          <select v-model="mesSeleccionado" class="border rounded-md px-3 py-2 text-sm bg-white
+               focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">
+              {{ mes.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <!-- AÑO -->
+        <div class="flex flex-col">
+          <label class="text-xs font-semibold text-slate-500 mb-1">
+            Año
+          </label>
+          <input type="number" v-model.number="añoSeleccionado" min="2020" max="2030" class="border rounded-md px-3 py-2 text-sm w-24 text-center
+               focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+
+        <!-- BOTÓN -->
+        <div>
+          <button @click="aplicarFiltros" class="bg-indigo-600 text-white px-6 py-2 rounded-md text-sm
+               hover:bg-indigo-700 transition font-medium">
+            Aplicar
+          </button>
+        </div>
       </div>
-      <div v-else class="flex flex-col items-center justify-center p-6">
-        <UIcon name="i-lucide-inbox" size="48" class="mb-4 text-gray-400" />
-        <p class="text-gray-500">No se encontraron registros para los criterios seleccionados.</p>
-      </div>
-    </template>
+    </div>
 
-    <!-- Empleado -->
-    <template #employee-cell="{ row }">
-      <div class="flex items-center gap-3 max-w-fit">
-        <UUser :name="row.original.employee.last_name" :description="row.original.employee.first_name" />
-        <UButton icon="i-lucide-eye" variant="link" size="sm" class="ml-auto cursor-pointer"
-          @click="(open = true), $emit('select:movility-report', row.original)" />
-      </div>
-    </template>
+    <table class="border-collapse w-full text-sm rounded shadow">
+      <thead>
+        <tr class="bg-slate-800 text-white">
+          <th class=" px-3 py-2">ID</th>
+          <th class=" px-3 py-2">APELLIDOS</th>
+          <th class=" px-4 py-2">NOMBRES</th>
 
-    <template #fechaIngreso-cell="{ row }">
-      <span class="text-green-600 font-medium">
-        01/03/2023
-      </span>
+          <th class=" px-3 py-2 bg-slate-700">CARGO</th>
+          <th class=" px-3 py-2 bg-slate-700">MOVILIDAD</th>
 
-    </template>
+          <th class=" px-3 py-2 bg-emerald-700">PROVINCIA</th>
+          <th class=" px-3 py-2 bg-emerald-700">EMPRESA</th>
 
-    <template #fecgha-cell="{ row }">
-      <span class="text-green-600 font-medium">
-        150
-      </span>
-    </template>
+          <th class=" px-3 py-2 bg-emerald-800">TOTAL</th>
+          <th class=" px-3 py-2 bg-emerald-600">VACACIONES</th>
+          <th class=" px-3 py-2 bg-emerald-600">NO MARCÓ</th>
+          <th class=" px-3 py-2 bg-emerald-600">DM</th>
 
-    <template #movilidad-cell="{ row }">
-      <span class="text-green-600 font-medium">
-        150
-      </span>
-    </template>
-    
+          <th class=" px-3 py-2 bg-green-700">MONTO A DEPOSITAR</th>
+          <th class=" px-3 py-2 bg-amber-300 text-black">COMENTARIO</th>
+          <th class=" px-3 py-2  ">Acciones</th>
+        </tr>
+      </thead>
 
-    <!-- Provincia -->
-    <template #provincia-cell="{ row }">
-      <span class="text-orange-500 font-medium">
-        Lima
-      </span>
-    </template>
+      <tbody>
+        <tr v-for="emp in datosFiltrados" class="hover:bg-gray-50">
 
-    <!-- Empresa -->
-    <template #empresa-cell="{ row }">
-      <span class="text-blue-500 font-medium">
-        Cechriza
-      </span>
-    </template>
-  </UTable>
+          <td class="border px-2 text-center">{{ emp.employee.id }}</td>
+          <td class="border px-2 text-center">{{ emp.employee.last_name }}</td>
+          <td class="border px-4 text-center">{{ emp.employee.first_name }}</td>
+          <td class="border px-2 text-center">{{ emp.employee.position_name }}</td>
+          <td class="border px-2 text-center">150</td>
+          <td class="border px-2 text-center">{{ emp.employee.department_name }}</td>
+          <td class="border px-2 text-center">CECHRIZA</td>
+          <td class="border px-2 text-center">{{ emp.summary.total_days }}</td>
+          <td class="border px-2 text-center">{{ emp.summary.vacation_days }}</td>
+          <td class="border px-2 text-center">{{ emp.summary.no_mark_days }}</td>
+          <td class="border px-2 text-center">{{ emp.summary.medical_leave_days }}</td>
+          <td class="border px-2 text-center">{{ emp.summary.amount_to_deposit }}</td>
+          <td class="border px-4 text-center">{{ emp.comments }}</td>
+          <td class="border px-2 text-center space-x-1">
+            <UButton size="xs" color="blue" icon="i-heroicons-eye" " /> 
+                </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui"
-import { format } from "date-fns"
-import type { MovilityReport } from "~/interfaces/movility-report"
+import { apiFetch } from '~/services/api';
 
-const open = defineModel("open", {
-  type: Boolean,
-  required: true,
+const datosMoilityReports = ref([])
+
+const payload = {
+  year: 2025,
+  month: 10,
+
+}
+
+const mesSeleccionado = ref(payload.month)
+const añoSeleccionado = ref(payload.year)
+const filtroUsuario = ref('')
+
+const meses = [
+  { valor: 1, nombre: 'Enero' },
+  { valor: 2, nombre: 'Febrero' },
+  { valor: 3, nombre: 'Marzo' },
+  { valor: 4, nombre: 'Abril' },
+  { valor: 5, nombre: 'Mayo' },
+  { valor: 6, nombre: 'Junio' },
+  { valor: 7, nombre: 'Julio' },
+  { valor: 8, nombre: 'Agosto' },
+  { valor: 9, nombre: 'Septiembre' },
+  { valor: 10, nombre: 'Octubre' },
+  { valor: 11, nombre: 'Noviembre' },
+  { valor: 12, nombre: 'Diciembre' },
+]
+
+const aplicarFiltros = () => {
+  payload.month = mesSeleccionado.value
+  payload.year = añoSeleccionado.value
+  cargarMovilityReports()
+}
+
+const datosFiltrados = computed(() => {
+  if (!filtroUsuario.value) return datosMoilityReports.value
+
+  const q = filtroUsuario.value.toLowerCase()
+
+  return datosMoilityReports.value.filter((emp: any) =>
+    emp.employee.first_name.toLowerCase().includes(q) ||
+    emp.employee.last_name.toLowerCase().includes(q) ||
+    emp.employee.id.toString().includes(q)
+  )
 })
 
-const { rangeDate, searchTerm } = defineProps<{
-  rangeDate: {
-    start: Date
-    end: Date
+
+const cargarMovilityReports = async () => {
+  try {
+    const response = await apiFetch('/api/mobility/monthly-report', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    datosMoilityReports.value = response;
+
+  } catch (error) {
+    console.error('Error loading mobility reports:', error);
   }
-  searchTerm: string
-}>()
+};
 
-defineEmits<{
-  (e: "select:movility-report", movilityReport: MovilityReport): void
-}>()
+onMounted(() => {
+  cargarMovilityReports();
+});
 
-const currentYear = computed(() => format(rangeDate.start, "yyyy"))
-const currentMonth = computed(() => format(rangeDate.start, "MM"))
-
-const {
-  data,
-  pending: loading,
-  error,
-  refresh,
-} = await useFetch<MovilityReport[]>("/daily-records/monthly-summary", {
-  method: "POST",
-  $fetch: useNuxtApp().$api,
-  body: computed(() => ({
-    year: Number(currentYear.value),
-    month: Number(currentMonth.value),
-  })),
-  default: () => [],
-  watch: [currentYear, currentMonth],
-})
-
-const movilityReportList = computed<MovilityReport[]>(() => {
-  let filtered = data.value
-  if (searchTerm) {
-    const term = searchTerm.toLowerCase().trim()
-    filtered = filtered.filter(
-      (item) =>
-        item.employee.first_name.toLowerCase().includes(term) ||
-        item.employee.last_name.toLowerCase().includes(term) ||
-        item.employee.position_name.toLowerCase().includes(term)
-    )
-  }
-  return filtered
-})
-
-const columns = computed<TableColumn<MovilityReport>[]>(() => [
-  {
-    accessorKey: "employee",
-    header: "Empleado",
-    size: 220,
-  },
-  {
-    accessorKey: "employee.department_name",
-    header: "Cargo",
-  },
-  {
-    accessorKey: "fechaIngreso",
-    header: "F. Ingreso",
-    size: 110,
-  },
-  {
-    accessorKey: "movilidad",
-    header: "Movilidad",
-    size: 100,
-  },
-  {
-    accessorKey: "provincia",
-    header: "Provincia",
-    size: 120,
-  },
-  {
-    accessorKey: "empresa",
-    header: "Empresa",
-    size: 130,
-  },
-  {
-    accessorKey: "summary.total_days",
-    header: "Total",
-    size: 60,
-  },
-  {
-    accessorKey: "summary.vacation_days",
-    header: "Vac",
-    size: 60,
-  },
-  {
-    accessorKey: "summary.no_mark_days",
-    header: "NM",
-    size: 60,
-  },
-  {
-    accessorKey: "summary.days_with_mobility",
-    header: "DM",
-    size: 60,
-  },
-  {
-    accessorKey: "summary.days_with_mobility",
-    header: "Depostar",
-    size: 60,
-  },
-  {
-    accessorKey: "summary.days_with_mobility",
-    header: "Comentario",
-    size: 60,
-  },
-   {
-    accessorKey: "summary.days_with_mobility",
-    header: "Acciones",
-    size: 60,
-  },
-])
 </script>
