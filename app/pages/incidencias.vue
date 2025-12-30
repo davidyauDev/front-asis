@@ -15,6 +15,7 @@ const toast = useToast();
 const datosEmpleados = ref<any[]>([]);
 const filtroUsuario = ref("");
 
+
 const empleadosFiltrados = computed(() => {
   if (!filtroUsuario.value.trim()) return datosEmpleados.value;
   const q = filtroUsuario.value.toLowerCase().trim();
@@ -54,6 +55,9 @@ const agregarIncidencia = (emp: any) => {
   isIncidenciaOpen.value = true;
 };
 
+const verTracking = (emp: any) => {
+  alert(`Ver tracking de incidencias para ${emp.nombre} ${emp.apellidos}`);
+};
 
 
 onMounted(() => {
@@ -152,7 +156,10 @@ watch([mesSeleccionado, añoSeleccionado], () => {
 });
 
 const guardarIncidencia = async () => {
+   const user = useCookie<string | null>('auth_user')
+
   const payload = {
+    creado_por: user.value.id,
     usuario_id: usuasioSeleccionado.value,
     tipo: formIncidencia.tipo,
     fecha: formIncidencia.fecha,
@@ -186,7 +193,6 @@ const guardarIncidencia = async () => {
     cargarIncidencias()
   }
 }
-
 
 
 const notificarPorCorreo = () => {
@@ -358,7 +364,7 @@ const notificarPorCorreo = () => {
                 ]">
                   <input v-if="filaSeleccionada === emp.id" v-model="emp.dias[f]"
                     class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded" />
-                  <span v-else class="font-medium">
+                  <span v-else class="font-medium" >
                     {{ emp.dias[f] || "" }}
                   </span>
                 </td>
@@ -367,7 +373,7 @@ const notificarPorCorreo = () => {
                   {{ emp.incidencias_hhmm }}
                 </td>
                 <td class="border px-2 text-center space-x-1">
-                  <!-- <UButton size="xs" color="blue" icon="i-heroicons-eye" @click.stop="abrirDetalle(emp)" /> -->
+                   <UButton size="xs" color="blue" icon="i-heroicons-eye" @click.stop="verTracking(emp)" />
 
                   <UButton size="xs" color="green" icon="i-heroicons-plus" @click.stop="agregarIncidencia(emp)" />
                 </td>
@@ -429,6 +435,9 @@ const notificarPorCorreo = () => {
       </div>
     </template>
   </UDashboardPanel>
+  
+
+
   <UModal v-model:open="isIncidenciaOpen" :ui="{ width: 'max-w-lg' }">
 
     <!-- HEADER -->
@@ -496,7 +505,4 @@ const notificarPorCorreo = () => {
     </template>
 
   </UModal>
-
-
-
 </template>
