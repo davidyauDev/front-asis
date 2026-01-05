@@ -9,7 +9,7 @@
     </template>
 
     <template #body>
-      <div class="p-6">
+      <div class="p-2">
         <TableReport
           :range-date="rangeDate"
           v-model:open="openDetailModal"

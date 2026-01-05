@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { apiFetch } from '~/services/api';
 
-
 const props = defineProps<{
     mesSeleccionado: number,
     añoSeleccionado: number,
     filtroUsuario: string
 }>();
+
 const datosEmpleados = ref<any[]>([]);
 const cargando = ref(true);
 
@@ -29,15 +29,42 @@ const convertirAMinutos = (t: string) => {
 };
 
 
+const loadingEmail = ref<{ [key: number]: boolean }>({});
+
+async function enviarEmail(emp: any) {
+    loadingEmail.value[emp.id] = true;
+    const payload = {
+        email: emp.email ?? 'yauridavid00@gmail.com',
+        nombre: emp.nombre,
+        scheduled_time: emp.neto_hhmm,
+        check_in: emp.check_in ?? emp.hora_ingreso ?? '',
+        fecha: emp.fecha ?? '',
+    };
+    try {
+        await apiFetch('/api/tardanzas/enviar-correo', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+        toast.add({
+            title: 'Correo enviado',
+            description: `Se envió el correo a ${payload.email}`,
+            color: 'success',
+        });
+    } catch (error) {
+        toast.add({
+            title: 'Error',
+            description: 'No se pudo enviar el correo',
+            color: 'error',
+        });
+    } finally {
+        loadingEmail.value[emp.id] = false;
+    }
+}
+
 const esMayorAUnaHora = (hhmm: string) => {
     const minutos = convertirAMinutos(hhmm)
     return minutos > 60
 }
-
-const notificarPorCorreo = () => {
-    alert("Funcionalidad de correo en desarrollo");
-};
-
 
 const cargarIncidencias = async () => {
     cargando.value = true;
@@ -47,8 +74,6 @@ const cargarIncidencias = async () => {
             { method: "GET" }
         );
         datosEmpleados.value = response;
-        console.log("log:", response);
-        console.log("Incidencias cargadas:", datosEmpleados.value);
     } catch (error) {
         console.error("Error al cargar incidencias:", error);
         toast.add({
@@ -61,40 +86,18 @@ const cargarIncidencias = async () => {
     }
 };
 
-
 onMounted(() => {
-        cargarIncidencias();
+    cargarIncidencias();
 });
 
 watch([
     () => props.mesSeleccionado,
     () => props.añoSeleccionado
 ], cargarIncidencias);
-
-
 </script>
-
 
 <template>
     <div>
-        <div class="flex justify-between items-center bg-white p-4 rounded shadow border">
-            <h2 class="text-lg font-bold">Cálculo de Tardanzas Netas</h2>
-            <div class="flex gap-2">
-                <UButton color="secondary" @click="notificarPorCorreo">
-                    Notificar por correo
-                    <UIcon name="i-lucide-mail" class="size-5" />
-
-                </UButton>
-                <div>
-                </div>
-                <UButton color="success">
-                    Descargar Excel
-                    <UIcon name="i-lucide-file" class="size-5" />
-
-                </UButton>
-            </div>
-        </div>
-
         <div v-if="cargando" class="my-8">
             <div class="rounded shadow border bg-white p-4 animate-pulse">
                 <div class="mb-4 flex justify-between items-center">
@@ -134,6 +137,8 @@ watch([
                     <th class="border px-3 py-2 bg-blue-700">BRUTO</th>
                     <th class="border px-3 py-2 bg-purple-700">INCIDENCIAS</th>
                     <th class="border px-3 py-2 bg-green-700">NETO</th>
+                    <th class="border px-3 py-2 bg-green-700">Acciones</th>
+
                 </tr>
             </thead>
 
@@ -159,6 +164,27 @@ watch([
                         ">
                         {{ emp.neto_hhmm }}
                     </td>
+                    <td class="border px-2 text-center">
+                                                <UButton
+                                                    size="sm"
+                                                    color="info"
+                                                    variant="soft"
+                                                    :disabled="loadingEmail[emp.id]"
+                                                    @click="enviarEmail(emp)"
+                                                >
+                                                    <template v-if="loadingEmail[emp.id]">
+                                                        <svg class="animate-spin h-4 w-4 mr-2 inline-block text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                                        </svg>
+                                                        <span class="ml-1">Enviando...</span>
+                                                    </template>
+                                                    <template v-else>
+                                                        <UIcon name="i-heroicons-envelope" class="size-4" />
+                                                    </template>
+                                                </UButton>
+                    </td>
+
                 </tr>
 
             </tbody>

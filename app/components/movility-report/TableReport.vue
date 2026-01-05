@@ -45,8 +45,8 @@
           </div>
         </div>
 
-        <!-- BOTÓN DESCARGAR EXCEL AL EXTREMO DERECHO -->
-        <div class="flex items-end">
+        <!-- BOTÓN DESCARGAR EXCEL Y AGREGAR MONTO -->
+        <div class="flex items-end gap-2">
           <button @click="descargarExcel" class="bg-green-600 text-white px-6 py-2 rounded-md text-sm
                hover:bg-green-700 transition font-medium flex items-center gap-2">
             <span>Descargar Excel</span>
@@ -54,6 +54,12 @@
               stroke="currentColor" class="w-5 h-5">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M19.5 14.25v2.25A2.25 2.25 0 0 1 17.25 18.75H6.75A2.25 2.25 0 0 1 4.5 16.5v-2.25M7.5 10.5l4.5 4.5m0 0l4.5-4.5m-4.5 4.5V3" />
+            </svg>
+          </button>
+          <button @click="agregarMontoMovilidad" class="bg-amber-500 text-white px-6 py-2 rounded-md text-sm hover:bg-amber-600 transition font-medium flex items-center gap-2">
+            <span>Agregar monto movilidad</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
           </button>
         </div>
@@ -230,6 +236,11 @@ function descargarExcel() {
   // Aquí puedes implementar la lógica real de exportación a Excel
   // Por ahora solo muestra un alert
   alert('Descargar Excel (pendiente de implementar)');
+}
+
+function agregarMontoMovilidad() {
+  // Aquí puedes implementar la lógica para abrir un modal o similar
+  alert('Agregar monto movilidad de usuario (pendiente de implementar)');
 }
 </script>
 
