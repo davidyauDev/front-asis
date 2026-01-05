@@ -16,7 +16,6 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-// State for the detail modal
 const isDetailModalOpen = ref(false)
 const selectedEventoForDetail = ref<EventoCalendario | null>(null)
 
@@ -26,12 +25,10 @@ const openEventDetails = (evento: EventoCalendario) => {
   isDetailModalOpen.value = true
 }
 
-// 📅 Estado del calendario
 const currentDate = ref(new Date());
 const selectedDate = ref<Date | null>(new Date()); // Inicializar con la fecha de hoy
 const viewMode = ref<'month' | 'week' | 'day'>('month');
 
-// 🗓️ Computadas para el calendario
 const currentMonth = computed(() => currentDate.value.getMonth());
 const currentYear = computed(() => currentDate.value.getFullYear());
 
@@ -42,7 +39,6 @@ const monthNames = [
 
 const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-// 📊 Generar días del mes
 const formatLocalYMD = (date: Date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -102,23 +98,19 @@ const calendarDays = computed(() => {
   return days;
 });
 
-// 🎯 Funciones
 const previousMonth = () => {
   currentDate.value = new Date(currentYear.value, currentMonth.value - 1, 1);
-  // Emitir evento de cambio de mes
   emit('monthChanged', currentYear.value, currentMonth.value + 1);
 };
 
 const nextMonth = () => {
   currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1);
-  // Emitir evento de cambio de mes
   emit('monthChanged', currentYear.value, currentMonth.value + 1);
 };
 
 const selectDate = (date: Date) => {
-  selectedDate.value = new Date(date); // Crear nueva instancia para forzar reactividad
+  selectedDate.value = new Date(date); 
   console.log('Fecha seleccionada:', date.toDateString(), 'selectedDate:', selectedDate.value?.toDateString());
-  // Emitir el evento con la fecha seleccionada en formato YYYY-MM-DD
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -172,7 +164,6 @@ const selectedDateEvents = computed(() => {
   });
 });
 
-// 🔄 Emitir evento de mes actual al montar componente
 onMounted(() => {
   emit('monthChanged', currentYear.value, currentMonth.value + 1);
 });
@@ -180,7 +171,6 @@ onMounted(() => {
 
 <template>
   <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
-    <!-- 🧭 Header del calendario con mejor diseño -->
     <div class="bg-linear-to-r from-blue-600 to-purple-600 text-white p-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -343,12 +333,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Transiciones suaves para el calendario */
 .calendar-transition {
   transition: all 0.3s ease;
 }
 
-/* Hover effects para los días */
 .calendar-day:hover {
   transform: scale(1.02);
 }

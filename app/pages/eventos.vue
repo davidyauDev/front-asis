@@ -69,14 +69,10 @@ watch(updateEvent, async (newValue, oldValue) => {
 });
 
 
-// Eliminado: persistencia local de eventos
 
-// 🌐 Función para cargar eventos del mes desde la API
-// 🔄 Función para recargar el calendario después de crear un evento
 const recargarCalendario = async (nuevoEvento?: any) => {
   console.log('🔄 [RECARGA] Iniciando recarga del calendario...');
   
-  // Mostrar indicadores de carga más sutiles para recarga
   isLoading.value = true;
   isLoadingCalendar.value = true;
   loadingProgress.value = 0;

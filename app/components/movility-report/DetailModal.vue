@@ -1,182 +1,277 @@
 <template>
-    <UModal v-model:open="open" :ui="{
-        title: 'py-6',
-        content: 'max-w-2xl',
-    }" >
-        <template #title>
+  <UModal
+    v-model:open="open"
+    :ui="{
+      title: 'py-6',
+      content: 'max-w-3xl',
+    }"
+  >
+    <template #title>
+      <div class="flex items-center gap-4">
+        <UAvatar size="xl" alt="Reyna, Fredy Kenlly" />
+        <div class="flex-1 gap-2 flex flex-col">
+          <h4
+            id="radix-_r_5_"
+            data-slot="dialog-title"
+            class="text-xl font-bold text-foreground"
+          >
+            Portugal Reyna, Fredy Kenlly
+          </h4>
+
+         
+        </div>
+      </div>
+    </template>
+    <template #body>
+      <div class="flex flex-col items-center justify-center w-full mt-4">
+        <div
+          class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden w-full max-w-5xl"
+        >
+          <div
+            class="flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+          >
             <div class="flex items-center gap-4">
-                <UAvatar size="xl" alt="Reyna, Fredy Kenlly" />
-                <div class="flex-1 gap-2 flex flex-col">
-                    <h4 id="radix-_r_5_" data-slot="dialog-title" class="text-xl font-bold text-foreground">Portugal
-                        Reyna, Fredy Kenlly</h4>
-
-                    <div class="flex gap-2">
-
-
-                        <UBadge variant="subtle" color="info" icon="i-lucide-id-card" size="xs">
-                            73829648
-                        </UBadge>
-
-                        <UBadge variant="subtle" color="info" icon="i-lucide-cake" size="xs">
-                            11/12/24
-                        </UBadge>
-
-                        <UBadge variant="subtle" color="info" icon="i-lucide-map-pin" size="xs">
-                            Tumbes
-                        </UBadge>
-
-                        <UBadge variant="subtle" color="info" icon="i-lucide-building" size="xs">
-                            Cechriza S.A.C
-                        </UBadge>
-
-                    </div>
-
-                </div>
+              <button
+                @click="previousMonth"
+                class="text-white hover:bg-white/20 rounded-full p-2"
+              >
+                <span class="i-lucide-chevron-left"></span>
+              </button>
+              <h2 class="text-2xl font-bold">
+                {{ monthNames[currentMonth] }} {{ currentYear }}
+              </h2>
+              <button
+                @click="nextMonth"
+                class="text-white hover:bg-white/20 rounded-full p-2"
+              >
+                <span class="i-lucide-chevron-right"></span>
+              </button>
             </div>
-
-
-        </template>
-        <template #body>
-            
-            <div class="p-6">
-                <div class="flex max-md:flex-col gap-6">
-                    <div class="flex-1 max-md:order-2">
-                        <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Calendario
-                            de Asistencia</h3>
-                        <UCalendar variant="soft" disabled locale="es" :model-value="rangeDate" range>
-                            <template #day="{ day }">
-
-                                <UChip text="✓"  :show="!!getColorByDate(day.toDate(getLocalTimeZone()))"
-                                    
-                                    :color="getColorByDate(day.toDate(getLocalTimeZone()))" size="3xl" class="size-6">
-                                    <UTooltip :delay-duration="0" text="Presente">
-                                        <span>
-                                            {{ day.day }}
-                                        </span>
-
-                                    </UTooltip>
-                                </UChip>
-                            </template>
-                        </UCalendar>
-                    </div>
-                    <div class="w-full flex flex-col gap-3">
-                        <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Resumen</h3>
-                        <div class="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                            <div class="flex items-center justify-between mb-2"><span
-                                    class="text-xs text-muted-foreground">Asistencia</span><span
-                                    class="text-lg font-bold text-foreground">{{selectedMR?.summary.total_days || 0 }}<span
-                                        class="text-muted-foreground text-sm">/{{ endDayOfMonth }}</span></span></div>
-                            <div aria-valuemax="100" aria-valuemin="0" role="progressbar" data-state="indeterminate"
-                                data-max="100" data-slot="progress"
-                                class="bg-primary/20 relative w-full overflow-hidden rounded-full h-2">
-                                <div data-state="indeterminate" data-max="100" data-slot="progress-indicator"
-                                    class="bg-primary h-full w-full flex-1 transition-all"
-                                    :style="`transform: translateX(-${100 - percent}%);`"></div>
-                            </div>
-                            <p class="text-xs text-muted-foreground mt-2 text-center">
-                                {{ percent }}% de asistencia
-                            </p>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <div
-                                class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-present">{{ selectedMR?.summary.total_days || 0 }}</span><span
-                                    class="text-[10px] text-muted-foreground">Trabajados</span>
-                            </div>
-                            <div
-                                class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-vacation">{{ selectedMR?.summary.vacation_days || 0 }}</span><span
-                                    class="text-[10px] text-muted-foreground">Vacaciones</span>
-                            </div>
-                            <div
-                                class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-medical">{{ selectedMR?.summary.medical_leave_days || 0 }}</span><span
-                                    class="text-[10px] text-muted-foreground">D.
-                                    Médico</span>
-                            </div>
-                            <div
-                                class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-foreground">{{ selectedMR?.summary.no_mark_days || 0 }}</span><span
-                                    class="text-[10px] text-muted-foreground">No
-                                    Marcó</span>
-                            </div>
-                            <div
-                                class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-foreground">0</span><span
-                                    class="text-[10px] text-muted-foreground">LCGH</span>
-                            </div>
-                            <div
-                                class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <span class="text-xl font-bold text-foreground">0</span><span
-                                    class="text-[10px] text-muted-foreground">LSGH</span>
-                            </div>
-                        </div>
-                        <div class="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                            <div class="flex items-center gap-2 mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round"
-                                    class="lucide lucide-trending-up w-4 h-4 text-primary">
-                                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-                                    <polyline points="16 7 22 7 22 13"></polyline>
-                                </svg><span class="text-xs text-muted-foreground">Monto a Depositar</span></div>
-                            <p class="text-3xl font-bold text-present">S/ {{ selectedMR?.summary.total_mobility_to_pay || 0 }}</p>
-                            
-                            <!-- <span data-slot="badge"
-                                class="inline-flex items-center justify-center rounded-md px-2 py-0.5 font-medium w-fit whitespace-nowrap shrink-0 [&amp;&gt;svg]:size-3 gap-1 [&amp;&gt;svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent [a&amp;]:hover:bg-primary/90 mt-2 bg-sunday/20 text-sunday border-0 text-xs">+S/
-                                8 bono Vac &gt;23</span> -->
-                        </div>
-                    </div>
-                </div>
+            <button
+              @click="goToToday"
+              class="border border-white/30 text-white px-4 py-2 rounded hover:bg-white/20"
+            >
+              Hoy
+            </button>
+          </div>
+          <div
+            class="grid grid-cols-7 bg-gradient-to-r from-gray-100 to-gray-200"
+          >
+            <div
+              v-for="day in weekDays"
+              :key="day"
+              class="p-4 text-center font-semibold text-gray-700 border-r last:border-r-0"
+            >
+              <div class="text-sm uppercase tracking-wider">{{ day }}</div>
             </div>
-        </template>
-    </UModal>
+          </div>
+          <div class="grid grid-cols-7 bg-white">
+            <div
+              v-for="day in calendarDays"
+              :key="day.date.getTime()"
+              class="min-h-[100px] border-r border-b border-gray-200 p-3 cursor-pointer group relative transition-all duration-200"
+              :class="{
+                'bg-gray-50/50': !day.isCurrentMonth,
+                'bg-blue-100 border-blue-400 ring-2 ring-blue-300':
+                  day.isSelected,
+                'hover:bg-blue-50':
+                  day.isCurrentMonth && !day.isSelected && !day.isToday,
+                'ring-2 ring-green-500 ring-inset bg-green-50':
+                  day.isToday && !day.isSelected,
+              }"
+              @click="selectDate(day.date)"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div
+                  class="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors"
+                  :class="{
+                    'text-gray-400': !day.isCurrentMonth,
+                    'bg-green-600 text-white shadow-lg':
+                      day.isToday && !day.isSelected,
+                    'text-gray-900 group-hover:bg-blue-100':
+                      day.isCurrentMonth && !day.isToday && !day.isSelected,
+                    'bg-blue-600 text-white shadow-lg ring-2 ring-blue-200':
+                      day.isSelected,
+                  }"
+                >
+                  {{ day.dayNumber }}
+                </div>
+                <div
+                  v-if="day.events.length > 0"
+                  class="flex items-center gap-1"
+                >
+                  <div class="flex -space-x-1">
+                    <div
+                      v-for="(evento, index) in day.events.slice(0, 3)"
+                      :key="index"
+                      class="w-2 h-2 rounded-full border border-white"
+                      :class="getCategoriaColor(evento.categoria)"
+                    ></div>
+                  </div>
+                  <span
+                    class="text-xs font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full"
+                  >
+                    {{ day.events.length }}
+                  </span>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div
+                  v-for="evento in day.events.slice(0, 2)"
+                  :key="evento.id"
+                  class="text-xs p-2 rounded-md cursor-pointer hover:shadow-sm transition-all duration-200 border-l-2"
+                  :class="
+                    getCategoriaColor(evento.categoria) +
+                    ' bg-opacity-10 hover:bg-opacity-20 text-gray-800'
+                  "
+                  :style="{
+                    borderLeftColor: getCategoriaColorHex(evento.categoria),
+                  }"
+                  :title="evento.nombre + ' - ' + evento.descripcion"
+                >
+                  <div class="font-medium truncate">{{ evento.nombre }}</div>
+                </div>
+                <div
+                  v-if="day.events.length > 2"
+                  class="text-xs text-gray-500 font-medium hover:text-blue-600 cursor-pointer p-1 rounded bg-gray-100"
+                >
+                  <span class="i-lucide-plus mr-1"></span
+                  >{{ day.events.length - 2 }} más eventos
+                </div>
+              </div>
+              <div
+                class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
-import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
-import type { MovilityReport } from '~/interfaces/movility-report';
-import { endOfMonth } from 'date-fns';
+const open = defineModel<boolean>("isOpen");
+import { ref, computed } from "vue";
 
-const open = defineModel('open', {
-    type: Boolean,
-    required: true
-})
+// Datos de ejemplo para eventos
+const eventos = ref([
+  {
+    id: 1,
+    nombre: "Reunión de equipo",
+    descripcion: "Planificación mensual",
+    fecha: "2026-01-10",
+    categoria: "feriado",
+  },
+  {
+    id: 2,
+    nombre: "Entrega de informe",
+    descripcion: "Informe anual",
+    fecha: "2026-01-15",
+    categoria: "celebracion",
+  },
+  {
+    id: 3,
+    nombre: "Capacitación",
+    descripcion: "Capacitación interna",
+    fecha: "2026-01-20",
+    categoria: "especial",
+  },
+]);
 
+const currentDate = ref(new Date());
+const selectedDate = ref<Date | null>(new Date());
+const currentMonth = computed(() => currentDate.value.getMonth());
+const currentYear = computed(() => currentDate.value.getFullYear());
+const monthNames = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+const weekDays = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
-const { rangeDate, selectedMovilityReport:selectedMR } = defineProps<{
-    rangeDate: {
-        start: CalendarDate,
-        end: CalendarDate
-    },
-    selectedMovilityReport: MovilityReport | null
-}>()
+const formatLocalYMD = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+const parseYMDToLocalDate = (ymd: string) => {
+  const [ys, ms, ds] = ymd.split("-");
+  return new Date(Number(ys), Number(ms) - 1, Number(ds));
+};
 
-const endDayOfMonth = endOfMonth(fromCalToDate(rangeDate.end)).getDate();
-
-const percent = computed(() => {
-    if (!selectedMR) return 0;
-    return calcPercent(selectedMR.summary.total_days || 0, endDayOfMonth);
+const calendarDays = computed(() => {
+  const year = currentYear.value;
+  const month = currentMonth.value;
+  const firstDay = new Date(year, month, 1);
+  const startDate = new Date(firstDay);
+  startDate.setDate(startDate.getDate() - firstDay.getDay());
+  const days = [];
+  let currentDay = new Date(startDate);
+  for (let i = 0; i < 42; i++) {
+    const currentDayYMD = formatLocalYMD(currentDay);
+    const dayEvents = eventos.value.filter(
+      (evento) =>
+        formatLocalYMD(parseYMDToLocalDate(evento.fecha)) === currentDayYMD
+    );
+    const isToday = currentDay.toDateString() === new Date().toDateString();
+    const isSelected =
+      selectedDate.value &&
+      selectedDate.value.toDateString() === currentDay.toDateString();
+    days.push({
+      date: new Date(currentDay),
+      dayNumber: currentDay.getDate(),
+      isCurrentMonth: currentDay.getMonth() === month,
+      isToday,
+      isSelected,
+      events: dayEvents,
+    });
+    currentDay.setDate(currentDay.getDate() + 1);
+  }
+  return days;
 });
 
-const calcPercent = (part: number, total: number) => {
-    if (total === 0) return 0;
-    return Math.round((part / total) * 100);
-}
-// const modelValue = shallowRef(new CalendarDate(2022, 1, 10))
-
-function getColorByDate(date: Date) {
-    const isWeekend = date.getDay() % 6 == 0
-    const isDayMeeting = date.getDay() % 3 == 0
-
-    if (isWeekend) {
-        return undefined
-    }
-
-    if (isDayMeeting) {
-        return 'error'
-    }
-
-    return 'success'
-}
-
+const previousMonth = () => {
+  currentDate.value = new Date(currentYear.value, currentMonth.value - 1, 1);
+};
+const nextMonth = () => {
+  currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1);
+};
+const goToToday = () => {
+  currentDate.value = new Date();
+  selectedDate.value = new Date();
+};
+const selectDate = (date: Date) => {
+  selectedDate.value = new Date(date);
+};
+const getCategoriaColor = (categoria: string) => {
+  const colores: Record<string, string> = {
+    feriado: "bg-red-500",
+    celebracion: "bg-green-500",
+    cumpleanos: "bg-yellow-500",
+    aniversario: "bg-pink-500",
+    especial: "bg-blue-500",
+  };
+  return colores[categoria] || "bg-gray-500";
+};
+const getCategoriaColorHex = (categoria: string) => {
+  const colores: Record<string, string> = {
+    feriado: "#ef4444",
+    celebracion: "#22c55e",
+    cumpleanos: "#eab308",
+    aniversario: "#ec4899",
+    especial: "#3b82f6",
+  };
+  return colores[categoria] || "#6b7280";
+};
 </script>

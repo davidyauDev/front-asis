@@ -2,44 +2,59 @@
   <div class="flex flex-col h-full">
     <!-- FILTROS -->
     <div class="bg-white border-b shadow-sm">
-      <div class="p-4 flex flex-wrap gap-4 items-end">
+      <div class="p-4 flex flex-wrap gap-4 items-end justify-between">
 
-        <!-- BUSCADOR -->
-        <div class="flex flex-col">
-          <label class="text-xs font-semibold text-slate-500 mb-1">
-            Buscar usuario
-          </label>
-          <input v-model="filtroUsuario" type="text" placeholder="DNI, apellido o nombre" class="border rounded-md px-3 py-2 text-sm w-64
-               focus:ring-2 focus:ring-indigo-500 outline-none" />
+        <div class="flex flex-1 gap-4 items-end">
+          <!-- BUSCADOR -->
+          <div class="flex flex-col">
+            <label class="text-xs font-semibold text-slate-500 mb-1">
+              Buscar usuario
+            </label>
+            <input v-model="filtroUsuario" type="text" placeholder="DNI, apellido o nombre" class="border rounded-md px-3 py-2 text-sm w-64
+                 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+
+          <!-- MES -->
+          <div class="flex flex-col">
+            <label class="text-xs font-semibold text-slate-500 mb-1">
+              Mes
+            </label>
+            <select v-model="mesSeleccionado" class="border rounded-md px-3 py-2 text-sm bg-white
+                 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">
+                {{ mes.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <!-- AÑO -->
+          <div class="flex flex-col">
+            <label class="text-xs font-semibold text-slate-500 mb-1">
+              Año
+            </label>
+            <input type="number" v-model.number="añoSeleccionado" min="2020" max="2030" class="border rounded-md px-3 py-2 text-sm w-24 text-center
+                 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+
+          <!-- BOTÓN APLICAR -->
+          <div>
+            <button @click="aplicarFiltros" class="bg-indigo-600 text-white px-6 py-2 rounded-md text-sm
+                 hover:bg-indigo-700 transition font-medium">
+              Aplicar
+            </button>
+          </div>
         </div>
 
-        <!-- MES -->
-        <div class="flex flex-col">
-          <label class="text-xs font-semibold text-slate-500 mb-1">
-            Mes
-          </label>
-          <select v-model="mesSeleccionado" class="border rounded-md px-3 py-2 text-sm bg-white
-               focus:ring-2 focus:ring-indigo-500 outline-none">
-            <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">
-              {{ mes.nombre }}
-            </option>
-          </select>
-        </div>
-
-        <!-- AÑO -->
-        <div class="flex flex-col">
-          <label class="text-xs font-semibold text-slate-500 mb-1">
-            Año
-          </label>
-          <input type="number" v-model.number="añoSeleccionado" min="2020" max="2030" class="border rounded-md px-3 py-2 text-sm w-24 text-center
-               focus:ring-2 focus:ring-indigo-500 outline-none" />
-        </div>
-
-        <!-- BOTÓN -->
-        <div>
-          <button @click="aplicarFiltros" class="bg-indigo-600 text-white px-6 py-2 rounded-md text-sm
-               hover:bg-indigo-700 transition font-medium">
-            Aplicar
+        <!-- BOTÓN DESCARGAR EXCEL AL EXTREMO DERECHO -->
+        <div class="flex items-end">
+          <button @click="descargarExcel" class="bg-green-600 text-white px-6 py-2 rounded-md text-sm
+               hover:bg-green-700 transition font-medium flex items-center gap-2">
+            <span>Descargar Excel</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19.5 14.25v2.25A2.25 2.25 0 0 1 17.25 18.75H6.75A2.25 2.25 0 0 1 4.5 16.5v-2.25M7.5 10.5l4.5 4.5m0 0l4.5-4.5m-4.5 4.5V3" />
+            </svg>
           </button>
         </div>
       </div>
@@ -47,55 +62,98 @@
 
     <table class="border-collapse w-full text-sm rounded shadow">
       <thead>
-        <tr class="bg-slate-800 text-white">
-          <th class=" px-3 py-2">ID</th>
-          <th class=" px-3 py-2">APELLIDOS</th>
-          <th class=" px-4 py-2">NOMBRES</th>
+        <tr class="bg-slate-800 text-slate-100 text-xs uppercase tracking-wide">
+          <th class="px-3 py-2">ID</th>
+          <th class="px-3 py-2">DNI</th>
+          <th class="px-3 py-2">Apellidos</th>
+          <th class="px-4 py-2">Nombres</th>
+          <th class="px-3 py-2 bg-slate-700">Cargo</th>
+          <th class="px-3 py-2 bg-slate-700">Ingreso</th>
+          <th class="px-3 py-2 bg-slate-700">Movilidad</th>
 
-          <th class=" px-3 py-2 bg-slate-700">CARGO</th>
-          <th class=" px-3 py-2 bg-slate-700">MOVILIDAD</th>
+          <th class="px-3 py-2 bg-emerald-700/90">Provincia</th>
+          <th class="px-3 py-2 bg-emerald-700/90">Empresa</th>
 
-          <th class=" px-3 py-2 bg-emerald-700">PROVINCIA</th>
-          <th class=" px-3 py-2 bg-emerald-700">EMPRESA</th>
+          <th class="px-3 py-2 bg-emerald-800">Total</th>
+          <th class="px-3 py-2 bg-emerald-600">Vac.</th>
+          <th class="px-3 py-2 bg-slate-600">No marcó</th>
+          <th class="px-3 py-2 bg-red-600/80">DM</th>
 
-          <th class=" px-3 py-2 bg-emerald-800">TOTAL</th>
-          <th class=" px-3 py-2 bg-emerald-600">VACACIONES</th>
-          <th class=" px-3 py-2 bg-emerald-600">NO MARCÓ</th>
-          <th class=" px-3 py-2 bg-emerald-600">DM</th>
-
-          <th class=" px-3 py-2 bg-green-700">MONTO A DEPOSITAR</th>
-          <th class=" px-3 py-2 bg-amber-300 text-black">COMENTARIO</th>
-          <th class=" px-3 py-2  ">Acciones</th>
+          <th class="px-3 py-2 bg-green-700">Monto</th>
+          <th class="px-3 py-2 bg-amber-300 text-slate-900">Comentario</th>
+          <th class="px-3 py-2 bg-slate-700">Acciones</th>
         </tr>
       </thead>
 
-      <tbody>
-        <tr v-for="emp in datosFiltrados" class="hover:bg-gray-50">
 
+      <tbody>
+        <tr v-for="emp in datosFiltrados" class="hover:bg-slate-50 transition-colors duration-150">
           <td class="border px-2 text-center">{{ emp.employee.id }}</td>
+          <td class="border px-2 text-center">{{ emp.employee.dni }}</td>
           <td class="border px-2 text-center">{{ emp.employee.last_name }}</td>
           <td class="border px-4 text-center">{{ emp.employee.first_name }}</td>
           <td class="border px-2 text-center">{{ emp.employee.position_name }}</td>
-          <td class="border px-2 text-center">150</td>
+          <td class="border px-2 text-center">28/03/2022</td>
+          <td class="border px-2 text-center">
+            <span class="inline-block
+           bg-slate-100 text-slate-700
+           px-2 py-0.5 rounded-md
+           text-xs font-medium tabular-nums
+           transition-colors duration-200
+           hover:bg-slate-200">
+              S/ 150.00
+            </span>
+          </td>
+
+
+
           <td class="border px-2 text-center">{{ emp.employee.department_name }}</td>
           <td class="border px-2 text-center">CECHRIZA</td>
-          <td class="border px-2 text-center">{{ emp.summary.total_days }}</td>
-          <td class="border px-2 text-center">{{ emp.summary.vacation_days }}</td>
-          <td class="border px-2 text-center">{{ emp.summary.no_mark_days }}</td>
+          <td class="border px-2 text-center">
+            <span class="font-medium tabular-nums text-emerald-700">
+              {{ emp.summary.total_days }}
+            </span>
+          </td>
+
+          <td class="border px-2 text-center">
+            <span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs font-medium">
+              {{ emp.summary.vacation_days }}
+            </span>
+          </td>
+
+          <td class="border px-2 text-center">
+            <span class="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-xs font-medium">
+              {{ emp.summary.no_mark_days }}
+            </span>
+          </td>
           <td class="border px-2 text-center">{{ emp.summary.medical_leave_days }}</td>
-          <td class="border px-2 text-center">{{ emp.summary.amount_to_deposit }}</td>
-          <td class="border px-4 text-center">{{ emp.comments }}</td>
+          <td class="border px-2 text-center">
+            <span class="inline-flex items-center justify-center
+           bg-green-50 text-green-700
+           px-3 py-1 rounded-md
+           text-xs font-semibold tabular-nums">
+              S/ {{ emp.summary.amount_to_deposit ?? '120.00' }}
+            </span>
+          </td>
+
+
+          <td class="border px-4 text-center">{{ emp.comments ?? "GAAAA" }}</td>
           <td class="border px-2 text-center space-x-1">
-            <UButton size="xs" color="blue" icon="i-heroicons-eye" " /> 
-                </td>
+            <UButton size="xs" color="blue" icon="i-heroicons-eye" @click="verDetalle(emp)" />
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <DetailModal v-model:isOpen="isOpenModal"></DetailModal>
+
+
 </template>
 
 <script setup lang="ts">
 import { apiFetch } from '~/services/api';
+import DetailModal from './DetailModal.vue';
 
 const datosMoilityReports = ref([])
 
@@ -104,6 +162,8 @@ const payload = {
   month: 10,
 
 }
+
+const isOpenModal = ref(false)
 
 const mesSeleccionado = ref(payload.month)
 const añoSeleccionado = ref(payload.year)
@@ -128,6 +188,10 @@ const aplicarFiltros = () => {
   payload.month = mesSeleccionado.value
   payload.year = añoSeleccionado.value
   cargarMovilityReports()
+}
+
+function verDetalle(emp: any) {
+  isOpenModal.value = true
 }
 
 const datosFiltrados = computed(() => {
@@ -161,4 +225,13 @@ onMounted(() => {
   cargarMovilityReports();
 });
 
+
+function descargarExcel() {
+  // Aquí puedes implementar la lógica real de exportación a Excel
+  // Por ahora solo muestra un alert
+  alert('Descargar Excel (pendiente de implementar)');
+}
 </script>
+
+
+<style scoped></style>
