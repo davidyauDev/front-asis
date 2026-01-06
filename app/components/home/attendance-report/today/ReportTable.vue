@@ -288,44 +288,54 @@ const calcularTardanza = (
 };
 
 
-const guardarIncidencia = async () => {
-  if (!selectedRow.value) return
 
-  savingIncidencia.value = true
+const guardarIncidencia = async () => {
+  if (!selectedRow.value) return;
+  const user = useCookie<{ id: number } | null>('auth_user');
+  if (!user.value) {
+    toast.add({
+      title: 'Error',
+      description: 'Usuario no autenticado',
+      color: 'error'
+    });
+    return;
+  }
+  savingIncidencia.value = true;
 
   const payload = {
+    creado_por: user.value.id,
     usuario_id: selectedRow.value.Empleado_id,
     fecha: incidenciaForm.fecha,
     minutos: incidenciaForm.minutosTardanza,
-    motivo: incidenciaForm.motivo
-  }
+    tipo : 'LLEGADA_TARDE',
+    motivo: incidenciaForm.motivo,
+  };
 
   try {
     await apiFetch('/api/incidencias', {
       method: 'POST',
-      body: JSON.stringify(payload)
-    })
+      body: JSON.stringify(payload),
+    });
 
     toast.add({
       title: 'Incidencia registrada',
       description: 'La incidencia se ha registrado correctamente',
-      color: 'success'
-    })
+      color: 'success',
+    });
 
-      isIncidenciaOpen.value = false
-
+    isIncidenciaOpen.value = false;
   } catch (error) {
-    console.error('Error al guardar incidencia:', error)
+    console.error('Error al guardar incidencia:', error);
 
     toast.add({
       title: 'Error',
       description: 'No se pudo registrar la incidencia',
-      color: 'red'
-    })
+      color: 'red',
+    });
   } finally {
-    savingIncidencia.value = false
+    savingIncidencia.value = false;
   }
-}
+};
 
 
 

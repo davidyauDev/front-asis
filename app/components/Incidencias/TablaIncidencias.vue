@@ -21,6 +21,7 @@ function setFilaRef(el: Element | any, emp: Empleado) {
 }
 
 const usuarioSeleccionado = ref<number | null>(null);
+const usuarioNombreSeleccionado = ref<string>("");
 const isIncidenciaOpen = ref(false);
 const isHistorialOpen = ref(false);
 const valuetrackingIncidencia = ref<Record<string, any> | null>(null);
@@ -91,7 +92,7 @@ const guardarIncidencia = async (formIncidencia: FormIncidencia) => {
   }
   const payload = {
     creado_por: user.value.id,
-    usuario_id: usuasioSeleccionado.value,
+    usuario_id: usuarioSeleccionado.value,
     tipo: formIncidencia.tipo,
     fecha: formIncidencia.fecha,
     minutos: formIncidencia.minutos,
@@ -143,6 +144,7 @@ const cargarIncidencias = async () => {
 
 const agregarIncidencia = (emp: Empleado) => {
   usuarioSeleccionado.value = emp.id;
+  usuarioNombreSeleccionado.value = `${emp.nombre} ${emp.apellidos}`;
   isIncidenciaOpen.value = true;
 };
 
@@ -325,7 +327,11 @@ watch([
       </tr>
     </tbody>
   </table>
-  <AddIncidencia v-model:isOpen="isIncidenciaOpen" @submit="guardarIncidencia" />
+  <AddIncidencia
+    v-model:isOpen="isIncidenciaOpen"
+    :usuarioNombre="usuarioNombreSeleccionado"
+    @submit="async (...args) => { await guardarIncidencia(...args); await cargarIncidencias(); }"
+  />
   <HistoriaIncidencia v-model:isOpen="isHistorialOpen" :historialUser="valuetrackingIncidencia" />
 
 </template>
