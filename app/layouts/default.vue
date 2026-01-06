@@ -23,6 +23,14 @@ const links = [[{
   }
 },
 {
+  label: 'Seguimiento',
+  icon: 'i-lucide-map-pin',
+  to: '/seguimiento',
+  onSelect: () => {
+    open.value = false;
+  }
+},
+{
   label: 'Movilidad',
   icon: 'i-lucide-wallet',
   to: '/movility-report',
@@ -30,10 +38,7 @@ const links = [[{
     open.value = false;
   }
 }
-
-
 ,
-
 {
   label: 'Incidencias',
   icon: 'i-lucide-clock-alert',
@@ -61,6 +66,15 @@ const links = [[{
 }, {
   label: 'Rutas GPS',
   icon: 'i-lucide-map',
+  to: '/rutas',
+  onSelect: () => {
+    open.value = false
+  }
+}
+
+, {
+  label: 'Settings',
+  icon: 'i-lucide-settings',
   to: '/rutas',
   onSelect: () => {
     open.value = false
