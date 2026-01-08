@@ -115,31 +115,7 @@
                     </button>
                 </div>
             </div>
-            <div v-if="showFilters" class="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 shadow-sm">
-                <div class="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                    </svg>
-                    <h3 class="text-sm font-bold text-gray-800">Opciones Avanzadas</h3>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                            </svg>
-                            Registros por página
-                        </label>
-                        <select v-model.number="itemsPorPagina" class="border border-gray-300 rounded-lg px-3 py-2 w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium">
-                            <option :value="5">5 por página</option>
-                            <option :value="10">10 por página</option>
-                            <option :value="25">25 por página</option>
-                            <option :value="50">50 por página</option>
-                            <option :value="100">100 por página</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+
             
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-2">
                 <div
@@ -203,7 +179,7 @@
             <div v-else>
             <div class="mb-4 flex items-center justify-between text-sm text-gray-600 bg-white rounded-lg p-3 shadow-sm border border-gray-200">
                 <span class="font-medium">
-                    Mostrando <span class="font-bold text-blue-600">{{ datosPaginados.length }}</span> de <span class="font-bold text-blue-600">{{ datosAgrupadosFiltrados.length }}</span> técnico(s)
+                    Mostrando <span class="font-bold text-blue-600">{{ datosAgrupadosFiltrados.length }}</span> técnico(s)
                     <span v-if="search || filtroEstado !== 'todos'" class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs ml-1">(filtrado)</span>
                 </span>
                 <button 
@@ -217,8 +193,8 @@
                 </button>
             </div>
 
-            <div class="space-y-3">
-                <div v-if="datosPaginados.length === 0" class="text-center py-12 bg-gray-50 rounded-lg">
+            <div class="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+                <div v-if="datosAgrupadosFiltrados.length === 0" class="text-center py-12 bg-gray-50 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -227,7 +203,7 @@
                 </div>
 
                 <div
-                    v-for="[dni, tecnicoData] in datosPaginados"
+                    v-for="[dni, tecnicoData] in datosAgrupadosFiltrados"
                     :key="dni"
                     class="bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-lg"
                     :class="{
@@ -410,43 +386,6 @@
                     </div>
                 </div>
             </div>
-
-            <div v-if="totalPaginas > 1" class="mt-6 flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3">
-                <div class="text-xs font-medium text-gray-600">
-                    Página {{ paginaActual }} de {{ totalPaginas }}
-                </div>
-                <div class="flex gap-1">
-                    <button
-                        @click="cambiarPagina(paginaActual - 1)"
-                        :disabled="paginaActual === 1"
-                        class="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                        Anterior
-                    </button>
-                    
-                    <button
-                        v-for="pagina in totalPaginas"
-                        :key="pagina"
-                        v-show="Math.abs(pagina - paginaActual) <= 2 || pagina === 1 || pagina === totalPaginas"
-                        @click="cambiarPagina(pagina)"
-                        class="min-w-[32px] px-2 py-1.5 text-xs font-medium border rounded transition-colors"
-                        :class="{
-                            'bg-gray-900 text-white border-gray-900': pagina === paginaActual,
-                            'border-gray-200 hover:bg-gray-50': pagina !== paginaActual
-                        }"
-                    >
-                        {{ pagina }}
-                    </button>
-                    
-                    <button
-                        @click="cambiarPagina(paginaActual + 1)"
-                        :disabled="paginaActual === totalPaginas"
-                        class="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                        Siguiente
-                    </button>
-                </div>
-            </div>
             </div>
         </section>
        
@@ -530,8 +469,6 @@ const search = ref('')
 const showFilters = ref(false)
 const filtroEstado = ref('todos') 
 const ordenarPor = ref('original') 
-const itemsPorPagina = ref(10)
-const paginaActual = ref(1)
 const tecnicosExpandidos = ref<Record<string, boolean>>({})
 const fechaSeleccionada = ref(new Date().toISOString().split('T')[0])
 
@@ -652,25 +589,6 @@ const datosAgrupadosFiltrados = computed(() => {
     }
     
     return datos
-})
-
-const datosPaginados = computed(() => {
-    const inicio = (paginaActual.value - 1) * itemsPorPagina.value
-    const fin = inicio + itemsPorPagina.value
-    return datosAgrupadosFiltrados.value.slice(inicio, fin)
-})
-
-const totalPaginas = computed(() => {
-    return Math.ceil(datosAgrupadosFiltrados.value.length / itemsPorPagina.value)
-})
-
-const cambiarPagina = (pagina: number) => {
-    paginaActual.value = pagina
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-watch([search, filtroEstado, ordenarPor], () => {
-    paginaActual.value = 1
 })
 
 const datosAgrupados = ref<Record<string, TecnicoData>>({})
