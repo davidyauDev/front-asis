@@ -14,10 +14,8 @@
         <header class="mb-6">
             <h1 class="text-2xl font-bold mb-1 flex items-center gap-2">
                 <span>Seguimiento de Técnicos</span>
-               
             </h1>
             <p class="text-gray-600 mb-4">Monitorea en tiempo real el estado, actividad diaria y cumplimiento de asistencia.</p>
-            
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
                 <div class="flex flex-wrap gap-3 items-center">
                     <div class="relative flex-1 min-w-[300px]">
@@ -76,6 +74,20 @@
                         </div>
                     </div>
                     
+                    <div class="relative">
+                        <input 
+                            v-model="fechaSeleccionada" 
+                            type="date" 
+                            @change="cargarDatos"
+                            class="border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm font-medium text-gray-700 cursor-pointer hover:border-gray-400"
+                        />
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                    
                     <button class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 font-medium text-sm" @click="generarReporte">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -103,7 +115,6 @@
                     </button>
                 </div>
             </div>
-            
             <div v-if="showFilters" class="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 shadow-sm">
                 <div class="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -522,6 +533,7 @@ const ordenarPor = ref('original')
 const itemsPorPagina = ref(10)
 const paginaActual = ref(1)
 const tecnicosExpandidos = ref<Record<string, boolean>>({})
+const fechaSeleccionada = ref(new Date().toISOString().split('T')[0])
 
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -669,17 +681,34 @@ const cargarDatos = async () => {
     error.value = null
     
     try {
-        const response = await apiFetch('/api/seguimiento-tecnico')
+        const params = new URLSearchParams()
+        if (fechaSeleccionada.value) {
+            params.append('fecha', fechaSeleccionada.value)
+        }
+        
+        const url = `/api/seguimiento-tecnico${params.toString() ? '?' + params.toString() : ''}`
+        const response = await apiFetch(url)
         
         let datos = response.grouped || response
         
-        if (typeof datos === 'object' && !Array.isArray(datos)) {
+        // Si grouped es un array vacío o null, limpiar los datos
+        if (Array.isArray(datos) && datos.length === 0) {
+            datosAgrupados.value = {}
+            ordenOriginal.value = []
+        } else if (typeof datos === 'object' && !Array.isArray(datos)) {
             ordenOriginal.value = Object.keys(datos)
             datosAgrupados.value = datos
+        } else {
+            // Limpiar si el formato no es el esperado
+            datosAgrupados.value = {}
+            ordenOriginal.value = []
         }
     } catch (err: any) {
         console.error('Error al cargar datos de seguimiento:', err)
         error.value = err.message || 'Error al cargar los datos'
+        // Limpiar datos en caso de error
+        datosAgrupados.value = {}
+        ordenOriginal.value = []
     } finally {
         isLoading.value = false
     }
