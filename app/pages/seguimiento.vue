@@ -229,8 +229,9 @@
                                     <h3 class="text-base font-semibold text-gray-900 truncate">
                                         {{ tecnicoData.rutas[0]?.firstname || '' }} {{ tecnicoData.rutas[0]?.lastname || '' }}
                                     </h3>
-                                    <p class="text-xs text-gray-500">
-                                        DNI: {{ dni }}
+                                    <p class="text-xs">
+                                        <span v-if="dni && dni !== 'null' && dni !== 'undefined'" class="text-gray-500">DNI: {{ dni }}</span>
+                                        <span v-else class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-medium">Sin técnico asignado</span>
                                     </p>
                                 </div>
                             </div>
