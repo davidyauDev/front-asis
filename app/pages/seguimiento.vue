@@ -163,6 +163,7 @@
                     </div>
                 </div>
             </div>
+
         </header>
 
         <section>
@@ -234,12 +235,12 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center text-white font-semibold text-sm shrink-0">
-                                    {{ tecnicoData.rutas[0]?.firstname.charAt(0) }}{{ tecnicoData.rutas[0]?.lastname.charAt(0) }}
+                                    {{ tecnicoData.rutas[0]?.firstname?.charAt(0) || '' }}{{ tecnicoData.rutas[0]?.lastname?.charAt(0) || '' }}
                                 </div>
                                 
                                 <div class="min-w-0">
                                     <h3 class="text-base font-semibold text-gray-900 truncate">
-                                        {{ tecnicoData.rutas[0]?.firstname }} {{ tecnicoData.rutas[0]?.lastname }}
+                                        {{ tecnicoData.rutas[0]?.firstname || '' }} {{ tecnicoData.rutas[0]?.lastname || '' }}
                                     </h3>
                                     <p class="text-xs text-gray-500">
                                         DNI: {{ dni }}
@@ -590,9 +591,9 @@ const datosAgrupadosFiltrados = computed(() => {
     if (search.value.trim()) {
         const searchLower = search.value.toLowerCase()
         datos = datos.filter(([dni, tecnicoData]: [string, any]) => {
-            const nombre = `${tecnicoData.rutas[0]?.firstname} ${tecnicoData.rutas[0]?.lastname}`.toLowerCase()
-            const agencias = tecnicoData.rutas.map((r: any) => r.agencia.toLowerCase()).join(' ')
-            const cliente = tecnicoData.rutas.map((r: any) => r.cliente.toLowerCase()).join(' ')
+            const nombre = `${tecnicoData.rutas[0]?.firstname || ''} ${tecnicoData.rutas[0]?.lastname || ''}`.toLowerCase()
+            const agencias = tecnicoData.rutas.map((r: any) => r.agencia?.toLowerCase() || '').join(' ')
+            const cliente = tecnicoData.rutas.map((r: any) => r.cliente?.toLowerCase() || '').join(' ')
             
             return dni.includes(searchLower) || 
                    nombre.includes(searchLower) || 
@@ -614,8 +615,8 @@ const datosAgrupadosFiltrados = computed(() => {
     if (ordenarPor.value !== 'original') {
         datos.sort(([dniA, dataA]: [string, any], [dniB, dataB]: [string, any]) => {
             if (ordenarPor.value === 'nombre') {
-                const nombreA = `${dataA.rutas[0]?.firstname} ${dataA.rutas[0]?.lastname}`
-                const nombreB = `${dataB.rutas[0]?.firstname} ${dataB.rutas[0]?.lastname}`
+                const nombreA = `${dataA.rutas[0]?.firstname || ''} ${dataA.rutas[0]?.lastname || ''}`
+                const nombreB = `${dataB.rutas[0]?.firstname || ''} ${dataB.rutas[0]?.lastname || ''}`
                 return nombreA.localeCompare(nombreB)
             } else if (ordenarPor.value === 'rutas') {
                 return dataB.rutas.length - dataA.rutas.length
