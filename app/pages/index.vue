@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="home">
     <template #header>
-      <UDashboardNavbar title="Inicio" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="Reporte Asistencia General" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -10,7 +10,7 @@
           <UTooltip text="Usuarios sin asistencia completa" :shortcuts="['N']">
             <UButton color="neutral" variant="ghost" square @click="isNotificationsSlideoverOpen = true">
               <UChip color="error" inset>
-                <UIcon name="i-lucide-user-round-x" class="size-5 shrink-0" />
+                <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
               </UChip>
             </UButton>
           </UTooltip>
@@ -24,47 +24,36 @@
       <UDashboardToolbar>
         <UTabs v-model="currentTabType" :items="tabItems" :orientation="width < 500 ? 'vertical' : 'horizontal'"
           class="flex-1 flex justify-center mt-2" :ui="{
-            list: `
-        flex gap-2 p-1 rounded-xl
-        bg-gray-100 dark:bg-gray-900
-        border border-gray-200 dark:border-gray-800
-      `,
+            list: 'flex gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-800',
             item: {
-              base: `
-          px-6 py-2
-          text-sm font-semibold
-          rounded-lg
-          cursor-pointer
-          transition-all duration-200 ease-out
-          focus:outline-none
-          focus-visible:ring-2 focus-visible:ring-green-500
-        `,
-              active: `
-          bg-green-500 text-white
-          shadow-md
-          scale-[1.02]
-        `,
-              inactive: `
-          text-gray-600 dark:text-gray-400
-          hover:bg-white dark:hover:bg-gray-800
-          hover:text-gray-800 dark:hover:text-gray-200
-          hover:shadow
-          hover:-translate-y-[1px]
-        `
+              base: 'px-4 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-colors focus:outline-none',
+              active: 'tab-active-custom text-white dark:bg-white dark:text-black',
+              inactive: 'bg-transparent text-gray-600 dark:text-gray-400'
             },
             marker: 'hidden'
           }" />
       </UDashboardToolbar>
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
-        <UTabs :items="employeeItems" variant="link" class="flex-1 p-3 mx-auto" v-model="currentEmployeeType"
+        <UTabs :items="employeeItems" class="flex-1 flex justify-center" v-model="currentEmployeeType"
           @update:model-value="(value) => {
             currentEmployeeType = value as EmployeeType
+          }" :ui="{
+            list: 'flex gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-800',
+            item: {
+              base: 'px-4 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-colors focus:outline-none',
+              active: 'tab-active-custom text-white dark:bg-white dark:text-black',
+              inactive: 'bg-transparent text-gray-600 dark:text-gray-400'
+            },
+            marker: 'hidden'
           }">
         </UTabs>
       </UDashboardToolbar>
 
     </template>
     <template #body>
+      <!-- Metric Cards -->
+      
+
       <DailyAttendanceReport v-if="currentTabType === ItemType.TODAY" />
       <MonthlyAttendanceReport v-else-if="currentTabType === ItemType.TECHNICIANS"
         :employee-type="currentEmployeeType" />
@@ -83,6 +72,7 @@ import type { DropdownMenuItem, TabsItem } from '@nuxt/ui';
 import MonthlyAttendanceReport from '~/components/home/attendance-report/month/AttendaceReport.vue';
 import DailyAttendanceReport from '~/components/home/attendance-report/today/Today.vue';
 import ReporteAsistenciasAdministrators from '~/components/home/attendance-report/summary/Administrators.vue';
+import MetricCards from '~/components/home/MetricCards.vue';
 
 
 import { EmployeeType, ItemType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
@@ -96,6 +86,33 @@ const { isNotificationsSlideoverOpen } = useDashboard()
 const currentTabType = ref<ItemType>(ItemType.TODAY);
 
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS);
+
+const metricsData = ref([
+  {
+    title: 'TOTAL DE USUARIOS',
+    value: '135 mil',
+    change: '+50%',
+    description: 'del mes anterior'
+  },
+  {
+    title: 'ASISTENCIAS HOY',
+    value: '2,845',
+    change: '+12%',
+    description: 'vs. ayer'
+  },
+  {
+    title: 'INCIDENCIAS',
+    value: '234',
+    change: '+8%',
+    description: 'esta semana'
+  },
+  {
+    title: 'TÉCNICOS ACTIVOS',
+    value: '89',
+    change: '+3%',
+    description: 'en campo'
+  }
+])
 
 const fechaActual = new Date();
 const fechaFormateada = format(fechaActual, 'dd MMMM yyyy', {

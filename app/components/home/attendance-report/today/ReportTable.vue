@@ -6,7 +6,7 @@
     @retry="getDailyTakenAttendances"
   >
     <div
-      class="flex flex-wrap items-center justify-between gap-3 p-4 mb-4 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+      class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 mb-4 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800"
     >
       <UInput
         icon="i-lucide-search"
@@ -16,71 +16,58 @@
       />
 
       <UButton
-  icon="i-lucide-file-spreadsheet"
-  class="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
-  @click="exportarExcel"
->
-  Exportar Excel
-</UButton>
+        variant="outline"
+        color="gray"
+        size="sm"
+        @click="exportarExcel"
+        :loading="exportando"
+        :disabled="exportando"
+        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      >
+        <UIcon name="i-lucide-download" class="w-4 h-4 mr-2" />
+        {{ exportando ? 'Exportando...' : 'Exportar' }}
+      </UButton>
 
     </div>
 
-    <UTable
-      ref="table"
-      :data="dailyListAttendaces"
-      :columns="columns"
-      :loading="dailyTakenAttendaces.loading"
-      empty="No se encontraron reportes de hoy"
-      v-model:pagination="dailyTakenAttendaces.pagination"
-      :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-      :ui="{
-        base: 'table-fixed border-separate border-spacing-y-1',
-        thead: '[&>tr]:bg-transparent',
-        th: `
-          px-3 py-2 text-xs font-semibold uppercase tracking-wide
-          text-gray-600 dark:text-gray-400
-        `,
-        td: `
-          px-3 py-2 text-sm
-          text-gray-800 dark:text-gray-200
-        `,
-        tbody: `
-          [&>tr]:bg-white
-          dark:[&>tr]:bg-gray-950
-          [&>tr]:rounded-lg
-          [&>tr:hover]:bg-primary-50
-          dark:[&>tr:hover]:bg-primary-900/20
-        `,
-      }"
-    />
-
-    <div
-      class="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-gray-200 dark:border-gray-800"
-    >
-      <div class="text-xs text-gray-600 dark:text-gray-400">
-        Mostrando
-        <strong>{{ getStats().start }}</strong> –
-        <strong>{{ getStats().end }}</strong>
-        de
-        <strong>{{ getStats().total }}</strong>
-        registros
-      </div>
-
-      <UPagination
-        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-        :total="table?.tableApi?.getFilteredRowModel().rows.length"
-        @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
+    <div class="overflow-x-auto">
+      <UTable
+        ref="table"
+        :data="dailyListAttendaces"
+        :columns="columns"
+        :loading="dailyTakenAttendaces.loading"
+        empty="No se encontraron reportes de hoy"
+        :ui="{
+          base: 'w-full',
+          wrapper: 'max-h-[calc(100vh-400px)] overflow-y-auto relative',
+          thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
+          th: `
+            px-4 py-3 text-left text-xs font-medium
+            text-gray-500 dark:text-gray-400
+            tracking-tight
+          `,
+          td: `
+            px-4 py-3 text-sm
+            text-gray-900 dark:text-gray-100
+            border-b border-gray-100 dark:border-gray-900
+          `,
+          tbody: `
+            [&>tr]:transition-colors
+            [&>tr:hover]:bg-gray-50
+            dark:[&>tr:hover]:bg-gray-900/50
+          `,
+        }"
       />
     </div>
-  </DataState>
-  <UAlert v-if="selectedRow?.Tardanza" color="warning" variant="subtle">
-    Se detectó una tardanza. El tiempo fue calculado automáticamente.
-  </UAlert>
 
-  <UAlert v-else color="success" variant="subtle">
-    No se detectó tardanza según el horario registrado.
-  </UAlert>
+    <div
+      class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
+    >
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        <span class="font-medium text-gray-900 dark:text-gray-100">{{ dailyListAttendaces.length }}</span> registros
+      </p>
+    </div>
+  </DataState>
 
   <UModal
   v-model:open="isIncidenciaOpen"
@@ -92,28 +79,28 @@
     <div class="space-y-6">
 
       <!-- Contexto -->
-      <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-        <div class="flex items-center gap-2 text-yellow-800 font-semibold">
+      <div class="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4">
+        <div class="flex items-center gap-2 text-amber-900 dark:text-amber-100 font-semibold">
           <UIcon name="i-lucide-alert-circle" class="w-5 h-5" />
           Se detectó una tardanza
         </div>
-        <p class="text-sm text-yellow-700 mt-1">
+        <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
           Registra el motivo para justificar esta incidencia.
         </p>
       </div>
 
       <!-- Datos clave -->
       <div class="grid grid-cols-2 gap-4">
-        <div class="rounded-lg bg-gray-100 p-3 text-center">
-          <p class="text-xs text-gray-500">Fecha</p>
-          <p class="font-semibold text-gray-800">
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3">
+          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Fecha</p>
+          <p class="font-semibold text-gray-900 dark:text-gray-100">
             {{ incidenciaForm.fecha }}
           </p>
         </div>
 
-        <div class="rounded-lg bg-gray-100 p-3 text-center">
-          <p class="text-xs text-gray-500">Tiempo de tardanza</p>
-          <p class="font-semibold text-red-600">
+        <div class="rounded-lg border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 p-3">
+          <p class="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">Tiempo de tardanza</p>
+          <p class="font-semibold text-orange-900 dark:text-orange-100">
             {{ incidenciaForm.minutosTardanza }} minutos
           </p>
         </div>
@@ -138,17 +125,27 @@
   </template>
 
   <template #footer>
-    <div class="flex justify-between items-center">
+    <div class="flex justify-end items-center gap-3">
       <UButton
-  color="primary"
-  :loading="savingIncidencia"
-  :disabled="!incidenciaForm.motivo || savingIncidencia"
-  icon="i-lucide-save"
-  @click="guardarIncidencia"
->
-  {{ savingIncidencia ? 'Guardando…' : 'Guardar incidencia' }}
-</UButton>
-
+        variant="outline"
+        color="gray"
+        size="sm"
+        @click="isIncidenciaOpen = false"
+      >
+        Cancelar
+      </UButton>
+      
+      <UButton
+        variant="solid"
+        color="gray"
+        size="sm"
+        :loading="savingIncidencia"
+        :disabled="!incidenciaForm.motivo || savingIncidencia"
+        @click="guardarIncidencia"
+      >
+        <UIcon name="i-lucide-save" class="w-4 h-4 mr-1.5" />
+        {{ savingIncidencia ? 'Guardando…' : 'Guardar' }}
+      </UButton>
     </div>
   </template>
 </UModal>
@@ -157,7 +154,6 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import { getPaginationRowModel } from "@tanstack/vue-table";
 import { parse } from "date-fns";
 import DataState from "~/components/common/DataState.vue";
 import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
@@ -195,8 +191,21 @@ const dailyListAttendaces = computed<TakenAttendace[]>(() => {
 
 const token = useCookie<string | null>('auth_token')
 
+const exportando = ref(false)
 
 const exportarExcel = async () => {
+  if (exportando.value) return;
+  
+  exportando.value = true;
+  
+  toast.add({
+    id: 'exportando',
+    title: 'Preparando exportación',
+    description: 'Generando archivo Excel...',
+    icon: 'i-lucide-loader-2',
+    timeout: 0,
+  })
+
   try {
     if (!token.value) {
       throw new Error('Token no disponible')
@@ -230,8 +239,27 @@ const exportarExcel = async () => {
     a.remove()
     window.URL.revokeObjectURL(url)
 
+    toast.remove('exportando')
+    toast.add({
+      title: 'Descarga completa',
+      description: 'El archivo se descargó correctamente',
+      icon: 'i-lucide-check-circle',
+      color: 'green',
+      timeout: 3000,
+    })
+
   } catch (error) {
     console.error('Error exportando Excel:', error)
+    toast.remove('exportando')
+    toast.add({
+      title: 'Error al exportar',
+      description: 'No se pudo generar el archivo Excel',
+      icon: 'i-lucide-alert-circle',
+      color: 'red',
+      timeout: 5000,
+    })
+  } finally {
+    exportando.value = false
   }
 }
 
@@ -303,6 +331,7 @@ const guardarIncidencia = async () => {
   savingIncidencia.value = true;
 
   const payload = {
+    ID_Marcacion: selectedRow.value.ID_Marcacion,
     creado_por: user.value.id,
     usuario_id: selectedRow.value.Empleado_id,
     fecha: incidenciaForm.fecha,
@@ -323,6 +352,11 @@ const guardarIncidencia = async () => {
       color: 'success',
     });
 
+    // Actualizar la fila localmente para reflejar el cambio
+    if (selectedRow.value) {
+      selectedRow.value.Tiene_Incidencia = true;
+    }
+
     isIncidenciaOpen.value = false;
   } catch (error) {
     console.error('Error al guardar incidencia:', error);
@@ -335,22 +369,6 @@ const guardarIncidencia = async () => {
   } finally {
     savingIncidencia.value = false;
   }
-};
-
-
-
-
-const getStats = () => {
-  const pageIndex =
-    table?.value?.tableApi?.getState().pagination.pageIndex || 0;
-  const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10;
-  const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0;
-
-  return {
-    start: total === 0 ? 0 : pageIndex * pageSize + 1,
-    end: Math.min((pageIndex + 1) * pageSize, total),
-    total,
-  };
 };
 
 const sortColumButton = (column: any, label: string) => {
@@ -373,27 +391,35 @@ const columns: TableColumn<TakenAttendace>[] = [
   {
     accessorKey: "DNI",
     header: ({ column }) => sortColumButton(column, "DNI"),
+    cell: ({ row }) =>
+      h("span", { class: "font-mono text-sm" }, row.getValue("DNI")),
   },
   {
     accessorKey: "Apellidos",
     header: ({ column }) => sortColumButton(column, "Empleado"),
-    cell: ({ row }) =>
-      h("div", { class: "flex flex-col" }, [
-        h(
-          "span",
-          { class: "font-medium text-gray-900 dark:text-gray-100" },
-          row.getValue("Apellidos")
-        ),
-        h(
-          "span",
-          { class: "text-xs text-gray-500 dark:text-gray-400" },
-          row.getValue("Nombres")
-        ),
-      ]),
+    cell: ({ row }) => {
+      const nombres = row.original.Nombres || "";
+      const apellidos = row.original.Apellidos || "";
+      
+      const primerNombre = nombres.split(" ")[0] || "";
+      const primerApellido = apellidos.split(" ")[0] || "";
+      
+      return h(
+        "span",
+        { class: "font-medium text-gray-900 dark:text-gray-100 text-sm" },
+        `${primerNombre} ${primerApellido}`.trim()
+      );
+    },
   },
   {
     accessorKey: "Departamento",
     header: ({ column }) => sortColumButton(column, "Departamento"),
+    cell: ({ row }) =>
+      h(
+        "span",
+        { class: "text-sm text-gray-700 dark:text-gray-300" },
+        row.getValue("Departamento")
+      ),
   },
   {
     accessorKey: "Empresa",
@@ -401,7 +427,7 @@ const columns: TableColumn<TakenAttendace>[] = [
     cell: ({ row }) =>
       h(
         "span",
-        { class: "text-sm text-gray-500 dark:text-gray-400" },
+        { class: "text-sm text-gray-600 dark:text-gray-400" },
         row.getValue("Empresa")
       ),
   },
@@ -409,8 +435,9 @@ const columns: TableColumn<TakenAttendace>[] = [
     accessorKey: "Horario",
     header: ({ column }) => sortColumButton(column, "Horario"),
     cell: ({ row }) =>
-      row.getValue("Horario") ||
-      h(UBadge, { variant: "subtle", color: "info" }, () => "Sin horario"),
+      row.getValue("Horario") 
+        ? h("span", { class: "font-mono text-sm" }, row.getValue("Horario"))
+        : h("span", { class: "text-sm text-gray-400 dark:text-gray-500" }, "Sin horario"),
   },
   {
     accessorKey: "Ingreso",
@@ -420,19 +447,11 @@ const columns: TableColumn<TakenAttendace>[] = [
       const horario = row.getValue("Horario") as string | null;
 
       if (!ingreso) {
-        return h(
-          UBadge,
-          { variant: "subtle", color: "info" },
-          () => "Sin ingreso"
-        );
+        return h("span", { class: "text-sm text-gray-400 dark:text-gray-500" }, "Sin ingreso");
       }
 
       if (!horario) {
-        return h(
-          UBadge,
-          { variant: "subtle", color: "neutral" },
-          () => ingreso
-        );
+        return h("span", { class: "font-mono text-sm" }, ingreso);
       }
 
       const isLate =
@@ -440,18 +459,22 @@ const columns: TableColumn<TakenAttendace>[] = [
         parse(horario, "HH:mm:ss", new Date());
 
       return h(
-        UBadge,
+        "div",
         {
-          variant: "subtle",
-          color: isLate ? "error" : "success",
-          class: "inline-flex items-center gap-1 whitespace-nowrap",
+          class: "inline-flex items-center gap-1.5",
         },
-        () => [
+        [
           h(UIcon, {
             name: isLate ? "i-lucide-alert-circle" : "i-lucide-check-circle",
-            class: "w-4 h-4",
+            class: isLate 
+              ? "w-4 h-4 text-red-500 dark:text-red-400" 
+              : "w-4 h-4 text-green-600 dark:text-green-500",
           }),
-          ingreso,
+          h("span", { 
+            class: isLate 
+              ? "font-mono text-sm text-red-600 dark:text-red-400" 
+              : "font-mono text-sm text-green-600 dark:text-green-500" 
+          }, ingreso),
         ]
       );
     },
@@ -464,80 +487,87 @@ const columns: TableColumn<TakenAttendace>[] = [
 
       if (!salida) {
         return h(
-          UBadge,
-          { variant: "subtle", color: "info", class: "inline-flex gap-1" },
-          () => [
+          "div",
+          { class: "inline-flex items-center gap-1.5 text-gray-400 dark:text-gray-500" },
+          [
             h(UIcon, { name: "i-lucide-clock", class: "w-4 h-4" }),
-            "Sin salida",
+            h("span", { class: "text-sm" }, "Sin salida"),
           ]
         );
       }
 
       return h(
-        UBadge,
-        { variant: "subtle", color: "neutral", class: "inline-flex gap-1" },
-        () => [h(UIcon, { name: "i-lucide-log-out", class: "w-4 h-4" }), salida]
+        "div",
+        { class: "inline-flex items-center gap-1.5 text-gray-600 dark:text-gray-400" },
+        [
+          h(UIcon, { name: "i-lucide-log-out", class: "w-4 h-4" }),
+          h("span", { class: "font-mono text-sm" }, salida)
+        ]
       );
     },
   },
- {
-  id: 'acciones',
-  header: () =>
-    h('div', { class: 'text-center w-full' }, 'Acciones'),
+  {
+    id: 'acciones',
+    header: () =>
+      h('span', { class: 'text-left w-full' }, 'Acciones'),
 
-  cell: ({ row }) => {
-    const hasTardanza = Boolean(row.original.Tardanza)
+    cell: ({ row }) => {
+      const hasTardanza = Boolean(row.original.Tardanza)
+      const tieneIncidencia = Boolean(row.original.Tiene_Incidencia)
 
-    // Contenedor centrado
-    const wrapper = (content: any) =>
-      h(
-        'div',
-        { class: 'flex justify-center items-center w-full' },
-        content
-      )
+      const wrapper = (content: any) =>
+        h(
+          'div',
+          { class: 'flex justify-start items-center' },
+          content
+        )
 
-    // Caso: NO aplica
-    if (!hasTardanza) {
+      // Si no hay tardanza
+      if (!hasTardanza) {
+        return wrapper(
+          h(
+            'span',
+            { class: 'inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400' },
+            [
+              h(UIcon, { name: 'i-lucide-check-circle', class: 'w-4 h-4' }),
+              'Sin incidencia'
+            ]
+          )
+        )
+      }
+
+      // Si ya tiene incidencia registrada
+      if (tieneIncidencia) {
+        return wrapper(
+          h(
+            'span',
+            { class: 'inline-flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400' },
+            [
+              h(UIcon, { name: 'i-lucide-check-circle-2', class: 'w-4 h-4' }),
+              'Incidencia registrada'
+            ]
+          )
+        )
+      }
+
+      // Si hay tardanza y no tiene incidencia, mostrar botón
       return wrapper(
         h(
-          UTooltip,
-          { text: 'El empleado no presenta tardanza' },
-          () =>
-            h(
-              UButton,
-              {
-                icon: 'i-lucide-check-circle',
-                size: 'xs',
-                variant: 'ghost',
-                color: 'success',
-                disabled: true
-              },
-              () => 'Sin incidencia'
-            )
+          UButton,
+          {
+            size: 'xs',
+            variant: 'outline',
+            color: 'gray',
+            class: 'hover:bg-gray-50 dark:hover:bg-gray-800',
+            onClick: () => openIncidenciaModal(row.original)
+          },
+          () => [
+            h(UIcon, { name: 'i-lucide-file-text', class: 'w-3.5 h-3.5 mr-1.5' }),
+            'Registrar'
+          ]
         )
       )
     }
-
-    // Caso: SÍ aplica
-    return wrapper(
-      h(
-        UTooltip,
-        { text: 'Registrar incidencia por tardanza' },
-        () =>
-          h(
-            UButton,
-            {
-              icon: 'i-lucide-alert-circle',
-              size: 'xs',
-              color: 'warning',
-              variant: 'solid',
-              onClick: () => openIncidenciaModal(row.original)
-            },
-            () => 'Registrar'
-          )
-      )
-    )
   }
-}
 ];
 </script>
