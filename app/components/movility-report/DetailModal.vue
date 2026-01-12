@@ -8,89 +8,88 @@
   >
     <template #title>
       <div class="flex items-center gap-4">
-        <UAvatar size="xl" alt="Reyna, Fredy Kenlly" />
-        <div class="flex-1 gap-2 flex flex-col">
+        <UAvatar size="lg" :alt="employeeData?.employee.first_name || 'Usuario'" />
+        <div class="flex-1 gap-1 flex flex-col">
           <h4
-            id="radix-_r_5_"
-            data-slot="dialog-title"
-            class="text-xl font-bold text-foreground"
+            class="text-lg font-semibold text-gray-900 dark:text-gray-100"
           >
-            Portugal Reyna, Fredy Kenlly
+            {{ employeeData?.employee.last_name }}, {{ employeeData?.employee.first_name }}
           </h4>
-
-         
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            {{ employeeData?.employee.position_name }} - DNI: {{ employeeData?.employee.dni }}
+          </p>
         </div>
       </div>
     </template>
     <template #body>
       <div class="flex flex-col items-center justify-center w-full mt-4">
         <div
-          class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden w-full max-w-5xl"
+          class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden w-full max-w-5xl"
         >
           <div
-            class="flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+            class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800"
           >
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
               <button
                 @click="previousMonth"
-                class="text-white hover:bg-white/20 rounded-full p-2"
+                class="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md p-2"
               >
                 <span class="i-lucide-chevron-left"></span>
               </button>
-              <h2 class="text-2xl font-bold">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {{ monthNames[currentMonth] }} {{ currentYear }}
               </h2>
               <button
                 @click="nextMonth"
-                class="text-white hover:bg-white/20 rounded-full p-2"
+                class="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md p-2"
               >
                 <span class="i-lucide-chevron-right"></span>
               </button>
             </div>
             <button
               @click="goToToday"
-              class="border border-white/30 text-white px-4 py-2 rounded hover:bg-white/20"
+              class="border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium"
             >
               Hoy
             </button>
           </div>
           <div
-            class="grid grid-cols-7 bg-gradient-to-r from-gray-100 to-gray-200"
+            class="grid grid-cols-7 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800"
           >
             <div
               v-for="day in weekDays"
               :key="day"
-              class="p-4 text-center font-semibold text-gray-700 border-r last:border-r-0"
+              class="p-3 text-center font-medium text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 last:border-r-0"
             >
-              <div class="text-sm uppercase tracking-wider">{{ day }}</div>
+              <div class="text-xs uppercase tracking-wide">{{ day }}</div>
             </div>
           </div>
-          <div class="grid grid-cols-7 bg-white">
+          <div class="grid grid-cols-7 bg-white dark:bg-gray-950">
             <div
               v-for="day in calendarDays"
               :key="day.date.getTime()"
-              class="min-h-[100px] border-r border-b border-gray-200 p-3 cursor-pointer group relative transition-all duration-200"
+              class="min-h-[100px] border-r border-b border-gray-200 dark:border-gray-800 p-3 cursor-pointer group relative transition-colors"
               :class="{
-                'bg-gray-50/50': !day.isCurrentMonth,
-                'bg-blue-100 border-blue-400 ring-2 ring-blue-300':
+                'bg-gray-50/50 dark:bg-gray-900/50': !day.isCurrentMonth,
+                'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700':
                   day.isSelected,
-                'hover:bg-blue-50':
+                'hover:bg-gray-50 dark:hover:bg-gray-900':
                   day.isCurrentMonth && !day.isSelected && !day.isToday,
-                'ring-2 ring-green-500 ring-inset bg-green-50':
+                'ring-1 ring-inset ring-gray-900 dark:ring-gray-100':
                   day.isToday && !day.isSelected,
               }"
               @click="selectDate(day.date)"
             >
               <div class="flex items-center justify-between mb-2">
                 <div
-                  class="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors"
+                  class="flex items-center justify-center w-7 h-7 rounded-md text-sm font-medium transition-colors"
                   :class="{
-                    'text-gray-400': !day.isCurrentMonth,
-                    'bg-green-600 text-white shadow-lg':
+                    'text-gray-400 dark:text-gray-600': !day.isCurrentMonth,
+                    'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900':
                       day.isToday && !day.isSelected,
-                    'text-gray-900 group-hover:bg-blue-100':
+                    'text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-800':
                       day.isCurrentMonth && !day.isToday && !day.isSelected,
-                    'bg-blue-600 text-white shadow-lg ring-2 ring-blue-200':
+                    'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900':
                       day.isSelected,
                   }"
                 >
@@ -104,12 +103,12 @@
                     <div
                       v-for="(evento, index) in day.events.slice(0, 3)"
                       :key="index"
-                      class="w-2 h-2 rounded-full border border-white"
+                      class="w-1.5 h-1.5 rounded-full border border-white dark:border-gray-950"
                       :class="getCategoriaColor(evento.categoria)"
                     ></div>
                   </div>
                   <span
-                    class="text-xs font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full"
+                    class="text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded"
                   >
                     {{ day.events.length }}
                   </span>
@@ -119,10 +118,10 @@
                 <div
                   v-for="evento in day.events.slice(0, 2)"
                   :key="evento.id"
-                  class="text-xs p-2 rounded-md cursor-pointer hover:shadow-sm transition-all duration-200 border-l-2"
+                  class="text-xs p-1.5 rounded cursor-pointer transition-colors border-l-2"
                   :class="
                     getCategoriaColor(evento.categoria) +
-                    ' bg-opacity-10 hover:bg-opacity-20 text-gray-800'
+                    ' bg-opacity-10 hover:bg-opacity-20 text-gray-800 dark:text-gray-200'
                   "
                   :style="{
                     borderLeftColor: getCategoriaColorHex(evento.categoria),
@@ -133,15 +132,12 @@
                 </div>
                 <div
                   v-if="day.events.length > 2"
-                  class="text-xs text-gray-500 font-medium hover:text-blue-600 cursor-pointer p-1 rounded bg-gray-100"
+                  class="text-xs text-gray-500 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-gray-100 cursor-pointer p-1 rounded bg-gray-100 dark:bg-gray-800"
                 >
                   <span class="i-lucide-plus mr-1"></span
                   >{{ day.events.length - 2 }} más eventos
                 </div>
               </div>
-              <div
-                class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded"
-              ></div>
             </div>
           </div>
         </div>
@@ -152,7 +148,32 @@
 
 <script setup lang="ts">
 const open = defineModel<boolean>("isOpen");
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
+
+interface EmployeeData {
+  employee: {
+    id: number
+    dni: string
+    first_name: string
+    last_name: string
+    position_name: string
+    department_name: string
+  }
+  summary: {
+    total_days: number
+    vacation_days: number
+    medical_leave_days: number
+    no_mark_days: number
+    days_with_mobility: number
+    mobility_amount_per_day: number
+    total_mobility_to_pay: number
+  }
+  [key: string]: any 
+}
+
+const props = defineProps<{
+  employeeData: EmployeeData | null
+}>()
 
 // Datos de ejemplo para eventos
 const eventos = ref([
@@ -274,4 +295,55 @@ const getCategoriaColorHex = (categoria: string) => {
   };
   return colores[categoria] || "#6b7280";
 };
+
+// Convertir los días del empleado en eventos del calendario
+watch(() => props.employeeData, (newData) => {
+  if (!newData) {
+    eventos.value = []
+    return
+  }
+  
+  const newEventos: any[] = []
+  
+  // Iterar sobre todas las propiedades del objeto
+  Object.keys(newData).forEach((key) => {
+    // Verificar si la key es una fecha (formato YYYY-MM-DD)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+      const dayData = newData[key]
+      let categoria = 'especial'
+      let nombre = 'Día trabajado'
+      
+      // Determinar la categoría según el código
+      if (dayData.code === '1') {
+        categoria = 'celebracion'
+        nombre = 'Asistencia normal'
+      } else if (dayData.code === 'V') {
+        categoria = 'feriado'
+        nombre = 'Vacaciones'
+      } else if (dayData.code === 'DM') {
+        categoria = 'cumpleanos'
+        nombre = 'Descanso médico'
+      } else if (dayData.code === '0') {
+        categoria = 'aniversario'
+        nombre = 'No marcó'
+      }
+      
+      newEventos.push({
+        id: key,
+        nombre: nombre,
+        descripcion: dayData.mobility_counted ? 'Movilidad contada' : 'Sin movilidad',
+        fecha: key,
+        categoria: categoria
+      })
+    }
+  })
+  
+  eventos.value = newEventos
+  
+  // Si hay eventos, navegar al mes del primer evento
+  if (newEventos.length > 0) {
+    const primerEvento = parseYMDToLocalDate(newEventos[0].fecha)
+    currentDate.value = new Date(primerEvento.getFullYear(), primerEvento.getMonth(), 1)
+  }
+}, { immediate: true })
 </script>
