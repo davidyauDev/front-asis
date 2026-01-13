@@ -45,22 +45,25 @@
 
         <!-- LIST -->
         <div class="flex flex-wrap gap-2">
-          <UButton
+          <button
             v-for="item in list"
             :key="item.id"
-            size="xs"
-            class="rounded-full transition-all"
-            :variant="selecteds.some(s => s.id === item.id) ? 'solid' : 'outline'"
-            :color="selecteds.some(s => s.id === item.id) ? 'primary' : 'gray'"
             @click="handleSelectCompany(item)"
+            :class="[
+              'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer',
+              'flex items-center gap-1.5',
+              selecteds.some(s => s.id === item.id) 
+                ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
+            ]"
           >
             <UIcon
               v-if="selecteds.some(s => s.id === item.id)"
               name="i-lucide-check"
-              class="size-3 mr-1"
+              class="size-3.5"
             />
             {{ item.company_name }}
-          </UButton>
+          </button>
         </div>
       </DataState>
     </div>

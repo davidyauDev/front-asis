@@ -1,35 +1,91 @@
 <template>
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-6">
-        <!-- Company Filter -->
-        <div class="xl:col-span-2">
-            <CompanyFilter :loading="companyResponse.loading" :is-error="companyResponse.isError"
-                :list="companyResponse.list" v-model:company="currentCompanySelected"
-                v-model:param="currentParams.company_id" />
+    <div class="space-y-4">
+        <!-- Botón para mostrar/ocultar filtros -->
+        <div class="flex items-center justify-between">
+            <UButton 
+                @click="mostrarFiltros = !mostrarFiltros"
+                variant="soft"
+                color="gray"
+                icon="i-lucide-filter"
+                size="sm"
+            >
+                {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
+                <UIcon :name="mostrarFiltros ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="ml-2" />
+            </UButton>
+            
+            <span v-if="!mostrarFiltros" class="text-xs text-gray-500 dark:text-gray-400">
+                Los filtros están ocultos
+            </span>
         </div>
 
-        <!-- Date Range Picker -->
-        <div class="xl:col-span-6">
-            <DateRangePicker v-model:dates="currentParams.fechas" />
-        </div>
+        <!-- Panel de filtros con transición -->
+        <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-2"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 -translate-y-2"
+        >
+            <div v-show="mostrarFiltros" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
+                    <!-- Company Filter -->
+                    <div class="md:col-span-1 xl:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Empresa
+                        </label>
+                        <CompanyFilter 
+                            :loading="companyResponse.loading" 
+                            :is-error="companyResponse.isError"
+                            :list="companyResponse.list" 
+                            v-model:company="currentCompanySelected"
+                            v-model:param="currentParams.company_id" 
+                        />
+                    </div>
 
-        <!-- Department Filter -->
-        <div class="xl:col-span-2">
-            <DepartmentFilter :loading="departmentResponse.loading" :is-error="departmentResponse.isError"
-                :list="departmentResponse.list" class="max-h-72" v-model:department="currentDepartmentSelected"
-                v-model:param="currentParams.department_id" />
-        </div>
+                    <!-- Department Filter -->
+                    <div class="md:col-span-1 xl:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Departamento
+                        </label>
+                        <DepartmentFilter 
+                            :loading="departmentResponse.loading" 
+                            :is-error="departmentResponse.isError"
+                            :list="departmentResponse.list" 
+                            class="max-h-72" 
+                            v-model:department="currentDepartmentSelected"
+                            v-model:param="currentParams.department_id" 
+                        />
+                    </div>
 
-        <!-- Employee Filter -->
-        <div class="xl:col-span-2">
-            <EmployeeFilter :loading="employeeResponse.loading" :is-error="employeeResponse.isError"
-                :list="employeeResponse.list" class="max-h-72" v-model:employee="currentEmployeeSelected"
-                v-model:param="currentParams.empleado_id" />
-        </div>
+                    <!-- Employee Filter -->
+                    <div class="md:col-span-1 xl:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Empleado
+                        </label>
+                        <EmployeeFilter 
+                            :loading="employeeResponse.loading" 
+                            :is-error="employeeResponse.isError"
+                            :list="employeeResponse.list" 
+                            class="max-h-72" 
+                            v-model:employee="currentEmployeeSelected"
+                            v-model:param="currentParams.empleado_id" 
+                        />
+                    </div>
+
+                    <!-- Date Range Picker -->
+                    <div class="md:col-span-2 xl:col-span-6">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Rango de fechas
+                        </label>
+                        <DateRangePicker v-model:dates="currentParams.fechas" />
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
+        <ReportTable :employee-type="employeeType" />
     </div>
-
-    <ReportTable :employee-type="employeeType" />
-
-
 </template>
 
 <script setup lang="ts">
@@ -47,6 +103,8 @@ const { company, department, employee, attendance } = storeToRefs(store);
 const { employeeType } = defineProps<{
     employeeType: EmployeeType
 }>()
+
+const mostrarFiltros = ref(true)
 
 const currentParams = computed(() => {
     if (employeeType === EmployeeType.TECHNICIANS) {

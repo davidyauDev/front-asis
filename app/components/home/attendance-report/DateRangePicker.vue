@@ -1,116 +1,105 @@
 <template>
-  <div class="flex flex-col lg:flex-row gap-4">
+  <div class="flex flex-col lg:flex-row gap-3">
 
-    <!-- PANEL IZQUIERDO: AÑO + MES -->
-    <div class="flex flex-col w-full lg:max-w-sm gap-4">
+    <!-- PANEL IZQUIERDO COMPACTO: AÑO + MES + RANGOS -->
+    <div class="flex flex-col w-full lg:max-w-[280px] gap-3">
 
-      <!-- AÑOS -->
-      <UCard :ui="{ header: 'py-2' }">
-        <template #header>Año</template>
+      <!-- AÑOS Y MESES COMBINADOS -->
+      <UCard :ui="{ header: 'py-1.5', body: 'p-3' }">
+        <template #header>
+          <div class="text-xs font-medium">Período</div>
+        </template>
 
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            v-for="y in years"
-            :key="y"
-            size="sm"
-            :variant="calendarYear === Number(y) ? 'solid' : 'outline'"
-            :color="calendarYear === Number(y) ? 'primary' : 'neutral'"
-            @click="goToYear(Number(y))"
+        <!-- AÑOS - Dropdown compacto -->
+        <div class="mb-3">
+          <label class="text-[10px] font-medium text-gray-600 dark:text-gray-400 mb-1 block">Año</label>
+          <select 
+            :value="calendarYear" 
+            @change="goToYear(Number(($event.target as HTMLSelectElement).value))"
+            class="w-full text-xs border border-gray-200 dark:border-gray-800 rounded px-2 py-1.5 bg-white dark:bg-gray-950 focus:border-gray-300 dark:focus:border-gray-700 focus:ring-0"
           >
-            {{ y }}
-          </UButton>
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </div>
+
+        <!-- MESES - Grid compacto -->
+        <div>
+          <label class="text-[10px] font-medium text-gray-600 dark:text-gray-400 mb-1 block">Mes</label>
+          <div class="grid grid-cols-4 gap-1">
+            <button
+              v-for="m in months"
+              :key="m.value"
+              @click="goToMonth(m.value)"
+              :class="[
+                'text-[10px] px-1.5 py-1 rounded transition-colors',
+                calendarMonth === m.value 
+                  ? 'bg-primary text-white font-semibold' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              ]"
+            >
+              {{ m.label }}
+            </button>
+          </div>
         </div>
       </UCard>
 
-      <!-- MESES -->
-      <UCard :ui="{ header: 'py-2' }">
-        <template #header>Mes</template>
+      <!-- RANGOS RÁPIDOS COMPACTOS -->
+      <UCard :ui="{ header: 'py-1.5', body: 'p-3' }">
+        <template #header>
+          <div class="text-xs font-medium">Selección rápida</div>
+        </template>
 
-        <div class="grid grid-cols-3 gap-2">
-          <UButton
-            v-for="m in months"
-            :key="m.value"
-            size="xs"
-            :variant="calendarMonth === m.value ? 'solid' : 'outline'"
-            :color="calendarMonth === m.value ? 'primary' : 'neutral'"
-            @click="goToMonth(m.value)"
-          >
-            {{ m.label }}
-          </UButton>
-        </div>
-      </UCard>
-
-      <!-- RANGOS RÁPIDOS -->
-      <UCard :ui="{ header: 'py-2' }">
-        <template #header>Selección rápida</template>
-
-        <div class="flex flex-col gap-2">
-          <UButton
-            size="xs"
-            variant="outline"
-            color="neutral"
-            icon="i-lucide-calendar-days"
+        <div class="grid grid-cols-2 gap-1.5">
+          <button
             @click="selectLastDays(7)"
-            block
+            class="text-[10px] px-2 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           >
-            Últimos 7 días
-          </UButton>
-          <UButton
-            size="xs"
-            variant="outline"
-            color="neutral"
-            icon="i-lucide-calendar-days"
+            7 días
+          </button>
+          <button
             @click="selectLastDays(15)"
-            block
+            class="text-[10px] px-2 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           >
-            Últimos 15 días
-          </UButton>
-          <UButton
-            size="xs"
-            variant="outline"
-            color="neutral"
-            icon="i-lucide-calendar-days"
+            15 días
+          </button>
+          <button
             @click="selectLastDays(30)"
-            block
+            class="text-[10px] px-2 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           >
-            Últimos 30 días
-          </UButton>
-          <UButton
-            size="xs"
-            variant="outline"
-            color="neutral"
-            icon="i-lucide-calendar-range"
+            30 días
+          </button>
+          <button
             @click="selectCurrentWeek"
-            block
+            class="text-[10px] px-2 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           >
-            Semana actual
-          </UButton>
+            Semana
+          </button>
         </div>
       </UCard>
     </div>
 
     <!-- CALENDARIO -->
-    <UCard class="flex-1" :ui="{ header: 'py-2' }">
+    <UCard class="flex-1" :ui="{ header: 'py-1.5' }">
       <template #header>
         <div class="flex items-center justify-between">
-          <span>
+          <span class="text-xs font-medium">
             Días
-            <span v-if="selectedDaysCount > 0" class="ml-2 text-xs text-gray-500 dark:text-gray-400">
+            <span v-if="selectedDaysCount > 0" class="ml-2 text-[10px] text-gray-500 dark:text-gray-400">
               ({{ selectedDaysCount }} {{ selectedDaysCount === 1 ? 'día' : 'días' }})
             </span>
           </span>
-          <div class="flex gap-2">
+          <div class="flex gap-3">
             <UButton
-              size="xs"
+              size="2xs"
               variant="outline"
               color="primary"
               icon="i-lucide-calendar-check"
               @click="selectAllDaysInMonth"
             >
-              Mes completo
+              Mes
             </UButton>
             <UButton
-              size="xs"
+              size="2xs"
               variant="outline"
               color="blue"
               icon="i-lucide-calendar-clock"
@@ -145,6 +134,7 @@
 
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone } from '@internationalized/date'
+import { format } from 'date-fns'
 
 /* =========================
    MODEL (ÚNICA FUENTE)
@@ -188,7 +178,6 @@ const calendar = computed<CalendarDate[]>({
 ========================= */
 const calendarYear = computed(() => placeholder.value.year)
 const calendarMonth = computed(() => placeholder.value.month)
-const selectedDaysCount = computed(() => modelDates.value.length)
 
 /* =========================
    CONTROLS DATA
@@ -237,212 +226,20 @@ const selectAllDaysInMonth = () => {
   const year = placeholder.value.year
   const month = placeholder.value.month
   
-  // Obtener el número de días del mes (month está en 1-12, Date usa 0-11)
+  // Obtener el número de días del mes
   const daysInMonth = new Date(year, month, 0).getDate()
   
-  // Validar que no sean fechas futuras
-  const today = new Date()
-  today.setHours(23, 59, 59, 999)
-  
+  // Crear array con todos los días del mes
   const allDays: CalendarDate[] = []
   for (let day = 1; day <= daysInMonth; day++) {
-    const dateToAdd = new Date(year, month - 1, day)
-    // Solo agregar si no es fecha futura
-    if (dateToAdd <= today) {
-      allDays.push(new CalendarDate(year, month, day))
-    }
+    allDays.push(new CalendarDate(year, month, day))
   }
   
+  // Actualizar el modelo
   calendar.value = allDays
-}
-
-const selectLastDays = (days: number) => {
-  const today = new Date()
-  today.setHours(23, 59, 59, 999)
-  
-  const currentViewYear = placeholder.value.year
-  const currentViewMonth = placeholder.value.month
-  
-  // Verificar si el usuario está viendo el mes actual
-  const isCurrentMonth = currentViewYear === today.getFullYear() && 
-                         currentViewMonth === (today.getMonth() + 1)
-  
-  let endDate: Date
-  
-  if (isCurrentMonth) {
-    // Si está en el mes actual, usar hoy como fecha final
-    endDate = new Date(today)
-  } else {
-    // Si está en otro mes, usar el último día de ese mes como fecha final
-    endDate = new Date(currentViewYear, currentViewMonth, 0)
-    endDate.setHours(23, 59, 59, 999)
-    
-    // Validar que no sea fecha futura
-    if (endDate > today) {
-      endDate = new Date(today)
-    }
-  }
-  
-  const startDate = new Date(endDate)
-  startDate.setDate(endDate.getDate() - (days - 1))
-  startDate.setHours(0, 0, 0, 0)
-  
-  const selectedDays: CalendarDate[] = []
-  
-  // Clonar fecha para evitar mutaciones
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    selectedDays.push(
-      new CalendarDate(
-        d.getFullYear(),
-        d.getMonth() + 1,
-        d.getDate()
-      )
-    )
-  }
-  
-  calendar.value = selectedDays
-  
-  // Mantener el mes actual de visualización o ir al mes con más días
-  if (!isCurrentMonth) {
-    // Si no estamos en el mes actual, quedarnos en el mes que el usuario seleccionó
-    // solo si la mayoría de días están en ese mes
-    const daysInViewMonth = selectedDays.filter(d => 
-      d.year === currentViewYear && d.month === currentViewMonth
-    ).length
-    
-    if (daysInViewMonth >= days / 2) {
-      // La mayoría de días están en el mes actual, mantener la vista
-      return
-    }
-  }
-  
-  // Determinar el mes más relevante para mostrar
-  const monthCounts = new Map<string, { year: number, month: number, count: number }>()
-  
-  selectedDays.forEach(day => {
-    const key = `${day.year}-${day.month}`
-    const existing = monthCounts.get(key)
-    if (existing) {
-      existing.count++
-    } else {
-      monthCounts.set(key, { year: day.year, month: day.month, count: 1 })
-    }
-  })
-  
-  // Encontrar el mes con más días seleccionados
-  let maxCount = 0
-  let targetYear = endDate.getFullYear()
-  let targetMonth = endDate.getMonth() + 1
-  
-  monthCounts.forEach(({ year, month, count }) => {
-    if (count > maxCount) {
-      maxCount = count
-      targetYear = year
-      targetMonth = month
-    }
-  })
-  
-  placeholder.value = new CalendarDate(targetYear, targetMonth, 1)
-}
-
-const selectCurrentWeek = () => {
-  const today = new Date()
-  today.setHours(23, 59, 59, 999)
-  
-  const dayOfWeek = today.getDay() // 0 = Domingo, 1 = Lunes, ...
-  
-  // Calcular el lunes de esta semana (inicio de semana)
-  const startOfWeek = new Date(today)
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  startOfWeek.setDate(today.getDate() + diff)
-  startOfWeek.setHours(0, 0, 0, 0)
-  
-  // Calcular el domingo (fin de semana), pero sin pasar de hoy
-  const endOfWeek = new Date(startOfWeek)
-  endOfWeek.setDate(startOfWeek.getDate() + 6)
-  
-  // No seleccionar días futuros
-  const maxDate = endOfWeek > today ? today : endOfWeek
-  
-  const selectedDays: CalendarDate[] = []
-  
-  // Iterar sin mutar la fecha original
-  for (let d = new Date(startOfWeek); d <= maxDate; d.setDate(d.getDate() + 1)) {
-    selectedDays.push(
-      new CalendarDate(
-        d.getFullYear(),
-        d.getMonth() + 1,
-        d.getDate()
-      )
-    )
-  }
-  
-  calendar.value = selectedDays
-  
-  // Determinar el mes con más días en la semana
-  const monthCounts = new Map<string, { year: number, month: number, count: number }>()
-  
-  selectedDays.forEach(day => {
-    const key = `${day.year}-${day.month}`
-    const existing = monthCounts.get(key)
-    if (existing) {
-      existing.count++
-    } else {
-      monthCounts.set(key, { year: day.year, month: day.month, count: 1 })
-    }
-  })
-  
-  // Encontrar el mes con más días en la semana
-  let maxCount = 0
-  let targetYear = today.getFullYear()
-  let targetMonth = today.getMonth() + 1
-  
-  monthCounts.forEach(({ year, month, count }) => {
-    if (count > maxCount) {
-      maxCount = count
-      targetYear = year
-      targetMonth = month
-    }
-  })
-  
-  // Actualizar placeholder al mes más relevante
-  placeholder.value = new CalendarDate(targetYear, targetMonth, 1)
-}
-
-const goToToday = () => {
-  const today = new Date()
-  
-  // Navegar al mes actual
-  placeholder.value = new CalendarDate(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    1
-  )
-  
-  // Seleccionar el día de hoy
-  calendar.value = [
-    new CalendarDate(
-      today.getFullYear(),
-      today.getMonth() + 1,
-      today.getDate()
-    )
-  ]
 }
 
 const clearSelection = () => {
   modelDates.value = []
-}
-
-const clearSelectionAndReset = () => {
-  // Limpiar selección
-  modelDates.value = []
-  
-  // Regresar al mes actual
-  const today = new Date()
-  placeholder.value = new CalendarDate(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    1
-  )
 }
 </script>

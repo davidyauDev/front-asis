@@ -1,18 +1,21 @@
 <template>
   <DataState :loading="attendances.loading" :error="attendances.isError" error-message="No se pudo cargar los reportes"
     @retry="employeeType === EmployeeType.TECHNICIANS ? getTechTakenAttendances() : getAllTakenAttendances()">
-   <div class="flex gap-2 mb-4">
-    <UInput icon="i-lucide-search" v-model="attendances.globalFilter" class="w-full"
+   <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 mb-4 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
+    <UInput icon="i-lucide-search" v-model="attendances.globalFilter" class="w-full sm:max-w-sm"
       placeholder="Buscar por nombre, apellido o DNI..." />
 
-      <UButton variant="solid" icon="i-lucide-file-spreadsheet" class="
-    whitespace-nowrap
-    bg-green-500
-    hover:bg-green-600
-    active:bg-green-700
-    text-white
-  ">
-        Exportar Excel
+      <UButton
+        variant="outline"
+        color="gray"
+        size="sm"
+        @click="exportarExcel"
+        :loading="exportando"
+        :disabled="exportando"
+        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      >
+        <UIcon name="i-lucide-download" class="w-4 h-4 mr-2" />
+        {{ exportando ? 'Exportando...' : 'Exportar' }}
       </UButton>
       
     </div>
@@ -72,11 +75,96 @@ import { h, ref, resolveComponent } from 'vue';
 import DataState from '~/components/common/DataState.vue';
 import { EmployeeType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 import ModalMap from './ModalMap.vue';
+import { apiFetch } from '@/services/api'
 
 
 const store = useAttendanceReportStore();
 const { getAllTakenAttendances, getTechTakenAttendances } = store;
 const { attendance } = storeToRefs(store);
+
+const config = useRuntimeConfig()
+const toast = useToast()
+const token = useCookie<string | null>('auth_token')
+
+const exportando = ref(false)
+
+const exportarExcel = async () => {
+  if (exportando.value) return;
+  
+  exportando.value = true;
+  
+  toast.add({
+    id: 'exportando',
+    title: 'Preparando exportación',
+    description: 'Generando archivo Excel...',
+    icon: 'i-lucide-loader-2',
+    timeout: 0,
+  })
+
+  try {
+    if (!token.value) {
+      throw new Error('Token no disponible')
+    }
+
+    const params = employeeType === EmployeeType.TECHNICIANS 
+      ? attendance.value.taken.tech.params 
+      : attendance.value.taken.all.params;
+
+    const response = await fetch(
+      `${config.public.apiBaseUrl}/api/reporte-asistencia/marcacion`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token.value}`,
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        },
+        body: JSON.stringify({ 
+          ...params,
+          export: 'excel' 
+        })
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP ${response.status}`)
+    }
+
+    const blob = await response.blob()
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'reporte_mensual_asistencias.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+
+    toast.remove('exportando')
+    toast.add({
+      title: 'Descarga completa',
+      description: 'El archivo se descargó correctamente',
+      icon: 'i-lucide-check-circle',
+      color: 'green',
+      timeout: 3000,
+    })
+
+  } catch (error) {
+    console.error('Error exportando Excel:', error)
+    toast.remove('exportando')
+    toast.add({
+      title: 'Error al exportar',
+      description: 'No se pudo generar el archivo Excel',
+      icon: 'i-lucide-alert-circle',
+      color: 'red',
+      timeout: 5000,
+    })
+  } finally {
+    exportando.value = false
+  }
+}
+
 
 
 
