@@ -110,7 +110,7 @@
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">No marcó</th>
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">DM</th>
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Monto</th>
-              <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Comentario</th>
+              <!-- <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Comentario</th> -->
               <th class="px-3 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-400">Acciones</th>
             </tr>
           </thead>
@@ -128,8 +128,8 @@
               <td class="px-3 py-3 text-gray-600 dark:text-gray-400">{{ emp.employee.position_name }}</td>
               <td class="px-3 py-3 text-gray-600 dark:text-gray-400">28/03/2022</td>
               <td class="px-3 py-3">
-                <span class="inline-block bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded text-xs font-medium">
-                  S/ 150.00
+                <span class="inline-block bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded text-xs font-semibold">
+                  S/ {{ emp.summary.mobility_amount ? Number(emp.summary.mobility_amount).toFixed(2) : '0.00' }}
                 </span>
               </td>
               <td class="px-3 py-3 text-gray-600 dark:text-gray-400">{{ emp.employee.department_name }}</td>
@@ -151,11 +151,18 @@
               </td>
               <td class="px-3 py-3 text-gray-900 dark:text-gray-100">{{ emp.summary.medical_leave_days }}</td>
               <td class="px-3 py-3">
-                <span class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded text-xs font-semibold">
-                  S/ {{ emp.summary.amount_to_deposit ?? '120.00' }}
+                <span 
+                  :class="[
+                    'px-3 py-1 rounded text-xs font-semibold',
+                    emp.summary.total_mobility_to_pay < 0 
+                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                      : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                  ]"
+                >
+                  S/ {{ emp.summary.total_mobility_to_pay ? Number(emp.summary.total_mobility_to_pay).toFixed(2) : '0.00' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ emp.comments ?? "GAAAA" }}</td>
+              <!-- <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ emp.comments ?? "GAAAA" }}</td> -->
               <td class="px-3 py-3 text-center">
                 <button 
                   @click="verDetalle(emp)"

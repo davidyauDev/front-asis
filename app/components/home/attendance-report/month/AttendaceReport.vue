@@ -1,26 +1,30 @@
 <template>
-    <div class="flex gap-6 flex-wrap justify-center ">
-        <div class="xl:basis-[calc(15%-1.5rem)]">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-6">
+        <!-- Company Filter -->
+        <div class="xl:col-span-2">
             <CompanyFilter :loading="companyResponse.loading" :is-error="companyResponse.isError"
                 :list="companyResponse.list" v-model:company="currentCompanySelected"
                 v-model:param="currentParams.company_id" />
         </div>
-        <div class="xl:basis-[calc(55%-1.5rem)]">
+
+        <!-- Date Range Picker -->
+        <div class="xl:col-span-6">
             <DateRangePicker v-model:dates="currentParams.fechas" />
         </div>
 
-        <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
+        <!-- Department Filter -->
+        <div class="xl:col-span-2">
             <DepartmentFilter :loading="departmentResponse.loading" :is-error="departmentResponse.isError"
                 :list="departmentResponse.list" class="max-h-72" v-model:department="currentDepartmentSelected"
                 v-model:param="currentParams.department_id" />
         </div>
 
-        <div class="sm:basis-[calc(50%-1.5rem)] xl:basis-[calc(15%-1.5rem)]">
+        <!-- Employee Filter -->
+        <div class="xl:col-span-2">
             <EmployeeFilter :loading="employeeResponse.loading" :is-error="employeeResponse.isError"
                 :list="employeeResponse.list" class="max-h-72" v-model:employee="currentEmployeeSelected"
                 v-model:param="currentParams.empleado_id" />
         </div>
-
     </div>
 
     <ReportTable :employee-type="employeeType" />

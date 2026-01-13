@@ -187,7 +187,9 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
     const date = new Date(raw);
 
     const fecha = new Intl.DateTimeFormat('es-PE', {
-      dateStyle: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
       timeZone: 'America/Lima'
     }).format(date);
 
@@ -197,8 +199,8 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
     }).format(date);
 
     return h('div', { class: 'flex flex-col leading-tight' }, [
-      h('span', { class: 'text-sm font-medium text-gray-800 dark:text-gray-200' }, fecha),
-      h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, hora)
+      h('span', { class: 'text-base font-semibold text-gray-900 dark:text-gray-100' }, hora),
+      h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, fecha)
     ]);
   }
 }

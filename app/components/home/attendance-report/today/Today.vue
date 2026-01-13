@@ -37,10 +37,10 @@
 
         <div class="col-span-6 min-w-0">
           <EmployeeFilter
-            :loading="employee.department.loading"
-            :is-error="employee.department.isError"
-            :list="employee.department.list"
-            v-model:employee="employee.department.selecteds"
+            :loading="employee.daily.loading"
+            :is-error="employee.daily.isError"
+            :list="employee.daily.list"
+            v-model:employee="employee.daily.selecteds"
           />
         </div>
       </div>
@@ -74,9 +74,6 @@ const { getDailyTakenAttendances } = store;
 
 const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
 
-/* =========================
-   METRICS DATA
-========================= */
 const metricsData = computed(() => {
   const summary = dailyTakenAttendace.value.summary;
   const total = dailyTakenAttendace.value.list.length;
@@ -111,121 +108,114 @@ const metricsData = computed(() => {
 });
 
 /* =========================
-   WATCHERS
+   WATCHERS - REFACTORIZADO
 ========================= */
 
-watch(
-  () => dailyTakenAttendace.value.params.company_id,
-  (companyId) => {
+// Debounce para evitar múltiples llamadas a API
+let fetchTimeout: ReturnType<typeof setTimeout> | null = null;
+const debouncedFetch = () => {
+  if (fetchTimeout) clearTimeout(fetchTimeout);
+  fetchTimeout = setTimeout(() => {
     getDailyTakenAttendances();
+  }, 300);
+};
 
-    if (companyId) {
-      department.value.daily.list = department.value.list.filter(
-        dep => dep.company_id === companyId
-      );
+// Función auxiliar para actualizar listas filtradas en cascada
+const updateFilteredLists = () => {
+  const companyId = dailyTakenAttendace.value.params.company_id;
+  const departmentIds = store.attendance.taken.daily.params.departamento_ids || [];
 
-      if (!dailyTakenAttendace.value.params.department_id) {
-        employee.value.daily.list = employee.value.list.filter(
-          emp => emp.company_id === companyId
-        );
-      }
-    } else {
-      const departmentId = dailyTakenAttendace.value.params.department_id;
-
-      if (departmentId) {
-        employee.value.daily.list = employee.value.list.filter(
-          emp => emp.department_id === departmentId
-        );
-      } else {
-        employee.value.daily.list = employee.value.list;
-      }
-
-      department.value.daily.list = department.value.list;
-    }
-
-    dailyTakenAttendace.value.pagination.pageIndex = 0;
+  // Filtrar departments por company
+  if (companyId) {
+    department.value.daily.list = department.value.list.filter(
+      dep => dep.company_id === companyId
+    );
+  } else {
+    department.value.daily.list = department.value.list;
   }
-);
 
+  // Filtrar employees por company y departments
+  if (departmentIds.length > 0) {
+    employee.value.daily.list = employee.value.list.filter(
+      emp => departmentIds.includes(emp.department_id)
+    );
+  } else if (companyId) {
+    employee.value.daily.list = employee.value.list.filter(
+      emp => emp.company_id === companyId
+    );
+  } else {
+    employee.value.daily.list = employee.value.list;
+  }
+};
+
+// Inicializar listas al montar el componente
+onMounted(() => {
+  // Asegurarse de que las listas daily tengan todos los datos al inicio
+  if (employee.value.list.length > 0 && employee.value.daily.list.length === 0) {
+    employee.value.daily.list = employee.value.list;
+  }
+  if (department.value.list.length > 0 && department.value.daily.list.length === 0) {
+    department.value.daily.list = department.value.list;
+  }
+  if (company.value.list.length > 0 && company.value.daily.list.length === 0) {
+    company.value.daily.list = company.value.list;
+  }
+});
+
+// Watch para cambios en departments seleccionados
 watch(
   () => store.department.daily.selecteds,
-  (departments) => {
+  async (departments) => {
     const ids = departments.map(d => d.id);
 
     store.attendance.params.departamento_ids = ids;
     store.attendance.taken.daily.params.departamento_ids = ids;
 
-    store.getEmployeesByDepartment();
-    store.getDailyTakenAttendances();
+    // Actualizar listas filtradas
+    updateFilteredLists();
+
+    // Cargar empleados por departamento (esperar a que termine)
+    if (ids.length > 0) {
+      await store.getEmployeesByDepartment();
+    }
+
+    // Hacer fetch con debounce
+    debouncedFetch();
   },
   { deep: true, immediate: true }
 );
 
+// Watch para cambios en employees seleccionados
 watch(
-  () => store.employee.department.selecteds,
+  () => store.employee.daily.selecteds,
   (employees) => {
     store.attendance.taken.daily.params.empleado_ids =
       employees.map(e => e.id);
 
-    store.getDailyTakenAttendances();
+    debouncedFetch();
   },
   { deep: true }
 );
 
+// Watch para company_id (filtro simple)
 watch(
-  () => dailyTakenAttendace.value.params.department_id,
-  (departmentId) => {
-    getDailyTakenAttendances();
-
-    const currDep = department.value.list.find(dep => dep.id === departmentId);
-
-    if (currDep) {
-      company.value.daily.list = company.value.list.filter(
-        com => com.id === currDep.company_id
+  () => dailyTakenAttendace.value.params.company_id,
+  (companyId) => {
+    // Limpiar selections cuando cambia company
+    if (companyId) {
+      // Limpiar departments que no pertenecen a la company
+      const validDepartments = store.department.daily.selecteds.filter(
+        dep => dep.company_id === companyId
       );
-
-      employee.value.daily.list = employee.value.list.filter(
-        emp => emp.department_id === currDep.id
-      );
-    } else {
-      company.value.daily.list = company.value.list;
-      employee.value.daily.list = employee.value.list;
-    }
-
-    dailyTakenAttendace.value.pagination.pageIndex = 0;
-  }
-);
-
-watch(
-  () => dailyTakenAttendace.value.params.empleado_id,
-  (employeeId) => {
-    getDailyTakenAttendances();
-
-    const currEmp = employee.value.list.find(emp => emp.id === employeeId);
-
-    if (currEmp) {
-      company.value.daily.list = company.value.list.filter(
-        com => com.id === currEmp.company_id
-      );
-
-      department.value.daily.list = department.value.list.filter(
-        dep => dep.id === currEmp.department_id
-      );
-    } else {
-      const companyId = dailyTakenAttendace.value.params.company_id;
-
-      if (companyId) {
-        department.value.daily.list = department.value.list.filter(
-          dep => dep.company_id === companyId
-        );
-        return;
+      
+      if (validDepartments.length !== store.department.daily.selecteds.length) {
+        store.department.daily.selecteds = validDepartments;
       }
-
-      company.value.daily.list = company.value.list;
-      department.value.daily.list = department.value.list;
     }
 
+    updateFilteredLists();
     dailyTakenAttendace.value.pagination.pageIndex = 0;
+    debouncedFetch();
   }
 );
 </script>

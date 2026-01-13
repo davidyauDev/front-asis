@@ -10,7 +10,7 @@
           <UTooltip text="Usuarios sin asistencia completa" :shortcuts="['N']">
             <UButton color="neutral" variant="ghost" square @click="isNotificationsSlideoverOpen = true">
               <UChip color="error" inset>
-                <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
+                <UIcon name="i-lucide-bell" class="size-5 shrink-0 animate-ring" />
               </UChip>
             </UButton>
           </UTooltip>
@@ -51,9 +51,6 @@
 
     </template>
     <template #body>
-      <!-- Metric Cards -->
-      
-
       <DailyAttendanceReport v-if="currentTabType === ItemType.TODAY" />
       <MonthlyAttendanceReport v-else-if="currentTabType === ItemType.TECHNICIANS"
         :employee-type="currentEmployeeType" />
@@ -66,13 +63,11 @@
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
 import type { DropdownMenuItem, TabsItem } from '@nuxt/ui';
 
 import MonthlyAttendanceReport from '~/components/home/attendance-report/month/AttendaceReport.vue';
 import DailyAttendanceReport from '~/components/home/attendance-report/today/Today.vue';
 import ReporteAsistenciasAdministrators from '~/components/home/attendance-report/summary/Administrators.vue';
-import MetricCards from '~/components/home/MetricCards.vue';
 
 
 import { EmployeeType, ItemType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
@@ -87,38 +82,11 @@ const currentTabType = ref<ItemType>(ItemType.TODAY);
 
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS);
 
-const metricsData = ref([
-  {
-    title: 'TOTAL DE USUARIOS',
-    value: '135 mil',
-    change: '+50%',
-    description: 'del mes anterior'
-  },
-  {
-    title: 'ASISTENCIAS HOY',
-    value: '2,845',
-    change: '+12%',
-    description: 'vs. ayer'
-  },
-  {
-    title: 'INCIDENCIAS',
-    value: '234',
-    change: '+8%',
-    description: 'esta semana'
-  },
-  {
-    title: 'TÉCNICOS ACTIVOS',
-    value: '89',
-    change: '+3%',
-    description: 'en campo'
-  }
-])
 
 const fechaActual = new Date();
 const fechaFormateada = format(fechaActual, 'dd MMMM yyyy', {
   locale: es
 });
-
 
 const store = useAttendanceReportStore();
 const { getCompanies, getDepartments, getTakenAttendances, getEmployees } = store;
@@ -172,3 +140,22 @@ const items = [[{
   to: '/customers'
 }]] satisfies DropdownMenuItem[][]
 </script>
+
+<style scoped>
+@keyframes ring {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-15deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-10deg); }
+  50% { transform: rotate(5deg); }
+  60% { transform: rotate(-5deg); }
+  70% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-ring {
+  animation: ring 2s ease-in-out infinite;
+  transform-origin: 50% 0%;
+}
+</style>

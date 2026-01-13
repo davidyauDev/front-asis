@@ -279,12 +279,33 @@ const _useAttendanceReport = () => {
       const res = await $fetch<{
         data: TakenAttendace[];
         resumen: TakenAttendanceSummary;
+      }>(`${reportPrefix}/marcacion-simple`, {
+        body: params,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          Accept: "application/json",
+        },
+      });
+
+      return res;
+    } catch (error) {
+      console.error({ error });
+      throw error;
+    }
+  };
+
+  const fetchMonthlyAttendances = async (
+    params: TakenAttendaceParams
+  ): Promise<{
+    data: TakenAttendace[];
+    resumen: TakenAttendanceSummary;
+  }> => {
+    try {
+      const res = await $fetch<{
+        data: TakenAttendace[];
+        resumen: TakenAttendanceSummary;
       }>(`${reportPrefix}/marcacion`, {
-        // body: {
-        //   ...params,
-        //   fecha_fin: params.fecha_fin || undefined,
-        //   export: exportExcel,
-        // },
         body: params,
         method: "POST",
         headers: {
@@ -307,6 +328,7 @@ const _useAttendanceReport = () => {
     fetchAttendancesSummary,
     fetchAttendacesDetails,
     fetchTakenAttandances,
+    fetchMonthlyAttendances,
   };
 };
 

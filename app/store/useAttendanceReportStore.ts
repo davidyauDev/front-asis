@@ -41,6 +41,7 @@ const {
   fetchAttendancesSummary,
   fetchAttendacesDetails,
   fetchTakenAttandances,
+  fetchMonthlyAttendances,
 } = useAttendanceReport();
 
 export const useAttendanceReportStore = defineStore("attendance-report", {
@@ -442,7 +443,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       this.attendance.taken.tech.isError = false;
 
       try {
-        const attendances = await fetchTakenAttandances(
+        const attendances = await fetchMonthlyAttendances(
           this.attendance.taken.tech.params
         );
         this.attendance.taken.tech.listFiltered = attendances.data.filter((att) => att.Tecnico);
@@ -459,7 +460,7 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       this.attendance.taken.all.loading = true;
 
       try {
-        const attendances = await fetchTakenAttandances(
+        const attendances = await fetchMonthlyAttendances(
           this.attendance.taken.all.params
         );
         this.attendance.taken.all.list = attendances.data;
