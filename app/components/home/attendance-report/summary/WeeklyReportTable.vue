@@ -4,33 +4,37 @@
         error-message="No se pudó cagar el reporte semanal" @retry="getAttendanceSummary">
 
         <!-- Tabla -->
-        <UTable sticky :data="weeklyReportList" :columns="columns" ref="table" :ui="{
-            th: 'p-0 w-1',
-            td: 'p-0'
-
-        }" v-model:pagination="pagination" :pagination-options="{
-            getPaginationRowModel: getPaginationRowModel()
-        }" empty="Sin registro semanal">
-
-
-        </UTable>
+        <div class="overflow-x-auto">
+            <UTable
+                sticky
+                :data="weeklyReportList"
+                :columns="columns"
+                ref="table"
+                :loading="attendance.summary.loading"
+                empty="Sin registro semanal"
+                :ui="{
+                    base: 'w-full',
+                    wrapper: 'max-h-[calc(100vh-350px)] overflow-y-auto relative',
+                    thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
+                    th: 'p-0 w-1',
+                    td: 'p-0',
+                    tbody: `
+                        [&>tr]:transition-colors
+                        [&>tr:hover]:bg-gray-50
+                        dark:[&>tr:hover]:bg-gray-900/50
+                    `,
+                }"
+            />
+        </div>
 
     </DataState>
 
     <!-- Info de registros -->
-    <div class="flex items-center justify-between p-4">
-
-        <div class="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando <span class="font-medium">{{ getStats().start }}</span> - <span class="font-medium">{{
-                getStats().end }}</span>
-            de <span class="font-medium">{{ getStats().total }}</span> registros
-        </div>
-        <div class="flex justify-end border-t border-default">
-            <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-                :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-                :total="table?.tableApi?.getFilteredRowModel().rows.length"
-                @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)" />
-        </div>
+    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="font-medium text-gray-900 dark:text-gray-100">{{ weeklyReportList.length }}</span>
+            {{ weeklyReportList.length === 1 ? 'registro' : 'registros' }}
+        </p>
     </div>
 
 </template>
@@ -43,15 +47,7 @@ import TableHeaderWeekGroup from './TableHeaderWeekGroup.vue';
 import TableCellWeekGroup from './TableCellWeekGroup.vue';
 
 import type { TableColumn } from '@nuxt/ui';
-import { getPaginationRowModel } from '@tanstack/vue-table';
-import { h, } from 'vue';
-
-const pagination = ref({
-    pageIndex: 0,
-    pageSize: 10
-})
-
-import { computed, ref } from 'vue';
+import { h, computed, ref } from 'vue';
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 import DataState from '~/components/common/DataState.vue';
 
@@ -60,30 +56,12 @@ const store = useAttendanceReportStore()
 const { getAttendanceSummary } = store;
 const { employee, week, attendance } = storeToRefs(store)
 
-
-
-
 const table = useTemplateRef('table')
 
 onMounted(() => {
     if (attendance.value.summary.list.length) return;
     getAttendanceSummary()
-},)
-
-
-const getStats = () => {
-    const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0;
-    const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10;
-    const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0;
-
-    const start = total === 0 ? 0 : pageIndex * pageSize + 1;
-    const end = Math.min((pageIndex + 1) * pageSize, total);
-    return {
-        total,
-        end,
-        start
-    }
-}
+})
 
 const weeklyReportList = computed(() => {
     let reportList: AttendanceSummary[] = attendance.value.summary.list;

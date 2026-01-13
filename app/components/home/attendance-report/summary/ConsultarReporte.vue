@@ -104,7 +104,6 @@ watch(
     const idSet = new Set(newCompanies);
     const newDepartments = departments.filter(dep => idSet.has(dep.company_id));
 
-
     // Remover departamentos seleccionados que no existen en la empresa nueva
     const validDepartmentIds = new Set(newDepartments.map(d => d.id));
     const selectedDepartmentIds = attendance.value.params.departamento_ids;
@@ -113,11 +112,8 @@ watch(
       validDepartmentIds.has(id)
     );
 
-    // Guardar la lista limpia
+    // Guardar la lista limpia (sin selección automática)
     attendance.value.params.departamento_ids = cleanedSelection;
-
-
-
   },
   { immediate: true }
 );

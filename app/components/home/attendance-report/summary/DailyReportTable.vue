@@ -2,32 +2,48 @@
     <DataState :error="attendance.details.isError" :loading="attendance.details.loading" @retry="getAttendanceDetails()"
         error-message="No se pudo cargar los detalles diarios">
 
-        <UTable ref="table" :data="dailyReportList" :columns="columns" v-model:pagination="pagination"
-            :pagination-options="{
-                getPaginationRowModel: getPaginationRowModel()
-            }" empty="Sin registro diario" />
+        <div class="overflow-x-auto">
+            <UTable
+                ref="table"
+                :data="dailyReportList"
+                :columns="columns"
+                :loading="attendance.details.loading"
+                empty="Sin registro diario"
+                :ui="{
+                    base: 'w-full',
+                    wrapper: 'max-h-[calc(100vh-350px)] overflow-y-auto relative',
+                    thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
+                    th: `
+                        px-4 py-3 text-left text-xs font-medium
+                        text-gray-500 dark:text-gray-400
+                        tracking-tight
+                    `,
+                    td: `
+                        px-4 py-3 text-sm
+                        text-gray-900 dark:text-gray-100
+                        border-b border-gray-100 dark:border-gray-900
+                    `,
+                    tbody: `
+                        [&>tr]:transition-colors
+                        [&>tr:hover]:bg-gray-50
+                        dark:[&>tr:hover]:bg-gray-900/50
+                    `,
+                }"
+            />
+        </div>
 
     </DataState>
-    <div class="flex items-center justify-between p-4">
-
-        <div class="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando <span class="font-medium">{{ getStats().start }}</span> - <span class="font-medium">{{
-                getStats().end }}</span>
-            de <span class="font-medium">{{ getStats().total }}</span> registros
-        </div>
-        <div class="flex justify-end border-t border-default">
-            <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-                :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-                :total="table?.tableApi?.getFilteredRowModel().rows.length"
-                @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)" />
-        </div>
+    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="font-medium text-gray-900 dark:text-gray-100">{{ dailyReportList.length }}</span>
+            {{ dailyReportList.length === 1 ? 'registro' : 'registros' }}
+        </p>
     </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/vue-table'
-import { h, resolveComponent } from 'vue'
+import { h, resolveComponent, computed, ref } from 'vue'
 import DataState from '~/components/common/DataState.vue'
 import { type AttendanceDetails } from '~/composables/useAttendanceReport'
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore'
@@ -36,14 +52,9 @@ const store = useAttendanceReportStore()
 const { getAttendanceDetails } = store
 const { employee, attendance } = storeToRefs(store)
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
-
 const table = useTemplateRef('table')
 
-
+// Filtrado optimizado con computed
 const dailyReportList = computed(() => {
   let reportList: AttendanceDetails[] = attendance.value.details.list
 
@@ -70,20 +81,6 @@ onMounted(() => {
     getAttendanceDetails()
   }
 })
-
-
-const getStats = () => {
-  const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0
-  const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10
-  const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0
-
-  return {
-    start: total === 0 ? 0 : pageIndex * pageSize + 1,
-    end: Math.min((pageIndex + 1) * pageSize, total),
-    total
-  }
-}
-
 
 const UBadge = resolveComponent('UBadge')
 const UIcon = resolveComponent('UIcon')
