@@ -159,6 +159,7 @@ import DataState from "~/components/common/DataState.vue";
 import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
 import { apiFetch } from '@/services/api'
 
+const config = useRuntimeConfig()
 const store = useAttendanceReportStore();
 const { getDailyTakenAttendances } = store;
 const { attendance } = storeToRefs(store);
@@ -211,7 +212,7 @@ const exportarExcel = async () => {
       throw new Error('Token no disponible')
     }
     const response = await fetch(
-      'http://127.0.0.1:8000/api/reporte-asistencia/marcacion',
+      `${config.public.apiBaseUrl}/api/reporte-asistencia/marcacion`,
       {
         method: 'POST',
         headers: {
