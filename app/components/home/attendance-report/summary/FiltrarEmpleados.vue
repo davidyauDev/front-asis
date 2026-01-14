@@ -20,23 +20,15 @@
     <DataState :loading="employee.department.loading" :error="employee.department.isError"
       :error-message="`No se pudieron cargar los empleados para ${departmentsByAttendanceParams.join(', ')}`"
       :show-retry="departmentsByAttendanceParams.length > 0" @retry="getEmployeesByDepartment()">
-
       <template #loading>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 max-h-48 overflow-y-auto"
           v-for="(_, i) in Array.from({ length: 3 })" :key="i">
           <USkeleton class="h-14" />
           <USkeleton class="h-14" />
-
         </div>
       </template>
-
-
-
       <div v-if="filteredEmployees.length" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 max-h-48 overflow-y-auto">
-
         <button @click="handleSelectEmployee(emp)" v-for="emp in filteredEmployees" :key="emp.id" class="w-full py-3 text-center cursor-pointer rounded-xl border border-gray-300
-       
-       
         transition font-medium " :class="{
           'bg-primary text-gray-700': hasEmployee(emp),
           'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-2': !hasEmployee(emp)
@@ -46,9 +38,7 @@
       </div>
       <UEmpty v-else icon="i-lucide-users" title="No se encontraron empleados"
         description="Parece que no has escogido un departamento o trata de ajustar la busqueda" />
-
     </DataState>
-
   </div>
 </template>
 
@@ -87,15 +77,11 @@ const selecteds = computed({
     employee.value.department.selecteds = value;
   }
 })
-
-
 onMounted(() => {
   // if (attendance.value.summary.list.length) return;
   if (employee.value.department.list.length) return;
   getEmployeesByDepartment()
 })
-
-
 
 const handleSelectEmployee = (newEmployee: Employee) => {
   if (hasEmployee(newEmployee)) {

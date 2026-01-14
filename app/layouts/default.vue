@@ -14,76 +14,59 @@ const toast = useToast()
 
 const open = ref(false)
 
-const links = [[{
-  label: 'Inicio',
-  icon: 'i-lucide-house',
+// Dashboard
+const dashboardLinks = [{
+  label: 'Dashboard',
+  icon: 'i-heroicons-home',
   to: '/',
-  onSelect: () => {
-    open.value = false
-  }
-},
-{
-  label: 'Seguimiento',
-  icon: 'i-lucide-map-pin',
-  to: '/seguimiento',
-  onSelect: () => {
-    open.value = false;
-  }
-},
-{
-  label: 'Movilidad',
-  icon: 'i-lucide-wallet',
-  to: '/movility-report',
-  onSelect: () => {
-    open.value = false;
-  }
-}
-,
-{
-  label: 'Incidencias',
-  icon: 'i-lucide-clock-alert',
-  to: '/incidencias',
-  onSelect: () => {
-    open.value = false;
-  }
-}
-,
+  onSelect: () => { open.value = false }
+}]
 
-{
-  label: 'Usuarios',
-  icon: 'i-lucide-users',
-  to: '/users',
-  onSelect: () => {
-    open.value = false
-  }
+// Gestión
+const managementLinks = [{
+  label: 'Seguimiento',
+  icon: 'i-heroicons-map-pin',
+  to: '/seguimiento',
+  onSelect: () => { open.value = false }
 }, {
-  label: 'Eventos Especiales',
-  icon: 'i-lucide-calendar-heart',
-  to: '/eventos',
-  onSelect: () => {
-    open.value = false
-  }
+  label: 'Usuarios',
+  icon: 'i-heroicons-user-group',
+  to: '/users',
+  onSelect: () => { open.value = false }
 }, {
   label: 'Rutas GPS',
-  icon: 'i-lucide-map',
+  icon: 'i-heroicons-map',
   to: '/rutas',
-  onSelect: () => {
-    open.value = false
-  }
-}
+  onSelect: () => { open.value = false }
+}]
 
-, {
-  label: 'Settings',
-  icon: 'i-lucide-settings',
-  to: '/rutas',
-  onSelect: () => {
-    open.value = false
-  }
-},
+// Reportes
+const reportLinks = [{
+  label: 'Incidencias',
+  icon: 'i-heroicons-exclamation-triangle',
+  to: '/incidencias',
+  onSelect: () => { open.value = false }
+}, {
+  label: 'Movilidad',
+  icon: 'i-heroicons-currency-dollar',
+  to: '/movility-report',
+  onSelect: () => { open.value = false }
+}, {
+  label: 'Eventos',
+  icon: 'i-heroicons-calendar',
+  to: '/eventos',
+  onSelect: () => { open.value = false }
+}]
 
+// Sistema
+const systemLinks = [{
+  label: 'Configuración',
+  icon: 'i-heroicons-cog-6-tooth',
+  to: '/settings',
+  onSelect: () => { open.value = false }
+}]
 
-
-]] satisfies NavigationMenuItem[][]
+const links = [dashboardLinks, managementLinks, reportLinks, systemLinks] satisfies NavigationMenuItem[][]
 
 const groups = computed(() => [{
   id: 'links',
@@ -127,6 +110,7 @@ onMounted(async () => {
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
+        <!-- Dashboard -->
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[0]"
@@ -135,11 +119,43 @@ onMounted(async () => {
           popover
         />
 
+        <UDivider class="my-2" />
+
+        <!-- Gestión -->
+        <div v-if="!collapsed" class="px-3 mb-1">
+          <p class="text-xs font-medium text-gray-500">Gestión</p>
+        </div>
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[1]"
           orientation="vertical"
           tooltip
+          popover
+        />
+
+        <UDivider class="my-2" />
+
+        <!-- Reportes -->
+        <div v-if="!collapsed" class="px-3 mb-1">
+          <p class="text-xs font-medium text-gray-500">Reportes</p>
+        </div>
+        <UNavigationMenu
+          :collapsed="collapsed"
+          :items="links[2]"
+          orientation="vertical"
+          tooltip
+          popover
+        />
+
+        <UDivider class="my-2" />
+
+        <!-- Sistema -->
+        <UNavigationMenu
+          :collapsed="collapsed"
+          :items="links[3]"
+          orientation="vertical"
+          tooltip
+          popover
           class="mt-auto"
         />
       </template>

@@ -332,6 +332,10 @@ watch([
     :usuarioNombre="usuarioNombreSeleccionado"
     @submit="async (...args) => { await guardarIncidencia(...args); await cargarIncidencias(); }"
   />
-  <HistoriaIncidencia v-model:isOpen="isHistorialOpen" :historialUser="valuetrackingIncidencia" />
+  <HistoriaIncidencia 
+    v-model:isOpen="isHistorialOpen" 
+    :historialUser="valuetrackingIncidencia"
+    @refetch="cargarIncidencias"
+  />
 
 </template>
