@@ -1,70 +1,88 @@
 <template>
-  <DataState :loading="attendances.loading" :error="attendances.isError" error-message="No se pudo cargar los reportes"
-    @retry="employeeType === EmployeeType.TECHNICIANS ? getTechTakenAttendances() : getAllTakenAttendances()">
-   <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 mb-4 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
-    <UInput icon="i-lucide-search" v-model="attendances.globalFilter" class="w-full sm:max-w-sm"
-      placeholder="Buscar por nombre, apellido o DNI..." />
+  <div>
+    <DataState :loading="attendances.loading" :error="attendances.isError" error-message="No se pudo cargar los reportes"
+      @retry="employeeType === EmployeeType.TECHNICIANS ? getTechTakenAttendances() : getAllTakenAttendances()">
+     
+     <!-- Header con búsqueda y exportar -->
+     <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div class="flex-1 max-w-md">
+          <UInput 
+            icon="i-heroicons-magnifying-glass" 
+            v-model="attendances.globalFilter" 
+            placeholder="Buscar empleado, DNI..."
+            size="md"
+          />
+        </div>
 
-      <UButton
-        variant="outline"
-        color="gray"
-        size="sm"
-        @click="exportarExcel"
-        :loading="exportando"
-        :disabled="exportando"
-        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-      >
-        <UIcon name="i-lucide-download" class="w-4 h-4 mr-2" />
-        {{ exportando ? 'Exportando...' : 'Exportar' }}
-      </UButton>
-      
-    </div>
-
-    <UTable  ref="table" :data="attendances.listFiltered" :columns="dinamicColumns" class="shrink-0" :ui="{
-      base: 'table-fixed border-separate border-spacing-0',
-      thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-      tbody: '[&>tr]:last:[&>td]:border-b-0',
-      th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-      td: 'border-b border-default'
-    }" v-model:pagination="attendances.pagination" :pagination-options="{
-      getPaginationRowModel: getPaginationRowModel()
-    }" />
-
-    <div class="flex items-center justify-between p-4">
-
-      <div class="text-sm text-gray-600 dark:text-gray-400">
-        Mostrando <span class="font-medium">{{ getStats().start }}</span> - <span class="font-medium">{{
-          getStats().end }}</span>
-        de <span class="font-medium">{{ getStats().total }}</span> registros
+        <UButton
+          color="primary"
+          variant="outline"
+          size="md"
+          @click="exportarExcel"
+          :loading="exportando"
+          :disabled="exportando"
+        >
+          <template #leading>
+            <UIcon name="i-heroicons-arrow-down-tray" class="w-4 h-4" />
+          </template>
+          {{ exportando ? 'Exportando...' : 'Exportar Excel' }}
+        </UButton>
       </div>
-      <div class="flex justify-end border-t border-default">
-        <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
+
+      <!-- Tabla -->
+      <div class="overflow-x-auto">
+        <UTable 
+          ref="table" 
+          :data="attendances.listFiltered" 
+          :columns="dinamicColumns" 
+          :ui="{
+            wrapper: 'relative',
+            base: 'min-w-full table-fixed',
+            divide: 'divide-y divide-gray-200 dark:divide-gray-800',
+            thead: 'bg-gray-50 dark:bg-gray-900/50',
+            tbody: 'divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900',
+            tr: {
+              base: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
+            },
+            th: {
+              base: 'px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider',
+              padding: 'px-4 py-3',
+              color: 'text-gray-700 dark:text-gray-300',
+              font: 'font-semibold',
+              size: 'text-xs'
+            },
+            td: {
+              base: 'px-4 py-3 text-sm text-gray-900 dark:text-gray-100',
+              padding: 'px-4 py-3',
+              color: 'text-gray-900 dark:text-gray-100',
+              font: 'font-normal',
+              size: 'text-sm'
+            }
+          }" 
+          v-model:pagination="attendances.pagination" 
+          :pagination-options="{
+            getPaginationRowModel: getPaginationRowModel()
+          }" 
+        />
+      </div>
+
+      <!-- Footer con paginación -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800">
+        <div class="text-sm text-gray-600 dark:text-gray-400">
+          Mostrando <span class="font-semibold text-gray-900 dark:text-gray-100">{{ getStats().start }}</span> - 
+          <span class="font-semibold text-gray-900 dark:text-gray-100">{{ getStats().end }}</span>
+          de <span class="font-semibold text-gray-900 dark:text-gray-100">{{ getStats().total }}</span> registros
+        </div>
+        
+        <UPagination 
+          :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
           :items-per-page="table?.tableApi?.getState().pagination.pageSize"
           :total="table?.tableApi?.getFilteredRowModel().rows.length"
-          @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)" />
+          @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)" 
+        />
       </div>
-    </div>
-  </DataState>
-
-
-  <ModalMap v-model:open="openModalMap"  :map-url="currentMap" />
-
-
-  <!-- Modal para ampliar imagen -->
-  <UModal :open="zoomImage" @update:open="(isOpen) => {
-    if (!isOpen) {
-      zoomImage = false;
-    }
-
-  }" title="Vista previa de la imagen">
-    <template #content>
-      <div class="flex justify-center items-center">
-        <img :src="showCurrentImage" alt="Imagen ampliada"
-          class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg border border-gray-300 dark:border-gray-700" />
-      </div>
-    </template>
-
-  </UModal>
+    </DataState>
+  </div>
 </template>
 
 
@@ -74,9 +92,6 @@ import { getPaginationRowModel } from '@tanstack/vue-table';
 import { h, ref, resolveComponent } from 'vue';
 import DataState from '~/components/common/DataState.vue';
 import { EmployeeType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
-import ModalMap from './ModalMap.vue';
-import { apiFetch } from '@/services/api'
-
 
 const store = useAttendanceReportStore();
 const { getAllTakenAttendances, getTechTakenAttendances } = store;
@@ -98,7 +113,6 @@ const exportarExcel = async () => {
     title: 'Preparando exportación',
     description: 'Generando archivo Excel...',
     icon: 'i-lucide-loader-2',
-    timeout: 0,
   })
 
   try {
@@ -146,8 +160,7 @@ const exportarExcel = async () => {
       title: 'Descarga completa',
       description: 'El archivo se descargó correctamente',
       icon: 'i-lucide-check-circle',
-      color: 'green',
-      timeout: 3000,
+      color: 'success',
     })
 
   } catch (error) {
@@ -157,8 +170,7 @@ const exportarExcel = async () => {
       title: 'Error al exportar',
       description: 'No se pudo generar el archivo Excel',
       icon: 'i-lucide-alert-circle',
-      color: 'red',
-      timeout: 5000,
+      color: 'error',
     })
   } finally {
     exportando.value = false
@@ -187,15 +199,16 @@ const UButton = resolveComponent('UButton');
 const sortColumButton = (column: any, label: string) => {
   const isSorted = column.getIsSorted();
   return h(UButton, {
-    color: 'neutral',
+    color: 'gray',
     variant: 'ghost',
     label,
     icon: isSorted
       ? isSorted === 'asc'
-        ? 'i-lucide-arrow-up-narrow-wide'
-        : 'i-lucide-arrow-down-wide-narrow'
-      : 'i-lucide-arrow-up-down',
-    class: '-mx-2.5',
+        ? 'i-heroicons-arrow-up'
+        : 'i-heroicons-arrow-down'
+      : 'i-heroicons-arrows-up-down',
+    size: 'xs',
+    class: 'font-semibold',
     onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
   })
 }
@@ -256,23 +269,37 @@ const columns: TableColumn<TakenAttendace>[] = [
 
 const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
   accessorKey: 'Tipo_Marcacion',
-  header: ({ column }) => sortColumButton(column, 'Tipo de marcación'),
+  header: ({ column }) => sortColumButton(column, 'Tipo'),
   cell: ({ row }) => {
     const value = row.getValue('Tipo_Marcacion');
+    const isEntry = parseInt(value as string) === 0;
 
-    if (parseInt(value) === 0) return 'Entrada';
-    if (parseInt(value) === 1) return 'Salida';
-    return 'Otro';
+    return h(
+      'span',
+      {
+        class: `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+          isEntry 
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+        }`
+      },
+      [
+        h('span', { 
+          class: `w-1.5 h-1.5 rounded-full ${isEntry ? 'bg-green-500' : 'bg-blue-500'}` 
+        }),
+        isEntry ? 'Entrada' : 'Salida'
+      ]
+    );
   }
 }
 , {
   accessorKey: 'Fecha_Hora_Marcacion',
-  header: ({ column }) => sortColumButton(column, 'Fecha y hora de marcación'),
+  header: ({ column }) => sortColumButton(column, 'Fecha/Hora'),
   cell: ({ row }) => {
     const raw = row.getValue('Fecha_Hora_Marcacion');
-    if (!raw) return 'Sin fecha';
+    if (!raw) return h('span', { class: 'text-xs text-gray-400 italic' }, 'Sin fecha');
 
-    const date = new Date(raw);
+    const date = new Date(raw as string);
 
     const fecha = new Intl.DateTimeFormat('es-PE', {
       day: '2-digit',
@@ -286,8 +313,8 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
       timeZone: 'America/Lima'
     }).format(date);
 
-    return h('div', { class: 'flex flex-col leading-tight' }, [
-      h('span', { class: 'text-base font-semibold text-gray-900 dark:text-gray-100' }, hora),
+    return h('div', { class: 'flex flex-col gap-0.5' }, [
+      h('span', { class: 'text-sm font-semibold text-gray-900 dark:text-gray-100' }, hora),
       h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, fecha)
     ]);
   }
@@ -308,14 +335,7 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
     return h(
       'div',
       {
-        class: `
-          max-w-[220px]
-          truncate
-          text-sm
-          text-gray-700
-          dark:text-gray-300
-          cursor-help
-        `,
+        class: 'max-w-[220px] truncate text-sm text-gray-700 dark:text-gray-300',
         title: value
       },
       value
@@ -327,16 +347,20 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
   header: "Mapa",
   cell: ({ row }) => {
     const mapUlr = row.getValue('map_url') as string | null;
-    if (!mapUlr) return "Sin Mapa"
+    if (!mapUlr) {
+      return h('span', { class: 'text-xs text-gray-400 italic' }, 'Sin mapa');
+    }
     return h(UButton, {
-    class: 'cursor-pointer',
-    icon: 'i-lucide-map',
-    onClick: (e: Event) => {
-      e.stopPropagation()
-      openModalMap.value = true;
-      currentMap.value = mapUlr;
-    },
-  }, () => 'Ver')
+      color: 'primary',
+      variant: 'soft',
+      size: 'xs',
+      icon: 'i-heroicons-map-pin',
+      onClick: (e: Event) => {
+        e.stopPropagation()
+        openModalMap.value = true;
+        currentMap.value = mapUlr;
+      },
+    }, () => 'Ver mapa')
   }
 }, {
   accessorKey: 'Imagen',
@@ -347,51 +371,47 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
     if (image) {
       return h('img', {
         src: image,
-        alt: 'Imagen de asistencia',
-        class: 'w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer',
+        alt: 'Foto de asistencia',
+        class: 'w-14 h-14 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer hover:border-primary-500 transition-colors shadow-sm',
         onClick: (e: Event) => {
           e.stopPropagation()
           zoomImage.value = true;
           showCurrentImage.value = image as any;
-          // openImageModal(image)
         }
       })
     }
 
-    // fallback
     return h('span', {
-      class: 'text-xs text-gray-500 dark:text-gray-400'
-    }, 'Sin imagen')
+      class: 'text-xs text-gray-400 italic'
+    }, 'Sin foto')
   }
 }]))
 
 const administratorsColumns = computed<TableColumn<TakenAttendace>[]>(() => [
-  
   {
-  accessorKey: 'Fecha_Hora_Marcacion',
-  header: ({ column }) => sortColumButton(column, 'Fecha y hora de marcación'),
-  cell: ({ row }) => {
-    const raw = row.getValue('Fecha_Hora_Marcacion');
-    if (!raw) return 'Sin fecha';
+    accessorKey: 'Fecha_Hora_Marcacion',
+    header: ({ column }) => sortColumButton(column, 'Fecha/Hora'),
+    cell: ({ row }) => {
+      const raw = row.getValue('Fecha_Hora_Marcacion');
+      if (!raw) return h('span', { class: 'text-xs text-gray-400 italic' }, 'Sin fecha');
 
-    const date = new Date(raw);
+      const date = new Date(raw as string);
 
-    const fecha = new Intl.DateTimeFormat('es-PE', {
-      dateStyle: 'long',
-      timeZone: 'America/Lima'
-    }).format(date);
+      const fecha = new Intl.DateTimeFormat('es-PE', {
+        dateStyle: 'medium',
+        timeZone: 'America/Lima'
+      }).format(date);
 
-    const hora = new Intl.DateTimeFormat('es-PE', {
-      timeStyle: 'short',
-      timeZone: 'America/Lima'
-    }).format(date);
+      const hora = new Intl.DateTimeFormat('es-PE', {
+        timeStyle: 'short',
+        timeZone: 'America/Lima'
+      }).format(date);
 
-    return h('div', { class: 'flex flex-col leading-tight' }, [
-      h('span', { class: 'text-sm font-medium text-gray-800 dark:text-gray-200' }, fecha),
-      h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, hora)
-    ]);
-  }
-},
-  
+      return h('div', { class: 'flex flex-col gap-0.5' }, [
+        h('span', { class: 'text-sm font-semibold text-gray-900 dark:text-gray-100' }, fecha),
+        h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, hora)
+      ]);
+    }
+  },
 ]);
 </script>

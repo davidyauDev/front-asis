@@ -1,51 +1,100 @@
 <template>
   <UDashboardPanel id="home">
     <template #header>
-      <UDashboardNavbar title="Reporte Asistencia General" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UDashboardSidebarCollapse />
+          <div class="flex items-center gap-3">
+            <UDashboardSidebarCollapse />
+            <div class="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-800">
+              <div class="hidden sm:flex items-center gap-2">
+                <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+                  <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h1 class="text-base font-semibold text-gray-900 dark:text-white">
+                    Reporte de Asistencia
+                  </h1>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <UIcon name="i-heroicons-calendar" class="w-3 h-3" />
+                    {{ fechaFormateada }}
+                  </p>
+                </div>
+              </div>
+              <h1 class="sm:hidden text-base font-semibold text-gray-900 dark:text-white">
+                Reportes
+              </h1>
+            </div>
+          </div>
         </template>
 
         <template #right>
-          <UTooltip text="Usuarios sin asistencia completa" :shortcuts="['N']">
-            <UButton color="neutral" variant="ghost" square @click="isNotificationsSlideoverOpen = true">
-              <UChip color="error" inset>
-                <UIcon name="i-lucide-bell" class="size-5 shrink-0 animate-ring" />
-              </UChip>
-            </UButton>
-          </UTooltip>
+          <div class="flex items-center gap-2">
+            <!-- Indicador de sincronización -->
+            <UTooltip text="Datos actualizados">
+              <div class="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                <span class="text-xs font-medium text-green-700 dark:text-green-400">En vivo</span>
+              </div>
+            </UTooltip>
 
-          <UDropdownMenu :items="items">
-            <UButton icon="i-lucide-plus" size="md" class="rounded-full" />
-          </UDropdownMenu>
+            <!-- Notificaciones -->
+            <UTooltip text="Usuarios sin asistencia completa" :shortcuts="['N']">
+              <UButton 
+                color="gray" 
+                variant="ghost" 
+                square 
+                @click="isNotificationsSlideoverOpen = true" 
+                class="relative group"
+              >
+                <div class="relative">
+                  <UIcon name="i-heroicons-bell" class="w-5 h-5 animate-ring text-gray-600 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
+                  
+                  <!-- Contador badge -->
+                  <div class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 bg-red-500 text-white text-[9px] font-semibold rounded-full flex items-center justify-center shadow-md border border-white dark:border-gray-900">
+                    5
+                  </div>
+                </div>
+              </UButton>
+            </UTooltip>
+          </div>
         </template>
       </UDashboardNavbar>
 
       <UDashboardToolbar>
-        <UTabs v-model="currentTabType" :items="tabItems" :orientation="width < 500 ? 'vertical' : 'horizontal'"
-          class="flex-1 flex justify-center mt-2" :ui="{
-            list: 'flex gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-800',
+        <UTabs 
+          v-model="currentTabType" 
+          :items="tabItems" 
+          :orientation="width < 500 ? 'vertical' : 'horizontal'"
+          class="flex-1 flex justify-center mt-2" 
+          :ui="{
+            list: 'flex gap-2 p-1.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800',
             item: {
-              base: 'px-4 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-colors focus:outline-none',
-              active: 'tab-active-custom text-white dark:bg-white dark:text-black',
-              inactive: 'bg-transparent text-gray-600 dark:text-gray-400'
+              base: 'px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all focus:outline-none flex items-center gap-2',
+              active: 'bg-primary-600 text-white shadow-md dark:bg-primary-600',
+              inactive: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             },
             marker: 'hidden'
-          }" />
+          }" 
+        />
       </UDashboardToolbar>
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
-        <UTabs :items="employeeItems" class="flex-1 flex justify-center" v-model="currentEmployeeType"
+        <UTabs 
+          :items="employeeItems" 
+          class="flex-1 flex justify-center" 
+          v-model="currentEmployeeType"
           @update:model-value="(value) => {
             currentEmployeeType = value as EmployeeType
-          }" :ui="{
-            list: 'flex gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-800',
+          }" 
+          :ui="{
+            list: 'flex gap-2 p-1.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800',
             item: {
-              base: 'px-4 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-colors focus:outline-none',
-              active: 'tab-active-custom text-white dark:bg-white dark:text-black',
-              inactive: 'bg-transparent text-gray-600 dark:text-gray-400'
+              base: 'px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all focus:outline-none flex items-center gap-2',
+              active: 'bg-primary-600 text-white shadow-md dark:bg-primary-600',
+              inactive: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             },
             marker: 'hidden'
-          }">
+          }"
+        >
         </UTabs>
       </UDashboardToolbar>
 
@@ -106,16 +155,19 @@ onMounted(getTakenAttendances)
 
 const tabItems: TabsItem[] = [
   {
-    label: fechaFormateada,
-    value: ItemType.TODAY
+    label: "Hoy",
+    value: ItemType.TODAY,
+    icon: "i-heroicons-calendar-days"
   },
   {
-    label: "Reporte de asistencia",
+    label: "Reporte Mensual",
     value: ItemType.TECHNICIANS,
-
-  }, {
-    label: "Reporte de asistencia de administrativos",
-    value: ItemType.ADMINISTRATORS
+    icon: "i-heroicons-chart-bar-square"
+  }, 
+  {
+    label: "Administrativos",
+    value: ItemType.ADMINISTRATORS,
+    icon: "i-heroicons-user-group"
   }
 ]
 
@@ -123,10 +175,12 @@ const employeeItems: TabsItem[] = [
   {
     label: "Técnicos",
     value: EmployeeType.TECHNICIANS,
-
-  }, {
+    icon: "i-heroicons-wrench-screwdriver"
+  }, 
+  {
     label: "Todos",
-    value: EmployeeType.ALL
+    value: EmployeeType.ALL,
+    icon: "i-heroicons-users"
   }
 ]
 

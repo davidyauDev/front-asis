@@ -2,25 +2,67 @@
 <template>
     <UDashboardPanel id="seguimiento">
        <template #header>
-      <UDashboardNavbar title="Seguimiento" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UDashboardSidebarCollapse />
+          <div class="flex items-center gap-3">
+            <UDashboardSidebarCollapse />
+            <div class="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-800">
+              <div class="hidden sm:flex items-center gap-2">
+                <div class="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <UIcon name="i-heroicons-map-pin" class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <h1 class="text-base font-semibold text-gray-900 dark:text-white">
+                    Seguimiento de Técnicos
+                  </h1>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <UIcon name="i-heroicons-signal" class="w-3 h-3" />
+                    Monitoreo en tiempo real
+                  </p>
+                </div>
+              </div>
+              <h1 class="sm:hidden text-base font-semibold text-gray-900 dark:text-white">
+                Seguimiento
+              </h1>
+            </div>
+          </div>
+        </template>
+
+        <template #right>
+          <div class="flex items-center gap-2">
+            <!-- Indicador de sincronización -->
+            <UTooltip text="Datos actualizados">
+              <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-pulse"></div>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">En vivo</span>
+              </div>
+            </UTooltip>
+
+            <!-- Notificaciones -->
+            <UTooltip text="Técnicos sin marcación">
+              <UButton 
+                color="gray" 
+                variant="ghost" 
+                square 
+                class="relative group"
+              >
+                <div class="relative">
+                  <UIcon name="i-heroicons-bell" class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
+                  
+                  <!-- Contador badge -->
+                  <div class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 text-[9px] font-medium rounded-full flex items-center justify-center border border-white dark:border-gray-900">
+                    3
+                  </div>
+                </div>
+              </UButton>
+            </UTooltip>
+          </div>
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-         <div class="p-6">
-        <header class="mb-6">
-            <div class="mb-6">
-                <h1 class="text-2xl font-medium text-gray-950 dark:text-gray-50 mb-2">
-                    Seguimiento de Técnicos
-                </h1>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Monitorea en tiempo real el estado, actividad diaria y cumplimiento de asistencia
-                </p>
-            </div>
-            
+         <div class="p-2">
             <div class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200/60 dark:border-gray-800/60 p-5 mb-6 shadow-sm">
                 <div class="flex flex-wrap gap-2 items-center">
                     <div class="relative flex-1 min-w-[300px]">
@@ -182,8 +224,6 @@
                     </button>
                 </div>
             </div>
-
-        </header>
 
         <section>
             <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
