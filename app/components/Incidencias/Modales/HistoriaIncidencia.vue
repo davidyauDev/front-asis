@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { apiFetch } from '~/services/api';
-
 const open = defineModel<boolean>("isOpen");
-
-const props = defineProps<{
-  historialUser: any
-}>();
-
+const props = defineProps<{ historialUser: any }>();
 const emit = defineEmits(['refetch']);
-
 const toast = useToast();
 const editandoId = ref<string | null>(null);
 const valorEdicion = ref('');
@@ -17,8 +11,13 @@ const motivoEdicion = ref('');
 const eliminandoId = ref<string | null>(null);
 
 const iniciarEdicion = (fecha: string, dia: any) => {
-  editandoId.value = fecha;
-  valorEdicion.value = dia.valor;
+  editandoId.value = dia.id;
+  if (typeof dia.valor === 'string' && /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(dia.valor)) {
+    const [hh, mm] = dia.valor.split(':').map(Number);
+    valorEdicion.value = String(hh * 60 + mm);
+  } else {
+    valorEdicion.value = dia.valor ? String(dia.valor) : '';
+  }
   motivoEdicion.value = dia.motivo || '';
 };
 
@@ -29,13 +28,21 @@ const cancelarEdicion = () => {
 };
 
 const guardarEdicion = async (fecha: string) => {
+  const minutosInt = valorEdicion.value ? parseInt(valorEdicion.value, 10) : undefined;
+  if (!minutosInt || isNaN(minutosInt) || minutosInt < 1) {
+    toast.add({
+      title: 'Error',
+      description: 'El campo minutos es obligatorio y debe ser mayor a 0.',
+      color: 'error'
+    });
+    return;
+  }
   try {
-    await apiFetch(`/api/incidencias/${props.historialUser.id}`, {
-      method: 'PUT',
+    await apiFetch(`/api/incidencias/${editandoId.value}` , {
+      method: 'PATCH',
       body: JSON.stringify({
-        fecha,
-        tipo: valorEdicion.value,
-        motivo: motivoEdicion.value
+        motivo: motivoEdicion.value,
+        minutos: minutosInt
       })
     });
 
@@ -46,6 +53,7 @@ const guardarEdicion = async (fecha: string) => {
     });
 
     editandoId.value = null;
+    open.value = false;
     emit('refetch');
   } catch (error) {
     console.error('Error al editar incidencia:', error);
@@ -61,19 +69,22 @@ const confirmarEliminacion = (fecha: string) => {
   eliminandoId.value = fecha;
 };
 
-const eliminarIncidencia = async (fecha: string) => {
+const eliminarIncidencia = async (id: string) => {
   try {
-    await apiFetch(`/api/incidencias/${props.historialUser.id}/${fecha}`, {
+    await apiFetch(`/api/incidencias/${id}`, {
       method: 'DELETE'
     });
 
     toast.add({
-      title: 'Incidencia eliminada',
-      description: 'El registro se eliminó correctamente',
-      color: 'success'
+      title: '¡Incidencia eliminada!',
+      description: 'La incidencia fue eliminada exitosamente.',
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+      timeout: 3500
     });
 
     eliminandoId.value = null;
+    open.value = false;
     emit('refetch');
   } catch (error) {
     console.error('Error al eliminar incidencia:', error);
@@ -84,9 +95,7 @@ const eliminarIncidencia = async (fecha: string) => {
     });
   }
 };
-
 </script>
-
 
 <template>
   <UModal
@@ -126,7 +135,7 @@ const eliminarIncidencia = async (fecha: string) => {
         >
           <!-- Modo normal -->
           <div 
-            v-if="editandoId !== fecha" 
+            v-if="editandoId !== dia.id" 
             class="flex items-center justify-between px-3 py-2 rounded-md border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
           >
             <div class="flex-1 min-w-0">
@@ -150,7 +159,7 @@ const eliminarIncidencia = async (fecha: string) => {
               <div class="flex items-center gap-0.5">
                 <UButton
                   size="xs"
-                  color="gray"
+                  color="primary"
                   variant="ghost"
                   icon="i-heroicons-pencil-square"
                   square
@@ -170,17 +179,19 @@ const eliminarIncidencia = async (fecha: string) => {
           </div>
 
           <!-- Modo edición -->
-          <div v-else class="px-3 py-3 rounded-md border-2 border-blue-200 bg-blue-50/50">
+          <div v-else-if="editandoId === dia.id" class="px-3 py-3 rounded-md border-2 border-blue-200 bg-blue-50/50">
             <div class="space-y-2">
               <p class="text-xs font-medium text-gray-700">{{ fecha }}</p>
 
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="block text-xs text-gray-600 mb-1">Tipo</label>
+                  <label class="block text-xs text-gray-600 mb-1">Minutos</label>
                   <UInput
                     v-model="valorEdicion"
                     size="sm"
-                    placeholder="F, DM, V..."
+                    type="number"
+                    min="1"
+                    placeholder="Ej: 20"
                     class="font-mono text-xs"
                   />
                 </div>
@@ -215,23 +226,32 @@ const eliminarIncidencia = async (fecha: string) => {
             </div>
           </div>
 
-          <!-- Confirmación de eliminación -->
-          <div v-if="eliminandoId === fecha" class="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center rounded-md border-2 border-red-200">
-            <div class="text-center px-4">
-              <p class="text-sm font-medium text-gray-900 mb-2">¿Eliminar?</p>
-              <div class="flex items-center gap-2 justify-center">
+          <!-- Confirmación de eliminación mejorada -->
+          <div v-if="eliminandoId === fecha" class="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center rounded-md border-2 border-red-200 z-10">
+            <div class="text-center px-6 py-6 bg-white rounded-xl shadow-lg border border-red-100 flex flex-col items-center gap-3">
+              <span class="text-red-500">
+                <i class="i-heroicons-exclamation-triangle w-10 h-10"></i>
+              </span>
+              <p class="text-base font-semibold text-gray-900">¿Estás seguro de eliminar esta incidencia?</p>
+              <p class="text-xs text-gray-500 mb-2">Esta acción no se puede deshacer.</p>
+              <div class="flex items-center gap-3 justify-center mt-2">
                 <UButton
-                  size="xs"
-                  color="red"
-                  @click="eliminarIncidencia(fecha)"
+                  size="sm"
+                  color="error"
+                  :loading="eliminandoId === 'loading'"
+                  :disabled="eliminandoId === 'loading'"
+                  @click="async () => { eliminandoId = 'loading'; await eliminarIncidencia(dia.id); }"
+                  icon="i-heroicons-trash"
                 >
-                  Confirmar
+                  Sí, eliminar
                 </UButton>
                 <UButton
-                  size="xs"
-                  color="gray"
-                  variant="ghost"
+                  size="sm"
+                  color="neutral"
+                  variant="outline"
+                  :disabled="eliminandoId === 'loading'"
                   @click="eliminandoId = null"
+                  icon="i-heroicons-x-mark"
                 >
                   Cancelar
                 </UButton>
