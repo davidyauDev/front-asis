@@ -8,19 +8,31 @@ const añoSeleccionado = ref(hoy.getFullYear());
 const filaSeleccionada = ref<number | null>(null);
 const filaRef = ref<HTMLElement | null>(null);
 const filtroUsuario = ref("");
+const exportando = ref(false)
+// Referencias a los componentes hijos
+const tablaIncidenciasRef = ref<InstanceType<typeof TablaIncidencias> | null>(null);
+const tablaCalculoRef = ref<InstanceType<typeof TablaCalculo> | null>(null);
 
 watch(filaSeleccionada, async () => {
   await nextTick();
   filaRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
-function descargarExcel() {
-  console.log("Descargar Excel", {
-    tab: tabActivo.value,
-    mes: mesSeleccionado.value,
-    año: añoSeleccionado.value,
-    filtro: filtroUsuario.value,
-  });
+async function descargarExcel() {
+  if (exportando.value) return; // Evitar múltiples clics
+  
+  exportando.value = true;
+  try {
+    if (tabActivo.value === 'incidencias' && tablaIncidenciasRef.value) {
+      await tablaIncidenciasRef.value.descargarExcel();
+    } else if (tabActivo.value === 'calculo' && tablaCalculoRef.value) {
+      await tablaCalculoRef.value.descargarExcel();
+    }
+  } catch (error) {
+    console.error('Error al descargar Excel:', error);
+  } finally {
+    exportando.value = false;
+  }
 }
 
 function enviarCorreosMasivos() {
@@ -124,8 +136,6 @@ function enviarCorreosMasivos() {
             </button>
           </div>
         </div>
-        <!-- FILTROS -->
-        <!-- FILTER BAR -->
         <div
           class="px-4 py-3 bg-white border-y border-slate-200 flex items-center justify-between gap-4 flex-wrap"
         >
@@ -200,27 +210,21 @@ function enviarCorreosMasivos() {
           <!-- DERECHA: acciones -->
           <div class="flex items-center gap-2 pl-4 border-slate-200">
             <!-- DESCARGAR EXCEL (acción secundaria) -->
-            <UButton
-              color="success"
-              variant="outline"
-              icon="i-heroicons-arrow-down-tray"
-              class="text-slate-700 border-slate-300 hover:bg-slate-50"
-              @click="descargarExcel"
-            >
-              Excel
-            </UButton>
 
-            <!-- ENVIAR CORREOS (acción principal, solo cálculo) -->
             <UButton
-              v-if="tabActivo === 'calculo'"
-              color="primary"
-              variant="soft"
-              icon="i-heroicons-envelope"
-              class="font-medium"
-              @click="enviarCorreosMasivos"
-            >
-              Enviar correos
-            </UButton>
+        variant="outline"
+        color="gray"
+        size="sm"
+        @click="descargarExcel"
+        :loading="exportando"
+        :disabled="exportando"
+        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      >
+        <UIcon name="i-lucide-download" class="w-4 h-4 mr-2" />
+        {{ exportando ? 'Exportando...' : 'Exportar' }}
+      </UButton>
+           
+          
           </div>
         </div>
 
@@ -230,6 +234,7 @@ function enviarCorreosMasivos() {
           class="overflow-x-auto rounded-lg shadow"
         >
           <TablaIncidencias
+            ref="tablaIncidenciasRef"
             :filtro-usuario="filtroUsuario"
             :mes-seleccionado="mesSeleccionado"
             :año-seleccionado="añoSeleccionado"
@@ -239,6 +244,7 @@ function enviarCorreosMasivos() {
         <!-- CALCULO -->
         <div v-if="tabActivo === 'calculo'" class="space-y-4">
           <TablaCalculo
+            ref="tablaCalculoRef"
             :mes-seleccionado="mesSeleccionado"
             :año-seleccionado="añoSeleccionado"
             :filtro-usuario="filtroUsuario"

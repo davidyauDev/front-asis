@@ -126,8 +126,12 @@ const guardarIncidencia = async (formIncidencia: FormIncidencia) => {
 const cargarIncidencias = async () => {
   cargando.value = true;
   try {
-    const response = await apiFetch(`/api/incidencias?mes=${props.mesSeleccionado}&anio=${props.añoSeleccionado}`, {
-      method: 'GET',
+    const response = await apiFetch('/api/incidencias', {
+      method: 'POST',
+      body: JSON.stringify({
+        mes: props.mesSeleccionado,
+        anio: props.añoSeleccionado
+      })
     });
     datosEmpleados.value = response;
   } catch (error) {
@@ -154,6 +158,93 @@ const verTracking = (emp: Empleado) => {
   valuetrackingIncidencia.value = emp;
 };
 
+const descargarExcel = async () => {
+  try {
+    const config = useRuntimeConfig();
+    const token = useCookie<string | null>('auth_token');
+    
+    if (!token.value) {
+      toast.add({
+        title: 'Error',
+        description: 'No hay token de autenticación',
+        color: 'error'
+      });
+      return;
+    }
+
+    toast.add({
+      id: 'exportando-incidencias',
+      title: 'Preparando exportación',
+      description: 'Generando archivo Excel...',
+      icon: 'i-lucide-loader-2',
+      timeout: 0
+    });
+
+    const body = {
+      mes: props.mesSeleccionado,
+      anio: props.añoSeleccionado,
+      descargar: true
+    };
+
+    const response = await fetch(
+      `${config.public.apiBaseUrl}/api/incidencias`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token.value}`,
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `incidencias_${props.mesSeleccionado}_${props.añoSeleccionado}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    toast.remove('exportando-incidencias');
+    toast.add({
+      title: 'Descarga completa',
+      description: 'El archivo se descargó correctamente',
+      icon: 'i-lucide-check-circle',
+      color: 'green',
+      timeout: 3000
+    });
+  } catch (error: any) {
+    console.error('Error al descargar Excel:', error);
+    toast.remove('exportando-incidencias');
+    
+    let errorTitle = 'Error al exportar';
+    let errorDescription = 'No se pudo generar el archivo Excel';
+
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      errorTitle = '🔌 Servidor no disponible';
+      errorDescription = 'No se puede conectar con el backend. Verifica que esté corriendo.';
+    } else if (error.message.includes('HTTP')) {
+      errorTitle = 'Error del servidor';
+      errorDescription = error.message;
+    }
+
+    toast.add({
+      title: errorTitle,
+      description: errorDescription,
+      icon: 'i-lucide-alert-circle',
+      color: 'red',
+      timeout: 8000
+    });
+  }
+};
 
 watch(filaSeleccionada, async () => {
   await nextTick();
@@ -169,6 +260,11 @@ watch([
   () => props.mesSeleccionado,
   () => props.añoSeleccionado
 ], cargarIncidencias);
+
+// Exponer la función para que el padre pueda llamarla
+defineExpose({
+  descargarExcel
+});
 </script>
 
 <template>
