@@ -124,16 +124,7 @@
                                 class="border border-gray-200/80 dark:border-gray-800/80 rounded-md px-3 py-2.5 bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-gray-300 dark:hover:border-gray-700" />
                         </div>
 
-                        <button
-                            class="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow"
-                            @click="generarReporte">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span>Exportar</span>
-                        </button>
+                       
 
                         <button @click="recargarDatos" :disabled="isLoading"
                             class="border border-gray-200/80 dark:border-gray-800/80 bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium shadow-sm"
@@ -360,8 +351,8 @@
                                                 <!-- Badge que muestra si existe daily_record (click para ver modal) -->
                                                 <button v-if="getDailyRecord(tecnicoData)"
                                                     @click.stop="viewDailyRecord(tecnicoData)"
-                                                    class="ml-2 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-medium rounded-md">
-                                                    Registro
+                                                    :class="`ml-2 px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnicoData)).color}`">
+                                                    {{ getConceptBadge(getDailyRecord(tecnicoData)).text }}
                                                 </button>
 
                                                 <button v-if="shouldShowValidar(tecnicoData)"
@@ -391,17 +382,7 @@
                                                 <!-- Mostrar daily_record si existe y no hay marcación -->
                                                 <div v-if="getDailyRecord(tecnicoData) && (esObjetoSinMarcacion(tecnicoData.iclock_transactions) || (Array.isArray(tecnicoData.iclock_transactions) && tecnicoData.iclock_transactions.length === 0))"
                                                     class="flex items-center gap-2">
-                                                    <button @click.stop="toggleDailyRecord(tecnicoData)"
-                                                        class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-xs text-gray-700 dark:text-gray-300">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            class="h-4 w-4 inline-block mr-1" fill="none"
-                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M13 16h-1v-4h-1m1-4h.01M12 20h.01" />
-                                                        </svg>
-                                                        Registro
-                                                    </button>
+                                                   
                                                     <div v-if="showDailyRecord[getKeyForTecnico(tecnicoData)]"
                                                         class="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs w-full border border-gray-200/60 dark:border-gray-800/60">
                                                         <pre
@@ -689,7 +670,7 @@
                 </section>
             </div>
             <ValidationModal v-model:show="showValidationModal" :tecnico="validationTarget"
-                @submit="onValidationSubmit" />
+                :loading="validationLoading" @submit="onValidationSubmit" />
 
             <!-- Modal ligero para mostrar daily_record -->
             <div v-if="showDailyModal" class="fixed inset-0 z-50 flex items-center justify-center">
@@ -838,6 +819,7 @@ const enviarWhatsApp = (tecnicoData: any) => {
 // Modal de validación
 const showValidationModal = ref(false)
 const validationTarget = ref<any | null>(null)
+const validationLoading = ref(false)
 
 const validarRuta = (tecnicoData: any) => {
     validationTarget.value = tecnicoData
@@ -922,6 +904,30 @@ const formatDailyRecord = (dr: any) => {
     }
 }
 
+const getConceptBadge = (dailyRecord: any) => {
+    if (!dailyRecord || !dailyRecord.concept_id) {
+        return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
+    }
+    
+    const conceptId = dailyRecord.concept_id
+    
+    switch(conceptId) {
+        case 1: // Asistencia
+            return { text: 'Asistencia', color: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' }
+        case 2: // Vacaciones (V)
+            return { text: 'Vacaciones', color: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' }
+        case 3: // Descanso Médico (DM)
+            return { text: 'Descanso Médico', color: 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' }
+        case 4: // Sin Ruta (SR)
+            return { text: 'Sin Ruta', color: 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' }
+        case 5: // No Marcó (NM)
+            return { text: 'No Marcó', color: 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300' }
+        case 6: // Cese (X)
+            return { text: 'Cese', color: 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300' }
+        default:
+            return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
+    }
+}
 
 const conceptoMap: Record<string, number> = {
     asistencia: 1,        // 1
@@ -933,6 +939,7 @@ const conceptoMap: Record<string, number> = {
 }
 
 const onValidationSubmit = async (payload: { motivo: string; comentario?: string }) => {
+    validationLoading.value = true
     try {
         const usuario = validationTarget.value?.usuario || validationTarget.value || {}
         const employee_id = usuario.id || null
@@ -1003,15 +1010,15 @@ const onValidationSubmit = async (payload: { motivo: string; comentario?: string
             })
         }
 
+        // Simular delay para mejor UX
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         showValidationModal.value = false
         validationTarget.value = null
-        // recargar en background para sincronizar con backend
-        cargarDatos()
-        alert('Validación registrada correctamente')
+        validationLoading.value = false
     } catch (err: any) {
+        validationLoading.value = false
         console.error('Error al registrar concepto del empleado:', err)
-        // mantener modal abierto para reintento
-        alert(err?.message || 'Error al validar la asistencia')
     }
 }
 
