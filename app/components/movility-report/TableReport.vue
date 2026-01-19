@@ -189,6 +189,7 @@
 import { apiFetch } from '~/services/api';
 import DetailModal from './DetailModal.vue';
 
+const toast = useToast();
 const datosMoilityReports = ref([])
 const isLoading = ref(true)
 
@@ -269,8 +270,90 @@ onMounted(() => {
 });
 
 
-function descargarExcel() {
-  alert('Descargar Excel (pendiente de implementar)');
+async function descargarExcel() {
+  try {
+    const config = useRuntimeConfig();
+    const token = useCookie<string | null>('auth_token');
+    
+    if (!token.value) {
+      toast.add({
+        title: 'Error',
+        description: 'No hay token de autenticación',
+        color: 'error'
+      });
+      return;
+    }
+
+    toast.add({
+      id: 'exportando-movilidad',
+      title: 'Preparando exportación',
+      description: 'Generando archivo Excel...',
+      icon: 'i-lucide-loader-2',
+      timeout: 0
+    });
+
+    const payloadExcel = {
+      year: añoSeleccionado.value,
+      month: mesSeleccionado.value,
+      descargar: true
+    };
+
+    const response = await fetch(`${config.public.apiBaseUrl}/api/mobility/monthly-report`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.value}`,
+        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+      body: JSON.stringify(payloadExcel),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reporte-movilidad-${mesSeleccionado.value}-${añoSeleccionado.value}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    toast.remove('exportando-movilidad');
+    toast.add({
+      title: 'Descarga completa',
+      description: 'El archivo se descargó correctamente',
+      icon: 'i-lucide-check-circle',
+      color: 'green',
+      timeout: 3000
+    });
+
+  } catch (error: any) {
+    console.error('Error al descargar Excel:', error);
+    toast.remove('exportando-movilidad');
+    
+    let errorTitle = 'Error al exportar';
+    let errorDescription = 'No se pudo generar el archivo Excel';
+
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      errorTitle = '🔌 Servidor no disponible';
+      errorDescription = 'No se puede conectar con el backend. Verifica que esté corriendo.';
+    } else if (error.message.includes('HTTP')) {
+      errorTitle = 'Error del servidor';
+      errorDescription = error.message;
+    }
+
+    toast.add({
+      title: errorTitle,
+      description: errorDescription,
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+      timeout: 8000
+    });
+  }
 }
 
 function agregarMontoMovilidad() {

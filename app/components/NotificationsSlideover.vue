@@ -1,135 +1,95 @@
 <script setup lang="ts">
-import { AttendanceType } from '~/enums/attendance'
-import type { UserListItem } from '~/types'
-
 const { isNotificationsSlideoverOpen } = useDashboard()
 
-type AttendanceTypeFilter = AttendanceType.CHECK_IN | AttendanceType.CHECK_OUT | 'unknown' | null;
+const cumpleañosHoy = ref([
+  { id: 1, name: 'Juan Pérez García', email: 'juan.perez@cechriza.com', age: 30, fecha: '19/01/2026', enviado: false },
+  { id: 2, name: 'María García López', email: 'maria.garcia@cechriza.com', age: 25, fecha: '22/01/2026', enviado: false },
+  { id: 3, name: 'Carlos Rodríguez Martín', email: 'carlos.rodriguez@cechriza.com', age: 35, fecha: '15/01/2026', enviado: true },
+  { id: 4, name: 'Ana Fernández Torres', email: 'ana.fernandez@cechriza.com', age: 28, fecha: '25/01/2026', enviado: false },
+  { id: 5, name: 'Luis Sánchez Ruiz', email: 'luis.sanchez@cechriza.com', age: 42, fecha: '28/01/2026', enviado: false },
+  { id: 6, name: 'Patricia Morales Díaz', email: 'patricia.morales@cechriza.com', age: 31, fecha: '10/01/2026', enviado: true },
+  { id: 7, name: 'Roberto Vega Castro', email: 'roberto.vega@cechriza.com', age: 29, fecha: '30/01/2026', enviado: false },
+])
 
-const attendanceTypeFilter = ref<AttendanceTypeFilter>(null);
+const isLoading = ref(false)
 
-
-const { data, error, refresh } = await useUsersNotCheckedInOutToday();
-
-// const { data, error, refresh } = await useFetch<{
-//   data: UserListItem[]
-// }>('/api/users/not-checked-in-out-today', {
-//   key: 'users-not-checked-in-out-today',
-//   pick: ['data'],
-//   default: () => ({ data: [] }),
-//   $fetch: useNuxtApp().$api
-// })
-
-
-const isCheckedIn = (user: UserListItem) => {
-  return user.attendances && user.attendances[0]?.type === AttendanceType.CHECK_IN;
-}
-
-const toogleAttendanceTypeFilter = (type: AttendanceTypeFilter) => {
-  if (attendanceTypeFilter.value === type) {
-    attendanceTypeFilter.value = null;
-  } else {
-    attendanceTypeFilter.value = type;
+const cargarCumpleañosHoy = async () => {
+  try {
+    isLoading.value = true
+    // Aquí llamarías a tu API para obtener los cumpleaños de hoy
+    // const response = await apiFetch('/api/cumpleaños/hoy')
+    // cumpleañosHoy.value = response.data
+  } catch (error) {
+    console.error('Error al cargar cumpleaños:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
-const variant = (type: AttendanceTypeFilter) => {
-  return attendanceTypeFilter.value === type ? 'subtle' : 'outline';
-
+const enviarCorreo = async (cumpleaños: any) => {
+  try {
+    // Aquí llamarías a tu API para enviar el correo
+    // await apiFetch('/api/cumpleaños/enviar-correo', {
+    //   method: 'POST',
+    //   body: JSON.stringify({ usuario_id: cumpleaños.id })
+    // })
+    cumpleaños.enviado = true
+    alert(`Correo enviado a ${cumpleaños.name}`)
+  } catch (error) {
+    console.error('Error al enviar correo:', error)
+  }
 }
 
-const users = computed(() => {
-
-  const userData = data.value.data;
-  if (!userData) return [];
-
-
-  if (!attendanceTypeFilter.value) {
-    return userData;
-  }
-
-  return userData.filter(user => {
-    if (attendanceTypeFilter.value === 'unknown') {
-      return !user.attendances || user.attendances.length === 0;
-    } else if (attendanceTypeFilter.value === AttendanceType.CHECK_IN) {
-      return user.attendances && user.attendances.length === 1 && user?.attendances?.[0]?.type === AttendanceType.CHECK_IN;
-    } else if (attendanceTypeFilter.value === AttendanceType.CHECK_OUT) {
-      return user.attendances && user.attendances.length === 1 && user?.attendances?.[0]?.type === AttendanceType.CHECK_OUT;
-    }
-    return false;
-  });
-});
+onMounted(() => {
+  cargarCumpleañosHoy()
+})
 </script>
 
-
-
 <template>
-  <USlideover v-model:open="isNotificationsSlideoverOpen" title="Usuarios sin registro de entrada/salida hoy">
+  <USlideover v-model:open="isNotificationsSlideoverOpen" title="Cumpleaños del mes 🎉">
     <template #body>
-      <UFieldGroup orientation="horizontal" class="w-full mb-4 flex justify-center">
-        <UButton color="neutral" :variant="variant('unknown')" label="Sin registro"
-          @click="() => toogleAttendanceTypeFilter('unknown')" />
-        <UButton color="neutral" :variant="variant(AttendanceType.CHECK_IN)" label="Entrada"
-          @click="() => toogleAttendanceTypeFilter(AttendanceType.CHECK_IN)" />
-        <UButton color="neutral" :variant="variant(AttendanceType.CHECK_OUT)" label="Salida"
-          @click="() => toogleAttendanceTypeFilter(AttendanceType.CHECK_OUT)" />
-      </UFieldGroup>
-
-      <div v-if="error" class="p-4 text-center text-sm text-red-600 flex">
-        Ocurrió un error al cargar los usuarios.
-        <UButton variant="link" class="underline" @click="() => refresh()" />
+      <div v-if="isLoading" class="p-4 text-center text-sm text-muted">
+        Cargando cumpleaños...
       </div>
 
-      
-
-
-      <!-- {{ data.data }} -->
-      <!-- //    :to="`/inbox?id=${notification.id}`" -->
-
-      <template v-else-if="users.length === 0">
+      <template v-else-if="cumpleañosHoy.length === 0">
         <div class="p-4 text-center text-sm text-muted">
-          No hay usuarios sin registro de entrada/salida hoy.
+          No hay cumpleaños este mes.
         </div>
       </template>
 
       <template v-else>
-        <!-- {{ users.length }} -->
-        <NuxtLink v-for="user in users" :key="user.id"
-          class="px-3 py-2.5 rounded-md hover:bg-elevated/50 flex items-center gap-3 relative -mx-3 first:-mt-3 last:-mb-3">
-          <!-- <UChip
-          color="error"
-          :show="!!notification.unread"
-          inset
-        > -->
-          <!-- v-bind="notification.sender.avatar" -->
-          <UAvatar :alt="user.name" size="md" />
-          <!-- </UChip> -->
+        <div v-for="persona in cumpleañosHoy" :key="persona.id"
+          class="px-3 py-2.5 rounded-md hover:bg-elevated/50 flex items-center gap-3 relative -mx-3 first:-mt-3 last:-mb-3 border-b border-gray-100 dark:border-gray-800">
+          
+          <UAvatar :alt="persona.name" size="md" />
 
           <div class="text-sm flex-1">
-            <p class="flex items-center justify-between">
-              <span class="text-highlighted font-medium">{{ user.name }}</span>
+            <p class="flex items-center justify-between mb-1">
+              <span class="text-highlighted font-medium">{{ persona.name }}</span>
+              <span class="text-muted text-xs font-semibold">{{ persona.fecha }}</span>
+            </p>
 
-              <!-- <time
+            <p class="text-dimmed text-xs mb-1">
+              {{ persona.email }} • {{ persona.age }} años 🎂
+            </p>
+
+            <button 
+              v-if="!persona.enviado"
+              @click="enviarCorreo(persona)"
+              class="mt-1.5 px-3 py-1 text-xs bg-primary-500 hover:bg-primary-600 text-white rounded-md transition-colors"
+            >
+              Enviar correo de felicitación
+            </button>
             
-
-              class="text-muted text-xs"
-              v-text="formatTimeAgo(new Date())"
-            /> -->
-              <!-- {{ user. }} -->
-
-
-              <UBadge v-if="!user.attendances || user.attendances.length === 0" label="Sin registro" variant="outline"
-                color="warning" size="sm" />
-              <UBadge v-else-if="user.attendances && user.attendances.length === 1" :label="isCheckedIn(user) ? 'Entrada registrada' : 'Salida registrada'
-                " variant="outline" color="info" size="sm" />
-
-            </p>
-
-            <p class="text-dimmed">
-              {{ user.email }}
-            </p>
+            <span 
+              v-else
+              class="inline-block mt-1.5 px-3 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-md"
+            >
+              ✓ Correo enviado
+            </span>
           </div>
-        </NuxtLink>
+        </div>
       </template>
     </template>
   </USlideover>
