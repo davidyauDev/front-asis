@@ -1,0 +1,18 @@
+{
+  "servers": {
+    "nuxt-ui": {
+      "type": "http",
+      "url": "https://ui.nuxt.com/mcp"
+    },
+    "testsprite": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@testsprite/testsprite-mcp@latest"
+      ],
+      "env": {
+        "API_KEY": "sk-user-0yHqMLKUmSovm05ou6VtCV5I4313GDknBuwBEHMUhGGnuLLSAzY7DGC1GDJTRAd1wyZsFQn1tTkb4J6p1De-MTRA6H4aDayPXvD73FXAsgUyN632jSi7pZcEuxMg4weponY"
+      }
+    }
+  }
+}

@@ -342,7 +342,7 @@ const guardarIncidencia = async () => {
   };
 
   try {
-    await apiFetch('/api/incidencias', {
+    await apiFetch('/api/incidencias/store', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
