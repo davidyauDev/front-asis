@@ -67,7 +67,7 @@
             <span class="hidden sm:inline">Excel</span>
           </button>
           
-          <button 
+          <!-- <button 
             @click="agregarMontoMovilidad" 
             class="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-900 dark:text-gray-100 px-4 py-2 rounded-md transition-colors flex items-center gap-2 font-medium text-sm"
           >
@@ -75,7 +75,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             <span class="hidden sm:inline">Agregar monto</span>
-          </button>
+          </button> -->
         </div>
       </div>
     </div>
@@ -104,7 +104,8 @@
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Ingreso</th>
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Movilidad</th>
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Provincia</th>
-              <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Empresa</th>
+              <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Ubicacion</th>
+              <!-- <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Empresa</th> -->
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Total</th>
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Vac.</th>
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">No marcó</th>
@@ -126,14 +127,16 @@
               <td class="px-3 py-3 text-gray-900 dark:text-gray-100">{{ emp.employee.last_name }}</td>
               <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ emp.employee.first_name }}</td>
               <td class="px-3 py-3 text-gray-600 dark:text-gray-400">{{ emp.employee.position_name }}</td>
-              <td class="px-3 py-3 text-gray-600 dark:text-gray-400">28/03/2022</td>
+              <td class="px-3 py-3 text-gray-600 dark:text-gray-400">{{ emp.employee.create_time }}</td>
               <td class="px-3 py-3">
                 <span class="inline-block bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded text-xs font-semibold">
                   S/ {{ emp.summary.mobility_amount ? Number(emp.summary.mobility_amount).toFixed(2) : '0.00' }}
                 </span>
               </td>
               <td class="px-3 py-3 text-gray-600 dark:text-gray-400">{{ emp.employee.department_name }}</td>
-              <td class="px-3 py-3 text-gray-600 dark:text-gray-400">CECHRIZA</td>
+              <td class="px-3 py-3 text-gray-600 dark:text-gray-400">{{ emp.employee.city }}</td>
+
+              <!-- <td class="px-3 py-3 text-gray-600 dark:text-gray-400">CECHRIZA</td> -->
               <td class="px-3 py-3">
                 <span class="font-semibold text-gray-900 dark:text-gray-100">
                   {{ emp.summary.total_days }}
