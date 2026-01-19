@@ -99,7 +99,7 @@ const guardarIncidencia = async (formIncidencia: FormIncidencia) => {
     motivo: formIncidencia.motivo
   }
   try {
-    await apiFetch('/api/incidencias', {
+    await apiFetch('/api/incidencias/store', {
       method: 'POST',
       body: JSON.stringify(payload)
     })
@@ -426,7 +426,7 @@ defineExpose({
   <AddIncidencia
     v-model:isOpen="isIncidenciaOpen"
     :usuarioNombre="usuarioNombreSeleccionado"
-    @submit="async (...args) => { await guardarIncidencia(...args); await cargarIncidencias(); }"
+    @submit="guardarIncidencia"
   />
   <HistoriaIncidencia 
     v-model:isOpen="isHistorialOpen" 

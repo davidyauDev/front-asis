@@ -39,7 +39,7 @@ const guardarEdicion = async (fecha: string) => {
   }
   try {
     await apiFetch(`/api/incidencias/${editandoId.value}` , {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify({
         motivo: motivoEdicion.value,
         minutos: minutosInt
@@ -70,6 +70,7 @@ const confirmarEliminacion = (fecha: string) => {
 };
 
 const eliminarIncidencia = async (id: string) => {
+  console.log('Eliminando incidencia con ID:', id);
   try {
     await apiFetch(`/api/incidencias/${id}`, {
       method: 'DELETE'
@@ -234,6 +235,7 @@ const eliminarIncidencia = async (id: string) => {
               </span>
               <p class="text-base font-semibold text-gray-900">¿Estás seguro de eliminar esta incidencia?</p>
               <p class="text-xs text-gray-500 mb-2">Esta acción no se puede deshacer.</p>
+
               <div class="flex items-center gap-3 justify-center mt-2">
                 <UButton
                   size="sm"
