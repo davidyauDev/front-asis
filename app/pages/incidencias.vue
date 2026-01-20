@@ -5,6 +5,10 @@ const tabActivo = ref<"incidencias" | "calculo">("incidencias");
 const hoy = new Date();
 const mesSeleccionado = ref(hoy.getMonth() + 1); 
 const añoSeleccionado = ref(hoy.getFullYear());
+const diaInicio = ref(1);
+const diaFin = ref(31);
+const filtroDiaInicio = ref(diaInicio.value);
+const filtroDiaFin = ref(diaFin.value);
 const filaSeleccionada = ref<number | null>(null);
 const filaRef = ref<HTMLElement | null>(null);
 const filtroUsuario = ref("");
@@ -12,6 +16,11 @@ const exportando = ref(false)
 // Referencias a los componentes hijos
 const tablaIncidenciasRef = ref<InstanceType<typeof TablaIncidencias> | null>(null);
 const tablaCalculoRef = ref<InstanceType<typeof TablaCalculo> | null>(null);
+
+function aplicarRangoDias() {
+  diaInicio.value = filtroDiaInicio.value;
+  diaFin.value = filtroDiaFin.value;
+}
 
 watch(filaSeleccionada, async () => {
   await nextTick();
@@ -35,13 +44,7 @@ async function descargarExcel() {
   }
 }
 
-function enviarCorreosMasivos() {
-  console.log("Enviar correos masivos", {
-    mes: mesSeleccionado.value,
-    año: añoSeleccionado.value,
-    filtro: filtroUsuario.value,
-  });
-}
+
 </script>
 
 <template>
@@ -86,7 +89,7 @@ function enviarCorreosMasivos() {
             <!-- Notificaciones -->
             <UTooltip text="Incidencias pendientes">
               <UButton 
-                color="gray" 
+                                      color="gray" 
                 variant="ghost" 
                 square 
                 class="relative group"
@@ -108,7 +111,7 @@ function enviarCorreosMasivos() {
     <template #body>
       <div class="mt-2">
         <div
-          class="flex items-center justify-between border-b border-gray-200 bg-white px-2"
+          class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2"
         >
           <div class="flex">
             <button
@@ -116,8 +119,8 @@ function enviarCorreosMasivos() {
               class="px-6 py-4 text-sm font-semibold transition-colors"
               :class="
                 tabActivo === 'incidencias'
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30'
-                  : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30 dark:text-blue-300 dark:bg-blue-900/40 dark:border-blue-400'
+                  : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50 dark:text-gray-400 dark:hover:text-blue-300 dark:hover:bg-gray-800'
               "
             >
               Incidencias Justificadas
@@ -128,8 +131,8 @@ function enviarCorreosMasivos() {
               class="px-6 py-4 text-sm font-semibold transition-colors"
               :class="
                 tabActivo === 'calculo'
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30'
-                  : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30 dark:text-blue-300 dark:bg-blue-900/40 dark:border-blue-400'
+                  : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50 dark:text-gray-400 dark:hover:text-blue-300 dark:hover:bg-gray-800'
               "
             >
               Cálculo de Tardanzas
@@ -137,43 +140,46 @@ function enviarCorreosMasivos() {
           </div>
         </div>
         <div
-          class="px-4 py-3 bg-white border-y border-slate-200 flex items-center justify-between gap-4 flex-wrap"
+          class="px-4 py-3 bg-white dark:bg-gray-900 border-y border-slate-200 dark:border-gray-700 flex items-center justify-between gap-4 flex-wrap"
         >
           <!-- IZQUIERDA: filtros -->
           <div class="flex items-end gap-4 flex-wrap">
             <!-- MES (principal) -->
             <div class="flex flex-col gap-0.5">
-              <label
-                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide"
-              >
-                Mes
-              </label>
-              <select
-                v-model="mesSeleccionado"
-                class="border rounded-md px-3 py-2 bg-white text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
-              >
-                <option
-                  v-for="mes in [
-                    { valor: 1, nombre: 'Enero' },
-                    { valor: 2, nombre: 'Febrero' },
-                    { valor: 3, nombre: 'Marzo' },
-                    { valor: 4, nombre: 'Abril' },
-                    { valor: 5, nombre: 'Mayo' },
-                    { valor: 6, nombre: 'Junio' },
-                    { valor: 7, nombre: 'Julio' },
-                    { valor: 8, nombre: 'Agosto' },
-                    { valor: 9, nombre: 'Septiembre' },
-                    { valor: 10, nombre: 'Octubre' },
-                    { valor: 11, nombre: 'Noviembre' },
-                    { valor: 12, nombre: 'Diciembre' },
-                  ]"
-                  :key="mes.valor"
-                  :value="mes.valor"
-                >
+              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Mes</label>
+              <select v-model="mesSeleccionado" class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option v-for="mes in [
+                  { valor: 1, nombre: 'Enero' },
+                  { valor: 2, nombre: 'Febrero' },
+                  { valor: 3, nombre: 'Marzo' },
+                  { valor: 4, nombre: 'Abril' },
+                  { valor: 5, nombre: 'Mayo' },
+                  { valor: 6, nombre: 'Junio' },
+                  { valor: 7, nombre: 'Julio' },
+                  { valor: 8, nombre: 'Agosto' },
+                  { valor: 9, nombre: 'Septiembre' },
+                  { valor: 10, nombre: 'Octubre' },
+                  { valor: 11, nombre: 'Noviembre' },
+                  { valor: 12, nombre: 'Diciembre' },
+                ]" :key="mes.valor" :value="mes.valor">
                   {{ mes.nombre }}
                 </option>
               </select>
             </div>
+            <!-- RANGO DE DÍAS SOLO EN TAB INCIDENCIAS -->
+            <template v-if="tabActivo === 'incidencias'">
+              <div class="flex flex-col gap-0.5">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Día inicio</label>
+                <input type="number" v-model.number="filtroDiaInicio" min="1" :max="31" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-20 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Día fin</label>
+                <input type="number" v-model.number="filtroDiaFin" min="1" :max="31" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-20 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+              <div class="flex flex-col justify-end">
+                <button @click="aplicarRangoDias" class="mt-2 px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Aplicar</button>
+              </div>
+            </template>
 
             <!-- BUSCADOR (protagonista) -->
             <div class="flex flex-col gap-0.5">
@@ -186,7 +192,7 @@ function enviarCorreosMasivos() {
                 v-model="filtroUsuario"
                 type="text"
                 placeholder="DNI, apellido o nombre"
-                class="border rounded-md px-3 py-2 bg-white text-sm w-64 focus:ring-2 focus:ring-indigo-500 outline-none"
+                class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-64 focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
 
@@ -202,13 +208,13 @@ function enviarCorreosMasivos() {
                 v-model.number="añoSeleccionado"
                 min="2020"
                 max="2030"
-                class="border rounded-md px-2 py-2 bg-white text-sm w-20 text-center focus:ring-2 focus:ring-indigo-500 outline-none"
+                class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-20 text-center focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
           </div>
 
           <!-- DERECHA: acciones -->
-          <div class="flex items-center gap-2 pl-4 border-slate-200">
+          <div class="flex items-center gap-2 pl-4 border-slate-200 dark:border-gray-700">
             <!-- DESCARGAR EXCEL (acción secundaria) -->
 
             <UButton
@@ -218,7 +224,7 @@ function enviarCorreosMasivos() {
         @click="descargarExcel"
         :loading="exportando"
         :disabled="exportando"
-        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-200 transition-colors"
       >
         <UIcon name="i-lucide-download" class="w-4 h-4 mr-2" />
         {{ exportando ? 'Exportando...' : 'Exportar' }}
@@ -231,18 +237,20 @@ function enviarCorreosMasivos() {
         <!-- INCIDENCIAS -->
         <div
           v-if="tabActivo === 'incidencias'"
-          class="overflow-x-auto rounded-lg shadow"
+          class="overflow-x-auto rounded-lg shadow dark:bg-gray-900"
         >
           <TablaIncidencias
             ref="tablaIncidenciasRef"
             :filtro-usuario="filtroUsuario"
             :mes-seleccionado="mesSeleccionado"
             :año-seleccionado="añoSeleccionado"
+            :dia-inicio="diaInicio"
+            :dia-fin="diaFin"
           />
         </div>
 
         <!-- CALCULO -->
-        <div v-if="tabActivo === 'calculo'" class="space-y-4">
+        <div v-if="tabActivo === 'calculo'" class="space-y-4 dark:bg-gray-900">
           <TablaCalculo
             ref="tablaCalculoRef"
             :mes-seleccionado="mesSeleccionado"

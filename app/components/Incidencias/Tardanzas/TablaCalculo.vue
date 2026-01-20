@@ -195,7 +195,7 @@ defineExpose({
 <template>
     <div>
         <div v-if="cargando" class="my-8">
-            <div class="rounded shadow border bg-white p-4 animate-pulse">
+            <div class="rounded shadow border bg-white dark:bg-gray-900 dark:border-gray-700 p-4 animate-pulse">
                 <div class="mb-4 flex justify-between items-center">
                     <USkeleton class="h-6 w-72 rounded" />
                     <div class="flex gap-2">
@@ -224,65 +224,62 @@ defineExpose({
             </div>
         </div>
 
-        <table v-else class="border-collapse w-full text-sm rounded shadow">
+        <table v-else class="border-collapse w-full text-sm rounded shadow dark:bg-gray-900 dark:text-gray-200">
             <thead>
-                <tr class="bg-[#1f4e78] text-white">
-                    <th class="border px-3 py-2">ID</th>
-                    <th class="border px-3 py-2">DNI</th>
-                    <th class="border px-4 py-2">APELLIDOS Y NOMBRES</th>
-                    <th class="border px-3 py-2 bg-blue-700">BRUTO</th>
-                    <th class="border px-3 py-2 bg-purple-700">INCIDENCIAS</th>
-                    <th class="border px-3 py-2 bg-green-700">NETO</th>
-                    <th class="border px-3 py-2 bg-green-700">Acciones</th>
-
+                <tr class="bg-[#1f4e78] text-white dark:bg-blue-900">
+                    <th class="border px-3 py-2 dark:border-gray-700">ID</th>
+                    <th class="border px-3 py-2 dark:border-gray-700">DNI</th>
+                    <th class="border px-4 py-2 dark:border-gray-700">APELLIDOS Y NOMBRES</th>
+                    <th class="border px-3 py-2 bg-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border-gray-700">BRUTO</th>
+                    <th class="border px-3 py-2 bg-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border-gray-700">INCIDENCIAS</th>
+                    <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">NETO</th>
+                    <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">Acciones</th>
                 </tr>
             </thead>
 
             <tbody>
-                <tr v-for="emp in empleadosFiltrados" :key="emp.id" class="hover:bg-gray-50">
-                    <td class="border px-2 text-center">{{ emp.id }}</td>
-                    <td class="border px-2 text-center">{{ emp.dni }}</td>
-                    <td class="border px-3">
+                <tr v-for="emp in empleadosFiltrados" :key="emp.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td class="border px-2 text-center dark:border-gray-700">{{ emp.id }}</td>
+                    <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
+                    <td class="border px-3 dark:border-gray-700">
                         {{ emp.apellidos }} {{ emp.nombre }}
                     </td>
 
-                    <td class="border px-2 text-center bg-blue-50">
+                    <td class="border px-2 text-center bg-blue-50 dark:bg-blue-900 dark:text-blue-200 dark:border-gray-700">
                         {{ emp.bruto_hhmm }}
                     </td>
 
-                    <td class="border px-2 text-center bg-purple-50 font-bold">
+                    <td class="border px-2 text-center bg-purple-50 font-bold dark:bg-purple-900 dark:text-purple-200 dark:border-gray-700">
                         {{ emp.incidencias_hhmm }}
                     </td>
 
-                    <td class="border px-2 text-center font-bold" :class="esMayorAUnaHora(emp.neto_hhmm)
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-green-100 text-green-800'
+                    <td class="border px-2 text-center font-bold dark:border-gray-700" :class="esMayorAUnaHora(emp.neto_hhmm)
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         ">
                         {{ emp.neto_hhmm }}
                     </td>
-                    <td class="border px-2 text-center">
-                                                <UButton
-                                                    size="sm"
-                                                    color="info"
-                                                    variant="soft"
-                                                    :disabled="loadingEmail[emp.id]"
-                                                    @click="enviarEmail(emp)"
-                                                >
-                                                    <template v-if="loadingEmail[emp.id]">
-                                                        <svg class="animate-spin h-4 w-4 mr-2 inline-block text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                                        </svg>
-                                                        <span class="ml-1">Enviando...</span>
-                                                    </template>
-                                                    <template v-else>
-                                                        <UIcon name="i-heroicons-envelope" class="size-4" />
-                                                    </template>
-                                                </UButton>
+                    <td class="border px-2 text-center dark:border-gray-700">
+                        <UButton
+                            size="sm"
+                            color="info"
+                            variant="soft"
+                            :disabled="loadingEmail[emp.id]"
+                            @click="enviarEmail(emp)"
+                        >
+                            <template v-if="loadingEmail[emp.id]">
+                                <svg class="animate-spin h-4 w-4 mr-2 inline-block text-blue-500 dark:text-blue-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                <span class="ml-1">Enviando...</span>
+                            </template>
+                            <template v-else>
+                                <UIcon name="i-heroicons-envelope" class="size-4 dark:text-blue-300" />
+                            </template>
+                        </UButton>
                     </td>
-
                 </tr>
-
             </tbody>
         </table>
     </div>

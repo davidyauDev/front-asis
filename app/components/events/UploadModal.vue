@@ -13,7 +13,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-// 🎨 Estado del componente
+//  Estado del componente
 const dragActive = ref(false);
 const uploading = ref(false);
 const selectedFiles = ref<File[]>([]);
@@ -26,7 +26,7 @@ const fileInput = ref<HTMLInputElement>();
 const fechasMultiples = ref<string[]>([]);
 const permitirFechasMultiples = ref(false);
 
-// 📋 Opciones de configuración
+//  Opciones de configuración
 const categorias = [
   { label: 'Celebración', value: 'celebracion', icon: 'i-lucide-party-popper' },
   { label: 'Feriado', value: 'feriado', icon: 'i-lucide-calendar-x' },
@@ -35,7 +35,7 @@ const categorias = [
   { label: 'Especial', value: 'especial', icon: 'i-lucide-star' }
 ];
 
-// 🖼️ Drag & Drop handlers
+//  Drag & Drop handlers
 const handleDragOver = (e: DragEvent) => {
   e.preventDefault();
   dragActive.value = true;
