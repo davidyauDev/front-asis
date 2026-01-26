@@ -7,10 +7,8 @@ import AddIncidencia from './Modales/AddIncidencia.vue';
 
 const props = defineProps<{
   filtroUsuario: string,
-  mesSeleccionado: number,
-  añoSeleccionado: number,
-  diaInicio?: number,
-  diaFin?: number
+  fechaInicio: string,
+  fechaFin: string
 }>();
 const filaSeleccionada = ref<number | null>(null);
 
@@ -41,6 +39,7 @@ interface Empleado {
   incidencias_hhmm: string;
   dias: Record<string, Dia>;
 }
+
 const toast = useToast()
 const datosEmpleados = ref<Empleado[]>([]);
 const cargando = ref(true);
@@ -56,23 +55,36 @@ const empleadosFiltrados = computed(() => {
   });
 });
 
+// Generar columnas de fechas entre fechaInicio y fechaFin usando UTC para evitar desfases por zona horaria
 const columnasFechas = computed(() => {
-  const diasMes = new Date(props.añoSeleccionado, props.mesSeleccionado, 0).getDate();
-  const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const mesStr = meses[props.mesSeleccionado - 1];
-  let inicio = props.diaInicio ?? 1;
-  let fin = props.diaFin ?? diasMes;
-  inicio = Math.max(1, inicio);
-  fin = Math.min(diasMes, fin);
-  return Array.from({ length: fin - inicio + 1 }, (_, i) => `${i + inicio}-${mesStr}`);
+  const fechas: string[] = [];
+  // Parsear fechas como UTC
+  const [anioInicio, mesInicio, diaInicio] = props.fechaInicio.split('-').map(Number);
+  const [anioFin, mesFin, diaFin] = props.fechaFin.split('-').map(Number);
+  let d = new Date(Date.UTC(anioInicio, mesInicio - 1, diaInicio));
+  const fin = new Date(Date.UTC(anioFin, mesFin - 1, diaFin));
+  while (d.getTime() <= fin.getTime()) {
+    const dia = d.getUTCDate().toString().padStart(2, '0');
+    const mes = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+    fechas.push(`${dia}-${mes}`);
+    // Avanzar un día en UTC
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return fechas;
 });
 
 
 const validarFormatoTiempo = (valor: string) =>
   /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(valor);
 
-const esFinDeSemana = (dia: number) => {
-  const fecha = new Date(props.añoSeleccionado, props.mesSeleccionado - 1, dia);
+const esFinDeSemana = (fechaStr: string) => {
+  // fechaStr: 'dd-mm'
+  if (typeof fechaStr !== 'string' || !fechaStr.includes('-')) return false;
+  const [dia, mes] = fechaStr.split('-');
+  if (!dia || !mes) return false;
+  const anio = new Date(props.fechaInicio).getFullYear();
+  const fecha = new Date(`${anio}-${mes}-${dia}`);
+  if (isNaN(fecha.getTime())) return false;
   return [0, 6].includes(fecha.getDay());
 };
 
@@ -129,19 +141,52 @@ const guardarIncidencia = async (formIncidencia: FormIncidencia) => {
 }
 
 
+// Utilidad para convertir claves tipo '30-Dic' a '30-12', '13-Ene' a '13-01', etc.
+const MES_MAP: Record<string, string> = {
+  'Ene': '01', 'Feb': '02', 'Mar': '03', 'Abr': '04', 'May': '05', 'Jun': '06',
+  'Jul': '07', 'Ago': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dic': '12',
+};
+function normalizaDias(dias: Record<string, any>): Record<string, any> {
+  const normalizado: Record<string, any> = {};
+  for (const key in dias) {
+    if (/^\d{2}-\d{2}$/.test(key)) {
+      normalizado[key] = dias[key];
+    } else if (/^\d{1,2}-[A-Za-z]{3}$/.test(key)) {
+      const [dia, mesStr] = key.split('-');
+      const mes = MES_MAP[mesStr.charAt(0).toUpperCase() + mesStr.slice(1,3).toLowerCase()] || MES_MAP[mesStr];
+      if (mes) {
+        const diaNum = dia.padStart(2, '0');
+        normalizado[`${diaNum}-${mes}`] = dias[key];
+      }
+    }
+  }
+  return normalizado;
+}
+
 const cargarIncidencias = async () => {
   cargando.value = true;
   try {
     const response = await apiFetch('/api/incidencias', {
       method: 'POST',
       body: JSON.stringify({
-        mes: props.mesSeleccionado,
-        anio: props.añoSeleccionado
+        fecha_desde: props.fechaInicio,
+        fecha_hasta: props.fechaFin
       })
     });
-    datosEmpleados.value = response;
+    let empleados: any[] = [];
+    if (Array.isArray(response)) {
+      empleados = response;
+    } else if (response && Array.isArray(response.data)) {
+      empleados = response.data;
+    }
+    // Normaliza las claves de dias para cada empleado
+    datosEmpleados.value = empleados.map(emp => ({
+      ...emp,
+      dias: emp.dias ? normalizaDias(emp.dias) : {}
+    }));
   } catch (error) {
     console.error('Error al cargar incidencias:', error);
+    datosEmpleados.value = [];
     toast.add({
       title: 'Error',
       description: 'No se pudo cargar las incidencias',
@@ -164,7 +209,7 @@ const verTracking = (emp: Empleado) => {
   valuetrackingIncidencia.value = emp;
 };
 
-const descargarExcel = async () => {
+const descargarExcel = async (filtros?: { fechaInicio?: string, fechaFin?: string, filtroUsuario?: string }) => {
   try {
     const config = useRuntimeConfig();
     const token = useCookie<string | null>('auth_token');
@@ -186,11 +231,14 @@ const descargarExcel = async () => {
       timeout: 0
     });
 
-    const body = {
-      mes: props.mesSeleccionado,
-      anio: props.añoSeleccionado,
+    const body: any = {
+      fecha_desde: filtros?.fechaInicio || props.fechaInicio,
+      fecha_hasta: filtros?.fechaFin || props.fechaFin,
       descargar: true
     };
+    if (filtros?.filtroUsuario) {
+      body.filtro_usuario = filtros.filtroUsuario;
+    }
 
     const response = await fetch(
       `${config.public.apiBaseUrl}/api/incidencias`,
@@ -213,7 +261,7 @@ const descargarExcel = async () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `incidencias_${props.mesSeleccionado}_${props.añoSeleccionado}.xlsx`;
+    a.download = `incidencias_${body.fecha_desde}_${body.fecha_hasta}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -263,8 +311,8 @@ onMounted(() => {
 });
 
 watch([
-  () => props.mesSeleccionado,
-  () => props.añoSeleccionado
+  () => props.fechaInicio,
+  () => props.fechaFin
 ], cargarIncidencias);
 
 // Exponer la función para que el padre pueda llamarla
@@ -274,42 +322,44 @@ defineExpose({
 </script>
 
 <template>
-  <div v-if="cargando" class="my-6">
-  <div class="rounded-lg border bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
-    
-    <!-- Header fake -->
-    <div class="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700">
-      <USkeleton class="h-4 w-64 rounded" />
-      <div class="flex gap-2">
-        <USkeleton class="h-8 w-28 rounded-md" />
-        <USkeleton class="h-8 w-36 rounded-md" />
+  <div>
+    <div v-if="cargando" class="my-6">
+      <div class="rounded-lg border bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+        <!-- Header fake -->
+        <div class="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700">
+          <USkeleton class="h-4 w-64 rounded" />
+          <div class="flex gap-2">
+            <USkeleton class="h-8 w-28 rounded-md" />
+            <USkeleton class="h-8 w-36 rounded-md" />
+          </div>
+        </div>
+        <!-- Table fake -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead>
+              <tr>
+                <th v-for="i in 12" :key="i" class="px-3 py-2">
+                  <USkeleton class="h-3 w-16 rounded" />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in 8" :key="row" class="border-t">
+                <td v-for="col in 12" :key="col" class="px-3 py-2">
+                  <USkeleton class="h-3 w-14 rounded" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-
-    <!-- Table fake -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-xs">
-        <thead>
-          <tr>
-            <th v-for="i in 12" :key="i" class="px-3 py-2">
-              <USkeleton class="h-3 w-16 rounded" />
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in 8" :key="row" class="border-t">
-            <td v-for="col in 12" :key="col" class="px-3 py-2">
-              <USkeleton class="h-3 w-14 rounded" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div>
-</div>
-
-  <table v-else class="w-full text-xs dark:text-gray-200">
+    <div v-else>
+      <div v-if="empleadosFiltrados.length === 0" class="my-8 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+        <span class="text-lg font-semibold mb-2">No hay incidencias para el rango seleccionado</span>
+        <span class="text-sm">Ajusta el filtro de fechas o verifica los datos.</span>
+      </div>
+      <table v-else class="w-full text-xs dark:text-gray-200">
     <!-- HEADER -->
     <thead>
   <!-- FILA 1: CONTEXTO -->
@@ -318,18 +368,16 @@ defineExpose({
       colspan="4"
       class="bg-[#1f4e78] text-white text-center py-3 font-bold border dark:bg-blue-900 dark:text-gray-100 dark:border-gray-700"
     >
-      INCIDENCIAS JUSTIFICADAS · DICIEMBRE
+      INCIDENCIAS JUSTIFICADAS 
     </th>
 
-    <th
+     <th
       v-for="f in columnasFechas"
       :key="f"
       class="border text-center text-xs font-semibold dark:border-gray-700"
-      :class="esFinDeSemana(Number(f.split('-')[0]))
-        ? 'bg-yellow-200 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-200'
-        : 'bg-slate-100 text-slate-700 dark:bg-gray-800 dark:text-gray-200'"
+      
     >
-      {{ f }}
+      
     </th>
 
     <th class="bg-purple-600 text-white px-3 text-sm dark:bg-purple-900 dark:text-gray-100">
@@ -340,6 +388,7 @@ defineExpose({
       ACCIONES
     </th>
   </tr>
+
 
   <!-- FILA 2: ESTRUCTURA -->
   <tr class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600 dark:bg-gray-800 dark:text-gray-300">
@@ -425,16 +474,17 @@ defineExpose({
 
       </tr>
     </tbody>
-  </table>
-  <AddIncidencia
-    v-model:isOpen="isIncidenciaOpen"
-    :usuarioNombre="usuarioNombreSeleccionado"
-    @submit="guardarIncidencia"
-  />
-  <HistoriaIncidencia 
-    v-model:isOpen="isHistorialOpen" 
-    :historialUser="valuetrackingIncidencia"
-    @refetch="cargarIncidencias"
-  />
-
+      </table>
+    </div>
+    <AddIncidencia
+      v-model:isOpen="isIncidenciaOpen"
+      :usuarioNombre="usuarioNombreSeleccionado"
+      @submit="guardarIncidencia"
+    />
+    <HistoriaIncidencia 
+      v-model:isOpen="isHistorialOpen" 
+      :historialUser="valuetrackingIncidencia"
+      @refetch="cargarIncidencias"
+    />
+  </div>
 </template>

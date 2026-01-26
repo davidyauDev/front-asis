@@ -3,12 +3,23 @@ import TablaIncidencias from "~/components/Incidencias/TablaIncidencias.vue";
 import TablaCalculo from "~/components/Incidencias/Tardanzas/TablaCalculo.vue";
 const tabActivo = ref<"incidencias" | "calculo">("incidencias");
 const hoy = new Date();
-const mesSeleccionado = ref(hoy.getMonth() + 1); 
-const añoSeleccionado = ref(hoy.getFullYear());
-const diaInicio = ref(1);
-const diaFin = ref(31);
-const filtroDiaInicio = ref(diaInicio.value);
-const filtroDiaFin = ref(diaFin.value);
+// Por defecto: fechaInicio = 23 del mes anterior, fechaFin = 22 del mes actual
+const fechaInicio = ref<string>((() => {
+  const anio = hoy.getFullYear();
+  let mes = hoy.getMonth(); // mes actual (0-11)
+  if (mes === 0) {
+    return `${anio - 1}-12-23`;
+  }
+  const mesStr = (mes).toString().padStart(2, '0');
+  return `${anio}-${mesStr}-23`;
+})());
+const fechaFin = ref<string>((() => {
+  const anio = hoy.getFullYear();
+  const mes = hoy.getMonth() + 1;
+  const mesStr = (mes).toString().padStart(2, '0');
+  return `${anio}-${mesStr}-22`;
+})());
+
 const filaSeleccionada = ref<number | null>(null);
 const filaRef = ref<HTMLElement | null>(null);
 const filtroUsuario = ref("");
@@ -17,10 +28,34 @@ const exportando = ref(false)
 const tablaIncidenciasRef = ref<InstanceType<typeof TablaIncidencias> | null>(null);
 const tablaCalculoRef = ref<InstanceType<typeof TablaCalculo> | null>(null);
 
-function aplicarRangoDias() {
-  diaInicio.value = filtroDiaInicio.value;
-  diaFin.value = filtroDiaFin.value;
+// Estados temporales para los inputs de fecha
+const fechaInicioTemp = ref(fechaInicio.value);
+const fechaFinTemp = ref(fechaFin.value);
+
+function aplicarRangoFechas() {
+  if (fechaInicioTemp.value && fechaFinTemp.value) {
+    fechaInicio.value = fechaInicioTemp.value;
+    fechaFin.value = fechaFinTemp.value;
+    // Siempre recargar ambas tablas si existen
+    if (tablaIncidenciasRef.value && typeof tablaIncidenciasRef.value.cargarIncidencias === 'function') {
+      tablaIncidenciasRef.value.cargarIncidencias();
+    }
+    if (tablaCalculoRef.value && typeof tablaCalculoRef.value.cargarIncidencias === 'function') {
+      tablaCalculoRef.value.cargarIncidencias();
+    }
+  }
 }
+
+// Si el usuario cambia de tab, recargar la tabla activa con los filtros actuales
+watch(tabActivo, (nuevo) => {
+  if (nuevo === 'incidencias' && tablaIncidenciasRef.value && typeof tablaIncidenciasRef.value.cargarIncidencias === 'function') {
+    tablaIncidenciasRef.value.cargarIncidencias();
+  }
+  if (nuevo === 'calculo' && tablaCalculoRef.value && typeof tablaCalculoRef.value.cargarIncidencias === 'function') {
+    tablaCalculoRef.value.cargarIncidencias();
+  }
+});
+
 
 watch(filaSeleccionada, async () => {
   await nextTick();
@@ -29,13 +64,21 @@ watch(filaSeleccionada, async () => {
 
 async function descargarExcel() {
   if (exportando.value) return; // Evitar múltiples clics
-  
   exportando.value = true;
   try {
-    if (tabActivo.value === 'incidencias' && tablaIncidenciasRef.value) {
-      await tablaIncidenciasRef.value.descargarExcel();
-    } else if (tabActivo.value === 'calculo' && tablaCalculoRef.value) {
-      await tablaCalculoRef.value.descargarExcel();
+    // Siempre pasar los filtros actuales a los hijos
+    if (tabActivo.value === 'incidencias' && tablaIncidenciasRef.value && typeof tablaIncidenciasRef.value.descargarExcel === 'function') {
+      await tablaIncidenciasRef.value.descargarExcel({
+        fechaInicio: fechaInicio.value,
+        fechaFin: fechaFin.value,
+        filtroUsuario: filtroUsuario.value
+      });
+    } else if (tabActivo.value === 'calculo' && tablaCalculoRef.value && typeof tablaCalculoRef.value.descargarExcel === 'function') {
+      await tablaCalculoRef.value.descargarExcel({
+        fechaInicio: fechaInicio.value,
+        fechaFin: fechaFin.value,
+        filtroUsuario: filtroUsuario.value
+      });
     }
   } catch (error) {
     console.error('Error al descargar Excel:', error);
@@ -89,7 +132,7 @@ async function descargarExcel() {
             <!-- Notificaciones -->
             <UTooltip text="Incidencias pendientes">
               <UButton 
-                                      color="gray" 
+                                      color="neutral" 
                 variant="ghost" 
                 square 
                 class="relative group"
@@ -98,7 +141,7 @@ async function descargarExcel() {
                   <UIcon name="i-heroicons-bell" class="w-5 h-5 animate-ring text-gray-600 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
                   
                   <!-- Contador badge -->
-                  <div class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 bg-red-500 text-white text-[9px] font-semibold rounded-full flex items-center justify-center shadow-md border border-white dark:border-gray-900">
+                  <div class="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 bg-red-500 text-white text-[9px] font-semibold rounded-full flex items-center justify-center shadow-md border border-white dark:border-gray-900">
                     7
                   </div>
                 </div>
@@ -144,42 +187,19 @@ async function descargarExcel() {
         >
           <!-- IZQUIERDA: filtros -->
           <div class="flex items-end gap-4 flex-wrap">
-            <!-- MES (principal) -->
+            <!-- RANGO DE FECHAS -->
             <div class="flex flex-col gap-0.5">
-              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Mes</label>
-              <select v-model="mesSeleccionado" class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
-                <option v-for="mes in [
-                  { valor: 1, nombre: 'Enero' },
-                  { valor: 2, nombre: 'Febrero' },
-                  { valor: 3, nombre: 'Marzo' },
-                  { valor: 4, nombre: 'Abril' },
-                  { valor: 5, nombre: 'Mayo' },
-                  { valor: 6, nombre: 'Junio' },
-                  { valor: 7, nombre: 'Julio' },
-                  { valor: 8, nombre: 'Agosto' },
-                  { valor: 9, nombre: 'Septiembre' },
-                  { valor: 10, nombre: 'Octubre' },
-                  { valor: 11, nombre: 'Noviembre' },
-                  { valor: 12, nombre: 'Diciembre' },
-                ]" :key="mes.valor" :value="mes.valor">
-                  {{ mes.nombre }}
-                </option>
-              </select>
+              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Desde</label>
+              <input type="date" v-model="fechaInicioTemp" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-36 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
-            <!-- RANGO DE DÍAS SOLO EN TAB INCIDENCIAS -->
-            <template v-if="tabActivo === 'incidencias'">
-              <div class="flex flex-col gap-0.5">
-                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Día inicio</label>
-                <input type="number" v-model.number="filtroDiaInicio" min="1" :max="31" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-20 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
-              </div>
-              <div class="flex flex-col gap-0.5">
-                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Día fin</label>
-                <input type="number" v-model.number="filtroDiaFin" min="1" :max="31" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-20 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
-              </div>
-              <div class="flex flex-col justify-end">
-                <button @click="aplicarRangoDias" class="mt-2 px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Aplicar</button>
-              </div>
-            </template>
+            <div class="flex flex-col gap-0.5">
+              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Hasta</label>
+              <input type="date" v-model="fechaFinTemp" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-36 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div class="flex flex-col justify-end">
+              <button @click="aplicarRangoFechas" class="mt-2 px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Aplicar</button>
+            </div>
+
 
             <!-- BUSCADOR (protagonista) -->
             <div class="flex flex-col gap-0.5">
@@ -196,21 +216,7 @@ async function descargarExcel() {
               />
             </div>
 
-            <!-- AÑO (secundario) -->
-            <div class="flex flex-col gap-0.5">
-              <label
-                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide"
-              >
-                Año
-              </label>
-              <input
-                type="number"
-                v-model.number="añoSeleccionado"
-                min="2020"
-                max="2030"
-                class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-20 text-center focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-            </div>
+
           </div>
 
           <!-- DERECHA: acciones -->
@@ -218,8 +224,8 @@ async function descargarExcel() {
             <!-- DESCARGAR EXCEL (acción secundaria) -->
 
             <UButton
-        variant="outline"
-        color="gray"
+          variant="outline"
+          color="neutral"
         size="sm"
         @click="descargarExcel"
         :loading="exportando"
@@ -242,10 +248,8 @@ async function descargarExcel() {
           <TablaIncidencias
             ref="tablaIncidenciasRef"
             :filtro-usuario="filtroUsuario"
-            :mes-seleccionado="mesSeleccionado"
-            :año-seleccionado="añoSeleccionado"
-            :dia-inicio="diaInicio"
-            :dia-fin="diaFin"
+            :fecha-inicio="fechaInicio"
+            :fecha-fin="fechaFin"
           />
         </div>
 
@@ -253,9 +257,9 @@ async function descargarExcel() {
         <div v-if="tabActivo === 'calculo'" class="space-y-4 dark:bg-gray-900">
           <TablaCalculo
             ref="tablaCalculoRef"
-            :mes-seleccionado="mesSeleccionado"
-            :año-seleccionado="añoSeleccionado"
             :filtro-usuario="filtroUsuario"
+            :fecha-inicio="fechaInicio"
+            :fecha-fin="fechaFin"
           />
         </div>
       </div>
@@ -264,6 +268,7 @@ async function descargarExcel() {
 </template>
 
 <style scoped>
+
 @keyframes ring {
   0% { transform: rotate(0deg); }
   10% { transform: rotate(15deg); }

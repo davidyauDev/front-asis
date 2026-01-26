@@ -2,8 +2,8 @@
 import { apiFetch } from '~/services/api';
 
 const props = defineProps<{
-    mesSeleccionado: number,
-    añoSeleccionado: number,
+    fechaInicio: string,
+    fechaFin: string,
     filtroUsuario: string
 }>();
 
@@ -19,7 +19,7 @@ const empleadosFiltrados = computed(() => {
     });
 });
 const toast = useToast()
-
+1
 const convertirAMinutos = (t: string) => {
     if (!t || t === "-") return 0;
     const p = t.split(":").map(Number);
@@ -72,8 +72,8 @@ const cargarIncidencias = async () => {
         const response = await apiFetch('/api/incidencias', {
             method: 'POST',
             body: JSON.stringify({
-                mes: props.mesSeleccionado,
-                anio: props.añoSeleccionado
+                fecha_desde: props.fechaInicio,
+                fecha_hasta: props.fechaFin
             })
         });
         datosEmpleados.value = response;
@@ -89,7 +89,7 @@ const cargarIncidencias = async () => {
     }
 };
 
-const descargarExcel = async () => {
+const descargarExcel = async (filtros?: { fechaInicio?: string, fechaFin?: string, filtroUsuario?: string }) => {
     try {
         const config = useRuntimeConfig();
         const token = useCookie<string | null>('auth_token');
@@ -111,11 +111,14 @@ const descargarExcel = async () => {
             timeout: 0
         });
 
-        const body = {
-            mes: props.mesSeleccionado,
-            anio: props.añoSeleccionado,
+        const body: any = {
+            fecha_desde: filtros?.fechaInicio || props.fechaInicio,
+            fecha_hasta: filtros?.fechaFin || props.fechaFin,
             descargar: true
         };
+        if (filtros?.filtroUsuario) {
+            body.filtro_usuario = filtros.filtroUsuario;
+        }
 
         const response = await fetch(
             `${config.public.apiBaseUrl}/api/incidencias`,
@@ -138,7 +141,7 @@ const descargarExcel = async () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `calculo_tardanzas_${props.mesSeleccionado}_${props.añoSeleccionado}.xlsx`;
+        a.download = `calculo_tardanzas_${body.fecha_desde}_${body.fecha_hasta}.xlsx`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -182,11 +185,10 @@ onMounted(() => {
 });
 
 watch([
-    () => props.mesSeleccionado,
-    () => props.añoSeleccionado
+    () => props.fechaInicio,
+    () => props.fechaFin
 ], cargarIncidencias);
 
-// Exponer la función para que el padre pueda llamarla
 defineExpose({
     descargarExcel
 });
