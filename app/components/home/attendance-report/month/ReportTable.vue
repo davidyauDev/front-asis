@@ -350,15 +350,26 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
     if (!mapUlr) {
       return h('span', { class: 'text-xs text-gray-400 italic' }, 'Sin mapa');
     }
+    // Extraer latitud y longitud si existen en la fila
+    const lat = row.original?.Latitud || row.original?.latitud || row.original?.latitude;
+    const lng = row.original?.Longitud || row.original?.longitud || row.original?.longitude;
+    const hasCoords = lat && lng;
     return h(UButton, {
       color: 'primary',
       variant: 'soft',
       size: 'xs',
       icon: 'i-heroicons-map-pin',
       onClick: (e: Event) => {
-        e.stopPropagation()
-        openModalMap.value = true;
-        currentMap.value = mapUlr;
+        e.stopPropagation();
+        if (hasCoords) {
+          const url = `https://www.google.com/maps?q=${lat},${lng}`;
+          window.open(url, '_blank');
+        } else if (mapUlr) {
+          window.open(mapUlr, '_blank');
+        } else {
+          openModalMap.value = true;
+          currentMap.value = mapUlr;
+        }
       },
     }, () => 'Ver mapa')
   }
