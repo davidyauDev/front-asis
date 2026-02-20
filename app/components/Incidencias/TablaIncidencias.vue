@@ -8,6 +8,7 @@ import AddIncidencia from './Modales/AddIncidencia.vue';
 const props = defineProps<{
   filtroUsuario: string,
   fechaInicio: string,
+  filtroEmpresa: string,
   fechaFin: string
 }>();
 const filaSeleccionada = ref<number | null>(null);
@@ -36,6 +37,7 @@ interface Empleado {
   dni: string;
   apellidos: string;
   nombre: string;
+  empresa?: string;
   incidencias_hhmm: string;
   dias: Record<string, Dia>;
 }
@@ -46,13 +48,25 @@ const cargando = ref(true);
 
 
 const empleadosFiltrados = computed(() => {
-  const q = props.filtroUsuario.trim().toLowerCase();
-  if (!q) return datosEmpleados.value;
+  let list = datosEmpleados.value;
 
-  return datosEmpleados.value.filter((e) => {
-    const texto = `${e.dni} ${e.apellidos} ${e.nombre} ${e.apellidos} ${e.nombre}`.toLowerCase();
-    return texto.includes(q);
-  });
+  const q = props.filtroUsuario.trim().toLowerCase();
+  if (q) {
+    list = list.filter((e) => {
+      const texto = `${e.dni} ${e.apellidos} ${e.nombre} ${e.apellidos} ${e.nombre}`.toLowerCase();
+      return texto.includes(q);
+    });
+  }
+
+  const empresa = props.filtroEmpresa?.trim().toLowerCase();
+  if (empresa) {
+    list = list.filter((e) => {
+      const empEmpresa = (e.empresa ?? '').toString().trim().toLowerCase();
+      return empEmpresa === empresa;
+    });
+  }
+
+  return list;
 });
 
 // Generar columnas de fechas entre fechaInicio y fechaFin usando UTC para evitar desfases por zona horaria
@@ -365,7 +379,7 @@ defineExpose({
   <!-- FILA 1: CONTEXTO -->
   <tr>
     <th
-      colspan="4"
+      colspan="5"
       class="bg-[#1f4e78] text-white text-center py-3 font-bold border dark:bg-blue-900 dark:text-gray-100 dark:border-gray-700"
     >
       INCIDENCIAS JUSTIFICADAS 
@@ -396,6 +410,7 @@ defineExpose({
     <th class="border px-2 py-2 text-center dark:border-gray-700">DNI</th>
     <th class="border px-4 py-2 text-center dark:border-gray-700">Apellidos</th>
     <th class="border px-4 py-2 text-center dark:border-gray-700">Nombre</th>
+    <th class="border px-4 py-2 text-center dark:border-gray-700">Empresa</th>
 
     <th
       v-for="f in columnasFechas"
@@ -426,6 +441,7 @@ defineExpose({
         <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.apellidos }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.nombre }}</td>
+        <td class="border px-3 dark:border-gray-700">{{ emp.empresa || '' }}</td>
 
         <td v-for="f in columnasFechas" :key="f" class="border px-1 py-1 text-center relative group dark:border-gray-700" :class="[
           esFinDeSemana(Number(f.split('-')[0])) && (!emp.dias[f]?.valor ? 'bg-yellow-50 dark:bg-yellow-900 dark:text-yellow-200' : ''),

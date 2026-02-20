@@ -23,6 +23,7 @@ const fechaFin = ref<string>((() => {
 const filaSeleccionada = ref<number | null>(null);
 const filaRef = ref<HTMLElement | null>(null);
 const filtroUsuario = ref("");
+const filtroEmpresa = ref("");
 const exportando = ref(false)
 // Referencias a los componentes hijos
 const tablaIncidenciasRef = ref<InstanceType<typeof TablaIncidencias> | null>(null);
@@ -216,6 +217,19 @@ async function descargarExcel() {
               />
             </div>
 
+            <div v-if="tabActivo === 'incidencias'" class="flex flex-col gap-0.5">
+              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Empresa
+              </label>
+              <select
+                v-model="filtroEmpresa"
+                class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-48 focus:ring-2 focus:ring-indigo-500 outline-none"
+              >
+                <option value="">Todas</option>
+                <option value="Ydieza SAC">Ydieza SAC</option>
+                <option value="Cechriza SAC">Cechriza SAC</option>
+              </select>
+            </div>
 
           </div>
 
@@ -248,6 +262,7 @@ async function descargarExcel() {
           <TablaIncidencias
             ref="tablaIncidenciasRef"
             :filtro-usuario="filtroUsuario"
+            :filtro-empresa="filtroEmpresa"
             :fecha-inicio="fechaInicio"
             :fecha-fin="fechaFin"
           />
