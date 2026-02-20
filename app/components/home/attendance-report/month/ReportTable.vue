@@ -66,6 +66,20 @@
         />
       </div>
 
+      <!-- Modal para ampliar imagen -->
+      <UModal :open="zoomImage" @update:open="(isOpen) => {
+        if (!isOpen) {
+          zoomImage = false;
+        }
+      }" title="Vista previa de la imagen">
+        <template #content>
+          <div class="flex justify-center items-center">
+            <img :src="showCurrentImage" alt="Imagen ampliada"
+              class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg border border-gray-300 dark:border-gray-700" />
+          </div>
+        </template>
+      </UModal>
+
       <!-- Footer con paginación -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">
