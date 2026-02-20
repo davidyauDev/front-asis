@@ -32,7 +32,6 @@
       <!-- Tabla -->
       <div class="overflow-x-auto">
         <UTable 
-          ref="table" 
           :data="attendances.listFiltered" 
           :columns="dinamicColumns" 
           :ui="{
@@ -59,10 +58,6 @@
               size: 'text-sm'
             }
           }" 
-          v-model:pagination="attendances.pagination" 
-          :pagination-options="{
-            getPaginationRowModel: getPaginationRowModel()
-          }" 
         />
       </div>
 
@@ -80,21 +75,6 @@
         </template>
       </UModal>
 
-      <!-- Footer con paginación -->
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800">
-        <div class="text-sm text-gray-600 dark:text-gray-400">
-          Mostrando <span class="font-semibold text-gray-900 dark:text-gray-100">{{ getStats().start }}</span> - 
-          <span class="font-semibold text-gray-900 dark:text-gray-100">{{ getStats().end }}</span>
-          de <span class="font-semibold text-gray-900 dark:text-gray-100">{{ getStats().total }}</span> registros
-        </div>
-        
-        <UPagination 
-          :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-          :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-          :total="table?.tableApi?.getFilteredRowModel().rows.length"
-          @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)" 
-        />
-      </div>
     </DataState>
   </div>
 </template>
@@ -102,7 +82,6 @@
 
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui';
-import { getPaginationRowModel } from '@tanstack/vue-table';
 import { h, ref, resolveComponent } from 'vue';
 import DataState from '~/components/common/DataState.vue';
 import { EmployeeType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
@@ -225,27 +204,6 @@ const sortColumButton = (column: any, label: string) => {
     class: 'font-semibold',
     onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
   })
-}
-
-const table = useTemplateRef('table')
-
-// const pagination = ref({
-//   pageIndex: 0,
-//   pageSize: 10
-// })
-
-const getStats = () => {
-  const pageIndex = table?.value?.tableApi?.getState().pagination.pageIndex || 0;
-  const pageSize = table?.value?.tableApi?.getState().pagination.pageSize || 10;
-  const total = table?.value?.tableApi?.getFilteredRowModel().rows.length || 0;
-
-  const start = total === 0 ? 0 : pageIndex * pageSize + 1;
-  const end = Math.min((pageIndex + 1) * pageSize, total);
-  return {
-    total,
-    end,
-    start
-  }
 }
 
 const dinamicColumns = computed<TableColumn<TakenAttendace>[]>(() => [...columns, ...(employeeType === EmployeeType.TECHNICIANS ? [...technicianColumns.value] : [...administratorsColumns.value])]);
