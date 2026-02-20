@@ -4,19 +4,33 @@ import { apiFetch } from '~/services/api';
 const props = defineProps<{
     fechaInicio: string,
     fechaFin: string,
-    filtroUsuario: string
+    filtroUsuario: string,
+    filtroEmpresa: string
 }>();
 
 const datosEmpleados = ref<any[]>([]);
 const cargando = ref(true);
 
 const empleadosFiltrados = computed(() => {
+    let list = datosEmpleados.value;
+
     const q = props.filtroUsuario.trim().toLowerCase();
-    if (!q) return datosEmpleados.value;
-    return datosEmpleados.value.filter((e) => {
-        const texto = `${e.dni} ${e.apellidos} ${e.nombre}`.toLowerCase();
-        return texto.includes(q);
-    });
+    if (q) {
+        list = list.filter((e) => {
+            const texto = `${e.dni} ${e.apellidos} ${e.nombre}`.toLowerCase();
+            return texto.includes(q);
+        });
+    }
+
+    const empresa = props.filtroEmpresa?.trim().toLowerCase();
+    if (empresa) {
+        list = list.filter((e) => {
+            const empEmpresa = (e.empresa ?? '').toString().trim().toLowerCase();
+            return empEmpresa === empresa;
+        });
+    }
+
+    return list;
 });
 const toast = useToast()
 1
@@ -209,14 +223,14 @@ defineExpose({
                     <table class="border-collapse w-full text-sm">
                         <thead>
                             <tr>
-                                <th v-for="i in 6" :key="i">
+                                <th v-for="i in 7" :key="i">
                                     <USkeleton class="h-4 w-32 rounded" />
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="row in 8" :key="row">
-                                <td v-for="col in 6" :key="col">
+                                <td v-for="col in 7" :key="col">
                                     <USkeleton class="h-4 w-28 rounded my-2" />
                                 </td>
                             </tr>
@@ -232,6 +246,7 @@ defineExpose({
                     <th class="border px-3 py-2 dark:border-gray-700">ID</th>
                     <th class="border px-3 py-2 dark:border-gray-700">DNI</th>
                     <th class="border px-4 py-2 dark:border-gray-700">APELLIDOS Y NOMBRES</th>
+                    <th class="border px-4 py-2 dark:border-gray-700">EMPRESA</th>
                     <th class="border px-3 py-2 bg-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border-gray-700">BRUTO</th>
                     <th class="border px-3 py-2 bg-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border-gray-700">INCIDENCIAS</th>
                     <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">NETO</th>
@@ -245,6 +260,9 @@ defineExpose({
                     <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
                     <td class="border px-3 dark:border-gray-700">
                         {{ emp.apellidos }} {{ emp.nombre }}
+                    </td>
+                    <td class="border px-3 dark:border-gray-700">
+                        {{ emp.empresa || '' }}
                     </td>
 
                     <td class="border px-2 text-center bg-blue-50 dark:bg-blue-900 dark:text-blue-200 dark:border-gray-700">

@@ -217,7 +217,7 @@ async function descargarExcel() {
               />
             </div>
 
-            <div v-if="tabActivo === 'incidencias'" class="flex flex-col gap-0.5">
+            <div class="flex flex-col gap-0.5">
               <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                 Empresa
               </label>
@@ -273,6 +273,7 @@ async function descargarExcel() {
           <TablaCalculo
             ref="tablaCalculoRef"
             :filtro-usuario="filtroUsuario"
+            :filtro-empresa="filtroEmpresa"
             :fecha-inicio="fechaInicio"
             :fecha-fin="fechaFin"
           />
