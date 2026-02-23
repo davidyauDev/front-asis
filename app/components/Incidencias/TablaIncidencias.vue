@@ -9,6 +9,7 @@ const props = defineProps<{
   filtroUsuario: string,
   fechaInicio: string,
   filtroEmpresa: string,
+  filtroDepartamento: string,
   fechaFin: string
 }>();
 const filaSeleccionada = ref<number | null>(null);
@@ -37,6 +38,7 @@ interface Empleado {
   dni: string;
   apellidos: string;
   nombre: string;
+  departamento?: string;
   empresa?: string;
   incidencias_hhmm: string;
   dias: Record<string, Dia>;
@@ -80,6 +82,14 @@ const empleadosFiltrados = computed(() => {
     list = list.filter((e) => {
       const empEmpresa = (e.empresa ?? '').toString().trim().toLowerCase();
       return empEmpresa === empresa;
+    });
+  }
+
+  const departamento = props.filtroDepartamento?.trim().toLowerCase();
+  if (departamento) {
+    list = list.filter((e) => {
+      const empDepto = (e.departamento ?? '').toString().trim().toLowerCase();
+      return empDepto === departamento;
     });
   }
 
@@ -435,7 +445,7 @@ defineExpose({
   <!-- FILA 1: CONTEXTO -->
   <tr>
     <th
-      colspan="4"
+      colspan="5"
       class="bg-[#1f4e78] text-white text-center py-3 font-bold border dark:bg-blue-900 dark:text-gray-100 dark:border-gray-700"
     >
       INCIDENCIAS JUSTIFICADAS 
@@ -488,6 +498,7 @@ defineExpose({
         <UIcon :name="sortIcon('nombre')" class="w-3 h-3" />
       </button>
     </th>
+    <th class="border px-4 py-2 text-center dark:border-gray-700">Departamento</th>
     <th class="border px-4 py-2 text-center dark:border-gray-700">
       <button
         type="button"
@@ -530,6 +541,7 @@ defineExpose({
         <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.apellidos }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.nombre }}</td>
+        <td class="border px-3 dark:border-gray-700">{{ emp.departamento || '' }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.empresa || '' }}</td>
 
         <td v-for="f in columnasFechas" :key="f" class="border px-1 py-1 text-center relative group dark:border-gray-700" :class="[

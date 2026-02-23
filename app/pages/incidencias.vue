@@ -39,6 +39,10 @@ const filtroEmpresa = useCookie<string>('incidencias-filtro-empresa', {
   default: () => '',
   sameSite: 'lax'
 });
+const filtroDepartamento = useCookie<string>('incidencias-filtro-departamento', {
+  default: () => '',
+  sameSite: 'lax'
+});
 const tabActivo = useCookie<"incidencias" | "calculo">('incidencias-tab-activo', {
   default: () => 'incidencias',
   sameSite: 'lax'
@@ -250,6 +254,25 @@ async function descargarExcel() {
               </select>
             </div>
 
+            <div class="flex flex-col gap-0.5">
+              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Departamento
+              </label>
+              <select
+                v-model="filtroDepartamento"
+                class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-56 focus:ring-2 focus:ring-indigo-500 outline-none"
+              >
+                <option value="">Todos</option>
+                <option value="Sistemas_C">Sistemas_C</option>
+                <option value="Operaciones_C">Operaciones_C</option>
+                <option value="TEC_Taller_C">TEC_Taller_C</option>
+                <option value="SSGG_C">SSGG_C</option>
+                <option value="ADM_Cechriza">ADM_Cechriza</option>
+                <option value="TEC_Taller_Y">TEC_Taller_Y</option>
+                <option value="Operaciones_Y">Operaciones_Y</option>
+              </select>
+            </div>
+
           </div>
 
           <!-- DERECHA: acciones -->
@@ -282,6 +305,7 @@ async function descargarExcel() {
             ref="tablaIncidenciasRef"
             :filtro-usuario="filtroUsuario"
             :filtro-empresa="filtroEmpresa"
+            :filtro-departamento="filtroDepartamento"
             :fecha-inicio="fechaInicio"
             :fecha-fin="fechaFin"
           />
@@ -293,6 +317,7 @@ async function descargarExcel() {
             ref="tablaCalculoRef"
             :filtro-usuario="filtroUsuario"
             :filtro-empresa="filtroEmpresa"
+            :filtro-departamento="filtroDepartamento"
             :fecha-inicio="fechaInicio"
             :fecha-fin="fechaFin"
           />

@@ -5,7 +5,8 @@ const props = defineProps<{
     fechaInicio: string,
     fechaFin: string,
     filtroUsuario: string,
-    filtroEmpresa: string
+    filtroEmpresa: string,
+    filtroDepartamento: string
 }>();
 
 const datosEmpleados = ref<any[]>([]);
@@ -27,6 +28,14 @@ const empleadosFiltrados = computed(() => {
         list = list.filter((e) => {
             const empEmpresa = (e.empresa ?? '').toString().trim().toLowerCase();
             return empEmpresa === empresa;
+        });
+    }
+
+    const departamento = props.filtroDepartamento?.trim().toLowerCase();
+    if (departamento) {
+        list = list.filter((e) => {
+            const empDepto = (e.departamento ?? '').toString().trim().toLowerCase();
+            return empDepto === departamento;
         });
     }
 
@@ -246,10 +255,11 @@ defineExpose({
                     <th class="border px-3 py-2 dark:border-gray-700">ID</th>
                     <th class="border px-3 py-2 dark:border-gray-700">DNI</th>
                     <th class="border px-4 py-2 dark:border-gray-700">APELLIDOS Y NOMBRES</th>
+                    <th class="border px-4 py-2 dark:border-gray-700">DEPARTAMENTO</th>
                     <th class="border px-4 py-2 dark:border-gray-700">EMPRESA</th>
-                    <th class="border px-3 py-2 bg-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border-gray-700">BRUTO</th>
-                    <th class="border px-3 py-2 bg-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border-gray-700">INCIDENCIAS</th>
-                    <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">NETO</th>
+                    <th class="border px-3 py-2 bg-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border-gray-700">Tardanza Acumulada</th>
+                    <th class="border px-3 py-2 bg-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border-gray-700">Descuentos por Incidencia</th>
+                    <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">Tardanza Neta</th>
                     <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">Acciones</th>
                 </tr>
             </thead>
@@ -260,6 +270,9 @@ defineExpose({
                     <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
                     <td class="border px-3 dark:border-gray-700">
                         {{ emp.apellidos }} {{ emp.nombre }}
+                    </td>
+                    <td class="border px-3 dark:border-gray-700">
+                        {{ emp.departamento || '' }}
                     </td>
                     <td class="border px-3 dark:border-gray-700">
                         {{ emp.empresa || '' }}

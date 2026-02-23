@@ -115,15 +115,15 @@ const eliminarIncidencia = async (id: string) => {
     <template #body>
       <div class="grid grid-cols-3 gap-3 pb-4 mb-4 border-b">
         <div class="space-y-1">
-          <p class="text-xs text-gray-500">Bruto</p>
+          <p class="text-xs text-gray-500">Tardanza Acumulada</p>
           <p class="text-sm font-mono font-medium text-gray-900">{{ props.historialUser.bruto_hhmm }}</p>
         </div>
         <div class="space-y-1">
-          <p class="text-xs text-gray-500">Incidencias</p>
+          <p class="text-xs text-gray-500">Descuentos por Incidencia</p>
           <p class="text-sm font-mono font-medium text-gray-900">{{ props.historialUser.incidencias_hhmm }}</p>
         </div>
         <div class="space-y-1">
-          <p class="text-xs text-gray-500">Neto</p>
+          <p class="text-xs text-gray-500">Tardanza Neta</p>
           <p class="text-sm font-mono font-medium text-gray-900">{{ props.historialUser.neto_hhmm }}</p>
         </div>
       </div>

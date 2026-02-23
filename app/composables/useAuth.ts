@@ -88,12 +88,14 @@ const _useAuth = () => {
       const incidenciasFechaFin = useCookie<string | null>('incidencias-fecha-fin', { sameSite: 'lax' })
       const incidenciasFiltroUsuario = useCookie<string | null>('incidencias-filtro-usuario', { sameSite: 'lax' })
       const incidenciasFiltroEmpresa = useCookie<string | null>('incidencias-filtro-empresa', { sameSite: 'lax' })
+      const incidenciasFiltroDepartamento = useCookie<string | null>('incidencias-filtro-departamento', { sameSite: 'lax' })
       const incidenciasTabActivo = useCookie<string | null>('incidencias-tab-activo', { sameSite: 'lax' })
 
       incidenciasFechaInicio.value = null
       incidenciasFechaFin.value = null
       incidenciasFiltroUsuario.value = null
       incidenciasFiltroEmpresa.value = null
+      incidenciasFiltroDepartamento.value = null
       incidenciasTabActivo.value = null
 
     } finally {
