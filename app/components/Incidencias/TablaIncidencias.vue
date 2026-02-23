@@ -48,7 +48,7 @@ const toast = useToast()
 const datosEmpleados = ref<Empleado[]>([]);
 const cargando = ref(true);
 
-type SortKey = 'apellidos' | 'nombre' | 'empresa';
+type SortKey = 'apellidos' | 'nombre' | 'departamento' | 'empresa';
 const sortKey = ref<SortKey | null>(null);
 const sortDir = ref<'asc' | 'desc'>('asc');
 
@@ -498,7 +498,16 @@ defineExpose({
         <UIcon :name="sortIcon('nombre')" class="w-3 h-3" />
       </button>
     </th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">Departamento</th>
+    <th class="border px-4 py-2 text-center dark:border-gray-700">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-1 w-full"
+        @click="toggleSort('departamento')"
+      >
+        Departamento
+        <UIcon :name="sortIcon('departamento')" class="w-3 h-3" />
+      </button>
+    </th>
     <th class="border px-4 py-2 text-center dark:border-gray-700">
       <button
         type="button"
