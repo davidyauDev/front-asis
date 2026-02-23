@@ -268,6 +268,7 @@ async function descargarExcel() {
                 <option value="TEC_Taller_C">TEC_Taller_C</option>
                 <option value="SSGG_C">SSGG_C</option>
                 <option value="ADM_Cechriza">ADM_Cechriza</option>
+                <option value="ADM_Ydieza">ADM_Ydieza</option>
                 <option value="TEC_Taller_Y">TEC_Taller_Y</option>
                 <option value="Operaciones_Y">Operaciones_Y</option>
               </select>
