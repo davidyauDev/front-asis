@@ -43,6 +43,54 @@ const empleadosFiltrados = computed(() => {
 });
 const toast = useToast()
 1
+const sortField = ref<'dni' | 'nombre' | 'departamento' | 'empresa' | ''>('');
+const sortDirection = ref<'asc' | 'desc'>('asc');
+const sortCollator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
+
+const obtenerValorOrden = (emp: any, campo: string) => {
+    switch (campo) {
+        case 'dni':
+            return String(emp.dni ?? '').trim();
+        case 'nombre':
+            return `${emp.apellidos ?? ''} ${emp.nombre ?? ''}`.trim();
+        case 'departamento':
+            return String(emp.departamento ?? '').trim();
+        case 'empresa':
+            return String(emp.empresa ?? '').trim();
+        default:
+            return '';
+    }
+};
+
+const empleadosOrdenados = computed(() => {
+    const list = [...empleadosFiltrados.value];
+    if (!sortField.value) return list;
+
+    list.sort((a, b) => {
+        const av = obtenerValorOrden(a, sortField.value);
+        const bv = obtenerValorOrden(b, sortField.value);
+        const cmp = sortCollator.compare(av, bv);
+        return sortDirection.value === 'asc' ? cmp : -cmp;
+    });
+
+    return list;
+});
+
+const toggleSort = (campo: 'dni' | 'nombre' | 'departamento' | 'empresa') => {
+    if (sortField.value === campo) {
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+        return;
+    }
+    sortField.value = campo;
+    sortDirection.value = 'asc';
+};
+
+const sortIcon = (campo: 'dni' | 'nombre' | 'departamento' | 'empresa') => {
+    if (sortField.value !== campo) return 'i-heroicons-arrows-up-down';
+    return sortDirection.value === 'asc'
+        ? 'i-heroicons-arrow-up'
+        : 'i-heroicons-arrow-down';
+};
 const convertirAMinutos = (t: string) => {
     if (!t || t === "-") return 0;
     const p = t.split(":").map(Number);
@@ -52,10 +100,10 @@ const convertirAMinutos = (t: string) => {
 };
 
 
-const loadingEmail = ref<{ [key: number]: boolean }>({});
+const loadingEmail = ref<{ [key: string]: boolean }>({});
 
 async function enviarEmail(emp: any) {
-    loadingEmail.value[emp.id] = true;
+    loadingEmail.value[String(emp.dni ?? '')] = true;
     const payload = {
         email: emp.email ?? 'yauridavid00@gmail.com',
         nombre: emp.nombre,
@@ -80,7 +128,7 @@ async function enviarEmail(emp: any) {
             color: 'error',
         });
     } finally {
-        loadingEmail.value[emp.id] = false;
+        loadingEmail.value[String(emp.dni ?? '')] = false;
     }
 }
 
@@ -252,11 +300,46 @@ defineExpose({
         <table v-else class="border-collapse w-full text-sm rounded shadow dark:bg-gray-900 dark:text-gray-200">
             <thead>
                 <tr class="bg-[#1f4e78] text-white dark:bg-blue-900">
-                    <th class="border px-3 py-2 dark:border-gray-700">ID</th>
-                    <th class="border px-3 py-2 dark:border-gray-700">DNI</th>
-                    <th class="border px-4 py-2 dark:border-gray-700">APELLIDOS Y NOMBRES</th>
-                    <th class="border px-4 py-2 dark:border-gray-700">DEPARTAMENTO</th>
-                    <th class="border px-4 py-2 dark:border-gray-700">EMPRESA</th>
+                    <th class="border px-3 py-2 dark:border-gray-700">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
+                            @click="toggleSort('dni')"
+                        >
+                            DNI
+                            <UIcon :name="sortIcon('dni')" class="w-4 h-4" />
+                        </button>
+                    </th>
+                    <th class="border px-4 py-2 dark:border-gray-700">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
+                            @click="toggleSort('nombre')"
+                        >
+                            APELLIDOS Y NOMBRES
+                            <UIcon :name="sortIcon('nombre')" class="w-4 h-4" />
+                        </button>
+                    </th>
+                    <th class="border px-4 py-2 dark:border-gray-700">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
+                            @click="toggleSort('departamento')"
+                        >
+                            DEPARTAMENTO
+                            <UIcon :name="sortIcon('departamento')" class="w-4 h-4" />
+                        </button>
+                    </th>
+                    <th class="border px-4 py-2 dark:border-gray-700">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
+                            @click="toggleSort('empresa')"
+                        >
+                            EMPRESA
+                            <UIcon :name="sortIcon('empresa')" class="w-4 h-4" />
+                        </button>
+                    </th>
                     <th class="border px-3 py-2 bg-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border-gray-700">Tardanza Acumulada</th>
                     <th class="border px-3 py-2 bg-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border-gray-700">Descuentos por Incidencia</th>
                     <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">Tardanza Neta</th>
@@ -265,8 +348,7 @@ defineExpose({
             </thead>
 
             <tbody>
-                <tr v-for="emp in empleadosFiltrados" :key="emp.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td class="border px-2 text-center dark:border-gray-700">{{ emp.id }}</td>
+                <tr v-for="emp in empleadosOrdenados" :key="emp.dni" class="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
                     <td class="border px-3 dark:border-gray-700">
                         {{ emp.apellidos }} {{ emp.nombre }}
@@ -297,10 +379,10 @@ defineExpose({
                             size="sm"
                             color="info"
                             variant="soft"
-                            :disabled="loadingEmail[emp.id]"
+                            :disabled="loadingEmail[String(emp.dni ?? '')]"
                             @click="enviarEmail(emp)"
                         >
-                            <template v-if="loadingEmail[emp.id]">
+                            <template v-if="loadingEmail[String(emp.dni ?? '')]">
                                 <svg class="animate-spin h-4 w-4 mr-2 inline-block text-blue-500 dark:text-blue-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
