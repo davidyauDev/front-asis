@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import TablaIncidencias from "~/components/Incidencias/TablaIncidencias.vue";
 import TablaCalculo from "~/components/Incidencias/Tardanzas/TablaCalculo.vue";
-const tabActivo = ref<"incidencias" | "calculo">("incidencias");
 const hoy = new Date();
 // Por defecto: fechaInicio = 23 del mes anterior, fechaFin = 22 del mes actual
-const fechaInicio = ref<string>((() => {
+const defaultFechaInicio = (() => {
   const anio = hoy.getFullYear();
   let mes = hoy.getMonth(); // mes actual (0-11)
   if (mes === 0) {
@@ -12,26 +11,46 @@ const fechaInicio = ref<string>((() => {
   }
   const mesStr = (mes).toString().padStart(2, '0');
   return `${anio}-${mesStr}-23`;
-})());
-const fechaFin = ref<string>((() => {
+})();
+const defaultFechaFin = (() => {
   const anio = hoy.getFullYear();
   const mes = hoy.getMonth() + 1;
   const mesStr = (mes).toString().padStart(2, '0');
   return `${anio}-${mesStr}-22`;
-})());
+})();
+
+// Persistir rango entre cambios de módulo
+const fechaInicio = useCookie<string>('incidencias-fecha-inicio', {
+  default: () => defaultFechaInicio,
+  sameSite: 'lax'
+});
+const fechaFin = useCookie<string>('incidencias-fecha-fin', {
+  default: () => defaultFechaFin,
+  sameSite: 'lax'
+});
 
 const filaSeleccionada = ref<number | null>(null);
 const filaRef = ref<HTMLElement | null>(null);
-const filtroUsuario = ref("");
-const filtroEmpresa = ref("");
+const filtroUsuario = useCookie<string>('incidencias-filtro-usuario', {
+  default: () => '',
+  sameSite: 'lax'
+});
+const filtroEmpresa = useCookie<string>('incidencias-filtro-empresa', {
+  default: () => '',
+  sameSite: 'lax'
+});
+const tabActivo = useCookie<"incidencias" | "calculo">('incidencias-tab-activo', {
+  default: () => 'incidencias',
+  sameSite: 'lax'
+});
 const exportando = ref(false)
 // Referencias a los componentes hijos
 const tablaIncidenciasRef = ref<InstanceType<typeof TablaIncidencias> | null>(null);
 const tablaCalculoRef = ref<InstanceType<typeof TablaCalculo> | null>(null);
 
 // Estados temporales para los inputs de fecha
-const fechaInicioTemp = ref(fechaInicio.value);
-const fechaFinTemp = ref(fechaFin.value);
+const fechaInicioTemp = ref(fechaInicio.value || defaultFechaInicio);
+const fechaFinTemp = ref(fechaFin.value || defaultFechaFin);
 
 function aplicarRangoFechas() {
   if (fechaInicioTemp.value && fechaFinTemp.value) {

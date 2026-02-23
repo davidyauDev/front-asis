@@ -83,6 +83,19 @@ const _useAuth = () => {
       authUserCookie.value = null
       authTokenCookie.value = null
 
+      // Limpiar filtros persistidos de incidencias al cerrar sesión
+      const incidenciasFechaInicio = useCookie<string | null>('incidencias-fecha-inicio', { sameSite: 'lax' })
+      const incidenciasFechaFin = useCookie<string | null>('incidencias-fecha-fin', { sameSite: 'lax' })
+      const incidenciasFiltroUsuario = useCookie<string | null>('incidencias-filtro-usuario', { sameSite: 'lax' })
+      const incidenciasFiltroEmpresa = useCookie<string | null>('incidencias-filtro-empresa', { sameSite: 'lax' })
+      const incidenciasTabActivo = useCookie<string | null>('incidencias-tab-activo', { sameSite: 'lax' })
+
+      incidenciasFechaInicio.value = null
+      incidenciasFechaFin.value = null
+      incidenciasFiltroUsuario.value = null
+      incidenciasFiltroEmpresa.value = null
+      incidenciasTabActivo.value = null
+
     } finally {
       loading.value = false
     }

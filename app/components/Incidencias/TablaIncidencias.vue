@@ -46,9 +46,26 @@ const toast = useToast()
 const datosEmpleados = ref<Empleado[]>([]);
 const cargando = ref(true);
 
+type SortKey = 'apellidos' | 'nombre' | 'empresa';
+const sortKey = ref<SortKey | null>(null);
+const sortDir = ref<'asc' | 'desc'>('asc');
+
+const toggleSort = (key: SortKey) => {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
+};
+
+const sortIcon = (key: SortKey) => {
+  if (sortKey.value !== key) return 'i-heroicons-arrows-up-down';
+  return sortDir.value === 'asc' ? 'i-heroicons-arrow-up' : 'i-heroicons-arrow-down';
+};
 
 const empleadosFiltrados = computed(() => {
-  let list = datosEmpleados.value;
+  let list = datosEmpleados.value.slice();
 
   const q = props.filtroUsuario.trim().toLowerCase();
   if (q) {
@@ -63,6 +80,17 @@ const empleadosFiltrados = computed(() => {
     list = list.filter((e) => {
       const empEmpresa = (e.empresa ?? '').toString().trim().toLowerCase();
       return empEmpresa === empresa;
+    });
+  }
+
+  if (sortKey.value) {
+    const key = sortKey.value;
+    list = list.slice().sort((a, b) => {
+      const av = (a[key] ?? '').toString().toLowerCase();
+      const bv = (b[key] ?? '').toString().toLowerCase();
+      if (av < bv) return sortDir.value === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir.value === 'asc' ? 1 : -1;
+      return 0;
     });
   }
 
@@ -91,15 +119,43 @@ const columnasFechas = computed(() => {
 const validarFormatoTiempo = (valor: string) =>
   /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(valor);
 
-const esFinDeSemana = (fechaStr: string) => {
+const fechaUtc = (fechaStr: string) => {
   // fechaStr: 'dd-mm'
-  if (typeof fechaStr !== 'string' || !fechaStr.includes('-')) return false;
-  const [dia, mes] = fechaStr.split('-');
-  if (!dia || !mes) return false;
-  const anio = new Date(props.fechaInicio).getFullYear();
-  const fecha = new Date(`${anio}-${mes}-${dia}`);
-  if (isNaN(fecha.getTime())) return false;
-  return [0, 6].includes(fecha.getDay());
+  if (typeof fechaStr !== 'string' || !fechaStr.includes('-')) return null;
+  const [dia, mes] = fechaStr.split('-').map(Number);
+  if (!dia || !mes) return null;
+  const [anio] = props.fechaInicio.split('-').map(Number);
+  if (!anio) return null;
+  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+  if (isNaN(fecha.getTime())) return null;
+  return fecha;
+};
+
+const esFinDeSemana = (fechaStr: string) => {
+  const fecha = fechaUtc(fechaStr);
+  if (!fecha) return false;
+  return [0, 6].includes(fecha.getUTCDay());
+};
+
+const esDomingo = (fechaStr: string) => {
+  const fecha = fechaUtc(fechaStr);
+  if (!fecha) return false;
+  return fecha.getUTCDay() === 0;
+};
+
+const inicialDia = (fechaStr: string) => {
+  const fecha = fechaUtc(fechaStr);
+  if (!fecha) return '';
+  const map: Record<number, string> = {
+    0: 'D', // Domingo
+    1: 'L', // Lunes
+    2: 'M', // Martes
+    3: 'X', // Miércoles
+    4: 'J', // Jueves
+    5: 'V', // Viernes
+    6: 'S', // Sábado
+  };
+  return map[fecha.getUTCDay()] || '';
 };
 
 const obtenerColorCelda = (valor: string): string => {
@@ -379,7 +435,7 @@ defineExpose({
   <!-- FILA 1: CONTEXTO -->
   <tr>
     <th
-      colspan="5"
+      colspan="4"
       class="bg-[#1f4e78] text-white text-center py-3 font-bold border dark:bg-blue-900 dark:text-gray-100 dark:border-gray-700"
     >
       INCIDENCIAS JUSTIFICADAS 
@@ -389,9 +445,14 @@ defineExpose({
       v-for="f in columnasFechas"
       :key="f"
       class="border text-center text-xs font-semibold dark:border-gray-700"
+      :class="esDomingo(f)
+        ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100'
+        : esFinDeSemana(f)
+          ? 'bg-yellow-50 dark:bg-yellow-900 dark:text-yellow-200'
+          : 'dark:bg-gray-900 dark:text-gray-200'"
       
     >
-      
+      <span class="text-[10px] font-semibold">{{ inicialDia(f) }}</span>
     </th>
 
     <th class="bg-purple-600 text-white px-3 text-sm dark:bg-purple-900 dark:text-gray-100">
@@ -406,21 +467,49 @@ defineExpose({
 
   <!-- FILA 2: ESTRUCTURA -->
   <tr class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600 dark:bg-gray-800 dark:text-gray-300">
-    <th class="border px-2 py-2 text-center dark:border-gray-700">#</th>
     <th class="border px-2 py-2 text-center dark:border-gray-700">DNI</th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">Apellidos</th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">Nombre</th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">Empresa</th>
+    <th class="border px-4 py-2 text-center dark:border-gray-700">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-1 w-full"
+        @click="toggleSort('apellidos')"
+      >
+        Apellidos
+        <UIcon :name="sortIcon('apellidos')" class="w-3 h-3" />
+      </button>
+    </th>
+    <th class="border px-4 py-2 text-center dark:border-gray-700">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-1 w-full"
+        @click="toggleSort('nombre')"
+      >
+        Nombre
+        <UIcon :name="sortIcon('nombre')" class="w-3 h-3" />
+      </button>
+    </th>
+    <th class="border px-4 py-2 text-center dark:border-gray-700">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-1 w-full"
+        @click="toggleSort('empresa')"
+      >
+        Empresa
+        <UIcon :name="sortIcon('empresa')" class="w-3 h-3" />
+      </button>
+    </th>
 
     <th
       v-for="f in columnasFechas"
       :key="f"
       class="border px-2 py-2 text-center dark:border-gray-700"
-      :class="esFinDeSemana(Number(f.split('-')[0]))
-        ? 'bg-yellow-50 dark:bg-yellow-900 dark:text-yellow-200'
-        : 'dark:bg-gray-900 dark:text-gray-200'"
+      :class="esDomingo(f)
+        ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100'
+        : esFinDeSemana(f)
+          ? 'bg-yellow-50 dark:bg-yellow-900 dark:text-yellow-200'
+          : 'dark:bg-gray-900 dark:text-gray-200'"
     >
-      {{ Number(f.split('-')[0]) }}
+      <span class="text-xs">{{ Number(f.split('-')[0]) }}</span>
     </th>
 
     <th class="border px-3 py-2 text-center font-semibold text-purple-700 dark:border-gray-700 dark:text-purple-300">
@@ -429,6 +518,7 @@ defineExpose({
 
     <th class="border px-3 py-2 text-center dark:border-gray-700"></th>
   </tr>
+
 </thead>
 
 
@@ -437,16 +527,16 @@ defineExpose({
       <tr v-for="emp in empleadosFiltrados" :key="emp.id" :ref="el => setFilaRef(el, emp)"
         class="cursor-pointer transition-colors dark:hover:bg-gray-800"
         :class="filaSeleccionada === emp.id ? 'bg-blue-100 ring-2 ring-blue-500 ring-inset dark:bg-blue-900 dark:ring-blue-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800'">
-        <td class="border px-2 text-center dark:border-gray-700">{{ emp.id }}</td>
         <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.apellidos }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.nombre }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.empresa || '' }}</td>
 
         <td v-for="f in columnasFechas" :key="f" class="border px-1 py-1 text-center relative group dark:border-gray-700" :class="[
-          esFinDeSemana(Number(f.split('-')[0])) && (!emp.dias[f]?.valor ? 'bg-yellow-50 dark:bg-yellow-900 dark:text-yellow-200' : ''),
+          esFinDeSemana(f) && (!emp.dias[f]?.valor ? 'bg-yellow-50 dark:bg-yellow-900 dark:text-yellow-200' : ''),
           emp.dias[f]?.valor ? obtenerColorCelda(emp.dias[f].valor) : '',
           filaSeleccionada === emp.id ? 'ring-1 ring-blue-300 dark:ring-blue-300' : '',
+          esDomingo(f) ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100' : '',
         ]">
           <!-- Tooltip -->
           <div v-if="emp.dias[f]?.motivo"
