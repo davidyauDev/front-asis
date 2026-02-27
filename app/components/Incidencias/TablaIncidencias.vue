@@ -31,6 +31,8 @@ const valuetrackingIncidencia = ref<Record<string, any> | null>(null);
 interface Dia {
   valor?: string;
   motivo?: string;
+  created_at?: string;
+  creado_por?: any;
 }
 
 interface Empleado {
@@ -196,6 +198,52 @@ const obtenerColorCelda = (valor: string): string => {
   if (v === 'TC') return 'bg-orange-300 text-orange-900 dark:bg-orange-800 dark:text-orange-100';
   if (validarFormatoTiempo(valor)) return 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100';
   return 'bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100';
+};
+
+const formatCreatedAt = (raw?: string) => {
+  if (!raw) return '';
+  const date = new Date(raw);
+  if (isNaN(date.getTime())) return raw;
+
+  const fecha = new Intl.DateTimeFormat('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Lima'
+  }).format(date);
+
+  const hora = new Intl.DateTimeFormat('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'America/Lima'
+  }).format(date);
+
+  return `${fecha} ${hora}`;
+};
+
+const formatCreatedBy = (raw: any) => {
+  if (!raw) return 'Admin';
+  if (typeof raw === 'string' || typeof raw === 'number') return String(raw);
+
+  const nombre =
+    raw.nombre ||
+    raw.nombres ||
+    raw.name ||
+    raw.full_name ||
+    raw.fullName;
+
+  const apellidos =
+    raw.apellidos ||
+    raw.apellido ||
+    raw.last_name ||
+    raw.lastName;
+
+  const partes = [nombre, apellidos].filter(Boolean);
+  if (partes.length) return partes.join(' ');
+
+  return 'Admin';
 };
 const guardarIncidencia = async (formIncidencia: FormIncidencia) => {
   const user = useCookie<{ id: number } | null>('auth_user')
@@ -578,22 +626,39 @@ defineExpose({
           filaSeleccionada === emp.id ? 'ring-1 ring-blue-300 dark:ring-blue-300' : '',
           esDomingo(f) ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100' : '',
         ]">
-          <!-- Tooltip -->
-          <div v-if="emp.dias[f]?.motivo"
-            class="absolute z-20 top-9 right-1 w-56 p-3 bg-white border rounded-lg shadow-lg text-left text-xs text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200">
-            <div class="font-semibold text-gray-900 mb-1 dark:text-gray-100">
-              Motivo: {{ emp.dias[f].motivo }}
-            </div>
-            <div class="text-gray-600 dark:text-gray-300">
-              <span class="font-medium">Creado por:</span> Admin
-            </div>
-            <div class="text-gray-500 dark:text-gray-400">
-              <span class="font-medium">Hora:</span> 18/06/2025 15:42
-            </div>
-          </div>
+          <UPopover
+            v-if="emp.dias[f]?.motivo"
+            mode="hover"
+            :portal="true"
+            :arrow="true"
+            :content="{ side: 'top', sideOffset: 8, collisionPadding: 12 }"
+          >
+            <template #default>
+              <template v-if="emp.dias[f]">
+                <input v-if="filaSeleccionada === emp.id" v-model="emp.dias[f].valor"
+                  class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded dark:bg-gray-800 dark:text-gray-200" />
+                <span v-else class="font-medium" :title="emp.dias[f].motivo || ''">
+                  {{ emp.dias[f].valor }}
+                </span>
+              </template>
+            </template>
+            <template #content>
+              <div class="w-60 p-3 bg-white/95 border border-gray-200 rounded-xl shadow-xl text-left text-xs text-gray-700 dark:bg-gray-900/95 dark:border-gray-700 dark:text-gray-200 backdrop-blur">
+                <div class="font-semibold text-gray-900 mb-1.5 dark:text-gray-100">
+                  Motivo: {{ emp.dias[f].motivo }}
+                </div>
+                <div class="h-px bg-gray-100 dark:bg-gray-800 my-1.5"></div>
+                <div class="text-gray-600 dark:text-gray-300">
+                  <span class="font-medium">Creado por:</span> {{ formatCreatedBy(emp.dias[f].creado_por) }}
+                </div>
+                <div class="text-gray-500 dark:text-gray-400">
+                  <span class="font-medium">Fecha:</span> {{ formatCreatedAt(emp.dias[f].created_at) }}
+                </div>
+              </div>
+            </template>
+          </UPopover>
 
-          <!-- Input / Texto -->
-          <template v-if="emp.dias[f]">
+          <template v-else-if="emp.dias[f]">
             <input v-if="filaSeleccionada === emp.id" v-model="emp.dias[f].valor"
               class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded dark:bg-gray-800 dark:text-gray-200" />
             <span v-else class="font-medium" :title="emp.dias[f].motivo || ''">
