@@ -100,6 +100,16 @@ const storeSelecteds = defineModel<Department[]>('department', {
 
 const param = defineModel<number[] | undefined>('param');
 
+const route = useRoute();
+const routeKey = (route.name ?? route.path)
+  .toString()
+  .replace(/[^a-zA-Z0-9_-]/g, '_');
+const savedIds = useCookie<number[]>(
+  `department-filter-${routeKey}`,
+  { default: () => [], sameSite: 'lax' }
+);
+const hasAppliedSaved = ref(false);
+
 
 const selecteds = computed<Department[]>({
   get() {
@@ -142,6 +152,34 @@ const handleResertFilter = () => {
   selecteds.value = department.value.list
   //param.value = undefined;
 }
+
+watch(
+  () => list,
+  (newList) => {
+    if (hasAppliedSaved.value) return;
+    if (!newList.length) return;
+    const ids = savedIds.value || [];
+    if (!ids.length) {
+      hasAppliedSaved.value = true;
+      return;
+    }
+    const restored = newList.filter(dep => ids.includes(dep.id));
+    if (restored.length) {
+      storeSelecteds.value = restored;
+    }
+    hasAppliedSaved.value = true;
+  },
+  { immediate: true }
+);
+
+watch(
+  () => storeSelecteds.value,
+  (newSelecteds) => {
+    if (!hasAppliedSaved.value) return;
+    savedIds.value = newSelecteds.map(dep => dep.id);
+  },
+  { deep: true }
+);
 
 
 </script>

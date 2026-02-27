@@ -49,8 +49,13 @@ const datosEmpleados = ref<Empleado[]>([]);
 const cargando = ref(true);
 
 type SortKey = 'apellidos' | 'nombre' | 'departamento' | 'empresa';
-const sortKey = ref<SortKey | null>(null);
-const sortDir = ref<'asc' | 'desc'>('asc');
+const sortKey = useCookie<SortKey | ''>('incidencias-sort-key', {
+  default: () => ''
+});
+const sortDir = useCookie<'asc' | 'desc'>('incidencias-sort-dir', {
+  default: () => 'asc'
+});
+const sortCollator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
 
 const toggleSort = (key: SortKey) => {
   if (sortKey.value === key) {
@@ -64,6 +69,21 @@ const toggleSort = (key: SortKey) => {
 const sortIcon = (key: SortKey) => {
   if (sortKey.value !== key) return 'i-heroicons-arrows-up-down';
   return sortDir.value === 'asc' ? 'i-heroicons-arrow-up' : 'i-heroicons-arrow-down';
+};
+
+const obtenerValorOrden = (emp: Empleado, key: SortKey) => {
+  switch (key) {
+    case 'apellidos':
+      return `${emp.apellidos ?? ''} ${emp.nombre ?? ''}`.trim();
+    case 'nombre':
+      return `${emp.nombre ?? ''} ${emp.apellidos ?? ''}`.trim();
+    case 'departamento':
+      return String(emp.departamento ?? '').trim();
+    case 'empresa':
+      return String(emp.empresa ?? '').trim();
+    default:
+      return '';
+  }
 };
 
 const empleadosFiltrados = computed(() => {
@@ -96,11 +116,10 @@ const empleadosFiltrados = computed(() => {
   if (sortKey.value) {
     const key = sortKey.value;
     list = list.slice().sort((a, b) => {
-      const av = (a[key] ?? '').toString().toLowerCase();
-      const bv = (b[key] ?? '').toString().toLowerCase();
-      if (av < bv) return sortDir.value === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir.value === 'asc' ? 1 : -1;
-      return 0;
+      const av = obtenerValorOrden(a, key);
+      const bv = obtenerValorOrden(b, key);
+      const cmp = sortCollator.compare(av, bv);
+      return sortDir.value === 'asc' ? cmp : -cmp;
     });
   }
 

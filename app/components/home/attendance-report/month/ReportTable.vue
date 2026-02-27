@@ -189,6 +189,27 @@ const currentMap = ref<string | undefined>(undefined)
 
 const UButton = resolveComponent('UButton');
 
+const formatDateTimeParts = (raw: string) => {
+  const date = new Date(raw);
+
+  const fecha = new Intl.DateTimeFormat('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Lima'
+  }).format(date);
+
+  const hora = new Intl.DateTimeFormat('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'America/Lima'
+  }).format(date);
+
+  return { fecha, hora };
+}
+
 const sortColumButton = (column: any, label: string) => {
   const isSorted = column.getIsSorted();
   return h(UButton, {
@@ -271,23 +292,11 @@ const technicianColumns = computed<TableColumn<TakenAttendace>[]>(() => ([{
     const raw = row.getValue('Fecha_Hora_Marcacion');
     if (!raw) return h('span', { class: 'text-xs text-gray-400 italic' }, 'Sin fecha');
 
-    const date = new Date(raw as string);
-
-    const fecha = new Intl.DateTimeFormat('es-PE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      timeZone: 'America/Lima'
-    }).format(date);
-
-    const hora = new Intl.DateTimeFormat('es-PE', {
-      timeStyle: 'short',
-      timeZone: 'America/Lima'
-    }).format(date);
+    const { fecha, hora } = formatDateTimeParts(raw as string);
 
     return h('div', { class: 'flex flex-col gap-0.5' }, [
-      h('span', { class: 'text-sm font-semibold text-gray-900 dark:text-gray-100' }, hora),
-      h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, fecha)
+      h('span', { class: 'text-base font-semibold text-gray-900 dark:text-gray-100' }, hora),
+      h('span', { class: 'text-sm font-semibold text-gray-700 dark:text-gray-300' }, fecha)
     ]);
   }
 }
@@ -378,21 +387,11 @@ const administratorsColumns = computed<TableColumn<TakenAttendace>[]>(() => [
       const raw = row.getValue('Fecha_Hora_Marcacion');
       if (!raw) return h('span', { class: 'text-xs text-gray-400 italic' }, 'Sin fecha');
 
-      const date = new Date(raw as string);
-
-      const fecha = new Intl.DateTimeFormat('es-PE', {
-        dateStyle: 'medium',
-        timeZone: 'America/Lima'
-      }).format(date);
-
-      const hora = new Intl.DateTimeFormat('es-PE', {
-        timeStyle: 'short',
-        timeZone: 'America/Lima'
-      }).format(date);
+      const { fecha, hora } = formatDateTimeParts(raw as string);
 
       return h('div', { class: 'flex flex-col gap-0.5' }, [
-        h('span', { class: 'text-sm font-semibold text-gray-900 dark:text-gray-100' }, fecha),
-        h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, hora)
+        h('span', { class: 'text-base font-semibold text-gray-900 dark:text-gray-100' }, hora),
+        h('span', { class: 'text-sm font-semibold text-gray-700 dark:text-gray-300' }, fecha)
       ]);
     }
   },

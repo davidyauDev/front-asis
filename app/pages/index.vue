@@ -7,15 +7,11 @@
             <UDashboardSidebarCollapse />
             <div class="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-800">
               <div class="hidden sm:flex items-center gap-2">
-                <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                  <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 text-white" />
-                </div>
-                <div>
+                <div class="flex flex-wrap items-center gap-3">
                   <h1 class="text-base font-semibold text-gray-900 dark:text-white">
                     Reporte de Asistencia
                   </h1>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <UIcon name="i-heroicons-calendar" class="w-3 h-3" />
+                  <p class="text-base font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2 px-2.5 py-1.5 leading-tight rounded-md bg-gray-100 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800">
                     {{ fechaFormateada }}
                   </p>
                 </div>
