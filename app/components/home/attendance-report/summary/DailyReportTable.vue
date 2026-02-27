@@ -124,12 +124,13 @@ const columns: TableColumn<AttendanceDetails>[] = [
       const raw = row.getValue('fecha')
       if (!raw) return h('span', { class: 'text-xs text-gray-400 italic' }, 'Sin fecha')
 
-      const date = new Date(raw as string)
+      const [y, m, d] = String(raw).split('-').map(Number)
+      const date = new Date(y, (m || 1) - 1, d || 1)
+
       const fecha = new Intl.DateTimeFormat('es-PE', {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric',
-        timeZone: 'America/Lima'
+        year: 'numeric'
       }).format(date)
 
       return h('span', { class: 'text-sm font-semibold text-gray-900 dark:text-gray-100' }, fecha)
