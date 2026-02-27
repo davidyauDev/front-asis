@@ -2,29 +2,62 @@
   <UModal
     v-model:open="open"
     :ui="{
-      title: 'py-6',
-      content: 'max-w-3xl',
+      title: 'py-5 px-6',
+      content: 'max-w-5xl',
     }"
   >
     <template #title>
-      <div class="flex items-center gap-4">
+      <div class="flex items-start gap-4">
         <UAvatar size="lg" :alt="employeeData?.employee.first_name || 'Usuario'" />
-        <div class="flex-1 gap-1 flex flex-col">
-          <h4
-            class="text-lg font-semibold text-gray-900 dark:text-gray-100"
-          >
+        <div class="flex-1">
+          <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {{ employeeData?.employee.last_name }}, {{ employeeData?.employee.first_name }}
           </h4>
-          <p class="text-sm text-gray-600 dark:text-gray-400">
-            {{ employeeData?.employee.position_name }} - DNI: {{ employeeData?.employee.dni }}
-          </p>
+          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+              DNI: {{ employeeData?.employee.dni }}
+            </span>
+            <span v-if="employeeData?.employee.department_name" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100/60 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+              {{ employeeData?.employee.department_name }}
+            </span>
+            <span v-if="employeeData?.employee.position_name" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100/60 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+              {{ employeeData?.employee.position_name }}
+            </span>
+          </div>
         </div>
       </div>
     </template>
     <template #body>
-      <div class="flex flex-col items-center justify-center w-full mt-4">
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-3">
+            <div class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Total dÃ­as</div>
+            <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {{ employeeData?.summary.total_days ?? 0 }}
+            </div>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-3">
+            <div class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Vacaciones</div>
+            <div class="text-lg font-semibold text-amber-700 dark:text-amber-300">
+              {{ employeeData?.summary.vacation_days ?? 0 }}
+            </div>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-3">
+            <div class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Desc. mÃ©dico</div>
+            <div class="text-lg font-semibold text-blue-700 dark:text-blue-300">
+              {{ employeeData?.summary.medical_leave_days ?? 0 }}
+            </div>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-3">
+            <div class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">No marcÃ³</div>
+            <div class="text-lg font-semibold text-rose-700 dark:text-rose-300">
+              {{ employeeData?.summary.no_mark_days ?? 0 }}
+            </div>
+          </div>
+        </div>
+
         <div
-          class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden w-full max-w-5xl"
+          class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden w-full"
         >
           <div
             class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800"

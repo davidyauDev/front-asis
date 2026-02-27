@@ -674,11 +674,11 @@ defineExpose({
           <div class="inline-flex items-center gap-1">
             <UTooltip text="Ver tracking">
               <UButton size="xs" color="primary" variant="ghost" icon="i-heroicons-eye"
-                class="transition-transform hover:scale-105 dark:bg-gray-800 dark:text-gray-200" @click.stop="verTracking(emp)" />
+                class="transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/60 dark:text-gray-200" @click.stop="verTracking(emp)" />
             </UTooltip>
             <UTooltip text="Agregar incidencia">
               <UButton size="xs" color="emerald" variant="ghost" icon="i-heroicons-plus"
-                class="transition-transform hover:scale-105 dark:bg-gray-800 dark:text-gray-200" @click.stop="agregarIncidencia(emp)" />
+                class="transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/60 dark:text-gray-200" @click.stop="agregarIncidencia(emp)" />
             </UTooltip>
           </div>
         </td>
