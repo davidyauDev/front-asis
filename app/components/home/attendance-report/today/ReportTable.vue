@@ -35,6 +35,7 @@
         ref="table"
         :data="dailyListAttendaces"
         :columns="columns"
+        :meta="{ class: { tr: rowClass } }"
         :loading="dailyTakenAttendaces.loading"
         empty="No se encontraron reportes de hoy"
         :ui="{
@@ -70,22 +71,26 @@
   </DataState>
 
   <UModal
-  v-model:open="isIncidenciaOpen"
-  :title="modalTitle"
-  :transition="true"
-  :ui="{ width: 'sm:max-w-lg' }"
->
+    v-model:open="isIncidenciaOpen"
+    :title="modalTitle"
+    :transition="true"
+    :ui="{ width: 'sm:max-w-lg' }"
+  >
   <template #body>
     <div class="space-y-6">
 
       <!-- Contexto -->
-      <div class="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4">
+      <div
+        class="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4"
+      >
         <div class="flex items-center gap-2 text-amber-900 dark:text-amber-100 font-semibold">
           <UIcon name="i-lucide-alert-circle" class="w-5 h-5" />
-          Se detectó una tardanza
+          <span v-if="!isPreIncidencia">Se detecto una tardanza</span>
+          <span v-else>Aun no marco ingreso</span>
         </div>
         <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
-          Registra el motivo para justificar esta incidencia.
+          <span v-if="!isPreIncidencia">Registra el motivo para justificar esta incidencia.</span>
+          <span v-else>Registra un recordatorio sin minutos. Se completara al aprobar.</span>
         </p>
       </div>
 
@@ -98,8 +103,13 @@
           </p>
         </div>
 
-        <div class="rounded-lg border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 p-3">
-          <p class="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">Tiempo de tardanza</p>
+        <div
+          v-if="!isPreIncidencia"
+          class="rounded-lg border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 p-3"
+        >
+          <p class="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">
+            Tiempo de tardanza
+          </p>
           <p class="font-semibold text-orange-900 dark:text-orange-100">
             {{ incidenciaForm.minutosTardanza }} minutos
           </p>
@@ -108,7 +118,7 @@
 
       <UFormGroup
   label="Motivo de la incidencia"
-  description="Describe brevemente la causa de la tardanza"
+  description="Describe brevemente el motivo"
   required
 >
   <UTextarea
@@ -189,6 +199,30 @@ const dailyListAttendaces = computed<TakenAttendace[]>(() => {
 
   return list;
 });
+
+type TakenAttendaceRow = TakenAttendace & {
+  Tiene_Incidencia?: boolean;
+  es_recordatorio?: boolean;
+  Es_Recordatorio?: boolean;
+  esRecordatorio?: boolean;
+};
+
+const getEsRecordatorio = (row: any) => {
+  const original = row?.original as TakenAttendaceRow | undefined;
+  if (!original) return false;
+  return Boolean(
+    original.es_recordatorio ??
+      original.Es_Recordatorio ??
+      original.esRecordatorio
+  );
+};
+
+const isPreIncidenciaRow = (row: any) => getEsRecordatorio(row);
+
+const rowClass = (row: any) =>
+  isPreIncidenciaRow(row)
+    ? "bg-amber-50/60 dark:bg-amber-950/30"
+    : "";
 
 const token = useCookie<string | null>('auth_token')
 
@@ -280,6 +314,8 @@ const UTooltip = resolveComponent("UTooltip");
 const savingIncidencia = ref(false)
 
 const isIncidenciaOpen = ref(false);
+const incidenciaMode = ref<"tardanza" | "preincidencia">("tardanza");
+const isPreIncidencia = computed(() => incidenciaMode.value === "preincidencia");
 const incidenciaForm = reactive({
   fecha: "",
   minutosTardanza: 0,
@@ -288,14 +324,19 @@ const incidenciaForm = reactive({
 
 const selectedRow = ref<TakenAttendace | null>(null);
 
-const openIncidenciaModal = (row: TakenAttendace) => {
+const openIncidenciaModal = (
+  row: TakenAttendace,
+  mode: "tardanza" | "preincidencia" = "tardanza"
+) => {
   selectedRow.value = row;
+  incidenciaMode.value = mode;
 
   incidenciaForm.fecha = new Date().toISOString().slice(0, 10);
 
-  incidenciaForm.minutosTardanza = row.Tardanza
-    ? calcularTardanza(row.Ingreso, row.Horario)
-    : 0;
+  incidenciaForm.minutosTardanza =
+    mode === "tardanza" && row.Tardanza
+      ? calcularTardanza(row.Ingreso, row.Horario)
+      : 0;
 
   incidenciaForm.motivo = "";
 
@@ -336,7 +377,8 @@ const guardarIncidencia = async () => {
     creado_por: user.value.id,
     usuario_id: selectedRow.value.Empleado_id,
     fecha: incidenciaForm.fecha,
-    minutos: incidenciaForm.minutosTardanza,
+    minutos: isPreIncidencia.value ? 0 : incidenciaForm.minutosTardanza,
+    es_recordatorio: isPreIncidencia.value,
     tipo : 'LLEGADA_TARDE',
     motivo: incidenciaForm.motivo,
   };
@@ -355,7 +397,12 @@ const guardarIncidencia = async () => {
 
     // Actualizar la fila localmente para reflejar el cambio
     if (selectedRow.value) {
-      selectedRow.value.Tiene_Incidencia = true;
+      if (isPreIncidencia.value) {
+        (selectedRow.value as TakenAttendaceRow).es_recordatorio = true;
+      } else {
+        selectedRow.value.Tiene_Incidencia = true;
+        (selectedRow.value as TakenAttendaceRow).es_recordatorio = false;
+      }
     }
 
     isIncidenciaOpen.value = false;
@@ -513,8 +560,10 @@ const columns: TableColumn<TakenAttendace>[] = [
       h('span', { class: 'text-left w-full' }, 'Acciones'),
 
     cell: ({ row }) => {
+      const hasIngreso = Boolean(row.original.Ingreso)
       const hasTardanza = Boolean(row.original.Tardanza)
       const tieneIncidencia = Boolean(row.original.Tiene_Incidencia)
+      const esRecordatorio = getEsRecordatorio(row)
 
       const wrapper = (content: any) =>
         h(
@@ -522,20 +571,6 @@ const columns: TableColumn<TakenAttendace>[] = [
           { class: 'flex justify-start items-center' },
           content
         )
-
-      // Si no hay tardanza
-      if (!hasTardanza) {
-        return wrapper(
-          h(
-            'span',
-            { class: 'inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400' },
-            [
-              h(UIcon, { name: 'i-lucide-check-circle', class: 'w-4 h-4' }),
-              'Sin incidencia'
-            ]
-          )
-        )
-      }
 
       // Si ya tiene incidencia registrada
       if (tieneIncidencia) {
@@ -551,20 +586,66 @@ const columns: TableColumn<TakenAttendace>[] = [
         )
       }
 
-      // Si hay tardanza y no tiene incidencia, mostrar botón
+      // Si hay ingreso y tardanza, permitir registrar incidencia (como antes)
+      if (hasIngreso && hasTardanza) {
+        return wrapper(
+          h(
+            UButton,
+            {
+              size: 'xs',
+              variant: 'outline',
+              color: 'gray',
+              class: 'hover:bg-gray-50 dark:hover:bg-gray-800',
+              onClick: () => openIncidenciaModal(row.original, "tardanza")
+            },
+            () => [
+              h(UIcon, { name: 'i-lucide-file-text', class: 'w-3.5 h-3.5 mr-1.5' }),
+              'Registrar'
+            ]
+          )
+        )
+      }
+
+      // Si no hay ingreso
+      if (!hasIngreso) {
+        if (esRecordatorio) {
+          return wrapper(
+            h(
+              'span',
+              { class: 'inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400' },
+              [
+                h(UIcon, { name: 'i-lucide-check-circle-2', class: 'w-4 h-4' }),
+                'Pre-incidencia registrada'
+              ]
+            )
+          )
+        }
+        return wrapper(
+          h(
+            UButton,
+            {
+              size: 'xs',
+              variant: 'outline',
+              color: 'gray',
+              class: 'hover:bg-gray-50 dark:hover:bg-gray-800',
+              onClick: () => openIncidenciaModal(row.original, "preincidencia")
+            },
+            () => [
+              h(UIcon, { name: 'i-lucide-clipboard-list', class: 'w-3.5 h-3.5 mr-1.5' }),
+              'Pre-incidencia'
+            ]
+          )
+        )
+      }
+
+      // Si no hay tardanza
       return wrapper(
         h(
-          UButton,
-          {
-            size: 'xs',
-            variant: 'outline',
-            color: 'gray',
-            class: 'hover:bg-gray-50 dark:hover:bg-gray-800',
-            onClick: () => openIncidenciaModal(row.original)
-          },
-          () => [
-            h(UIcon, { name: 'i-lucide-file-text', class: 'w-3.5 h-3.5 mr-1.5' }),
-            'Registrar'
+          'span',
+          { class: 'inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400' },
+          [
+            h(UIcon, { name: 'i-lucide-check-circle', class: 'w-4 h-4' }),
+            'Sin incidencia'
           ]
         )
       )
