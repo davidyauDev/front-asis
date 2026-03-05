@@ -8,6 +8,10 @@ interface MovilityReportBase {
     last_name: string;
     position_id: number;
     position_name: string;
+    department_name?: string;
+    city?: string;
+    create_time?: string;
+    emp_code?: string;
   };
   summary: {
     total_days: number;
@@ -16,6 +20,7 @@ interface MovilityReportBase {
     no_mark_days: number;
     days_with_mobility: number;
     mobility_amount_per_day: number;
+    mobility_amount?: number;
     total_mobility_to_pay: number;
   };
   
@@ -141,3 +146,46 @@ export const getCodeOp = (key?: MovilityReportCode) =>{
        
     }
 }
+
+export interface EmployeeConceptPayload {
+  employee_id: number;
+  emp_code: string;
+  concept_id: number;
+  start_date: string;
+  end_date: string;
+  comment?: string | null;
+}
+
+export interface EmployeeConceptOption {
+  id: number;
+  code: string;
+  label: string;
+  description: string;
+}
+
+export const employeeConceptOptions: EmployeeConceptOption[] = [
+  {
+    id: 2,
+    code: "V",
+    label: "Vacaciones",
+    description: "Empleado en periodo de vacaciones",
+  },
+  {
+    id: 3,
+    code: "DM",
+    label: "Descanso Medico",
+    description: "Incapacidad medica",
+  },
+  {
+    id: 4,
+    code: "SR",
+    label: "Sin Ruta",
+    description: "No tenia ruta asignada",
+  },
+  {
+    id: 5,
+    code: "NM",
+    label: "No Marco",
+    description: "No registro marcacion",
+  },
+];

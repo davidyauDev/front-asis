@@ -220,16 +220,27 @@
               </td>
               <!-- <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ emp.comments ?? "GAAAA" }}</td> -->
               <td class="px-3 py-3 text-center border border-gray-200 dark:border-gray-800">
-                <button 
-                  @click="verDetalle(emp)"
-                  class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                  title="Ver detalle"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </button>
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    @click="abrirRegistroConcepto(emp)"
+                    class="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors"
+                    title="Registrar concepto"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                  </button>
+                  <button 
+                    @click="verDetalle(emp)"
+                    class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                    title="Ver detalle"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -238,15 +249,25 @@
     </div>
 
     <DetailModal v-model:isOpen="isOpenModal" :employeeData="empleadoSeleccionado"></DetailModal>
+    <EmployeeConceptModal
+      v-model:isOpen="isOpenConceptModal"
+      :employee="conceptoSeleccionado"
+      :default-start="startDate"
+      :default-end="endDate"
+      :loading="isConceptSubmitting"
+      @submit="registrarConcepto"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { apiFetch } from '~/services/api';
 import DetailModal from './DetailModal.vue';
+import EmployeeConceptModal from './EmployeeConceptModal.vue';
+import type { EmployeeConceptPayload, MovilityReport } from '~/interfaces/movility-report';
 
 const toast = useToast();
-const datosMoilityReports = ref([])
+const datosMoilityReports = ref<MovilityReport[]>([])
 const isLoading = ref(true)
 
 const fechaActual = new Date()
@@ -257,7 +278,10 @@ const payload = {
 }
 
 const isOpenModal = ref(false)
-const empleadoSeleccionado = ref<any>(null)
+const empleadoSeleccionado = ref<MovilityReport | null>(null)
+const isOpenConceptModal = shallowRef(false)
+const conceptoSeleccionado = shallowRef<MovilityReport | null>(null)
+const isConceptSubmitting = shallowRef(false)
 
 const props = defineProps<{
   rangeDate?: {
@@ -303,7 +327,7 @@ const sortIcon = (key: SortKey) => {
   return sortDir.value === 'asc' ? 'i-heroicons-arrow-up' : 'i-heroicons-arrow-down';
 };
 
-const getSortValue = (emp: any, key: SortKey) => {
+const getSortValue = (emp: MovilityReport, key: SortKey) => {
   switch (key) {
     case 'dni':
       return emp.employee.dni ?? '';
@@ -382,9 +406,14 @@ const aplicarFiltros = () => {
   cargarMovilityReports()
 }
 
-function verDetalle(emp: any) {
+function verDetalle(emp: MovilityReport) {
   empleadoSeleccionado.value = emp
   isOpenModal.value = true
+}
+
+function abrirRegistroConcepto(emp: MovilityReport) {
+  conceptoSeleccionado.value = emp
+  isOpenConceptModal.value = true
 }
 
 const datosFiltrados = computed(() => {
@@ -392,7 +421,7 @@ const datosFiltrados = computed(() => {
 
   const q = filtroUsuario.value.toLowerCase()
 
-  return datosMoilityReports.value.filter((emp: any) =>
+  return datosMoilityReports.value.filter((emp) =>
     emp.employee.first_name.toLowerCase().includes(q) ||
     emp.employee.last_name.toLowerCase().includes(q) ||
     emp.employee.id.toString().includes(q) ||
@@ -405,7 +434,7 @@ const datosOrdenados = computed(() => {
   if (!sortKey.value) return list;
 
   const key = sortKey.value as SortKey;
-  list.sort((a: any, b: any) => {
+  list.sort((a, b) => {
     const av = getSortValue(a, key);
     const bv = getSortValue(b, key);
     const cmp =
@@ -528,6 +557,40 @@ async function descargarExcel() {
 
 function agregarMontoMovilidad() {
   alert('Agregar monto movilidad de usuario (pendiente de implementar)');
+}
+
+const registrarConcepto = async (payload: EmployeeConceptPayload) => {
+  if (isConceptSubmitting.value) return
+
+  try {
+    isConceptSubmitting.value = true
+    await apiFetch('/api/employee-concepts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+
+    toast.add({
+      title: 'Registro creado',
+      description: 'El concepto fue registrado correctamente.',
+      icon: 'i-lucide-check-circle',
+      color: 'green',
+      timeout: 3000
+    })
+
+    isOpenConceptModal.value = false
+    await cargarMovilityReports()
+  } catch (error: any) {
+    console.error('Error al registrar concepto:', error)
+    toast.add({
+      title: 'Error al registrar concepto',
+      description: error?.message || 'No se pudo registrar el concepto.',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+      timeout: 5000
+    })
+  } finally {
+    isConceptSubmitting.value = false
+  }
 }
 </script>
 

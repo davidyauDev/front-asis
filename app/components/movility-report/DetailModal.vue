@@ -264,6 +264,42 @@ const parseYMDToLocalDate = (ymd: string) => {
   return new Date(Number(ys), Number(ms) - 1, Number(ds));
 };
 
+const monthShortMap: Record<string, number> = {
+  jan: 0,
+  ene: 0,
+  feb: 1,
+  mar: 2,
+  apr: 3,
+  abr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  aug: 7,
+  ago: 7,
+  sep: 8,
+  set: 8,
+  oct: 9,
+  nov: 10,
+  dec: 11,
+  dic: 11,
+};
+
+const parseFlexibleKeyToDate = (key: string) => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+    return parseYMDToLocalDate(key);
+  }
+
+  if (/^\d{1,2}-[A-Za-z]{3}$/.test(key)) {
+    const [dayRaw, monRaw] = key.split("-");
+    const monthIndex = monthShortMap[monRaw.toLowerCase()];
+    if (monthIndex == null) return null;
+    const year = currentDate.value.getFullYear();
+    return new Date(year, monthIndex, Number(dayRaw));
+  }
+
+  return null;
+};
+
 const calendarDays = computed(() => {
   const year = currentYear.value;
   const month = currentMonth.value;
@@ -329,7 +365,7 @@ const getCategoriaColorHex = (categoria: string) => {
   return colores[categoria] || "#6b7280";
 };
 
-// Convertir los días del empleado en eventos del calendario
+// Convertir los d??as del empleado en eventos del calendario
 watch(() => props.employeeData, (newData) => {
   if (!newData) {
     eventos.value = []
@@ -337,46 +373,50 @@ watch(() => props.employeeData, (newData) => {
   }
   
   const newEventos: any[] = []
+  let firstEventDate: Date | null = null
   
   // Iterar sobre todas las propiedades del objeto
   Object.keys(newData).forEach((key) => {
-    // Verificar si la key es una fecha (formato YYYY-MM-DD)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
-      const dayData = newData[key]
-      let categoria = 'especial'
-      let nombre = 'Día trabajado'
-      
-      // Determinar la categoría según el código
-      if (dayData.code === '1') {
-        categoria = 'celebracion'
-        nombre = 'Asistencia normal'
-      } else if (dayData.code === 'V') {
-        categoria = 'feriado'
-        nombre = 'Vacaciones'
-      } else if (dayData.code === 'DM') {
-        categoria = 'cumpleanos'
-        nombre = 'Descanso médico'
-      } else if (dayData.code === '0') {
-        categoria = 'aniversario'
-        nombre = 'No marcó'
-      }
-      
-      newEventos.push({
-        id: key,
-        nombre: nombre,
-        descripcion: dayData.mobility_counted ? 'Movilidad contada' : 'Sin movilidad',
-        fecha: key,
-        categoria: categoria
-      })
+    const parsedDate = parseFlexibleKeyToDate(key)
+    if (!parsedDate) return
+
+    const dayData = newData[key]
+    let categoria = 'especial'
+    let nombre = 'D??a trabajado'
+    
+    // Determinar la categor??a seg??n el c??digo
+    if (dayData.code === '1') {
+      categoria = 'celebracion'
+      nombre = 'Asistencia normal'
+    } else if (dayData.code === 'V') {
+      categoria = 'feriado'
+      nombre = 'Vacaciones'
+    } else if (dayData.code === 'DM') {
+      categoria = 'cumpleanos'
+      nombre = 'Descanso m??dico'
+    } else if (dayData.code === '0') {
+      categoria = 'aniversario'
+      nombre = 'No marc??'
     }
+    
+    if (!firstEventDate) {
+      firstEventDate = parsedDate
+    }
+    
+    newEventos.push({
+      id: key,
+      nombre: nombre,
+      descripcion: dayData.mobility_counted ? 'Movilidad contada' : 'Sin movilidad',
+      fecha: formatLocalYMD(parsedDate),
+      categoria: categoria
+    })
   })
   
   eventos.value = newEventos
   
   // Si hay eventos, navegar al mes del primer evento
-  if (newEventos.length > 0) {
-    const primerEvento = parseYMDToLocalDate(newEventos[0].fecha)
-    currentDate.value = new Date(primerEvento.getFullYear(), primerEvento.getMonth(), 1)
+  if (firstEventDate) {
+    currentDate.value = new Date(firstEventDate.getFullYear(), firstEventDate.getMonth(), 1)
   }
 }, { immediate: true })
 </script>
