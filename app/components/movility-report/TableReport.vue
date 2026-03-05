@@ -23,37 +23,27 @@
             />
           </div>
 
-          <!-- MES -->
-          <div class="relative">
-            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 min-h-[16px]">
-              Mes
-            </label>
-            <select 
-              v-model="mesSeleccionado" 
-              class="appearance-none h-10 border border-gray-200 dark:border-gray-800 rounded-md pl-3 pr-8 bg-white dark:bg-gray-950 focus:border-gray-300 dark:focus:border-gray-700 focus:ring-2 focus:ring-primary-500/30 transition-colors text-sm text-gray-900 dark:text-gray-100 cursor-pointer"
-            >
-              <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">
-                {{ mes.nombre }}
-              </option>
-            </select>
-            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <svg class="h-4 w-4 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- ANO -->
+          <!-- DESDE -->
           <div>
             <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 min-h-[16px]">
-              Ano
+              Desde
             </label>
-            <input 
-              type="number" 
-              v-model.number="anoSeleccionado" 
-              min="2020" 
-              max="2030" 
-              class="h-10 border border-gray-200 dark:border-gray-800 rounded-md px-4 text-sm w-28 text-center bg-white dark:bg-gray-950 focus:border-gray-300 dark:focus:border-gray-700 focus:ring-2 focus:ring-primary-500/30 transition-colors font-medium text-gray-900 dark:text-gray-100"
+            <input
+              v-model="startDate"
+              type="date"
+              class="h-10 border border-gray-200 dark:border-gray-800 rounded-md px-3 text-sm bg-white dark:bg-gray-950 focus:border-gray-300 dark:focus:border-gray-700 focus:ring-2 focus:ring-primary-500/30 transition-colors font-medium text-gray-900 dark:text-gray-100"
+            />
+          </div>
+
+          <!-- HASTA -->
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 min-h-[16px]">
+              Hasta
+            </label>
+            <input
+              v-model="endDate"
+              type="date"
+              class="h-10 border border-gray-200 dark:border-gray-800 rounded-md px-3 text-sm bg-white dark:bg-gray-950 focus:border-gray-300 dark:focus:border-gray-700 focus:ring-2 focus:ring-primary-500/30 transition-colors font-medium text-gray-900 dark:text-gray-100"
             />
           </div>
 
@@ -113,11 +103,6 @@
         <table class="w-full text-sm border-separate border-spacing-0">
           <thead>
             <tr class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800">
-                <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('id')">
-                  ID <UIcon :name="sortIcon('id')" class="w-3 h-3" />
-                </button>
-              </th>
               <th class="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800">
                 <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('dni')">
                   DNI <UIcon :name="sortIcon('dni')" class="w-3 h-3" />
@@ -190,7 +175,6 @@
               :key="emp.employee.id"
               class="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
             >
-              <td class="px-3 py-3 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800">{{ emp.employee.id }}</td>
               <td class="px-3 py-3 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800">{{ emp.employee.dni }}</td>
               <td class="px-3 py-3 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800">{{ emp.employee.last_name }}</td>
               <td class="px-4 py-3 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800">{{ emp.employee.first_name }}</td>
@@ -266,23 +250,27 @@ const datosMoilityReports = ref([])
 const isLoading = ref(true)
 
 const fechaActual = new Date()
-const mesActual = fechaActual.getMonth() + 1 
-const anoActual = fechaActual.getFullYear()
 
 const payload = {
-  year: anoActual,
-  month: mesActual,
+  start_date: '',
+  end_date: '',
 }
 
 const isOpenModal = ref(false)
 const empleadoSeleccionado = ref<any>(null)
 
-const mesSeleccionado = ref(payload.month)
-const anoSeleccionado = ref(payload.year)
+const props = defineProps<{
+  rangeDate?: {
+    start: Date;
+    end: Date;
+  };
+}>()
+
+const startDate = ref('')
+const endDate = ref('')
 const filtroUsuario = ref('')
 
 type SortKey =
-  | 'id'
   | 'dni'
   | 'apellidos'
   | 'nombres'
@@ -317,8 +305,6 @@ const sortIcon = (key: SortKey) => {
 
 const getSortValue = (emp: any, key: SortKey) => {
   switch (key) {
-    case 'id':
-      return Number(emp.employee.id) || 0;
     case 'dni':
       return emp.employee.dni ?? '';
     case 'apellidos':
@@ -364,24 +350,35 @@ const formatDateLatam = (raw: any) => {
   }).format(date);
 };
 
-const meses = [
-  { valor: 1, nombre: 'Enero' },
-  { valor: 2, nombre: 'Febrero' },
-  { valor: 3, nombre: 'Marzo' },
-  { valor: 4, nombre: 'Abril' },
-  { valor: 5, nombre: 'Mayo' },
-  { valor: 6, nombre: 'Junio' },
-  { valor: 7, nombre: 'Julio' },
-  { valor: 8, nombre: 'Agosto' },
-  { valor: 9, nombre: 'Septiembre' },
-  { valor: 10, nombre: 'Octubre' },
-  { valor: 11, nombre: 'Noviembre' },
-  { valor: 12, nombre: 'Diciembre' },
-]
+const toDateInputValue = (value: Date) => {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const initStart = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1)
+const initEnd = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0)
+startDate.value = toDateInputValue(initStart)
+endDate.value = toDateInputValue(initEnd)
+payload.start_date = startDate.value
+payload.end_date = endDate.value
+
+watch(
+  () => props.rangeDate,
+  (range) => {
+    if (!range) return
+    if (range.start) startDate.value = toDateInputValue(range.start)
+    if (range.end) endDate.value = toDateInputValue(range.end)
+    payload.start_date = startDate.value
+    payload.end_date = endDate.value
+  },
+  { immediate: true }
+)
 
 const aplicarFiltros = () => {
-  payload.month = mesSeleccionado.value
-  payload.year = anoSeleccionado.value
+  payload.start_date = startDate.value
+  payload.end_date = endDate.value
   cargarMovilityReports()
 }
 
@@ -466,8 +463,8 @@ async function descargarExcel() {
     });
 
     const payloadExcel = {
-      year: anoSeleccionado.value,
-      month: mesSeleccionado.value,
+      start_date: startDate.value,
+      end_date: endDate.value,
       descargar: true
     };
 
@@ -489,7 +486,7 @@ async function descargarExcel() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte-movilidad-${mesSeleccionado.value}-${anoSeleccionado.value}.xlsx`;
+    a.download = `reporte-movilidad-${startDate.value}-${endDate.value}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
