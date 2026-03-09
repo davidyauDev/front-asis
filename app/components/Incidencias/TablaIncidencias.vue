@@ -689,6 +689,7 @@ defineExpose({
     </div>
     <AddIncidencia
       v-model:isOpen="isIncidenciaOpen"
+      :empleadoId="usuarioSeleccionado"
       :usuarioNombre="usuarioNombreSeleccionado"
       @submit="guardarIncidencia"
     />

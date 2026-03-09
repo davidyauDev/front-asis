@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { CalendarDate } from "@internationalized/date";
+import { apiFetch } from "~/services/api";
+
 type FormIncidencia = {
   fecha: string;
   descripcion: string;
@@ -8,7 +11,7 @@ type FormIncidencia = {
 };
 
 const open = defineModel<boolean>("isOpen");
-const props = defineProps<{ usuarioNombre?: string }>();
+const props = defineProps<{ usuarioNombre?: string; empleadoId?: number | null }>();
 
 const emit = defineEmits<{
   (e: "submit", data: FormIncidencia): void;
@@ -22,8 +25,23 @@ const form = ref<FormIncidencia>({
   motivo: "",
 });
 
+const duracionHoras = shallowRef<string>("");
+const duracionMinutos = shallowRef<string>("");
+
+const tardanza = shallowRef<number | null>(null);
+const tardanzaLoading = shallowRef(false);
+const tardanzaError = shallowRef<string | null>(null);
+
+const tardanzaLabel = computed(() => {
+  if (tardanza.value == null) return null;
+  const safe = Math.max(0, Math.trunc(tardanza.value));
+  const h = Math.floor(safe / 60);
+  const m = safe % 60;
+  return `${safe} min (${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")})`;
+});
+
 const tiposIncidencia = ref([
-  { label: "Descanso Médico", value: "DESCANSO_MEDICO" },
+  { label: "Descanso MÃ©dico", value: "DESCANSO_MEDICO" },
   { label: "Falta", value: "FALTA" },
   { label: "Trabajo en Campo", value: "TRABAJO_EN_CAMPO" },
   { label: "Llegada Tarde", value: "LLEGADA_TARDE" },
@@ -31,19 +49,164 @@ const tiposIncidencia = ref([
   { label: "Otras", value: "OTRAS" },
 ]);
 
-const tiposSinMinutos = readonly([
-  "DESCANSO_MEDICO",
-  "FALTA",
-  "TRABAJO_EN_CAMPO",
-]);
+const tiposSinMinutos = readonly(["DESCANSO_MEDICO", "FALTA", "TRABAJO_EN_CAMPO"]);
 
 const requiereMinutos = computed(
   () => !!form.value.tipo && !tiposSinMinutos.includes(form.value.tipo)
 );
 
+const calendarDate = computed<CalendarDate | undefined>({
+  get: () => {
+    if (!form.value.fecha) return undefined;
+    const [y, m, d] = form.value.fecha.split("-").map(Number);
+    if (!y || !m || !d) return undefined;
+    return new CalendarDate(y, m, d);
+  },
+  set: (value) => {
+    if (!value) {
+      form.value.fecha = "";
+      return;
+    }
+    const mm = String(value.month).padStart(2, "0");
+    const dd = String(value.day).padStart(2, "0");
+    form.value.fecha = `${value.year}-${mm}-${dd}`;
+  },
+});
+
 watch(open, (isOpen) => {
   if (!isOpen) resetForm();
 });
+
+function parseNonNegativeInt(raw: string): number | undefined {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  const n = Number(trimmed);
+  if (!Number.isFinite(n)) return undefined;
+  return Math.max(0, Math.trunc(n));
+}
+
+watch(
+  () => form.value.minutos,
+  (total) => {
+    if (!total || total < 1) {
+      duracionHoras.value = "";
+      duracionMinutos.value = "";
+      return;
+    }
+
+    const safeTotal = Math.max(0, Math.trunc(total));
+    duracionHoras.value = String(Math.floor(safeTotal / 60));
+    duracionMinutos.value = String(safeTotal % 60);
+  },
+  { immediate: true }
+);
+
+watch(
+  () => [duracionHoras.value, duracionMinutos.value, requiereMinutos.value] as const,
+  () => {
+    if (!requiereMinutos.value) return;
+
+    const horas = parseNonNegativeInt(duracionHoras.value) ?? 0;
+    const minutos = parseNonNegativeInt(duracionMinutos.value) ?? 0;
+    const total = horas * 60 + minutos;
+
+    form.value.minutos = total > 0 ? total : undefined;
+  }
+);
+
+function timeToSeconds(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+
+  const parts = trimmed.split(":").map((p) => Number(p));
+  if (parts.length < 2 || parts.length > 3) return null;
+  if (parts.some((p) => !Number.isFinite(p))) return null;
+
+  const [h, m, s = 0] = parts;
+  if (h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59) return null;
+  return h * 3600 + m * 60 + s;
+}
+
+async function cargarTardanza() {
+  if (!props.empleadoId || !form.value.fecha) {
+    tardanza.value = null;
+    tardanzaError.value = null;
+    return;
+  }
+
+  tardanzaLoading.value = true;
+  tardanzaError.value = null;
+
+  try {
+    const res = await apiFetch("/api/reporte-asistencia/marcacion-simple", {
+      method: "POST",
+      body: JSON.stringify({
+        empleado_ids: [props.empleadoId],
+        fechas: [form.value.fecha],
+      }),
+    });
+
+    const list = Array.isArray(res) ? res : res?.data;
+    const row =
+      Array.isArray(list) && list.length
+        ? list.find(
+            (r: any) =>
+              String(r?.Empleado_id) === String(props.empleadoId) &&
+              String(r?.Fecha) === String(form.value.fecha)
+          ) ?? list[0]
+        : null;
+
+    const horarioSec = timeToSeconds(row?.Horario);
+    const ingresoSec = timeToSeconds(row?.Ingreso);
+
+    let value: number | null = null;
+
+    if (horarioSec != null && ingresoSec != null) {
+      const delta = Math.max(0, ingresoSec - horarioSec);
+      value = Math.floor(delta / 60);
+    } else {
+      const raw = row?.Tardanza;
+      value =
+        typeof raw === "number"
+          ? raw
+          : raw != null && raw !== "" && Number.isFinite(Number(raw))
+            ? Number(raw)
+            : null;
+    }
+
+    tardanza.value = value;
+
+    const horasActual = duracionHoras.value.trim();
+    const minutosActual = duracionMinutos.value.trim();
+    const sinDuracion =
+      (!horasActual || horasActual === "0") &&
+      (!minutosActual || minutosActual === "0");
+
+    if (value != null && value > 0 && !form.value.minutos && sinDuracion) {
+      const safeTotal = Math.max(0, Math.trunc(value));
+      duracionHoras.value = String(Math.floor(safeTotal / 60));
+      duracionMinutos.value = String(safeTotal % 60);
+    }
+  } catch (e: any) {
+    tardanza.value = null;
+    tardanzaError.value = e?.message || "No se pudo obtener la tardanza.";
+  } finally {
+    tardanzaLoading.value = false;
+  }
+}
+
+function usarTardanza() {
+  if (!tardanza.value || tardanza.value < 1) return;
+  form.value.minutos = tardanza.value;
+}
+
+watch(
+  () => [props.empleadoId, form.value.fecha] as const,
+  () => {
+    cargarTardanza();
+  }
+);
 
 function guardarIncidencia() {
   emit("submit", { ...form.value });
@@ -58,6 +221,11 @@ function resetForm() {
     tipo: undefined,
     motivo: "",
   };
+  duracionHoras.value = "";
+  duracionMinutos.value = "";
+  tardanza.value = null;
+  tardanzaLoading.value = false;
+  tardanzaError.value = null;
 }
 </script>
 
@@ -83,7 +251,7 @@ function resetForm() {
      </template>
     <template #body>
       <div class="space-y-4 px-4 py-3 bg-white rounded-xl shadow-sm">
-        <!-- TÍTULO -->
+        <!-- TÃTULO -->
         
         <!-- FORMULARIO -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -91,13 +259,60 @@ function resetForm() {
             <label class="block font-semibold mb-1 text-gray-700">
               Fecha
             </label>
-            <UInput
-              type="date"
-              v-model="form.fecha"
-              class="w-full"
-              size="lg"
-              :ui="{ rounded: 'rounded-lg' }"
-            />
+            <div class="flex gap-2 items-start">
+              <UInput
+                type="date"
+                v-model="form.fecha"
+                class="w-full"
+                size="lg"
+                :ui="{ rounded: 'rounded-lg' }"
+              />
+
+              <UPopover>
+                <UButton
+                  size="lg"
+                  color="gray"
+                  variant="outline"
+                  icon="i-heroicons-calendar-days"
+                  class="rounded-lg"
+                  title="Abrir calendario"
+                />
+                <template #panel>
+                  <div class="p-2">
+                    <UCalendar v-model="calendarDate" locale="es" />
+                  </div>
+                </template>
+              </UPopover>
+            </div>
+
+            <div
+              v-if="form.fecha && props.empleadoId"
+              class="mt-2 text-xs text-gray-600 flex items-center justify-between gap-2"
+            >
+              <div class="flex items-center gap-2">
+                <span class="font-semibold">Tardanza:</span>
+                <span v-if="tardanzaLoading" class="italic text-gray-500">
+                  Consultando...
+                </span>
+                <span v-else-if="tardanzaError" class="text-red-600">
+                  {{ tardanzaError }}
+                </span>
+                <span v-else class="font-mono">
+                  {{ tardanzaLabel ?? "Sin datos" }}
+                </span>
+              </div>
+
+              <UButton
+                v-if="tardanza && tardanza > 0"
+                size="xs"
+                color="primary"
+                variant="ghost"
+                class="rounded-lg"
+                @click="usarTardanza"
+              >
+                Usar
+              </UButton>
+            </div>
           </div>
 
           <div>
@@ -114,19 +329,38 @@ function resetForm() {
             />
           </div>
 
-          <div v-if="requiereMinutos">
-            <label class="block font-semibold mb-1 text-gray-700">
-              Minutos
-            </label>
-            <UInput
-              type="number"
-              min="1"
-              v-model.number="form.minutos"
-              class="w-full"
-              size="lg"
-              :ui="{ rounded: 'rounded-lg' }"
-            />
-          </div>
+          <template v-if="requiereMinutos">
+            <div>
+              <label class="block font-semibold mb-1 text-gray-700">
+                Horas
+              </label>
+              <UInput
+                v-model="duracionHoras"
+                type="number"
+                min="0"
+                placeholder="0"
+                class="w-full"
+                size="lg"
+                :ui="{ rounded: 'rounded-lg' }"
+              />
+            </div>
+
+            <div>
+              <label class="block font-semibold mb-1 text-gray-700">
+                Minutos
+              </label>
+              <UInput
+                v-model="duracionMinutos"
+                type="number"
+                min="0"
+                max="59"
+                placeholder="0"
+                class="w-full"
+                size="lg"
+                :ui="{ rounded: 'rounded-lg' }"
+              />
+            </div>
+          </template>
 
           <div
             v-else-if="form.tipo"
