@@ -41,8 +41,7 @@ const empleadosFiltrados = computed(() => {
 
     return list;
 });
-const toast = useToast()
-1
+const toast = useToast();
 const sortField = ref<'dni' | 'nombre' | 'departamento' | 'empresa' | ''>('');
 const sortDirection = ref<'asc' | 'desc'>('asc');
 const sortCollator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
@@ -93,25 +92,114 @@ const sortIcon = (campo: 'dni' | 'nombre' | 'departamento' | 'empresa') => {
 };
 const convertirAMinutos = (t: string) => {
     if (!t || t === "-") return 0;
-    const p = t.split(":").map(Number);
-    return p.length === 3
-        ? p[0] * 60 + p[1] + Math.round(p[2] / 60)
-        : p[0] * 60 + p[1];
+
+    const p = t.split(":").map((v) => Number.parseInt(v, 10));
+    const [h = 0, m = 0, s = 0] = p;
+
+    return p.length >= 3
+        ? h * 60 + m + Math.round(s / 60)
+        : h * 60 + m;
 };
 
 
+const normalizarHHMM = (t?: string | null) => {
+    if (!t || t === '-') return '00:00';
+
+    const [hRaw, mRaw] = t.split(':');
+    const h = Number.parseInt(hRaw ?? '', 10);
+    const m = Number.parseInt(mRaw ?? '', 10);
+
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return '00:00';
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const loadingEmail = ref<{ [key: string]: boolean }>({});
 
-async function enviarEmail(emp: any) {
-    loadingEmail.value[String(emp.dni ?? '')] = true;
-    const payload = {
-        email: emp.email ?? 'yauridavid00@gmail.com',
-        nombre: emp.nombre,
-        scheduled_time: emp.neto_hhmm,
-        check_in: emp.check_in ?? emp.hora_ingreso ?? '',
-        fecha: emp.fecha ?? '',
+const emailKey = (emp: any) => String(emp.dni ?? emp.email ?? '');
+
+const tardanzaNetaCero = (emp: any) => convertirAMinutos(String(emp.neto_hhmm ?? '-')) === 0;
+
+const confirmarEnvioOpen = ref(false);
+const empConfirmacion = shallowRef<any | null>(null);
+
+const payloadConfirmacion = computed(() => {
+    if (!empConfirmacion.value) return null;
+
+    return {
+        email: String(empConfirmacion.value.email ?? '').trim(),
+        nombre: String(empConfirmacion.value.nombre ?? '').trim(),
+        minutos_tardanza: normalizarHHMM(empConfirmacion.value.neto_hhmm),
+        start_date: props.fechaInicio,
+        end_date: props.fechaFin,
     };
+});
+
+function solicitarConfirmacionEnvio(emp: any) {
+    if (tardanzaNetaCero(emp)) return;
+
+    const email = String(emp.email ?? '').trim();
+    if (!email) {
+        toast.add({
+            title: 'Error',
+            description: 'El usuario no tiene email registrado',
+            color: 'error',
+        });
+        return;
+    }
+
+    empConfirmacion.value = emp;
+    confirmarEnvioOpen.value = true;
+}
+
+function handleConfirmarEnvioOpen(isOpen: boolean) {
+    if (!isOpen) empConfirmacion.value = null;
+}
+
+async function confirmarEnvioCorreo() {
+    if (!empConfirmacion.value) return;
+    const ok = await enviarEmail(empConfirmacion.value);
+    if (ok) {
+        confirmarEnvioOpen.value = false;
+        empConfirmacion.value = null;
+    }
+}
+
+async function enviarEmail(emp: any): Promise<boolean> {
     try {
+        if (tardanzaNetaCero(emp)) {
+            toast.add({
+                title: 'Sin tardanza neta',
+                description: 'No se puede enviar correo si la tardanza neta es 00:00',
+                color: 'warning',
+            });
+            return false;
+        }
+
+        const key = emailKey(emp);
+        loadingEmail.value[key] = true;
+
+        const payload = {
+            email: String(emp.email ?? '').trim(),
+            nombre: String(emp.nombre ?? '').trim(),
+            minutos_tardanza: normalizarHHMM(emp.neto_hhmm),
+            start_date: props.fechaInicio,
+            end_date: props.fechaFin,
+            nro:emp.id,
+            dni:emp.dni,
+            apellidos:emp.apellidos,
+            departamento:emp.departamento,
+            empresa:emp.empresa
+        };
+
+        if (!payload.email) {
+            toast.add({
+                title: 'Error',
+                description: 'El usuario no tiene email registrado',
+                color: 'error',
+            });
+            return false;
+        }
+
         await apiFetch('/api/tardanzas/enviar-correo', {
             method: 'POST',
             body: JSON.stringify(payload),
@@ -121,14 +209,18 @@ async function enviarEmail(emp: any) {
             description: `Se envió el correo a ${payload.email}`,
             color: 'success',
         });
+
+        return true;
     } catch (error) {
         toast.add({
             title: 'Error',
             description: 'No se pudo enviar el correo',
             color: 'error',
         });
+        return false;
     } finally {
-        loadingEmail.value[String(emp.dni ?? '')] = false;
+        const key = emailKey(emp);
+        loadingEmail.value[key] = false;
     }
 }
 
@@ -179,7 +271,7 @@ const descargarExcel = async (filtros?: { fechaInicio?: string, fechaFin?: strin
             title: 'Preparando exportación',
             description: 'Generando archivo Excel...',
             icon: 'i-lucide-loader-2',
-            timeout: 0
+            duration: 0
         });
 
         const body: any = {
@@ -223,8 +315,8 @@ const descargarExcel = async (filtros?: { fechaInicio?: string, fechaFin?: strin
             title: 'Descarga completa',
             description: 'El archivo se descargó correctamente',
             icon: 'i-lucide-check-circle',
-            color: 'green',
-            timeout: 3000
+            color: 'success',
+            duration: 3000
         });
     } catch (error: any) {
         console.error('Error al descargar Excel:', error);
@@ -245,8 +337,8 @@ const descargarExcel = async (filtros?: { fechaInicio?: string, fechaFin?: strin
             title: errorTitle,
             description: errorDescription,
             icon: 'i-lucide-alert-circle',
-            color: 'red',
-            timeout: 8000
+            color: 'error',
+            duration: 8000
         });
     }
 };
@@ -379,10 +471,10 @@ defineExpose({
                             size="sm"
                             color="info"
                             variant="soft"
-                            :disabled="loadingEmail[String(emp.dni ?? '')]"
-                            @click="enviarEmail(emp)"
+                            :disabled="loadingEmail[emailKey(emp)] || tardanzaNetaCero(emp)"
+                            @click="solicitarConfirmacionEnvio(emp)"
                         >
-                            <template v-if="loadingEmail[String(emp.dni ?? '')]">
+                            <template v-if="loadingEmail[emailKey(emp)]">
                                 <svg class="animate-spin h-4 w-4 mr-2 inline-block text-blue-500 dark:text-blue-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -398,4 +490,49 @@ defineExpose({
             </tbody>
         </table>
     </div>
+
+    <UModal
+        v-model:open="confirmarEnvioOpen"
+        title="Confirmar envío de correo"
+        description="Revisa la información antes de enviar."
+        @update:open="handleConfirmarEnvioOpen"
+    >
+        <template #body>
+            <div class="space-y-3 text-sm">
+                <div class="grid grid-cols-[140px_1fr] gap-x-3 gap-y-2">
+                    <div class="font-semibold text-gray-700 dark:text-gray-200">Email</div>
+                    <div class="text-gray-900 dark:text-gray-100">{{ payloadConfirmacion?.email }}</div>
+
+                    <div class="font-semibold text-gray-700 dark:text-gray-200">Nombre</div>
+                    <div class="text-gray-900 dark:text-gray-100">{{ payloadConfirmacion?.nombre }}</div>
+
+                    <div class="font-semibold text-gray-700 dark:text-gray-200">Tardanza</div>
+                    <div class="text-gray-900 dark:text-gray-100">{{ payloadConfirmacion?.minutos_tardanza }}</div>
+
+                    <div class="font-semibold text-gray-700 dark:text-gray-200">Desde</div>
+                    <div class="text-gray-900 dark:text-gray-100">{{ payloadConfirmacion?.start_date }}</div>
+
+                    <div class="font-semibold text-gray-700 dark:text-gray-200">Hasta</div>
+                    <div class="text-gray-900 dark:text-gray-100">{{ payloadConfirmacion?.end_date }}</div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <UButton
+                        label="Cancelar"
+                        color="neutral"
+                        variant="subtle"
+                        @click="confirmarEnvioOpen = false"
+                    />
+                    <UButton
+                        label="Enviar correo"
+                        color="info"
+                        variant="solid"
+                        :disabled="!empConfirmacion || loadingEmail[emailKey(empConfirmacion)]"
+                        :loading="!!empConfirmacion && loadingEmail[emailKey(empConfirmacion)]"
+                        @click="confirmarEnvioCorreo"
+                    />
+                </div>
+            </div>
+        </template>
+    </UModal>
 </template>

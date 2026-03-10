@@ -10,6 +10,8 @@ type FormIncidencia = {
   motivo: string;
 };
 
+const toast = useToast();
+
 const open = defineModel<boolean>("isOpen");
 const props = defineProps<{ usuarioNombre?: string; empleadoId?: number | null }>();
 
@@ -23,6 +25,12 @@ const form = ref<FormIncidencia>({
   minutos: undefined,
   tipo: undefined,
   motivo: "",
+});
+
+const motivoTouched = shallowRef(false);
+const motivoError = computed(() => {
+  if (!motivoTouched.value) return null;
+  return form.value.motivo.trim() ? null : "El motivo es obligatorio";
 });
 
 const duracionHoras = shallowRef<string>("");
@@ -209,6 +217,18 @@ watch(
 );
 
 function guardarIncidencia() {
+  motivoTouched.value = true;
+  const motivo = form.value.motivo.trim();
+  if (!motivo) {
+    toast.add({
+      title: "Motivo obligatorio",
+      description: "Ingresa el motivo para poder guardar la incidencia.",
+      color: "error",
+    });
+    return;
+  }
+
+  form.value.motivo = motivo;
   emit("submit", { ...form.value });
   open.value = false;
 }
@@ -221,6 +241,7 @@ function resetForm() {
     tipo: undefined,
     motivo: "",
   };
+  motivoTouched.value = false;
   duracionHoras.value = "";
   duracionMinutos.value = "";
   tardanza.value = null;
@@ -372,15 +393,20 @@ function resetForm() {
 
           <div class="col-span-2">
             <label class="block font-semibold mb-1 text-gray-700">
-              Motivo
+              Motivo <span class="text-red-500">*</span>
             </label>
             <UTextarea
               v-model="form.motivo"
+              required
               :rows="3"
               class="w-full"
               :ui="{ rounded: 'rounded-lg' }"
               placeholder="Describe el motivo..."
+              @blur="motivoTouched = true"
             />
+            <p v-if="motivoError" class="mt-1 text-xs text-red-600">
+              {{ motivoError }}
+            </p>
           </div>
         </div>
       </div>
