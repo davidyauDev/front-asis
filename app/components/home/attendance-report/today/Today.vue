@@ -129,6 +129,9 @@ const { attendance, company, department, employee } = storeToRefs(store);
 const { getDailyTakenAttendances } = store;
 
 const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
+
+const excludedDepartmentIds = [2, 5, 7, 9, 10] as const
+const excludedDepartmentIdSet = new Set<number>(excludedDepartmentIds)
 const isSpecialFilterActive = (ids: number[]) => {
   const selectedIds = store.employee.daily.selecteds.map(e => e.id);
   if (selectedIds.length !== ids.length) return false;
@@ -208,10 +211,18 @@ const updateFilteredLists = () => {
     department.value.daily.list = department.value.list;
   }
 
+  department.value.daily.list = department.value.daily.list.filter(
+    dep => !excludedDepartmentIdSet.has(dep.id)
+  )
+
   // Filtrar employees por company y departments
-  if (departmentIds.length > 0) {
+  const effectiveDepartmentIds = departmentIds.length
+    ? departmentIds
+    : department.value.daily.list.map(d => d.id)
+
+  if (effectiveDepartmentIds.length > 0) {
     employee.value.daily.list = employee.value.list.filter(
-      emp => departmentIds.includes(emp.department_id)
+      emp => effectiveDepartmentIds.includes(emp.department_id)
     );
   } else if (companyId) {
     employee.value.daily.list = employee.value.list.filter(
@@ -234,13 +245,32 @@ onMounted(() => {
   if (company.value.list.length > 0 && company.value.daily.list.length === 0) {
     company.value.daily.list = company.value.list;
   }
+
+  // Aplicar exclusiones y defaults iniciales
+  updateFilteredLists()
+  if (!store.department.daily.selecteds.length) {
+    const ids = department.value.daily.list.map(d => d.id)
+    store.attendance.params.departamento_ids = ids
+    store.attendance.taken.daily.params.departamento_ids = ids
+  }
 });
 
 // Watch para cambios en departments seleccionados
 watch(
   () => store.department.daily.selecteds,
   async (departments) => {
-    const ids = departments.map(d => d.id);
+    const normalizedSelected = departments.filter(
+      d => !excludedDepartmentIdSet.has(d.id)
+    )
+
+    if (normalizedSelected.length !== departments.length) {
+      store.department.daily.selecteds = normalizedSelected
+      return
+    }
+
+    const ids = normalizedSelected.length
+      ? normalizedSelected.map(d => d.id)
+      : department.value.daily.list.map(d => d.id)
 
     store.attendance.params.departamento_ids = ids;
     store.attendance.taken.daily.params.departamento_ids = ids;
@@ -276,18 +306,20 @@ watch(
   () => dailyTakenAttendace.value.params.company_id,
   (companyId) => {
     // Limpiar selections cuando cambia company
-    if (companyId) {
-      // Limpiar departments que no pertenecen a la company
-      const validDepartments = store.department.daily.selecteds.filter(
-        dep => dep.company_id === companyId
-      );
-      
-      if (validDepartments.length !== store.department.daily.selecteds.length) {
-        store.department.daily.selecteds = validDepartments;
-      }
+    const validDepartments = store.department.daily.selecteds.filter((dep) => {
+      if (excludedDepartmentIdSet.has(dep.id)) return false
+      return companyId ? dep.company_id === companyId : true
+    })
+    if (validDepartments.length !== store.department.daily.selecteds.length) {
+      store.department.daily.selecteds = validDepartments
     }
 
     updateFilteredLists();
+    if (!store.department.daily.selecteds.length) {
+      const ids = department.value.daily.list.map(d => d.id)
+      store.attendance.params.departamento_ids = ids
+      store.attendance.taken.daily.params.departamento_ids = ids
+    }
     dailyTakenAttendace.value.pagination.pageIndex = 0;
     debouncedFetch();
   }

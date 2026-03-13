@@ -260,7 +260,10 @@ const exportarExcel = async () => {
           'Accept':
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         },
-        body: JSON.stringify({ export: 'excel' })
+        body: JSON.stringify({
+          ...(dailyTakenAttendaces.value.params || {}),
+          export: 'excel'
+        })
       }
     )
 
