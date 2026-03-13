@@ -129,6 +129,7 @@
         :year-controls="false"
         v-model="calendar"
         v-model:placeholder="placeholder"
+        :ui="calendarUi"
       />
     </UCard>
   </div>
@@ -138,6 +139,16 @@
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone } from '@internationalized/date'
 import { format } from 'date-fns'
+
+const calendarUi = {
+  cellTrigger: [
+    'data-[outside-view]:bg-muted/70 dark:data-[outside-view]:bg-muted/60',
+    'data-[outside-view]:text-muted-foreground/80 dark:data-[outside-view]:text-muted-foreground/75',
+    'data-[outside-view]:ring-1 data-[outside-view]:ring-inset data-[outside-view]:ring-black/10 dark:data-[outside-view]:ring-white/10',
+    'data-[outside-view]:hover:bg-muted/85 dark:data-[outside-view]:hover:bg-muted/75',
+    'data-[selected]:bg-primary data-[selected]:text-inverted data-[selected]:ring-0'
+  ].join(' ')
+} as const
 
 /* =========================
    MODEL (ÚNICA FUENTE)

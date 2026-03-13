@@ -91,17 +91,20 @@
 <script setup lang="ts">
 import DataState from '~/components/common/DataState.vue';
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
+import type { Employee } from '~/composables/useAttendanceReport';
 
 const store = useAttendanceReportStore();
 const { getEmployees } = store;
 const { employee } = storeToRefs(store);
 
-const { loading, isError, list, class: extraClass } = defineProps<{
-  loading: boolean;
-  isError: boolean;
-  list: Employee[];
-  class?: string;
-}>();
+const props = defineProps<{
+  loading: boolean
+  isError: boolean
+  list: Employee[]
+  class?: string
+}>()
+
+const { loading, isError, list, class: extraClass } = toRefs(props)
 
 const storeSelecteds = defineModel<Employee[]>('employee', {
   required: true
@@ -123,11 +126,11 @@ const selecteds = computed<Employee[]>({
 });
 
 const filteredList = computed(() => {
-  if (!search.value.trim()) return list;
+  if (!search.value.trim()) return list.value;
 
   const term = search.value.toLowerCase();
 
-  return list.filter(emp =>
+  return list.value.filter(emp =>
     `${emp.first_name} ${emp.last_name}`
       .toLowerCase()
       .includes(term)

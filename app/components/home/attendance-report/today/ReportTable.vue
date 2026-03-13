@@ -228,6 +228,11 @@ const token = useCookie<string | null>('auth_token')
 
 const exportando = ref(false)
 
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+const formatYmdLocal = (date: Date) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+
 const exportarExcel = async () => {
   if (exportando.value) return;
   
@@ -246,7 +251,7 @@ const exportarExcel = async () => {
       throw new Error('Token no disponible')
     }
     const response = await fetch(
-      `${config.public.apiBaseUrl}/api/reporte-asistencia/marcacion`,
+      `${config.public.apiBaseUrl}/api/reporte-asistencia/today`,
       {
         method: 'POST',
         headers: {
@@ -268,16 +273,17 @@ const exportarExcel = async () => {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'detalle_marcacion.xlsx'
+    const fileName = `ReporteDelDia_${formatYmdLocal(new Date())}.xlsx`
+    a.download = fileName
     document.body.appendChild(a)
     a.click()
     a.remove()
-    window.URL.revokeObjectURL(url)
+    setTimeout(() => window.URL.revokeObjectURL(url), 500)
 
     toast.remove('exportando')
     toast.add({
       title: 'Descarga completa',
-      description: 'El archivo se descargó correctamente',
+      description: `Descargado: ${fileName}`,
       icon: 'i-lucide-check-circle',
       color: 'green',
       timeout: 3000,

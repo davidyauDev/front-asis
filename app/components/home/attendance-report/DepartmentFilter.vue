@@ -86,12 +86,14 @@ const { getDepartments } = store;
 const { department } = storeToRefs(store);
 
 
-const { loading, isError, list, class: extraClass } = defineProps<{
-    loading: boolean,
-    isError: boolean,
-    list: Department[],
-    class?: string
+const props = defineProps<{
+  loading: boolean
+  isError: boolean
+  list: Department[]
+  class?: string
 }>()
+
+const { loading, isError, list, class: extraClass } = toRefs(props)
 
 
 const storeSelecteds = defineModel<Department[]>('department', {
@@ -154,7 +156,7 @@ const handleResertFilter = () => {
 }
 
 watch(
-  () => list,
+  list,
   (newList) => {
     if (hasAppliedSaved.value) return;
     if (!newList.length) return;

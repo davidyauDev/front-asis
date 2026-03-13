@@ -446,7 +446,9 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
         const attendances = await fetchMonthlyAttendances(
           this.attendance.taken.tech.params
         );
-        this.attendance.taken.tech.listFiltered = attendances.data.filter((att) => att.Tecnico);
+        const filtered = attendances.data.filter((att) => att.Tecnico);
+        this.attendance.taken.tech.list = filtered;
+        this.attendance.taken.tech.listFiltered = filtered;
 
         this.attendance.taken.tech.isError = false;
       } catch (error) {

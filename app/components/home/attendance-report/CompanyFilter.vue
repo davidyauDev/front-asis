@@ -81,11 +81,13 @@ const store = useAttendanceReportStore();
 const { getCompanies } = store;
 const { company } = storeToRefs(store);
 
-const { loading, isError, list } = defineProps<{
-    loading: boolean,
-    isError: boolean,
-    list: Company[],
+const props = defineProps<{
+  loading: boolean
+  isError: boolean
+  list: Company[]
 }>()
+
+const { loading, isError, list } = toRefs(props)
 
 const storeSelecteds = defineModel<Company[]>('company', {
     required: true

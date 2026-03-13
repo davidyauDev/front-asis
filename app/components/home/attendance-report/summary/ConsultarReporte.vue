@@ -16,6 +16,20 @@
     </UFormField>
 
     <UFormField label="Departamento" name="departamento_ids">
+      <div class="flex justify-end mb-1">
+        <UButton
+          v-if="attendance.params.departamento_ids.length"
+          type="button"
+          size="xs"
+          variant="ghost"
+          color="gray"
+          icon="i-lucide-x"
+          class="cursor-pointer"
+          @click="clearDepartmentFilter"
+        >
+          Quitar filtro
+        </UButton>
+      </div>
       <DataState :loading="department.loading" :error="department.isError"
         error-message="Hubo un error al cargar los departamentos" @retry="getDepartments(true)">
 
@@ -26,6 +40,13 @@
         <USelectMenu placeholder="Selecciona un departamento" class="w-full" :items="departmentOptions" label-key="dept_name"
           value-key="id" multiple v-model="attendance.params.departamento_ids" />
       </DataState>
+
+      <p
+        v-if="departmentRequiredError"
+        class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"
+      >
+        Selecciona el departamento por favor.
+      </p>
     </UFormField>
 
 
@@ -66,6 +87,9 @@ const store = useAttendanceReportStore()
 const { getEmployeesByDepartment, getCompanies, getDepartments, getAttendanceSummary, getAttendanceDetails } = store;
 const { company, department, attendance } = storeToRefs(store)
 
+const toast = useToast()
+const departmentRequiredError = ref(false)
+
 const SELECT_ALL_ID = -1
 
 
@@ -78,7 +102,6 @@ const departmentOptions = computed(() => {
   ]
 })
 const departments = computed(() => {
-  console.log(department.value.loading)
   let list = department.value.list;
   if (!department.value.list.length) return [];
 
@@ -121,6 +144,10 @@ watch(
 watch(
   () => attendance.value.params.departamento_ids,
   (ids) => {
+    if (ids.length) {
+      departmentRequiredError.value = false
+    }
+
     if (!ids.includes(SELECT_ALL_ID)) return
 
     // Quitar el marcador "Seleccionar todos"
@@ -133,7 +160,27 @@ watch(
 
 
 
+const clearDepartmentFilter = () => {
+  attendance.value.params.departamento_ids = []
+}
+
 const handleSubmit = async () => {
+  if (!attendance.value.params.departamento_ids.length) {
+    departmentRequiredError.value = true
+
+    const hasOptions = departments.value.length > 0
+
+    toast.add({
+      title: hasOptions ? 'Selecciona un departamento' : 'No hay departamentos disponibles',
+      description: hasOptions
+        ? 'Por favor selecciona al menos un departamento antes de consultar.'
+        : 'Selecciona una empresa o ajusta tus filtros para ver departamentos.',
+      icon: 'i-lucide-alert-triangle',
+      color: 'warning',
+    })
+
+    return
+  }
 
   await Promise.all([
     getEmployeesByDepartment(),

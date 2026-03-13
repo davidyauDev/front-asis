@@ -96,6 +96,11 @@ const token = useCookie<string | null>('auth_token')
 
 const exportando = ref(false)
 
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+const formatYmdLocal = (date: Date) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+
 const exportarExcel = async () => {
   if (exportando.value) return;
   
@@ -118,7 +123,7 @@ const exportarExcel = async () => {
       : attendance.value.taken.all.params;
 
     const response = await fetch(
-      `${config.public.apiBaseUrl}/api/reporte-asistencia/marcacion`,
+      `${config.public.apiBaseUrl}/api/reporte-asistencia/technicians`,
       {
         method: 'POST',
         headers: {
@@ -142,16 +147,17 @@ const exportarExcel = async () => {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'reporte_mensual_asistencias.xlsx'
+    const fileName = `reporte_mensual_asistencias_${formatYmdLocal(new Date())}.xlsx`
+    a.download = fileName
     document.body.appendChild(a)
     a.click()
     a.remove()
-    window.URL.revokeObjectURL(url)
+    setTimeout(() => window.URL.revokeObjectURL(url), 500)
 
     toast.remove('exportando')
     toast.add({
       title: 'Descarga completa',
-      description: 'El archivo se descargó correctamente',
+      description: `Descargado: ${fileName}`,
       icon: 'i-lucide-check-circle',
       color: 'success',
     })

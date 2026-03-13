@@ -279,7 +279,7 @@ const _useAttendanceReport = () => {
       const res = await $fetch<{
         data: TakenAttendace[];
         resumen: TakenAttendanceSummary;
-      }>(`${reportPrefix}/marcacion-simple`, {
+      }>(`${reportPrefix}/today`, {
         body: params,
         method: "POST",
         headers: {
@@ -305,7 +305,7 @@ const _useAttendanceReport = () => {
       const res = await $fetch<{
         data: TakenAttendace[];
         resumen: TakenAttendanceSummary;
-      }>(`${reportPrefix}/marcacion`, {
+      }>(`${reportPrefix}/technicians`, {
         body: params,
         method: "POST",
         headers: {

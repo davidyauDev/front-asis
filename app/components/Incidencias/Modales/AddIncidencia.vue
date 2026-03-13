@@ -147,7 +147,7 @@ async function cargarTardanza() {
   tardanzaError.value = null;
 
   try {
-    const res = await apiFetch("/api/reporte-asistencia/marcacion-simple", {
+    const res = await apiFetch("/api/reporte-asistencia/today", {
       method: "POST",
       body: JSON.stringify({
         empleado_ids: [props.empleadoId],
