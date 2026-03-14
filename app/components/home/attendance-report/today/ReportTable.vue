@@ -384,7 +384,7 @@ const guardarIncidencia = async () => {
   const payload = {
     ID_Marcacion: selectedRow.value.ID_Marcacion,
     creado_por: user.value.id,
-    usuario_id: selectedRow.value.Empleado_id,
+    usuario_id: selectedRow.value.usuario_id,
     fecha: incidenciaForm.fecha,
     minutos: isPreIncidencia.value ? 0 : incidenciaForm.minutosTardanza,
     es_recordatorio: isPreIncidencia.value,
