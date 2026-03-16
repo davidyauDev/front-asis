@@ -420,12 +420,12 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
-    async getDailyTakenAttendances() {
+    async getDailyTakenAttendances(paramsOverride?: TakenAttendaceParams) {
       this.attendance.taken.daily.loading = true;
 
       try {
         const attendances = await fetchTakenAttandances(
-          this.attendance.taken.daily.params
+          paramsOverride ?? this.attendance.taken.daily.params
         );
         this.attendance.taken.daily.list = attendances.data;
         this.attendance.taken.daily.summary = attendances.resumen;
@@ -438,13 +438,13 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
-    async getTechTakenAttendances() {
+    async getTechTakenAttendances(paramsOverride?: TakenAttendaceParams) {
       this.attendance.taken.tech.loading = true;
       this.attendance.taken.tech.isError = false;
 
       try {
         const attendances = await fetchMonthlyAttendances(
-          this.attendance.taken.tech.params
+          paramsOverride ?? this.attendance.taken.tech.params
         );
         const filtered = attendances.data.filter((att) => att.Tecnico);
         this.attendance.taken.tech.list = filtered;
@@ -458,12 +458,12 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
-    async getAllTakenAttendances() {
+    async getAllTakenAttendances(paramsOverride?: TakenAttendaceParams) {
       this.attendance.taken.all.loading = true;
 
       try {
         const attendances = await fetchMonthlyAttendances(
-          this.attendance.taken.all.params
+          paramsOverride ?? this.attendance.taken.all.params
         );
         this.attendance.taken.all.list = attendances.data;
          this.attendance.taken.all.listFiltered = attendances.data;

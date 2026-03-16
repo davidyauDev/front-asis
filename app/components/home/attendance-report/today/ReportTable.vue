@@ -1,9 +1,9 @@
 <template>
   <DataState
-    :loading="dailyTakenAttendaces.loading"
-    :error="dailyTakenAttendaces.isError"
+    :loading="dataLoading"
+    :error="dataError"
     error-message="No se pudo cargar los reportes de hoy"
-    @retry="getDailyTakenAttendances"
+    @retry="retryFetch"
   >
     <div
       class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 mb-4 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800"
@@ -12,7 +12,8 @@
         icon="i-lucide-search"
         v-model="dailyTakenAttendaces.globalFilter"
         class="w-full sm:max-w-sm"
-        placeholder="Buscar por nombre, apellido o DNI..."
+        :disabled="overrideBlocked"
+        :placeholder="overrideBlocked ? 'Selecciona usuarios para ver resultados...' : 'Buscar por nombre, apellido o DNI...'"
       />
 
       <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
@@ -45,8 +46,7 @@
         :data="dailyListAttendaces"
         :columns="columns"
         :meta="{ class: { tr: rowClass } }"
-        :loading="dailyTakenAttendaces.loading"
-        empty="No se encontraron reportes de hoy"
+        :loading="dataLoading"
         :ui="{
           base: 'w-full',
           root: 'max-h-[calc(100vh-400px)] overflow-y-auto relative',
@@ -67,6 +67,7 @@
             dark:[&>tr:hover]:bg-gray-900/50
           `,
         }"
+        :empty="emptyText"
       />
     </div>
 
@@ -176,6 +177,11 @@ import { parse } from "date-fns";
 import DataState from "~/components/common/DataState.vue";
 import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
 import { apiFetch } from '@/services/api'
+import type { TakenAttendaceParams } from "~/composables/useAttendanceReport";
+
+const props = defineProps<{
+  paramsOverride?: TakenAttendaceParams | null
+}>()
 
 const config = useRuntimeConfig()
 const store = useAttendanceReportStore();
@@ -185,8 +191,26 @@ const toast = useToast()
 
 
 const dailyTakenAttendaces = computed(() => attendance.value.taken.daily);
+const overrideBlocked = computed(() => props.paramsOverride === null)
+
+const requestParams = computed(() => {
+  if (props.paramsOverride === null) return null
+  return props.paramsOverride ?? dailyTakenAttendaces.value.params
+})
+
+const dataLoading = computed(() => (overrideBlocked.value ? false : dailyTakenAttendaces.value.loading))
+const dataError = computed(() => (overrideBlocked.value ? false : dailyTakenAttendaces.value.isError))
+const emptyText = computed(() =>
+  overrideBlocked.value ? 'Selecciona usuarios para ver resultados' : 'No se encontraron reportes de hoy'
+)
+
+const retryFetch = () => {
+  if (!requestParams.value) return
+  return getDailyTakenAttendances(requestParams.value)
+}
 
 const dailyListAttendaces = computed<TakenAttendace[]>(() => {
+  if (overrideBlocked.value) return []
   let list = dailyTakenAttendaces.value.list;
 
   if (dailyTakenAttendaces.value.globalFilter) {
@@ -245,6 +269,7 @@ const formatYmdLocal = (date: Date) =>
 
 const exportarExcel = async () => {
   if (exportando.value) return;
+  if (!requestParams.value) return;
   
   exportando.value = true;
   
@@ -270,7 +295,7 @@ const exportarExcel = async () => {
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         },
         body: JSON.stringify({
-          ...(dailyTakenAttendaces.value.params || {}),
+          ...(requestParams.value || {}),
           export: 'excel'
         })
       }

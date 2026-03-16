@@ -13,20 +13,67 @@
           p-4
           bg-white dark:bg-gray-900
           border border-gray-200 dark:border-gray-800
-          grid grid-cols-12 gap-4 items-start
+          space-y-4
         "
       >
-        <div class="col-span-2 min-w-0 space-y-3">
-          <CompanyFilter
-            :loading="company.daily.loading"
-            :is-error="company.daily.isError"
-            :list="company.daily.list"
-            v-model:company="company.daily.selecteds"
-            v-model:param="dailyTakenAttendace.params.company_id"
-          />
+        <nav class="w-full">
+          <div
+            class="flex gap-1 border-b-2 border-emerald-600 dark:border-emerald-500"
+            role="tablist"
+            aria-label="Filtros del reporte de hoy"
+          >
+            <button
+              v-for="item in filterTabs"
+              :key="item.value"
+              type="button"
+              role="tab"
+              :aria-selected="item.value === filterMode"
+              :tabindex="item.value === filterMode ? 0 : -1"
+              @click="filterMode = item.value as FilterMode"
+              class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wide rounded-t-md border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+              :class="[
+                item.value === filterMode
+                  ? 'bg-emerald-600 text-white border-emerald-600 -mb-[2px]'
+                  : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'
+              ]"
+            >
+              {{ item.label }}
+            </button>
+          </div>
+        </nav>
 
-          <div>
-           
+        <div v-if="filterMode === 'ADMIN'" class="grid grid-cols-12 gap-4 items-start">
+          <div class="col-span-12 md:col-span-2 min-w-0">
+            <CompanyFilter
+              :loading="company.daily.loading"
+              :is-error="company.daily.isError"
+              :list="company.daily.list"
+              v-model:company="company.daily.selecteds"
+              v-model:param="dailyTakenAttendace.params.company_id"
+            />
+          </div>
+
+          <div class="col-span-12 md:col-span-4 min-w-0">
+            <DepartmentFilter
+              :loading="department.daily.loading"
+              :is-error="department.daily.isError"
+              :list="department.daily.list"
+              v-model:department="department.daily.selecteds"
+            />
+          </div>
+
+          <div class="col-span-12 md:col-span-6 min-w-0">
+            <EmployeeFilter
+              :loading="employee.daily.loading"
+              :is-error="employee.daily.isError"
+              :list="employee.daily.list"
+              v-model:employee="employee.daily.selecteds"
+            />
+          </div>
+        </div>
+
+        <div v-else class="grid grid-cols-12 gap-4 items-start">
+          <div class="col-span-12 md:col-span-4">
             <UCard
               :ui="{
                 header: 'px-3 py-2 flex items-center justify-between border-b'
@@ -35,69 +82,148 @@
               <template #header>
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-sparkles" class="size-4 text-primary" />
-                  <span class="font-semibold text-sm">Filtros especiales</span>
+                  <span class="font-semibold text-sm">Ingenieros productos</span>
                 </div>
               </template>
 
-              <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    @click="applySpecialFilter([155, 64])"
-                    :class="[
-                      'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                      isSpecialFilterActive([155, 64])
-                        ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
-                    ]"
-                  >
-                    <UIcon
-                      v-if="isSpecialFilterActive([155, 64])"
-                      name="i-lucide-check"
-                      class="size-3.5"
-                    />
-                    Ingenieros productos
-                  </button>
+              <div class="space-y-3">
+                <div>
+                  <p class="text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-2">
+                    Empresa
+                  </p>
 
-                  <button
-                    type="button"
-                    @click="applySpecialFilter([9])"
-                    :class="[
-                      'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                      isSpecialFilterActive([9])
-                        ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
-                    ]"
-                  >
-                    <UIcon
-                      v-if="isSpecialFilterActive([9])"
-                      name="i-lucide-check"
-                      class="size-3.5"
-                    />
-                    Ingenieros productos Ydieza
-                  </button>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="item in specialCompanies"
+                      :key="item.key"
+                      type="button"
+                      @click="specialCompanyKey = item.key"
+                      :class="[
+                        'px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
+                        specialCompanyKey === item.key
+                          ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
+                      ]"
+                    >
+                      <UIcon
+                        v-if="specialCompanyKey === item.key"
+                        name="i-lucide-check"
+                        class="size-3.5"
+                      />
+                      {{ item.label }}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-2">
+                    Usuarios
+                  </p>
+                  <UInput
+                    v-model="specialEmployeeSearch"
+                    icon="i-lucide-search"
+                    size="sm"
+                    placeholder="Buscar usuario..."
+                    class="w-full"
+                  />
+                  <div class="mt-2 flex flex-wrap gap-2 max-h-56 overflow-y-auto pr-1">
+                    <button
+                      v-for="emp in specialEmployeesFiltered"
+                      :key="emp.id"
+                      type="button"
+                      @click="toggleSpecialEmployee(emp.id)"
+                      :class="[
+                        'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
+                        specialEmployeeIds.includes(emp.id)
+                          ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
+                      ]"
+                    >
+                      <UIcon
+                        v-if="specialEmployeeIds.includes(emp.id)"
+                        name="i-lucide-check"
+                        class="size-3.5"
+                      />
+                      {{ emp.first_name }} {{ emp.last_name }}
+                    </button>
+
+                    <p
+                      v-if="!specialEmployeesFiltered.length"
+                      class="text-xs text-gray-500 dark:text-gray-400 italic"
+                    >
+                      No hay usuarios para mostrar.
+                    </p>
+                  </div>
+
+                  <div class="mt-2 flex items-center justify-between gap-2">
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                      Seleccionados: <span class="font-semibold">{{ specialEmployeeIds.length }}</span>
+                    </p>
+                    <div class="flex items-center gap-2">
+                      <UButton
+                        size="xs"
+                        variant="ghost"
+                        color="neutral"
+                        icon="i-lucide-rotate-ccw"
+                        @click="specialEmployeeIds = []"
+                      >
+                        Limpiar
+                      </UButton>
+                    </div>
+                  </div>
                 </div>
               </div>
             </UCard>
           </div>
-        </div>
 
-        <div class="col-span-4 min-w-0">
-          <DepartmentFilter
-            :loading="department.daily.loading"
-            :is-error="department.daily.isError"
-            :list="department.daily.list"
-            v-model:department="department.daily.selecteds"
-          />
-        </div>
+          <div class="col-span-12 md:col-span-8">
+            <UCard
+              :ui="{ header: 'px-3 py-2 flex items-center justify-between border-b' }"
+            >
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-users" class="size-4 text-gray-500 dark:text-gray-400" />
+                  <span class="font-semibold text-sm">Usuarios</span>
+                </div>
+              </template>
 
-        <div class="col-span-6 min-w-0">
-          <EmployeeFilter
-            :loading="employee.daily.loading"
-            :is-error="employee.daily.isError"
-            :list="employee.daily.list"
-            v-model:employee="employee.daily.selecteds"
-          />
+              <div class="space-y-3">
+                <div class="flex flex-wrap gap-2">
+                  <span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    Empresa: {{ activeSpecialCompany?.label ?? '-' }}
+                  </span>
+                  <span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    Seleccionados: {{ specialEmployeeIds.length }}
+                  </span>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <template v-if="specialEmployeeIds.length">
+                    <span
+                      v-for="emp in selectedSpecialEmployees"
+                      :key="emp.key"
+                      class="inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-100 border border-emerald-200 dark:border-emerald-900"
+                    >
+                      <span class="truncate max-w-[240px]">{{ emp.label }}</span>
+                      <button
+                        v-if="emp.id != null"
+                        type="button"
+                        class="rounded-full p-0.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                        @click="toggleSpecialEmployee(emp.id)"
+                        aria-label="Quitar usuario"
+                      >
+                        <UIcon name="i-lucide-x" class="size-3.5" />
+                      </button>
+                    </span>
+                  </template>
+
+                  <p v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
+                    Selecciona usuarios para ver resultados.
+                  </p>
+                </div>
+              </div>
+            </UCard>
+          </div>
         </div>
       </div>
     </section>
@@ -110,46 +236,140 @@
         border border-gray-200 dark:border-gray-800
       "
     >
-      <ReportTable :taken-attendaces="dailyTakenAttendace.list" />
+      <ReportTable :params-override="effectiveDailyParams" />
     </section>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import CompanyFilter from "../CompanyFilter.vue";
-import DepartmentFilter from "../DepartmentFilter.vue";
-import EmployeeFilter from "../EmployeeFilter.vue";
-import ReportTable from "./ReportTable.vue";
-import MetricCards from "~/components/home/MetricCards.vue";
-import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
+ import CompanyFilter from "../CompanyFilter.vue";
+ import DepartmentFilter from "../DepartmentFilter.vue";
+ import EmployeeFilter from "../EmployeeFilter.vue";
+ import ReportTable from "./ReportTable.vue";
+ import MetricCards from "~/components/home/MetricCards.vue";
+ import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
+ 
+ const store = useAttendanceReportStore();
+ const { attendance, company, department, employee } = storeToRefs(store);
+ const { getDailyTakenAttendances } = store;
+ 
+ const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
+ 
+ const excludedDepartmentIds = [2, 5, 7, 10] as const
+ const excludedDepartmentIdSet = new Set<number>(excludedDepartmentIds)
 
-const store = useAttendanceReportStore();
-const { attendance, company, department, employee } = storeToRefs(store);
-const { getDailyTakenAttendances } = store;
+type FilterMode = 'ADMIN' | 'INGENIEROS'
+const filterMode = ref<FilterMode>('ADMIN')
 
-const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
+const filterTabs = [
+  { label: 'Administrativo', value: 'ADMIN' },
+  { label: 'Ingenieros productos', value: 'INGENIEROS' }
+]
 
-const excludedDepartmentIds = [2, 5, 7, 10] as const
-const excludedDepartmentIdSet = new Set<number>(excludedDepartmentIds)
-const isSpecialFilterActive = (ids: number[]) => {
-  const selectedIds = store.employee.daily.selecteds.map(e => e.id);
-  if (selectedIds.length !== ids.length) return false;
-  const selectedSet = new Set(selectedIds);
-  return ids.every(id => selectedSet.has(id));
-};
+type SpecialCompanyKey = 'cechriza' | 'ydieza'
+const specialCompanyKey = ref<SpecialCompanyKey>('cechriza')
+const specialEmployeeIds = ref<number[]>([])
+const specialEmployeeSearch = ref('')
 
-const applySpecialFilter = (ids: number[]) => {
-  if (isSpecialFilterActive(ids)) {
-    store.employee.daily.selecteds = [];
-    return;
+const specialCompanies = computed(() => {
+  const cechriza = company.value.list.find(c => /cechriza/i.test(c.company_name))
+  const ydieza = company.value.list.find(c => /ydieza/i.test(c.company_name))
+
+  return [
+    { key: 'cechriza' as const, label: cechriza?.company_name ?? 'Cechriza', id: cechriza?.id ?? 1 },
+    { key: 'ydieza' as const, label: ydieza?.company_name ?? 'Ydieza', id: ydieza?.id ?? 2 },
+  ]
+})
+
+const activeSpecialCompany = computed(() =>
+  specialCompanies.value.find(c => c.key === specialCompanyKey.value)
+)
+
+const specialDefaultEmployeeIds = computed<number[]>(() => {
+  if (specialCompanyKey.value === 'cechriza') return [155, 64]
+  if (specialCompanyKey.value === 'ydieza') return [9]
+  return []
+})
+
+const specialEmployeesBase = computed(() => {
+  const companyId = activeSpecialCompany.value?.id
+  if (!companyId) return [] as Employee[]
+
+  // Empresas con usuarios fijos (por ID)
+  if (specialDefaultEmployeeIds.value.length) {
+    const ids = new Set(specialDefaultEmployeeIds.value)
+    return employee.value.list.filter(e => ids.has(e.id))
   }
 
-  const selected = employee.value.list.filter(emp =>
-    ids.includes(emp.id)
-  );
-  store.employee.daily.selecteds = selected;
-};
+  return employee.value.list.filter(e => e.company_id === companyId)
+})
+
+const specialEmployeesFiltered = computed(() => {
+  const term = specialEmployeeSearch.value.trim().toLowerCase()
+  if (!term) return specialEmployeesBase.value
+
+  return specialEmployeesBase.value.filter(e =>
+    `${e.first_name} ${e.last_name}`.toLowerCase().includes(term) ||
+    (e.emp_code ?? '').toLowerCase().includes(term)
+  )
+})
+
+const toggleSpecialEmployee = (id: number) => {
+  specialEmployeeIds.value = specialEmployeeIds.value.includes(id)
+    ? specialEmployeeIds.value.filter(x => x !== id)
+    : [...specialEmployeeIds.value, id]
+}
+
+const selectedSpecialEmployees = computed(() => {
+  const ids = specialEmployeeIds.value
+  const base = specialEmployeesBase.value
+  const byId = new Map(base.map(e => [e.id, e]))
+
+  return ids.map((id) => {
+    const found = byId.get(id) ?? employee.value.list.find(e => e.id === id)
+    if (!found) {
+      return { key: `id:${id}`, id, label: `ID ${id}` }
+    }
+    return {
+      key: `emp:${found.id}`,
+      id: found.id,
+      label: `${found.first_name} ${found.last_name}`.trim() || `ID ${found.id}`,
+    }
+  })
+})
+
+const effectiveDailyParams = computed(() => {
+  const base = dailyTakenAttendace.value.params
+
+  if (filterMode.value === 'INGENIEROS') {
+    const ids = specialEmployeeIds.value.length
+      ? [...specialEmployeeIds.value]
+      : []
+
+    if (!ids.length) return null
+
+    return {
+      ...base,
+      company_id: undefined,
+      departamento_ids: [],
+      empleado_id: undefined,
+      empleado_ids: ids,
+    }
+  }
+
+  // ADMIN: no enviar empleado_ids cuando es "todos"
+  const explicitEmployeeIds = store.employee.daily.selecteds.map(e => e.id)
+  const allCount = employee.value.daily.list.length || employee.value.list.length
+  const shouldOmitEmployeeFilter =
+    !explicitEmployeeIds.length || (allCount > 0 && explicitEmployeeIds.length >= allCount)
+
+  return {
+    ...base,
+    empleado_id: undefined,
+    empleado_ids: shouldOmitEmployeeFilter ? undefined : explicitEmployeeIds,
+  }
+})
 
 const metricsData = computed(() => {
   const summary = dailyTakenAttendace.value.summary;
@@ -193,7 +413,9 @@ let fetchTimeout: ReturnType<typeof setTimeout> | null = null;
 const debouncedFetch = () => {
   if (fetchTimeout) clearTimeout(fetchTimeout);
   fetchTimeout = setTimeout(() => {
-    getDailyTakenAttendances();
+    const params = effectiveDailyParams.value
+    if (filterMode.value === 'INGENIEROS' && !params) return
+    getDailyTakenAttendances(params ?? undefined);
   }, 300);
 };
 
@@ -259,6 +481,7 @@ onMounted(() => {
 watch(
   () => store.department.daily.selecteds,
   async (departments) => {
+    if (filterMode.value !== 'ADMIN') return
     const normalizedSelected = departments.filter(
       d => !excludedDepartmentIdSet.has(d.id)
     )
@@ -293,9 +516,12 @@ watch(
 watch(
   () => store.employee.daily.selecteds,
   (employees) => {
-    store.attendance.taken.daily.params.empleado_ids =
-      employees.map(e => e.id);
+    if (filterMode.value !== 'ADMIN') return
 
+    // Mantenemos el estado de UI (selecteds) pero el request real se arma en effectiveDailyParams
+    store.attendance.taken.daily.params.empleado_id = undefined
+    store.attendance.taken.daily.params.empleado_ids = employees.map(e => e.id);
+ 
     debouncedFetch();
   },
   { deep: true }
@@ -305,6 +531,7 @@ watch(
 watch(
   () => dailyTakenAttendace.value.params.company_id,
   (companyId) => {
+    if (filterMode.value !== 'ADMIN') return
     // Limpiar selections cuando cambia company
     const validDepartments = store.department.daily.selecteds.filter((dep) => {
       if (excludedDepartmentIdSet.has(dep.id)) return false
@@ -324,4 +551,25 @@ watch(
     debouncedFetch();
   }
 );
+
+watch(filterMode, () => {
+  // Al entrar a Ingenieros, setear defaults de Cechriza
+  if (filterMode.value === 'INGENIEROS') {
+    specialCompanyKey.value = 'cechriza'
+    specialEmployeeIds.value = [...specialDefaultEmployeeIds.value]
+    specialEmployeeSearch.value = ''
+  }
+  debouncedFetch()
+})
+
+watch([specialCompanyKey, specialEmployeeIds], () => {
+  if (filterMode.value !== 'INGENIEROS') return
+  debouncedFetch()
+}, { deep: true })
+
+watch(specialCompanyKey, () => {
+  if (filterMode.value !== 'INGENIEROS') return
+  specialEmployeeSearch.value = ''
+  specialEmployeeIds.value = [...specialDefaultEmployeeIds.value]
+})
 </script>

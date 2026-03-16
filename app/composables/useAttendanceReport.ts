@@ -124,6 +124,7 @@ export type TakenAttendaceParams = {
   company_id?: number;
   departamento_ids?: number[];
   empleado_id?: number;
+  empleado_ids?: number[];
   fechas: Date[];
 };
 
