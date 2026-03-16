@@ -61,63 +61,15 @@
     </template>
 
     <template #body>
-      <div class="p-2 space-y-3">
-        <TableReport :range-date="rangeDate" />
+      <div class="p-2">
+        <NuxtPage />
       </div>
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { endOfMonth, startOfMonth } from "date-fns";
-import TableReport from "~/components/movility-report/TableReport.vue";
-import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
-import { type Department } from "~/composables/useAttendanceReport";
-
 definePageMeta({ middleware: "auth" });
-
-const store = useAttendanceReportStore();
-const { getDepartments } = store;
-const { department } = storeToRefs(store);
-
-const modelValue = shallowRef({
-  start: toCalendarDate(startOfMonth(new Date())),
-  end: toCalendarDate(endOfMonth(new Date())),
-});
-
-const departmentSelectedId = ref<number | undefined>(undefined);
-
-const departmentSelected = computed<Department | null>(() => {
-  if (!departmentSelectedId.value) return null;
-  return (
-    department.value.list.find(
-      (dep) => dep.id === departmentSelectedId.value
-    ) || null
-  );
-});
-
-const departments = computed<
-  {
-    label: string;
-    value: number;
-  }[]
->(() => [
-  {
-    label: "Todos",
-    value: 0,
-  },
-  ...department.value.list.map((dep) => ({
-    label: dep.dept_name,
-    value: dep.id,
-  })),
-]);
-
-const rangeDate = computed(() => ({
-  start: fromCalToDate(modelValue.value.start),
-  end: fromCalToDate(modelValue.value.end),
-}));
-
-onMounted(getDepartments);
 </script>
 
 <style scoped>
