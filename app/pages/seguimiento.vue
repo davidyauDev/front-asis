@@ -805,8 +805,46 @@ const toggleTecnico = (dni: string) => {
 }
 
 const enviarWhatsApp = (tecnicoData: any) => {
-    const nombre = tecnicoData.usuario?.nombre_completo || 'Técnico'
-    alert(`[DESARROLLO] Funcionalidad WhatsApp para: ${nombre}\n\nAquí se implementará el envío de mensaje de WhatsApp al técnico que no ha marcado asistencia.`)
+    const normalizeWhatsAppPhone = (raw: string) => {
+        const digits = String(raw || '').replace(/[^\d]/g, '')
+        if (!digits) return null
+
+        let phone = digits
+
+        if (phone.startsWith('00')) phone = phone.slice(2)
+        if (phone.startsWith('0')) phone = phone.slice(1)
+
+        // Heurística Perú: 9 dígitos (celular) -> prefijar 51
+        if (phone.length === 9 && phone.startsWith('9')) phone = `51${phone}`
+
+        if (phone.length < 10) return null
+        return phone
+    }
+
+    const usuario = tecnicoData?.usuario || {}
+    const nombre = usuario?.nombre_completo || 'Técnico'
+    const mobileRaw = usuario?.mobile || ''
+    const phone = normalizeWhatsAppPhone(mobileRaw)
+
+    if (!phone) {
+        alert(`No se pudo enviar WhatsApp: el técnico "${nombre}" no tiene un número válido en el campo mobile.`)
+        return
+    }
+
+    const fecha = fechaSeleccionada.value
+    const departamento = usuario?.departamento ? ` (${usuario.departamento})` : ''
+    const mensaje = [
+        `Hola ${nombre}${departamento},`,
+        '',
+        `Te escribo por el seguimiento de asistencia del día ${fecha}.`,
+        'Veo que no se registró tu marcación.',
+        '',
+        '¿Puedes confirmarme si tuviste algún inconveniente?'
+    ].join('\n')
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`
+    const w = window.open(url, '_blank', 'noopener,noreferrer')
+    if (!w) window.location.href = url
 }
 // Modal de validación
 const showValidationModal = ref(false)

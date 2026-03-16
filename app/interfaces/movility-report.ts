@@ -22,6 +22,7 @@ interface MovilityReportBase {
     mobility_amount_per_day: number;
     mobility_amount?: number;
     total_mobility_to_pay: number;
+    monthly_comment?: string | null;
   };
   
 }
@@ -62,6 +63,7 @@ export enum MovilityReportCode {
   DM = "DM",
   V = "V",
   X = "X",
+  LCGH = "LCGH",
   LSGH = "LSGH",
   LSLH = "LSLH",
   NM = "NM",
@@ -112,6 +114,13 @@ export const movilityReportCodeOp: Record<
     severity: undefined,
     bg: "bg-gray-700 dark:text-white",
     
+  },
+  [MovilityReportCode.LCGH]: {
+    label: "LCGH",
+    value: MovilityReportCode.LCGH,
+    severity: "neutral",
+    bg: "bg-slate-500 dark:text-white",
+  
   },
   [MovilityReportCode.LSGH]: {
     label: "LSGH",

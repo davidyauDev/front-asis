@@ -51,6 +51,20 @@ export type EmployeeMobilityPayload = {
   amount: number
 }
 
+export type EmployeeMobilityMonthlyComment = {
+  employee_id: number
+  period_month: string
+  monthly_comment: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export type EmployeeMobilityMonthlyCommentPayload = {
+  employee_id: number
+  period_month: string
+  monthly_comment: string | null
+}
+
 const toQueryString = (params: Record<string, unknown>) => {
   const sp = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
@@ -107,6 +121,41 @@ export async function updateEmployeeMobility(id: number, payload: EmployeeMobili
     method: 'PUT',
     body: JSON.stringify(payload),
   }) as Promise<ApiSuccess<EmployeeMobilityRow>>
+}
+
+export async function getEmployeeMobilityMonthlyComment(params: {
+  employee_id: number
+  period_month: string
+}) {
+  const query = toQueryString(params)
+  const url = `/api/employee-mobility/monthly-comments?${query}`
+  return apiFetch(url, { method: 'GET' }) as Promise<ApiSuccess<EmployeeMobilityMonthlyComment> | EmployeeMobilityMonthlyComment>
+}
+
+export async function createEmployeeMobilityMonthlyComment(payload: EmployeeMobilityMonthlyCommentPayload) {
+  return apiFetch('/api/employee-mobility/monthly-comments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<ApiSuccess<EmployeeMobilityMonthlyComment> | EmployeeMobilityMonthlyComment>
+}
+
+export async function updateEmployeeMobilityMonthlyComment(payload: EmployeeMobilityMonthlyCommentPayload) {
+  return apiFetch('/api/employee-mobility/monthly-comments', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }) as Promise<ApiSuccess<EmployeeMobilityMonthlyComment> | EmployeeMobilityMonthlyComment>
+}
+
+export async function upsertEmployeeMobilityMonthlyComment(payload: EmployeeMobilityMonthlyCommentPayload) {
+  try {
+    return await updateEmployeeMobilityMonthlyComment(payload)
+  } catch (e) {
+    const status = e && typeof e === 'object' && 'status' in e ? Number((e as any).status) : null
+    if (status === 404) {
+      return createEmployeeMobilityMonthlyComment(payload)
+    }
+    throw e
+  }
 }
 
 /*

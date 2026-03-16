@@ -40,7 +40,7 @@
             <!-- Notificaciones -->
             <UTooltip text="Vehículos con alertas">
               <UButton 
-                color="gray" 
+                color="neutral" 
                 variant="ghost" 
                 square 
                 class="relative group"
@@ -62,28 +62,7 @@
 
     <template #body>
       <div class="p-2 space-y-3">
-        <div class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2">
-          <UTabs v-model="selectedTab" :items="tabItems" :content="false" size="sm" />
-        </div>
-
-        <div v-if="selectedTab === 'report'">
-          <TableReport
-            :range-date="rangeDate"
-            v-model:open="openDetailModal"
-            :search-term="searchTerm"
-            @select:movility-report="
-              (selectedMovilityReport = $event), (openDetailModal = true)
-            "
-          />
-
-          <DetailModal
-            v-model:open="openDetailModal"
-            :range-date="modelValue"
-            :selected-movility-report="selectedMovilityReport"
-          />
-        </div>
-
-        <EmployeeMobilityAdmin v-else />
+        <TableReport :range-date="rangeDate" />
       </div>
     </template>
   </UDashboardPanel>
@@ -91,15 +70,9 @@
 
 <script setup lang="ts">
 import { endOfMonth, startOfMonth } from "date-fns";
-import DetailModal from "~/components/movility-report/DetailModal.vue";
-import EmployeeMobilityAdmin from "~/components/movility-report/EmployeeMobilityAdmin.vue";
 import TableReport from "~/components/movility-report/TableReport.vue";
 import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
 import { type Department } from "~/composables/useAttendanceReport";
-import {
-  movilityReportCodeOp,
-  type MovilityReport,
-} from "~/interfaces/movility-report";
 
 definePageMeta({ middleware: "auth" });
 
@@ -107,23 +80,10 @@ const store = useAttendanceReportStore();
 const { getDepartments } = store;
 const { department } = storeToRefs(store);
 
-const openDetailModal = ref(false);
-
-const selectedMovilityReport = ref<null | MovilityReport>(null);
-
-const tabItems = [
-  { label: "Reporte", value: "report" },
-  { label: "Monto Técnicos", value: "monto-tecnicos" },
-];
-
-const selectedTab = ref<(typeof tabItems)[number]["value"]>("report");
-
 const modelValue = shallowRef({
   start: toCalendarDate(startOfMonth(new Date())),
   end: toCalendarDate(endOfMonth(new Date())),
 });
-
-const searchTerm = ref("");
 
 const departmentSelectedId = ref<number | undefined>(undefined);
 

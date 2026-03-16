@@ -5,11 +5,11 @@
     :ui="{ content: 'p-0' }"
   >
     <template #content>
-      <div class="rounded-xl overflow-hidden border border-yellow-300 dark:border-yellow-600 bg-yellow-300 dark:bg-yellow-400">
+      <div class="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <!-- Header -->
-        <div class="flex items-start justify-between gap-3 px-4 py-3 border-b border-yellow-400/70 dark:border-yellow-600/70">
+        <div class="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/40">
           <div class="min-w-0 flex-1">
-            <div class="text-xs text-yellow-900/80">
+            <div class="text-xs text-gray-600 dark:text-gray-300">
               <span class="font-mono font-semibold">{{ employee.emp_code }}</span>
               <span class="mx-1">·</span>
               <span class="font-semibold">{{ fullName }}</span>
@@ -17,12 +17,9 @@
               <span class="font-mono">{{ year }}</span>
             </div>
 
-            <input
-              v-model="draft.title"
-              type="text"
-              placeholder="Título del recordatorio…"
-              class="mt-2 w-full bg-transparent placeholder:text-yellow-900/60 text-yellow-950 font-semibold text-sm outline-none"
-            />
+            <div class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Comentario mensual
+            </div>
           </div>
 
           <div class="flex items-center gap-2">
@@ -30,7 +27,7 @@
               v-model="month"
               :items="monthItems"
               size="xs"
-              :ui="{ base: 'min-w-28 bg-yellow-200/70 dark:bg-yellow-300/70' }"
+              :ui="{ base: 'min-w-28 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800' }"
             />
 
             <UButton
@@ -40,7 +37,7 @@
               variant="soft"
               icon="i-lucide-save"
               :loading="saving"
-              @click="saveNow()"
+              @click="saveNow({ close: true })"
               title="Guardar"
             />
 
@@ -68,37 +65,39 @@
 
         <!-- Body -->
         <div class="px-4 py-3">
-          <div class="text-xs text-yellow-900/80 mb-2">
+          <div class="text-xs text-gray-600 dark:text-gray-300 mb-2">
             <span class="font-medium">Borrador:</span>
             <span class="ml-1">{{ autosaveLabel }}</span>
+            <span v-if="loading" class="ml-2 text-[11px] text-gray-500 dark:text-gray-400">cargando…</span>
           </div>
 
           <textarea
             v-model="draft.content"
             placeholder="Escribe tu recordatorio mensual aquí…"
-            class="w-full min-h-[220px] resize-none bg-transparent placeholder:text-yellow-900/60 text-yellow-950 text-sm outline-none"
+            ref="contentRef"
+            class="w-full min-h-[220px] resize-none bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 text-sm outline-none"
           />
         </div>
 
-        <!-- Footer (solo maqueta) -->
-        <div class="flex items-center justify-between px-4 py-2 border-t border-yellow-400/70 dark:border-yellow-600/70">
-          <div class="flex items-center gap-3 text-yellow-950/80">
-            <button type="button" class="text-sm font-bold underline-offset-2 hover:underline" title="Negrita">
+        <!-- Footer (formato rápido) -->
+        <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/40">
+          <div class="flex items-center gap-3 text-gray-800 dark:text-gray-200">
+            <button type="button" class="text-sm font-bold underline-offset-2 hover:underline" title="Negrita" @click="toggleBold()">
               B
             </button>
-            <button type="button" class="text-sm italic underline-offset-2 hover:underline" title="Cursiva">
+            <button type="button" class="text-sm italic underline-offset-2 hover:underline" title="Cursiva" @click="toggleItalic()">
               I
             </button>
-            <button type="button" class="text-sm underline underline-offset-2 hover:no-underline" title="Subrayado">
+            <button type="button" class="text-sm underline underline-offset-2 hover:no-underline" title="Subrayado" @click="toggleUnderline()">
               U
             </button>
-            <button type="button" class="text-sm line-through" title="Tachado">
+            <button type="button" class="text-sm line-through" title="Tachado" @click="toggleStrike()">
               S
             </button>
           </div>
 
-          <div class="text-[11px] text-yellow-900/70">
-            {{ monthLabel }} · se guarda en este navegador
+          <div class="text-[11px] text-gray-500 dark:text-gray-400">
+            {{ monthLabel }} · se guarda en el servidor
           </div>
         </div>
       </div>
@@ -108,8 +107,9 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
-import { computed, reactive, ref, watch } from 'vue'
-import { useEmployeeMobilityReminders } from '~/composables/useEmployeeMobilityReminders'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { getApiErrorMessage } from '~/services/employeeMobility'
+import { getEmployeeMobilityMonthlyComment, upsertEmployeeMobilityMonthlyComment } from '~/services/employeeMobility'
 
 type EmployeeLite = {
   employee_id: number
@@ -123,13 +123,14 @@ const props = defineProps<{
   employee: EmployeeLite
   year: number
   initialMonth?: number
+  initialComment?: string | null
 }>()
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
-const { get, upsert, remove } = useEmployeeMobilityReminders()
+const toast = useToast()
 
 const monthItems = [
   { label: 'Enero', value: 1 },
@@ -150,11 +151,16 @@ const month = ref<number>(props.initialMonth ?? new Date().getMonth() + 1)
 
 const fullName = computed(() => `${props.employee.first_name ?? ''} ${props.employee.last_name ?? ''}`.trim())
 const monthLabel = computed(() => monthItems.find((m) => m.value === month.value)?.label ?? 'Mes')
+const periodMonth = computed(() => `${props.year}-${String(month.value).padStart(2, '0')}-01`)
+const periodLabel = computed(() => `${monthLabel.value} ${props.year}`)
 
 const draft = reactive({
-  title: '',
   content: '',
 })
+
+const contentRef = ref<HTMLTextAreaElement | null>(null)
+const suppressAutosave = ref(false)
+const loading = ref(false)
 
 const saving = ref(false)
 const autosaveState = ref<'idle' | 'saving' | 'saved'>('idle')
@@ -165,11 +171,40 @@ const autosaveLabel = computed(() => {
   return 'sin cambios'
 })
 
-const load = () => {
-  const existing = get(props.employee.employee_id, props.year, month.value)
-  draft.title = existing?.title ?? ''
-  draft.content = existing?.content ?? ''
-  autosaveState.value = 'idle'
+const load = async () => {
+  suppressAutosave.value = true
+  loading.value = true
+  try {
+    const res = await getEmployeeMobilityMonthlyComment({
+      employee_id: props.employee.employee_id,
+      period_month: periodMonth.value,
+    })
+    const comment = (res as any)?.data?.monthly_comment ?? (res as any)?.monthly_comment ?? ''
+    draft.content = String(comment ?? '')
+    autosaveState.value = 'idle'
+  } catch (e) {
+    const status = e && typeof e === 'object' && 'status' in e ? Number((e as any).status) : null
+    if (status === 404) {
+      if (props.initialMonth && month.value === props.initialMonth) {
+        draft.content = String(props.initialComment ?? draft.content ?? '')
+      } else {
+        draft.content = ''
+      }
+      autosaveState.value = 'idle'
+    } else {
+      toast.add({
+        title: 'Error',
+        description: getApiErrorMessage(e),
+        icon: 'i-lucide-alert-triangle',
+        color: 'error',
+      })
+    }
+  } finally {
+    loading.value = false
+    nextTick(() => {
+      suppressAutosave.value = false
+    })
+  }
 }
 
 watch(
@@ -177,6 +212,10 @@ watch(
   ([isOpen]) => {
     if (!isOpen) return
     if (props.initialMonth) month.value = props.initialMonth
+    if (props.initialMonth && month.value === props.initialMonth) {
+      draft.content = String(props.initialComment ?? '')
+      autosaveState.value = 'idle'
+    }
     load()
   }
 )
@@ -188,39 +227,118 @@ watch(month, () => {
 
 const debouncedAutosave = useDebounceFn(() => {
   if (!props.open) return
+  if (suppressAutosave.value) return
   autosaveState.value = 'saving'
-  upsert(props.employee.employee_id, props.year, month.value, {
-    title: draft.title,
-    content: draft.content,
+  upsertEmployeeMobilityMonthlyComment({
+    employee_id: props.employee.employee_id,
+    period_month: periodMonth.value,
+    monthly_comment: draft.content.trim() ? draft.content : null,
   })
-  autosaveState.value = 'saved'
+    .then(() => {
+      autosaveState.value = 'saved'
+    })
+    .catch((e) => {
+      autosaveState.value = 'idle'
+      toast.add({
+        title: 'No se pudo guardar',
+        description: getApiErrorMessage(e),
+        icon: 'i-lucide-alert-triangle',
+        color: 'error',
+      })
+    })
 }, 600)
 
 watch(
-  () => [draft.title, draft.content] as const,
+  () => [draft.content] as const,
   () => {
     if (!props.open) return
+    if (suppressAutosave.value) return
     debouncedAutosave()
   }
 )
 
-const saveNow = async () => {
+const saveNow = async (opts?: { close?: boolean; title?: string }) => {
   saving.value = true
   try {
-    upsert(props.employee.employee_id, props.year, month.value, {
-      title: draft.title,
-      content: draft.content,
+    const res = await upsertEmployeeMobilityMonthlyComment({
+      employee_id: props.employee.employee_id,
+      period_month: periodMonth.value,
+      monthly_comment: draft.content.trim() ? draft.content : null,
     })
     autosaveState.value = 'saved'
+
+    const apiMessage =
+      (res as any)?.message ?? (res as any)?.data?.message ?? null
+
+    toast.add({
+      title: opts?.title ?? 'Comentario guardado',
+      description: apiMessage ? `${apiMessage} (${periodLabel.value})` : periodLabel.value,
+      icon: 'i-lucide-check-circle',
+      color: 'success',
+    })
+
+    if (opts?.close) emit('update:open', false)
+  } catch (e) {
+    autosaveState.value = 'idle'
+    toast.add({
+      title: 'No se pudo guardar',
+      description: getApiErrorMessage(e),
+      icon: 'i-lucide-alert-triangle',
+      color: 'error',
+    })
   } finally {
     saving.value = false
   }
 }
 
 const clearCurrent = () => {
-  remove(props.employee.employee_id, props.year, month.value)
-  draft.title = ''
+  suppressAutosave.value = true
   draft.content = ''
   autosaveState.value = 'idle'
+  nextTick(() => {
+    suppressAutosave.value = false
+  })
+  saveNow({ title: 'Comentario borrado' })
 }
+
+const toggleWrap = (before: string, after = before) => {
+  const el = contentRef.value
+  if (!el) return
+
+  const value = draft.content ?? ''
+  const start = el.selectionStart ?? 0
+  const end = el.selectionEnd ?? 0
+  const selected = value.slice(start, end)
+
+  const left = value.slice(Math.max(0, start - before.length), start)
+  const right = value.slice(end, end + after.length)
+  const hasWrap = left === before && right === after
+
+  if (hasWrap) {
+    const newStart = Math.max(0, start - before.length)
+    const newEnd = Math.max(newStart, end - before.length)
+    draft.content = value.slice(0, newStart) + selected + value.slice(end + after.length)
+    nextTick(() => {
+      el.focus()
+      el.setSelectionRange(newStart, newEnd)
+    })
+    return
+  }
+
+  draft.content = value.slice(0, start) + before + selected + after + value.slice(end)
+  nextTick(() => {
+    el.focus()
+    if (start === end) {
+      const pos = start + before.length
+      el.setSelectionRange(pos, pos)
+    } else {
+      el.setSelectionRange(start + before.length, end + before.length)
+    }
+  })
+}
+
+const toggleBold = () => toggleWrap('**')
+const toggleItalic = () => toggleWrap('*')
+const toggleUnderline = () => toggleWrap('<u>', '</u>')
+const toggleStrike = () => toggleWrap('~~')
 </script>

@@ -1,15 +1,11 @@
 <template>
   <div class="flex flex-col h-full">
-        <!-- FILTROS -->
-    <div class="bg-white/85 dark:bg-gray-950/70 rounded-xl border border-gray-200/80 dark:border-gray-800 p-4 mb-6 shadow-sm backdrop-blur">
-      <div class="flex flex-wrap gap-4 items-center justify-between">
-
-        <div class="flex flex-1 gap-3 items-end flex-wrap">
+    <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+      <!-- TOOLBAR -->
+      <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70">
+        <div class="flex flex-wrap items-center gap-3">
           <!-- BUSCADOR -->
-          <div class="relative flex-1 min-w-[250px]">
-            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 min-h-[16px]">
-              Buscar
-            </label>
+          <div class="relative flex-1 min-w-[260px]">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -23,72 +19,51 @@
             />
           </div>
 
-          <!-- DESDE -->
-          <div>
-            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 min-h-[16px]">
-              Desde
-            </label>
-            <input
-              v-model="startDate"
-              type="date"
-              class="h-10 border border-gray-200 dark:border-gray-800 rounded-lg px-3 text-sm bg-white dark:bg-gray-950 focus:border-primary-300 dark:focus:border-primary-700 focus:ring-2 focus:ring-primary-500/25 transition-colors font-medium text-gray-900 dark:text-gray-100"
-            />
+          <!-- RANGO FECHAS -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Desde</span>
+              <input
+                v-model="startDate"
+                type="date"
+                class="h-10 border border-gray-200 dark:border-gray-800 rounded-lg px-3 text-sm bg-white dark:bg-gray-950 focus:border-primary-300 dark:focus:border-primary-700 focus:ring-2 focus:ring-primary-500/25 transition-colors font-medium text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Hasta</span>
+              <input
+                v-model="endDate"
+                type="date"
+                class="h-10 border border-gray-200 dark:border-gray-800 rounded-lg px-3 text-sm bg-white dark:bg-gray-950 focus:border-primary-300 dark:focus:border-primary-700 focus:ring-2 focus:ring-primary-500/25 transition-colors font-medium text-gray-900 dark:text-gray-100"
+              />
+            </div>
           </div>
 
-          <!-- HASTA -->
-          <div>
-            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 min-h-[16px]">
-              Hasta
-            </label>
-            <input
-              v-model="endDate"
-              type="date"
-              class="h-10 border border-gray-200 dark:border-gray-800 rounded-lg px-3 text-sm bg-white dark:bg-gray-950 focus:border-primary-300 dark:focus:border-primary-700 focus:ring-2 focus:ring-primary-500/25 transition-colors font-medium text-gray-900 dark:text-gray-100"
-            />
-          </div>
-
-          <!-- BOTON APLICAR -->
-          <div class="flex flex-col">
-            <span class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 min-h-[16px] opacity-0 select-none">
-              Accion
-            </span>
+          <div class="flex items-center gap-2 ms-auto">
             <button 
               @click="aplicarFiltros" 
               class="h-10 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white px-4 rounded-lg transition-colors flex items-center gap-2 font-semibold text-sm shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950"
             >
               <span>Aplicar</span>
             </button>
+
+            <button 
+              @click="descargarExcel" 
+              :disabled="isExporting"
+              class="h-10 px-4 rounded-lg transition-colors inline-flex items-center gap-2 font-semibold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950 border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white disabled:opacity-60 disabled:pointer-events-none"
+              :title="isExporting ? 'Exportando…' : 'Exportar Excel'"
+            >
+              <UIcon
+                :name="isExporting ? 'i-lucide-loader-2' : 'i-lucide-file-spreadsheet'"
+                class="h-4 w-4"
+                :class="isExporting ? 'animate-spin' : ''"
+              />
+              <span class="hidden sm:inline">{{ isExporting ? 'Exportando…' : 'Excel' }}</span>
+            </button>
           </div>
         </div>
-
-        <!-- BOTONES ACCIONES -->
-        <div class="flex items-center gap-2 pt-[16px]">
-          <button 
-            @click="descargarExcel" 
-            class="h-10 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/40 text-gray-800 dark:text-gray-200 px-4 rounded-lg transition-colors flex items-center gap-2 font-semibold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span class="hidden sm:inline">Excel</span>
-          </button>
-          
-          <!-- <button 
-            @click="agregarMontoMovilidad" 
-            class="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-900 dark:text-gray-100 px-4 py-2 rounded-md transition-colors flex items-center gap-2 font-medium text-sm"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            <span class="hidden sm:inline">Agregar monto</span>
-          </button> -->
-        </div>
       </div>
-    </div>
 
-    <!-- TABLA -->
-
-    <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
       <!-- ESTADO DE CARGA -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-16">
         <svg class="animate-spin h-10 w-10 text-gray-900 dark:text-gray-100 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -102,70 +77,66 @@
       <div v-else class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200">
-                <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('dni')">
-                  DNI <UIcon :name="sortIcon('dni')" class="w-3 h-3" />
-                </button>
-              </th>
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200">
+            <tr class="sticky top-0 z-10 bg-primary-600 text-white border-b border-primary-700/40">
+              <th class="px-3 py-3 text-left text-xs font-semibold">
                 <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('apellidos')">
-                  Apellidos <UIcon :name="sortIcon('apellidos')" class="w-3 h-3" />
+                  Empleado <UIcon :name="employeeSortIcon" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200">
-                <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('nombres')">
-                  Nombres <UIcon :name="sortIcon('nombres')" class="w-3 h-3" />
-                </button>
-              </th>
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <th class="px-3 py-3 text-left text-xs font-semibold">
                 <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('ingreso')">
-                  Ingreso <UIcon :name="sortIcon('ingreso')" class="w-3 h-3" />
+                  Ingreso <UIcon :name="sortIcon('ingreso')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <th class="px-3 py-3 text-right text-xs font-semibold">
                 <button type="button" class="inline-flex items-center gap-1 w-full justify-end" @click="toggleSort('movilidad')">
-                  Movilidad <UIcon :name="sortIcon('movilidad')" class="w-3 h-3" />
+                  Movilidad <UIcon :name="sortIcon('movilidad')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <th class="px-3 py-3 text-left text-xs font-semibold">
                 <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('provincia')">
-                  Provincia <UIcon :name="sortIcon('provincia')" class="w-3 h-3" />
+                  Provincia <UIcon :name="sortIcon('provincia')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <th class="px-3 py-3 text-left text-xs font-semibold">
                 <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('ubicacion')">
-                  Ubicacion <UIcon :name="sortIcon('ubicacion')" class="w-3 h-3" />
+                  Ubicacion <UIcon :name="sortIcon('ubicacion')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
               <!-- <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Empresa</th> -->
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200">
-                <button type="button" class="inline-flex items-center gap-1 w-full justify-end" @click="toggleSort('total')">
-                  Total <UIcon :name="sortIcon('total')" class="w-3 h-3" />
+              <th class="px-3 py-3 text-center text-xs font-semibold">
+                <button type="button" class="inline-flex items-center gap-1 w-full justify-center" @click="toggleSort('total')">
+                  Total <UIcon :name="sortIcon('total')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200">
-                <button type="button" class="inline-flex items-center gap-1 w-full justify-end" @click="toggleSort('vac')">
-                  Vac. <UIcon :name="sortIcon('vac')" class="w-3 h-3" />
+              <th class="px-3 py-3 text-center text-xs font-semibold">
+                <button type="button" class="inline-flex items-center gap-1 w-full justify-center" @click="toggleSort('vac')">
+                  Vac. <UIcon :name="sortIcon('vac')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200">
-                <button type="button" class="inline-flex items-center gap-1 w-full justify-end" @click="toggleSort('no_marcado')">
-                  No marcó <UIcon :name="sortIcon('no_marcado')" class="w-3 h-3" />
+              <th class="px-3 py-3 text-center text-xs font-semibold">
+                <button type="button" class="inline-flex items-center gap-1 w-full justify-center" @click="toggleSort('no_marcado')">
+                  No marcó <UIcon :name="sortIcon('no_marcado')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200">
-                <button type="button" class="inline-flex items-center gap-1 w-full justify-end" @click="toggleSort('dm')">
-                  DM <UIcon :name="sortIcon('dm')" class="w-3 h-3" />
+              <th class="px-3 py-3 text-center text-xs font-semibold">
+                <button type="button" class="inline-flex items-center gap-1 w-full justify-center" @click="toggleSort('dm')">
+                  DM <UIcon :name="sortIcon('dm')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <th class="px-3 py-3 text-center text-xs font-semibold">
+                LCGH
+              </th>
+              <th class="px-3 py-3 text-center text-xs font-semibold">
+                LSGH
+              </th>
+              <th class="px-3 py-3 text-right text-xs font-semibold">
                 <button type="button" class="inline-flex items-center gap-1 w-full justify-end" @click="toggleSort('monto')">
-                  Total a pagar <UIcon :name="sortIcon('monto')" class="w-3 h-3" />
+                  Total a pagar <UIcon :name="sortIcon('monto')" class="w-3 h-3 opacity-90" />
                 </button>
               </th>
               <!-- <th class="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400">Comentario</th> -->
-              <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-200">Acciones</th>
+              <th class="px-3 py-3 text-center text-xs font-semibold">Acciones</th>
             </tr>
           </thead>
 
@@ -175,9 +146,19 @@
               :key="emp.employee.id"
               class="transition-colors odd:bg-white even:bg-gray-50/40 hover:bg-primary-50/40 dark:odd:bg-gray-950 dark:even:bg-gray-900/25 dark:hover:bg-primary-900/10"
             >
-              <td class="px-3 py-3 text-gray-900 dark:text-gray-100 font-mono text-xs">{{ emp.employee.dni }}</td>
-              <td class="px-3 py-3 text-gray-900 dark:text-gray-100 font-semibold">{{ emp.employee.last_name }}</td>
-              <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ emp.employee.first_name }}</td>
+              <td class="px-3 py-3 min-w-[220px]">
+                <div class="min-w-0 flex flex-col gap-0.5">
+                  <div class="min-w-0 truncate font-semibold text-primary-700 dark:text-primary-300 leading-tight">
+                    {{ emp.employee.last_name }}
+                  </div>
+                  <div class="min-w-0 truncate text-gray-900 dark:text-gray-100 leading-tight">
+                    {{ emp.employee.first_name }}
+                  </div>
+                  <div class="min-w-0 truncate font-mono text-xs text-gray-800 dark:text-gray-200">
+                    {{ emp.employee.dni }}
+                  </div>
+                </div>
+              </td>
               <td class="px-3 py-3 text-gray-600 dark:text-gray-400 text-xs font-mono">
                 {{ formatDateLatam(emp.employee.create_time) }}
               </td>
@@ -190,22 +171,36 @@
               <td class="px-3 py-3 text-gray-700 dark:text-gray-300 max-w-[160px] truncate" :title="emp.employee.city">{{ emp.employee.city }}</td>
 
               <!-- <td class="px-3 py-3 text-gray-600 dark:text-gray-400">CECHRIZA</td> -->
-              <td class="px-3 py-3 text-right">
-                <span class="font-semibold text-gray-900 dark:text-gray-100 font-mono tabular-nums">
-                  {{ emp.summary.total_days }}
+              <td class="px-3 py-3 text-center">
+                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 text-xs font-semibold font-mono tabular-nums">
+                  {{ emp.summary.total_days ?? 0 }}
                 </span>
               </td>
-              <td class="px-3 py-3 text-right">
-                <span class="inline-flex justify-end bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-lg text-xs font-medium border border-amber-200/70 dark:border-amber-800/60 font-mono tabular-nums">
-                  {{ emp.summary.vacation_days }}
+              <td class="px-3 py-3 text-center">
+                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-amber-200/70 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs font-semibold font-mono tabular-nums">
+                  {{ emp.summary.vacation_days ?? 0 }}
                 </span>
               </td>
-              <td class="px-3 py-3 text-right">
-                <span class="inline-flex justify-end bg-gray-50 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-200/70 dark:border-gray-800/70 font-mono tabular-nums">
-                  {{ emp.summary.no_mark_days }}
+              <td class="px-3 py-3 text-center">
+                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-gray-200/70 dark:border-gray-800/70 bg-gray-50 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300 text-xs font-semibold font-mono tabular-nums">
+                  {{ emp.summary.no_mark_days ?? 0 }}
                 </span>
               </td>
-              <td class="px-3 py-3 text-right text-gray-900 dark:text-gray-100 font-mono tabular-nums">{{ emp.summary.medical_leave_days }}</td>
+              <td class="px-3 py-3 text-center">
+                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-blue-200/70 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-semibold font-mono tabular-nums">
+                  {{ emp.summary.medical_leave_days ?? 0 }}
+                </span>
+              </td>
+              <td class="px-3 py-3 text-center">
+                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-900/30 text-slate-700 dark:text-slate-200 text-xs font-semibold font-mono tabular-nums">
+                  {{ countCode(emp, MovilityReportCode.LCGH) || 0 }}
+                </span>
+              </td>
+              <td class="px-3 py-3 text-center">
+                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-gray-200/70 dark:border-gray-800/70 bg-gray-50 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300 text-xs font-semibold font-mono tabular-nums">
+                  {{ countCode(emp, MovilityReportCode.LSGH) || 0 }}
+                </span>
+              </td>
               <td class="px-3 py-3 text-right">
                 <span 
                   :class="[
@@ -226,9 +221,7 @@
                     class="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
                     title="Registrar concepto"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
+                    <UIcon name="i-lucide-clipboard-plus" class="h-4 w-4" />
                   </button>
 
                   <button
@@ -238,10 +231,10 @@
                   >
                     <UIcon name="i-lucide-sticky-note" class="h-4 w-4" />
                     <span
-                      v-if="countEmployeeYear(emp.employee.id, yearForReminders)"
+                      v-if="hasMonthlyComment(emp)"
                       class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 bg-amber-500 text-white text-[9px] font-semibold rounded-full flex items-center justify-center shadow-md border border-white dark:border-gray-900"
                     >
-                      {{ countEmployeeYear(emp.employee.id, yearForReminders) }}
+                      1
                     </span>
                   </button>
 
@@ -250,10 +243,7 @@
                     class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                     title="Ver detalle"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+                    <UIcon name="i-lucide-eye" class="h-4 w-4" />
                   </button>
                 </div>
               </td>
@@ -283,6 +273,7 @@
       }"
       :year="yearForReminders"
       :initial-month="monthForReminders"
+      :initial-comment="recordatorioSeleccionado.summary.monthly_comment ?? null"
       @update:open="handleReminderOpenUpdate"
     />
   </div>
@@ -293,12 +284,12 @@ import { apiFetch } from '~/services/api';
 import DetailModal from './DetailModal.vue';
 import EmployeeConceptModal from './EmployeeConceptModal.vue';
 import EmployeeMonthlyReminderModal from '~/components/movility-report/EmployeeMonthlyReminderModal.vue'
-import type { EmployeeConceptPayload, MovilityReport } from '~/interfaces/movility-report';
-import { useEmployeeMobilityReminders } from '~/composables/useEmployeeMobilityReminders'
+import { MovilityReportCode, type EmployeeConceptPayload, type MovilityReport } from '~/interfaces/movility-report';
 
 const toast = useToast();
 const datosMoilityReports = ref<MovilityReport[]>([])
 const isLoading = ref(true)
+const isExporting = ref(false)
 
 const fechaActual = new Date()
 
@@ -315,7 +306,17 @@ const isConceptSubmitting = shallowRef(false)
 const isOpenReminder = ref(false)
 const recordatorioSeleccionado = shallowRef<MovilityReport | null>(null)
 
-const { countEmployeeYear } = useEmployeeMobilityReminders()
+const hasMonthlyComment = (emp: MovilityReport) => Boolean(String(emp.summary?.monthly_comment ?? '').trim())
+
+const countCode = (emp: MovilityReport, code: MovilityReportCode) => {
+  let count = 0
+  for (const v of Object.values(emp as any)) {
+    if (!v || typeof v !== 'object') continue
+    if (!('code' in v)) continue
+    if ((v as any).code === code) count++
+  }
+  return count
+}
 
 const props = defineProps<{
   rangeDate?: {
@@ -373,6 +374,14 @@ const sortIcon = (key: SortKey) => {
   if (sortKey.value !== key) return 'i-heroicons-arrows-up-down';
   return sortDir.value === 'asc' ? 'i-heroicons-arrow-up' : 'i-heroicons-arrow-down';
 };
+
+const employeeSortIcon = computed(() => {
+  const key = (['dni', 'apellidos', 'nombres'] as const).includes(sortKey.value as any)
+    ? (sortKey.value as SortKey)
+    : 'apellidos'
+
+  return sortIcon(key)
+})
 
 const getSortValue = (emp: MovilityReport, key: SortKey) => {
   switch (key) {
@@ -528,6 +537,9 @@ onMounted(() => {
 
 
 async function descargarExcel() {
+  if (isExporting.value) return
+
+  isExporting.value = true
   try {
     const config = useRuntimeConfig();
     const token = useCookie<string | null>('auth_token');
@@ -610,6 +622,8 @@ async function descargarExcel() {
       color: 'error',
       duration: 8000
     });
+  } finally {
+    isExporting.value = false
   }
 }
 

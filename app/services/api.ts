@@ -12,10 +12,20 @@ export const apiFetch = async (url: string, options: RequestInit = {}) => {
     ...options
   })
 
-  const data = await response.json() 
+  const raw = await response.text()
+  const data = raw ? (() => {
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return raw
+    }
+  })() : null
 
   if (!response.ok) {
-    throw data
+    if (data && typeof data === 'object') {
+      throw { ...(data as any), status: response.status }
+    }
+    throw { message: String(data ?? response.statusText ?? 'Error'), status: response.status }
   }
 
   return data 

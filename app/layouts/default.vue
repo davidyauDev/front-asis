@@ -49,8 +49,21 @@ const reportLinks = [{
 }, {
   label: 'Movilidad',
   icon: 'i-heroicons-currency-dollar',
-  to: '/movility-report',
-  onSelect: () => { open.value = false }
+  children: [{
+    label: 'Reporte',
+    icon: 'i-heroicons-document-chart-bar',
+    to: '/movility-report',
+    onSelect: () => { open.value = false }
+  }, {
+    label: 'Settings',
+    icon: 'i-heroicons-cog-6-tooth',
+    children: [{
+      label: 'Monto Técnicos',
+      icon: 'i-heroicons-currency-dollar',
+      to: '/movility-report/settings/monto-tecnicos',
+      onSelect: () => { open.value = false }
+    }]
+  }]
 }, {
   label: 'Eventos',
   icon: 'i-heroicons-calendar',

@@ -212,7 +212,6 @@ import type { TableColumn } from '@nuxt/ui'
 import { computed, h, onMounted, reactive, ref, resolveComponent } from 'vue'
 import DataState from '~/components/common/DataState.vue'
 import EmployeeMonthlyReminderModal from '~/components/movility-report/EmployeeMonthlyReminderModal.vue'
-import { useEmployeeMobilityReminders } from '~/composables/useEmployeeMobilityReminders'
 import {
   createEmployeeMobility,
   getApiErrorMessage,
@@ -344,7 +343,6 @@ const formatMoney = (value: EmployeeMobilityRow['amount']) => {
   return String(value ?? '')
 }
 
-const { countEmployeeYear } = useEmployeeMobilityReminders()
 
 const isReminderOpen = ref(false)
 const reminderRow = ref<EmployeeMobilityRow | null>(null)
@@ -383,7 +381,6 @@ const columns: TableColumn<EmployeeMobilityRow>[] = [
     header: 'Recordatorio',
     cell: ({ row }) => {
       const r = row.original
-      const count = countEmployeeYear(r.employee_id, r.year)
       return h(
         'div',
         { class: 'flex items-center gap-2' },
@@ -401,14 +398,7 @@ const columns: TableColumn<EmployeeMobilityRow>[] = [
               'Abrir',
             ]
           ),
-          count
-            ? h(
-                UBadge,
-                { color: 'warning', variant: 'subtle' },
-                () => String(count)
-              )
-            : null,
-        ].filter(Boolean)
+        ]
       )
     },
   },
