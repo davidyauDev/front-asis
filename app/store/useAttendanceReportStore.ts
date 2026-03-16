@@ -363,12 +363,12 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
       }
     },
 
-    async getAttendanceDetails() {
+    async getAttendanceDetails(paramsOverride?: AttendanceParams) {
       this.attendance.details.loading = true;
 
       try {
         const attendances = await fetchAttendacesDetails(
-          this.attendance.params
+          paramsOverride ?? this.attendance.params
         );
         this.attendance.details.list = attendances!;
 

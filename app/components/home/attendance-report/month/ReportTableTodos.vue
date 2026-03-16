@@ -1,0 +1,296 @@
+<template>
+  <div>
+    <DataState
+      :error="attendance.details.isError"
+      :loading="attendance.details.loading"
+      error-message="No se pudo cargar el detalle de asistencia"
+      @retry="retryFetch"
+    >
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800"
+      >
+        <div class="flex-1 max-w-md">
+          <UInput
+            icon="i-heroicons-magnifying-glass"
+            v-model="searchModel"
+            placeholder="Buscar empleado, DNI..."
+            size="md"
+          />
+        </div>
+
+        <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
+          <UButton
+            color="success"
+            variant="solid"
+            size="md"
+            @click="exportarExcel"
+            :loading="exportando"
+            :disabled="exportando || !canExport"
+            class="min-w-[170px] justify-center shadow-sm hover:shadow-md disabled:shadow-none"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
+            </template>
+            <span class="hidden sm:inline">
+              {{ exportando ? 'Exportando...' : 'Descargar reporte' }}
+            </span>
+            <span class="sm:hidden">
+              {{ exportando ? 'Exportando...' : 'Excel' }}
+            </span>
+          </UButton>
+        </UTooltip>
+      </div>
+
+      <div class="overflow-x-auto">
+        <UTable
+          :data="filteredList"
+          :columns="columns"
+          :loading="attendance.details.loading"
+          empty="Sin registros"
+          :ui="{
+            base: 'w-full',
+            wrapper: 'max-h-[calc(100vh-350px)] overflow-y-auto relative',
+            thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
+            th: `
+              px-4 py-3 text-left text-xs font-medium
+              text-gray-500 dark:text-gray-400
+              tracking-tight
+            `,
+            td: `
+              px-4 py-3 text-sm
+              text-gray-900 dark:text-gray-100
+              border-b border-gray-100 dark:border-gray-900
+            `,
+            tbody: `
+              [&>tr]:transition-colors
+              [&>tr:hover]:bg-gray-50
+              dark:[&>tr:hover]:bg-gray-900/50
+            `
+          }"
+        />
+      </div>
+    </DataState>
+
+    <div
+      class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
+    >
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        <span class="font-medium text-gray-900 dark:text-gray-100">{{ filteredList.length }}</span>
+        {{ filteredList.length === 1 ? 'registro' : 'registros' }}
+      </p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui'
+import { h, resolveComponent, computed, ref } from 'vue'
+import DataState from '~/components/common/DataState.vue'
+import type { AttendanceDetails, AttendanceParams } from '~/composables/useAttendanceReport'
+import { useAttendanceReportStore } from '~/store/useAttendanceReportStore'
+
+const props = defineProps<{
+  params?: AttendanceParams | null
+}>()
+
+const store = useAttendanceReportStore()
+const { getAttendanceDetails } = store
+const { attendance } = storeToRefs(store)
+
+const config = useRuntimeConfig()
+const toast = useToast()
+const token = useCookie<string | null>('auth_token')
+
+const exportando = ref(false)
+
+const retryFetch = () => getAttendanceDetails(props.params ?? undefined)
+
+const searchModel = computed<string>({
+  get: () => attendance.value.globalFilter,
+  set: (v) => {
+    attendance.value.globalFilter = v
+  }
+})
+
+const filteredList = computed(() => {
+  let list: AttendanceDetails[] = attendance.value.details.list
+
+  const term = (attendance.value.globalFilter || '').toLowerCase().trim()
+  if (term) {
+    list = list.filter(r =>
+      (r.nombres || '').toLowerCase().includes(term) ||
+      (r.apellidos || '').toLowerCase().includes(term) ||
+      String(r.dni || '').toLowerCase().includes(term)
+    )
+  }
+
+  return list
+})
+
+const canExport = computed(() => filteredList.value.length > 0)
+
+const UBadge = resolveComponent('UBadge')
+const UIcon = resolveComponent('UIcon')
+const UButton = resolveComponent('UButton')
+
+const sortColumButton = (column: any, label: string) =>
+  h(UButton, {
+    color: 'neutral',
+    variant: 'ghost',
+    label,
+    icon: column.getIsSorted()
+      ? column.getIsSorted() === 'asc'
+        ? 'i-lucide-arrow-up-narrow-wide'
+        : 'i-lucide-arrow-down-wide-narrow'
+      : 'i-lucide-arrow-up-down',
+    class: 'text-slate-400 hover:text-slate-700 -mx-2.5',
+    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
+  })
+
+const badge = (text: string, color: any, icon?: string) =>
+  h(
+    UBadge,
+    { variant: 'subtle', color, class: 'inline-flex items-center gap-1 whitespace-nowrap' },
+    () => [
+      icon ? h(UIcon, { name: icon, class: 'w-4 h-4' }) : null,
+      text
+    ]
+  )
+
+const formatFecha = (raw: any) => {
+  if (!raw) return 'Sin fecha'
+  const [y, m, d] = String(raw).slice(0, 10).split('-').map(Number)
+  const date = new Date(y, (m || 1) - 1, d || 1)
+  return new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)
+}
+
+const columns: TableColumn<AttendanceDetails>[] = [
+  { accessorKey: 'dni', header: ({ column }) => sortColumButton(column, 'DNI') },
+  { accessorKey: 'apellidos', header: ({ column }) => sortColumButton(column, 'Apellidos') },
+  { accessorKey: 'nombres', header: ({ column }) => sortColumButton(column, 'Nombres') },
+  { accessorKey: 'departamento', header: ({ column }) => sortColumButton(column, 'Departamento') },
+  { accessorKey: 'empresa', header: ({ column }) => sortColumButton(column, 'Empresa') },
+  {
+    accessorKey: 'fecha',
+    header: ({ column }) => sortColumButton(column, 'Fecha'),
+    cell: ({ row }) =>
+      h('span', { class: 'text-sm font-semibold text-gray-900 dark:text-gray-100' }, formatFecha(row.getValue('fecha')))
+  },
+  { accessorKey: 'h_ingreso', header: ({ column }) => sortColumButton(column, 'H. Ingreso') },
+  { accessorKey: 'h_salida', header: ({ column }) => sortColumButton(column, 'H. Salida') },
+  {
+    accessorKey: 'm_ingreso',
+    header: ({ column }) => sortColumButton(column, 'M. Ingreso'),
+    cell: ({ row }) =>
+      row.getValue('m_ingreso')
+        ? badge(String(row.getValue('m_ingreso')), 'success', 'i-lucide-log-in')
+        : badge('No marcó entrada', 'error', 'i-lucide-alert-circle')
+  },
+  {
+    accessorKey: 'm_salida',
+    header: ({ column }) => sortColumButton(column, 'M. Salida'),
+    cell: ({ row }) =>
+      row.getValue('m_salida')
+        ? badge(String(row.getValue('m_salida')), 'neutral', 'i-lucide-log-out')
+        : badge('No marcó salida', 'error', 'i-lucide-alert-circle')
+  },
+  {
+    accessorKey: 'tardanza',
+    header: ({ column }) => sortColumButton(column, 'Tardanza'),
+    cell: ({ row }) =>
+      row.getValue('tardanza')
+        ? badge(String(row.getValue('tardanza')), 'warning', 'i-lucide-clock')
+        : badge('Sin tardanza', 'success', 'i-lucide-check-circle')
+  },
+  {
+    accessorKey: 'total_trabajado',
+    header: ({ column }) => sortColumButton(column, 'T. Trabajado'),
+    cell: ({ row }) => badge(String(row.getValue('total_trabajado') ?? '-'), 'info', 'i-lucide-timer')
+  }
+]
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const formatYmdLocal = (date: Date) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+
+const normalizeFechasToYmd = (fechas?: Array<string | Date>) => {
+  if (!fechas?.length) return undefined
+  return fechas.map((f) => (typeof f === 'string' ? f.slice(0, 10) : formatYmdLocal(f)))
+}
+
+const exportarExcel = async () => {
+  if (exportando.value) return
+  exportando.value = true
+
+  toast.add({
+    id: 'exportando-detalle',
+    title: 'Preparando exportación',
+    description: 'Generando archivo Excel...',
+    icon: 'i-lucide-loader-2',
+  })
+
+  try {
+    if (!token.value) throw new Error('Token no disponible')
+
+    const baseParams = props.params ?? {}
+    const fechas = normalizeFechasToYmd(baseParams.fechas)
+
+    const body: Record<string, unknown> = {
+      ...baseParams,
+      fechas: fechas?.length ? fechas : undefined,
+      export: 'excel',
+    }
+
+    if (fechas?.length) {
+      delete body['fecha_inicio']
+      delete body['fecha_fin']
+    }
+
+    const response = await fetch(`${config.public.apiBaseUrl}/api/reporte-asistencia/detalle`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token.value}`,
+        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP ${response.status}`)
+    }
+
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+
+    const fileName = `detalle_asistencia_${formatYmdLocal(new Date())}.xlsx`
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => window.URL.revokeObjectURL(url), 500)
+
+    toast.remove('exportando-detalle')
+    toast.add({
+      title: 'Descarga completa',
+      description: `Descargado: ${fileName}`,
+      icon: 'i-lucide-check-circle',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Error exportando Excel (detalle):', error)
+    toast.remove('exportando-detalle')
+    toast.add({
+      title: 'Error al exportar',
+      description: 'No se pudo generar el archivo Excel',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+  } finally {
+    exportando.value = false
+  }
+}
+</script>
+

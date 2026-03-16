@@ -144,28 +144,47 @@
             </div>
         </Transition>
 
-        <ReportTable :employee-type="employeeType" />
+        <ReportTableTodos
+          v-if="props.employeeType === EmployeeType.ALL"
+          :params="detalleParams"
+        />
+        <ReportTable
+          v-else
+          :employee-type="props.employeeType"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { EmployeeType, useAttendanceReportStore } from '~/store/useAttendanceReportStore';
+import type { AttendanceParams } from '~/composables/useAttendanceReport'
 import CompanyFilter from '../CompanyFilter.vue';
 import DateRangePicker from '../DateRangePicker.vue';
 import DepartmentFilter from '../DepartmentFilter.vue';
 import EmployeeFilter from '../EmployeeFilter.vue';
 import ReportTable from './ReportTable.vue';
+import ReportTableTodos from './ReportTableTodos.vue'
 
 const store = useAttendanceReportStore();
-const { getAllTakenAttendances, getTechTakenAttendances } = store;
+const { getAttendanceDetails, getTechTakenAttendances } = store;
 const { company, department, employee, attendance } = storeToRefs(store);
 
-const { employeeType } = defineProps<{
-    employeeType: EmployeeType
+const props = defineProps<{
+  employeeType: EmployeeType
 }>()
 
 const technicianDefaultDepartmentIds = [2, 5, 7, 9, 10] as const
 const technicianDepartmentIdSet = new Set<number>(technicianDefaultDepartmentIds)
+
+const isReady = ref(false)
+const refreshReport = () => {
+  if (!isReady.value) return
+  if (props.employeeType === EmployeeType.TECHNICIANS) {
+    getTechTakenAttendances()
+  } else {
+    getAttendanceDetails(detalleParams.value)
+  }
+}
 
 onMounted(async () => {
     await Promise.all([
@@ -174,7 +193,7 @@ onMounted(async () => {
         store.getEmployees(),
     ])
 
-    if (employeeType === EmployeeType.TECHNICIANS) {
+    if (props.employeeType === EmployeeType.TECHNICIANS) {
         const normalized = (attendance.value.taken.tech.params.departamento_ids ?? [])
             .filter((id) => technicianDepartmentIdSet.has(id))
 
@@ -188,16 +207,20 @@ onMounted(async () => {
             : department.value.list.filter((d) => technicianDepartmentIdSet.has(d.id))
     }
 
-    if (employeeType === EmployeeType.TECHNICIANS) {
-        getTechTakenAttendances()
-    } else {
-        getAllTakenAttendances()
-    }
+    isReady.value = true
+    refreshReport()
 })
+
+watch(
+  () => props.employeeType,
+  () => {
+    refreshReport()
+  }
+)
 
 const mostrarFiltros = ref(true)
 const isSpecialFilterActive = (ids: number[]) => {
-    const selecteds = employeeType === EmployeeType.TECHNICIANS
+    const selecteds = props.employeeType === EmployeeType.TECHNICIANS
         ? employee.value.tech.selecteds
         : employee.value.all.selecteds;
     const selectedIds = selecteds.map(e => e.id);
@@ -211,7 +234,7 @@ const applySpecialFilter = (ids: number[]) => {
         ids.includes(emp.id)
     );
 
-    if (employeeType === EmployeeType.TECHNICIANS) {
+    if (props.employeeType === EmployeeType.TECHNICIANS) {
         if (isSpecialFilterActive(ids)) {
             employee.value.tech.selecteds = [];
         } else {
@@ -228,14 +251,14 @@ const applySpecialFilter = (ids: number[]) => {
 };
 
 const currentParams = computed(() => {
-    if (employeeType === EmployeeType.TECHNICIANS) {
+    if (props.employeeType === EmployeeType.TECHNICIANS) {
         return attendance.value.taken.tech.params;
     }
     return attendance.value.taken.all.params;
 });
 
 const companyResponse = computed(() => {
-    if (employeeType === EmployeeType.TECHNICIANS) {
+    if (props.employeeType === EmployeeType.TECHNICIANS) {
         const employeeCompanies = new Set(
             attendance.value.taken.tech.list.map(e => e.Empresa_id)
         )
@@ -259,7 +282,7 @@ const companyResponse = computed(() => {
 })
 
 const departmentResponse = computed(() => {
-    if (employeeType === EmployeeType.TECHNICIANS) {
+    if (props.employeeType === EmployeeType.TECHNICIANS) {
         return {
             loading: department.value.tech.loading || attendance.value.taken.tech.loading,
             isError: department.value.tech.isError,
@@ -275,7 +298,7 @@ const departmentResponse = computed(() => {
 })
 
 const employeeResponse = computed(() => {
-    if (employeeType === EmployeeType.TECHNICIANS) {
+    if (props.employeeType === EmployeeType.TECHNICIANS) {
 
         const employees = new Set(
             attendance.value.taken.tech.list.map(e => e.Empleado_id)
@@ -302,10 +325,10 @@ const employeeResponse = computed(() => {
 
 const currentCompanySelected = computed<Company[]>({
     get: () => {
-        return employeeType === EmployeeType.TECHNICIANS ? company.value.tech.selecteds : company.value.all.selecteds;
+        return props.employeeType === EmployeeType.TECHNICIANS ? company.value.tech.selecteds : company.value.all.selecteds;
     },
     set: (newSelecteds) => {
-        if (employeeType === EmployeeType.TECHNICIANS) {
+        if (props.employeeType === EmployeeType.TECHNICIANS) {
             company.value.tech.selecteds = newSelecteds
         } else {
             company.value.all.selecteds = newSelecteds
@@ -315,10 +338,10 @@ const currentCompanySelected = computed<Company[]>({
 
 const currentDepartmentSelected = computed<Department[]>({
     get: () => {
-        return employeeType === EmployeeType.TECHNICIANS ? department.value.tech.selecteds : department.value.all.selecteds
+        return props.employeeType === EmployeeType.TECHNICIANS ? department.value.tech.selecteds : department.value.all.selecteds
     },
     set: (newSelecteds) => {
-        if (employeeType === EmployeeType.TECHNICIANS) {
+        if (props.employeeType === EmployeeType.TECHNICIANS) {
             department.value.tech.selecteds = newSelecteds
         } else {
             department.value.all.selecteds = newSelecteds
@@ -329,10 +352,10 @@ const currentDepartmentSelected = computed<Department[]>({
 
 const currentEmployeeSelected = computed<Employee[]>({
     get: () => {
-        return employeeType === EmployeeType.TECHNICIANS ? employee.value.tech.selecteds : employee.value.all.selecteds;
+        return props.employeeType === EmployeeType.TECHNICIANS ? employee.value.tech.selecteds : employee.value.all.selecteds;
     },
     set: (newSelecteds) => {
-        if (employeeType === EmployeeType.TECHNICIANS) {
+        if (props.employeeType === EmployeeType.TECHNICIANS) {
             employee.value.tech.selecteds = newSelecteds
         } else {
             employee.value.all.selecteds = newSelecteds
@@ -341,8 +364,25 @@ const currentEmployeeSelected = computed<Employee[]>({
 })
 
 
+const detalleParams = computed<AttendanceParams>(() => {
+  const companyId = attendance.value.taken.all.params.company_id
+  const empresaIds = companyId ? [companyId] : attendance.value.params.empresa_ids
+
+  const departamentoIds = attendance.value.taken.all.params.departamento_ids ?? []
+  const usuarioIds = attendance.value.taken.all.params.empleado_ids ?? []
+  const fechas = attendance.value.taken.all.params.fechas ?? []
+
+  return {
+    empresa_ids: Array.isArray(empresaIds) ? empresaIds : [empresaIds as number],
+    departamento_ids: departamentoIds.length ? departamentoIds : undefined,
+    usuarios: usuarioIds.length ? usuarioIds : undefined,
+    fechas: fechas.length ? fechas : undefined,
+  }
+})
+
 //* TECH
 watch(() => attendance.value.taken.tech.params.company_id, (companyId) => {
+    if (props.employeeType !== EmployeeType.TECHNICIANS) return
     getTechTakenAttendances()
     if (companyId) {
         department.value.tech.list = department.value.list.filter((dep) => dep.company_id === companyId);
@@ -372,6 +412,7 @@ watch(() => attendance.value.taken.tech.params.company_id, (companyId) => {
 watch(
   () => department.value.tech.selecteds,
   (departments) => {
+    if (props.employeeType !== EmployeeType.TECHNICIANS) return
     const normalizedIds = departments
       .map(d => d.id)
       .filter((id) => technicianDepartmentIdSet.has(id))
@@ -401,6 +442,7 @@ watch(
 watch(
   () => employee.value.tech.selecteds,
   (empleado_ids) => {
+    if (props.employeeType !== EmployeeType.TECHNICIANS) return
     const ids = empleado_ids.map(d => d.id);
     attendance.value.taken.tech.params.empleado_ids = ids;
     store.attendance.params.empleado_ids = ids;
@@ -434,30 +476,20 @@ watch(() => attendance.value.taken.tech.params.empleado_id, (employeeId) => {
 })*/
 
  watch(
-     () => attendance.value.taken.tech.params.fechas,
-     () => {
-         getTechTakenAttendances()
-         attendance.value.taken.tech.pagination.pageIndex = 0;
-     }
+      () => attendance.value.taken.tech.params.fechas,
+      () => {
+          if (props.employeeType !== EmployeeType.TECHNICIANS) return
+          getTechTakenAttendances()
+          attendance.value.taken.tech.pagination.pageIndex = 0;
+      }
 
 
  );
 
-watch(
-  () => attendance.value.taken.all.params.fechas,
-  (fechas) => {
-    if (!fechas?.length) return;
-    getAllTakenAttendances();
-    attendance.value.taken.all.pagination.pageIndex = 0;
-  },
-  { deep: true }
-);
-
-
-
 //* ALL
 watch(() => attendance.value.taken.all.params.company_id, (companyId) => {
-    getAllTakenAttendances()
+    if (props.employeeType !== EmployeeType.ALL) return
+    getAttendanceDetails(detalleParams.value)
     if (companyId) {
         department.value.all.list = department.value.list.filter((dep) => dep.company_id === companyId);
         if (!attendance.value.taken.all.params.departamento_ids?.length) {
@@ -473,10 +505,8 @@ watch(() => attendance.value.taken.all.params.company_id, (companyId) => {
 })
 
 
-department.value.all.selecteds
-
-
 watch(() => department.value.all.selecteds , (departments) => {
+    if (props.employeeType !== EmployeeType.ALL) return
     const ids = departments.map(d => d.id);
     store.attendance.taken.all.params.departamento_ids = ids;
     if (ids.length) {
@@ -486,15 +516,16 @@ watch(() => department.value.all.selecteds , (departments) => {
     } else {
       employee.value.all.list = employee.value.list;
     }
-    getAllTakenAttendances();
+    getAttendanceDetails(detalleParams.value);
 
     attendance.value.taken.all.pagination.pageIndex = 0;
 }, { deep: true, immediate: true })
 
 watch(() => employee.value.all.selecteds , (empleado_ids) => {
+    if (props.employeeType !== EmployeeType.ALL) return
     const ids = empleado_ids.map(d => d.id);
     store.attendance.taken.all.params.empleado_ids = ids;
-    getAllTakenAttendances();
+    getAttendanceDetails(detalleParams.value);
     attendance.value.taken.all.pagination.pageIndex = 0;
 }, { deep: true, immediate: true })
 
@@ -520,9 +551,10 @@ watch(() => attendance.value.taken.all.params.empleado_id, (employeeId) => {
 })*/
 
 watch(
-    () => attendance.value.taken.tech.params.fechas,
+    () => attendance.value.taken.all.params.fechas,
     () => {
-        getAllTakenAttendances()
+        if (props.employeeType !== EmployeeType.ALL) return
+        getAttendanceDetails(detalleParams.value)
         attendance.value.taken.all.pagination.pageIndex = 0;
     }
 );

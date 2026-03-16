@@ -125,17 +125,31 @@ export type TakenAttendaceParams = {
   departamento_ids?: number[];
   empleado_id?: number;
   empleado_ids?: number[];
-  fechas: Date[];
+  fechas?: Array<string | Date>;
+  excluir?: string[];
+  export?: "excel";
 };
 
 export type AttendanceParams = {
-  fecha_inicio: string;
+  fechas?: Array<string | Date>;
+  fecha_inicio?: string;
   fecha_fin?: string;
-  empresa_ids: number[];
-  departamento_ids: number[];
+  empresa_ids?: number[] | number;
+  departamento_ids?: number[] | number;
+  usuarios?: number[] | number;
+  export?: "excel";
 };
 
 const token = useCookie<string | null>('auth_token')
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const formatYmdLocal = (date: Date) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+
+const normalizeFechasToYmd = (fechas?: Array<string | Date>) => {
+  if (!fechas?.length) return undefined;
+  return fechas.map((f) => (typeof f === "string" ? f.slice(0, 10) : formatYmdLocal(f)));
+};
 
 const _useAttendanceReport = () => {
   const fetchCompanies = async (): Promise<Company[]> => {
@@ -248,14 +262,28 @@ const _useAttendanceReport = () => {
     exportExcel: string | null = null
   ): Promise<AttendanceDetails[] | void> => {
     try {
+      const fechas = normalizeFechasToYmd(params.fechas);
+      const exportValue = (exportExcel ?? params.export) as "excel" | null;
+
+      const body: Record<string, unknown> = {
+        ...params,
+        fechas: fechas?.length ? fechas : undefined,
+        export: exportValue || undefined,
+      };
+
+      // Si se envían fechas específicas, no mandamos rango para evitar confusión
+      if (fechas?.length) {
+        delete body["fecha_inicio"];
+        delete body["fecha_fin"];
+      } else {
+        // El backend define defaults de mes cuando no hay fechas específicas
+        body["fecha_fin"] = params.fecha_fin || undefined;
+      }
+
       const res = await $fetch<AttendanceDetails[] | Blob>(
         `${reportPrefix}/detalle`,
         {
-          body: {
-            ...params,
-            fecha_fin: params.fecha_fin || undefined,
-            export: exportExcel,
-          },
+          body,
           method: "POST",
           headers: {
             Authorization: `Bearer ${token.value}`,
@@ -264,10 +292,11 @@ const _useAttendanceReport = () => {
         }
       );
 
-      if (exportExcel) {
-        const fieldName = params.fecha_fin
-          ? `Reporte diario ( ${params.fecha_inicio} - ${params.fecha_fin} )`
-          : `Reporte diario ( Desde ${params.fecha_inicio} )`;
+      if (exportValue) {
+        const fieldName =
+          params.fecha_inicio && params.fecha_fin
+            ? `Reporte diario ( ${params.fecha_inicio} - ${params.fecha_fin} )`
+            : `Reporte diario`;
         descargarBlob(res as Blob, fieldName);
         return;
       }
@@ -312,11 +341,17 @@ const _useAttendanceReport = () => {
     resumen: TakenAttendanceSummary;
   }> => {
     try {
+      const fechas = normalizeFechasToYmd(params.fechas);
+      const body = {
+        ...params,
+        fechas,
+      } satisfies TakenAttendaceParams & { fechas?: string[] };
+
       const res = await $fetch<{
         data: TakenAttendace[];
         resumen: TakenAttendanceSummary;
       }>(`${reportPrefix}/technicians`, {
-        body: params,
+        body,
         method: "POST",
         headers: {
           Authorization: `Bearer ${token.value}`,
