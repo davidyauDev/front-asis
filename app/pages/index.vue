@@ -11,9 +11,7 @@
                   <h1 class="text-base font-semibold text-gray-900 dark:text-white">
                     Reporte de Asistencia
                   </h1>
-                  <p class="text-base font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2 px-2.5 py-1.5 leading-tight rounded-md bg-gray-100 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800">
-                    {{ fechaFormateada }}
-                  </p>
+                  
                 </div>
               </div>
               <h1 class="sm:hidden text-base font-semibold text-gray-900 dark:text-white">
@@ -36,7 +34,7 @@
             <!-- Notificaciones -->
             <UTooltip text="Usuarios sin asistencia completa" :shortcuts="['N']">
               <UButton 
-                color="gray" 
+                color="neutral" 
                 variant="ghost" 
                 square 
                 @click="isNotificationsSlideoverOpen = true" 
@@ -57,41 +55,68 @@
       </UDashboardNavbar>
 
       <UDashboardToolbar>
-        <UTabs 
-          v-model="currentTabType" 
-          :items="tabItems" 
-          :orientation="width < 500 ? 'vertical' : 'horizontal'"
-          class="flex-1 flex justify-center mt-2" 
-          :ui="{
-            list: 'flex gap-2 p-1.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800',
-            item: {
-              base: 'px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all focus:outline-none flex items-center gap-2',
-              active: 'bg-primary-600 text-white shadow-md dark:bg-primary-600',
-              inactive: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-            },
-            marker: 'hidden'
-          }" 
-        />
+        <nav class="w-full mt-2">
+          <div
+            class="flex gap-1 border-b-2 border-primary-600 dark:border-primary-500"
+            :class="width < 500 ? 'flex-col items-stretch' : 'items-end flex-wrap'"
+            role="tablist"
+            aria-label="Reporte de asistencia"
+          >
+            <button
+              v-for="item in tabItems"
+              :key="item.value"
+              type="button"
+              role="tab"
+              :aria-selected="item.value === currentTabType"
+              :tabindex="item.value === currentTabType ? 0 : -1"
+              @click="currentTabType = item.value"
+              class="px-6 py-2.5 text-xs font-semibold uppercase tracking-wide rounded-t-md border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              :class="[
+                item.value === currentTabType
+                  ? 'bg-primary-600 text-white border-primary-600 -mb-[2px]'
+                  : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'
+              ]"
+            >
+              {{ item.label }}
+              <span
+                v-if="item.value === ItemType.TODAY"
+                class="ml-2 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold tracking-normal normal-case"
+                :class="item.value === currentTabType
+                  ? 'bg-white/20 text-white'
+                  : 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-100'"
+              >
+                ({{ fechaFormateada }})
+              </span>
+            </button>
+          </div>
+        </nav>
       </UDashboardToolbar>
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
-        <UTabs 
-          :items="employeeItems" 
-          class="flex-1 flex justify-center" 
-          v-model="currentEmployeeType"
-          @update:model-value="(value) => {
-            currentEmployeeType = value as EmployeeType
-          }" 
-          :ui="{
-            list: 'flex gap-2 p-1.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800',
-            item: {
-              base: 'px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all focus:outline-none flex items-center gap-2',
-              active: 'bg-primary-600 text-white shadow-md dark:bg-primary-600',
-              inactive: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-            },
-            marker: 'hidden'
-          }"
-        >
-        </UTabs>
+        <nav class="w-full">
+          <div
+            class="flex gap-1 border-b-2 border-primary-600 dark:border-primary-500"
+            role="tablist"
+            aria-label="Tipo de empleado"
+          >
+            <button
+              v-for="item in employeeItems"
+              :key="item.value"
+              type="button"
+              role="tab"
+              :aria-selected="item.value === currentEmployeeType"
+              :tabindex="item.value === currentEmployeeType ? 0 : -1"
+              @click="currentEmployeeType = item.value"
+              class="px-5 py-2 text-[11px] font-semibold uppercase tracking-wide rounded-t-md border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              :class="[
+                item.value === currentEmployeeType
+                  ? 'bg-primary-600 text-white border-primary-600 -mb-[2px]'
+                  : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'
+              ]"
+            >
+              {{ item.label }}
+            </button>
+          </div>
+        </nav>
       </UDashboardToolbar>
 
     </template>
@@ -108,7 +133,7 @@
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { DropdownMenuItem, TabsItem } from '@nuxt/ui';
+import type { DropdownMenuItem } from '@nuxt/ui';
 
 import MonthlyAttendanceReport from '~/components/home/attendance-report/month/AttendaceReport.vue';
 import DailyAttendanceReport from '~/components/home/attendance-report/today/Today.vue';
@@ -149,34 +174,29 @@ onMounted(getEmployees);
 onMounted(getTakenAttendances)
 
 
-const tabItems: TabsItem[] = [
+const tabItems = [
   {
     label: "Hoy",
-    value: ItemType.TODAY,
-    icon: "i-heroicons-calendar-days"
+    value: ItemType.TODAY
   },
   {
     label: "Reporte Mensual",
-    value: ItemType.TECHNICIANS,
-    icon: "i-heroicons-chart-bar-square"
+    value: ItemType.TECHNICIANS
   }, 
   {
     label: "Administrativos",
-    value: ItemType.ADMINISTRATORS,
-    icon: "i-heroicons-user-group"
+    value: ItemType.ADMINISTRATORS
   }
 ]
 
-const employeeItems: TabsItem[] = [
+const employeeItems = [
   {
     label: "Técnicos",
-    value: EmployeeType.TECHNICIANS,
-    icon: "i-heroicons-wrench-screwdriver"
+    value: EmployeeType.TECHNICIANS
   }, 
   {
     label: "Todos",
-    value: EmployeeType.ALL,
-    icon: "i-heroicons-users"
+    value: EmployeeType.ALL
   }
 ]
 

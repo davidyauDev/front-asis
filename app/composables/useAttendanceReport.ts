@@ -89,6 +89,15 @@ export interface TakenAttendace {
   Ubicacion: string;
   Imagen: string | null;
   map_url: string | null;
+  Latitud?: number | string | null;
+  Longitud?: number | string | null;
+  latitud?: number | string | null;
+  longitud?: number | string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  ID_Marcacion?: number | string | null;
+  usuario_id?: number | string | null;
+  Tiene_Incidencia?: boolean;
   DNI: string;
   Apellidos: string;
   Nombres: string;

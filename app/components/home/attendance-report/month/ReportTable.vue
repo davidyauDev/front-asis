@@ -14,19 +14,27 @@
           />
         </div>
 
-        <UButton
-          color="primary"
-          variant="outline"
-          size="md"
-          @click="exportarExcel"
-          :loading="exportando"
-          :disabled="exportando"
-        >
-          <template #leading>
-            <UIcon name="i-heroicons-arrow-down-tray" class="w-4 h-4" />
-          </template>
-          {{ exportando ? 'Exportando...' : 'Exportar Excel' }}
-        </UButton>
+        <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
+          <UButton
+            color="success"
+            variant="solid"
+            size="md"
+            @click="exportarExcel"
+            :loading="exportando"
+            :disabled="exportando || !canExport"
+            class="min-w-[160px] justify-center shadow-sm hover:shadow-md disabled:shadow-none"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
+            </template>
+            <span class="hidden sm:inline">
+              {{ exportando ? 'Exportando...' : 'Exportar Excel' }}
+            </span>
+            <span class="sm:hidden">
+              {{ exportando ? 'Exportando...' : 'Excel' }}
+            </span>
+          </UButton>
+        </UTooltip>
       </div>
 
       <!-- Tabla -->
@@ -35,28 +43,13 @@
           :data="attendances.listFiltered" 
           :columns="dinamicColumns" 
           :ui="{
-            wrapper: 'relative',
+            root: 'relative overflow-auto',
             base: 'min-w-full table-fixed',
-            divide: 'divide-y divide-gray-200 dark:divide-gray-800',
             thead: 'bg-gray-50 dark:bg-gray-900/50',
             tbody: 'divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900',
-            tr: {
-              base: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
-            },
-            th: {
-              base: 'px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider',
-              padding: 'px-4 py-3',
-              color: 'text-gray-700 dark:text-gray-300',
-              font: 'font-semibold',
-              size: 'text-xs'
-            },
-            td: {
-              base: 'px-4 py-3 text-sm text-gray-900 dark:text-gray-100',
-              padding: 'px-4 py-3',
-              color: 'text-gray-900 dark:text-gray-100',
-              font: 'font-normal',
-              size: 'text-sm'
-            }
+            tr: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
+            th: 'px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider',
+            td: 'px-4 py-3 text-sm text-gray-900 dark:text-gray-100'
           }" 
         />
       </div>
@@ -184,6 +177,7 @@ const { employeeType } = defineProps<{
 }>()
 
 const attendances = computed(() => employeeType === EmployeeType.TECHNICIANS ? attendance.value.taken.tech : attendance.value.taken.all);
+const canExport = computed(() => (attendances.value.listFiltered?.length ?? 0) > 0)
 
 
 const zoomImage = ref<boolean>(false)

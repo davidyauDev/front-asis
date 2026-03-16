@@ -16,8 +16,8 @@ const open = ref(false)
 
 // Dashboard
 const dashboardLinks = [{
-  label: 'Dashboard',
-  icon: 'i-heroicons-home',
+  label: 'Asistencias',
+  icon: 'i-lucide-clipboard-check',
   to: '/',
   onSelect: () => { open.value = false }
 }]
@@ -25,17 +25,17 @@ const dashboardLinks = [{
 // Gestión
 const managementLinks = [{
   label: 'Seguimiento',
-  icon: 'i-heroicons-map-pin',
+  icon: 'i-lucide-map-pin',
   to: '/seguimiento',
   onSelect: () => { open.value = false }
 }, {
   label: 'Usuarios',
-  icon: 'i-heroicons-user-group',
+  icon: 'i-lucide-users',
   to: '/users',
   onSelect: () => { open.value = false }
 }, {
   label: 'Rutas GPS',
-  icon: 'i-heroicons-map',
+  icon: 'i-lucide-route',
   to: '/rutas',
   onSelect: () => { open.value = false }
 }]
@@ -43,28 +43,28 @@ const managementLinks = [{
 // Reportes
 const reportLinks = [{
   label: 'Incidencias',
-  icon: 'i-heroicons-exclamation-triangle',
+  icon: 'i-lucide-alert-triangle',
   to: '/incidencias',
   onSelect: () => { open.value = false }
 }, {
   label: 'Movilidad',
-  icon: 'i-heroicons-currency-dollar',
+  icon: 'i-lucide-car',
   children: [{
     label: 'Reporte',
-    icon: 'i-heroicons-document-chart-bar',
+    icon: 'i-lucide-file-text',
     to: '/movility-report',
     exact: true,
     onSelect: () => { open.value = false }
   }, {
     label: 'Monto Técnicos',
-    icon: 'i-heroicons-currency-dollar',
+    icon: 'i-lucide-hand-coins',
     to: '/movility-report/settings/monto-tecnicos',
     exact: true,
     onSelect: () => { open.value = false }
   }]
 }, {
   label: 'Eventos',
-  icon: 'i-heroicons-calendar',
+  icon: 'i-lucide-calendar-days',
   to: '/eventos',
   onSelect: () => { open.value = false }
 }]
@@ -72,7 +72,7 @@ const reportLinks = [{
 // Sistema
 const systemLinks = [{
   label: 'Configuración',
-  icon: 'i-heroicons-cog-6-tooth',
+  icon: 'i-lucide-settings',
   to: '/settings',
   onSelect: () => { open.value = false }
 }]
@@ -121,6 +121,7 @@ onMounted(async () => {
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
+        <div class="sidebar-nav mt-3 space-y-3">
         <!-- Dashboard -->
         <UNavigationMenu
           :collapsed="collapsed"
@@ -134,7 +135,7 @@ onMounted(async () => {
 
         <!-- Gestión -->
         <div v-if="!collapsed" class="px-3 mb-1">
-          <p class="text-xs font-medium text-gray-500">Gestión</p>
+          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Gestión</p>
         </div>
         <UNavigationMenu
           :collapsed="collapsed"
@@ -148,7 +149,7 @@ onMounted(async () => {
 
         <!-- Reportes -->
         <div v-if="!collapsed" class="px-3 mb-1">
-          <p class="text-xs font-medium text-gray-500">Reportes</p>
+          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Reportes</p>
         </div>
         <UNavigationMenu
           :collapsed="collapsed"
@@ -160,6 +161,9 @@ onMounted(async () => {
 
         <UDivider class="my-2" />
 
+        <div v-if="!collapsed" class="px-3 mb-1">
+          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Sistema</p>
+        </div>
         <!-- Sistema -->
         <UNavigationMenu
           :collapsed="collapsed"
@@ -169,6 +173,7 @@ onMounted(async () => {
           popover
           class="mt-auto"
         />
+        </div>
       </template>
 
       <template #footer="{ collapsed }">
@@ -183,3 +188,30 @@ onMounted(async () => {
     <!-- <NotificationsSlideover /> -->
   </UDashboardGroup>
 </template>
+
+<style scoped>
+.sidebar-nav :deep(a),
+.sidebar-nav :deep(button[role='menuitem']),
+.sidebar-nav :deep(button[role='menuitemcheckbox']),
+.sidebar-nav :deep(button[role='menuitemradio']) {
+  font-size: 0.95rem;
+  line-height: 1.25rem;
+}
+
+.sidebar-nav :deep(a),
+.sidebar-nav :deep(button) {
+  border-radius: 0.9rem;
+  padding: 0.65rem 0.85rem;
+}
+
+.sidebar-nav :deep(a[aria-current='page']),
+.sidebar-nav :deep(button[aria-current='page']) {
+  background: rgb(var(--ui-primary) / 0.12);
+  color: rgb(var(--ui-primary));
+}
+
+.sidebar-nav :deep(span[class^='i-']) {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+</style>

@@ -15,18 +15,27 @@
         placeholder="Buscar por nombre, apellido o DNI..."
       />
 
-      <UButton
-        variant="outline"
-        color="gray"
-        size="sm"
-        @click="exportarExcel"
-        :loading="exportando"
-        :disabled="exportando"
-        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-      >
-        <UIcon name="i-lucide-download" class="w-4 h-4 mr-2" />
-        {{ exportando ? 'Exportando...' : 'Exportar' }}
-      </UButton>
+      <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
+        <UButton
+          color="success"
+          variant="solid"
+          size="sm"
+          @click="exportarExcel"
+          :loading="exportando"
+          :disabled="exportando || !canExport"
+          class="min-w-[170px] justify-center whitespace-nowrap shadow-sm hover:shadow-md disabled:shadow-none transition-all"
+        >
+          <template #leading>
+            <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
+          </template>
+          <span class="hidden sm:inline">
+            {{ exportando ? 'Descargando...' : 'Descargar reporte' }}
+          </span>
+          <span class="sm:hidden">
+            {{ exportando ? 'Descargando...' : 'Excel' }}
+          </span>
+        </UButton>
+      </UTooltip>
 
     </div>
 
@@ -40,7 +49,7 @@
         empty="No se encontraron reportes de hoy"
         :ui="{
           base: 'w-full',
-          wrapper: 'max-h-[calc(100vh-400px)] overflow-y-auto relative',
+          root: 'max-h-[calc(100vh-400px)] overflow-y-auto relative',
           thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
           th: `
             px-4 py-3 text-left text-xs font-medium
@@ -74,7 +83,6 @@
     v-model:open="isIncidenciaOpen"
     :title="modalTitle"
     :transition="true"
-    :ui="{ width: 'sm:max-w-lg' }"
   >
   <template #body>
     <div class="space-y-6">
@@ -200,6 +208,8 @@ const dailyListAttendaces = computed<TakenAttendace[]>(() => {
   return list;
 });
 
+const canExport = computed(() => dailyListAttendaces.value.length > 0)
+
 type TakenAttendaceRow = TakenAttendace & {
   Tiene_Incidencia?: boolean;
   es_recordatorio?: boolean;
@@ -243,7 +253,6 @@ const exportarExcel = async () => {
     title: 'Preparando exportación',
     description: 'Generando archivo Excel...',
     icon: 'i-lucide-loader-2',
-    timeout: 0,
   })
 
   try {
@@ -288,8 +297,7 @@ const exportarExcel = async () => {
       title: 'Descarga completa',
       description: `Descargado: ${fileName}`,
       icon: 'i-lucide-check-circle',
-      color: 'green',
-      timeout: 3000,
+      color: 'success',
     })
 
   } catch (error) {
@@ -299,8 +307,7 @@ const exportarExcel = async () => {
       title: 'Error al exportar',
       description: 'No se pudo generar el archivo Excel',
       icon: 'i-lucide-alert-circle',
-      color: 'red',
-      timeout: 5000,
+      color: 'error',
     })
   } finally {
     exportando.value = false
@@ -421,7 +428,7 @@ const guardarIncidencia = async () => {
     toast.add({
       title: 'Error',
       description: 'No se pudo registrar la incidencia',
-      color: 'red',
+      color: 'error',
     });
   } finally {
     savingIncidencia.value = false;

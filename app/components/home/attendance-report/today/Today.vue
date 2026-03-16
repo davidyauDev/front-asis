@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-6 text-gray-900 dark:text-gray-100">
     <!-- METRICS -->
-    <section>
+    <!-- <section>
       <MetricCards :metrics="metricsData" />
-    </section>
+    </section> -->
 
     <!-- FILTROS -->
     <section class="grid grid-cols-1 gap-6 items-start">
@@ -130,7 +130,7 @@ const { getDailyTakenAttendances } = store;
 
 const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
 
-const excludedDepartmentIds = [2, 5, 7, 9, 10] as const
+const excludedDepartmentIds = [2, 5, 7, 10] as const
 const excludedDepartmentIdSet = new Set<number>(excludedDepartmentIds)
 const isSpecialFilterActive = (ids: number[]) => {
   const selectedIds = store.employee.daily.selecteds.map(e => e.id);
