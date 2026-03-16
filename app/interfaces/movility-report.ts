@@ -197,4 +197,16 @@ export const employeeConceptOptions: EmployeeConceptOption[] = [
     label: "No Marco",
     description: "No registro marcacion",
   },
+  {
+    id: 7,
+    code: "LSGH",
+    label: "Licencia sin goce",
+    description: "Licencia sin goce de haber",
+  },
+  {
+    id: 8,
+    code: "LCGH",
+    label: "Licencia con goce",
+    description: "Licencia con goce de haber",
+  },
 ];
