@@ -456,6 +456,27 @@ const updateFilteredLists = () => {
   }
 };
 
+const applyDepartmentExclusionsAndDefaults = () => {
+  if (filterMode.value !== 'ADMIN') return
+  if (!department.value.list.length) return
+
+  updateFilteredLists()
+
+  const allowedDepartments = department.value.daily.list
+  const allowedIdSet = new Set<number>(allowedDepartments.map(d => d.id))
+
+  const cleanedSelected = store.department.daily.selecteds.filter(
+    (dep) => allowedIdSet.has(dep.id)
+  )
+  if (cleanedSelected.length !== store.department.daily.selecteds.length) {
+    store.department.daily.selecteds = cleanedSelected
+  }
+
+  if (!store.department.daily.selecteds.length) {
+    store.attendance.taken.daily.params.departamento_ids = allowedDepartments.map(d => d.id)
+  }
+}
+
 // Inicializar listas al montar el componente
 onMounted(() => {
   // Asegurarse de que las listas daily tengan todos los datos al inicio
@@ -470,12 +491,17 @@ onMounted(() => {
   }
 
   // Aplicar exclusiones y defaults iniciales
-  updateFilteredLists()
-  if (!store.department.daily.selecteds.length) {
-    const ids = department.value.daily.list.map(d => d.id)
-    store.attendance.taken.daily.params.departamento_ids = ids
-  }
+  applyDepartmentExclusionsAndDefaults()
 });
+
+// Cuando se cargan departamentos por primera vez (o se refrescan), aplicar exclusiones sin esperar click.
+watch(
+  () => department.value.list.length,
+  () => {
+    applyDepartmentExclusionsAndDefaults()
+  },
+  { immediate: true }
+)
 
 // Watch para cambios en departments seleccionados
 watch(
