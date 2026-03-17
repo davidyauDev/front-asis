@@ -209,4 +209,16 @@ export const employeeConceptOptions: EmployeeConceptOption[] = [
     label: "Licencia con goce",
     description: "Licencia con goce de haber",
   },
+  {
+    id: 9,
+    code: "VE",
+    label: "Vacaciones Extemporaneas",
+    description: "Vacaciones extemporaneas",
+  },
+  {
+    id: 10,
+    code: "DE",
+    label: "Descanso Extemporaneas",
+    description: "Descanso extemporaneas",
+  },
 ];

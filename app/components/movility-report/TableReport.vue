@@ -21,22 +21,50 @@
 
           <!-- RANGO FECHAS -->
           <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Desde</span>
-              <input
-                v-model="startDate"
-                type="date"
-                class="h-10 border border-gray-200 dark:border-gray-800 rounded-lg px-3 text-sm bg-white dark:bg-gray-950 focus:border-primary-300 dark:focus:border-primary-700 focus:ring-2 focus:ring-primary-500/25 transition-colors font-medium text-gray-900 dark:text-gray-100"
-              />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Hasta</span>
-              <input
-                v-model="endDate"
-                type="date"
-                class="h-10 border border-gray-200 dark:border-gray-800 rounded-lg px-3 text-sm bg-white dark:bg-gray-950 focus:border-primary-300 dark:focus:border-primary-700 focus:ring-2 focus:ring-primary-500/25 transition-colors font-medium text-gray-900 dark:text-gray-100"
-              />
-            </div>
+            <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Periodo</span>
+
+            <UPopover>
+              <button
+                type="button"
+                class="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors inline-flex items-center gap-2"
+                title="Seleccionar periodo (corte 23 al 22)"
+              >
+                <UIcon name="i-lucide-calendar-range" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono tabular-nums">
+                  {{ periodDisplay }}
+                </span>
+                <UIcon name="i-lucide-chevron-down" class="h-4 w-4 text-gray-400" />
+              </button>
+
+              <template #content>
+                <div class="p-3">
+                  <div class="flex items-center justify-between gap-3 mb-2">
+                    <div class="text-xs text-gray-700 dark:text-gray-200">
+                      Corte: <span class="font-semibold">23</span> al <span class="font-semibold">22</span>
+                    </div>
+                    <div class="text-[11px] text-gray-500 dark:text-gray-400 font-mono">
+                      {{ periodDisplay }}
+                    </div>
+                  </div>
+
+                  <UCalendar
+                    range
+                    locale="es"
+                    :number-of-months="2"
+                    :year-controls="true"
+                    :month-controls="true"
+                    :disable-days-outside-current-view="true"
+                    :is-date-disabled="isDateDisabled"
+                    v-model="calendarRange"
+                    v-model:placeholder="calendarPlaceholder"
+                    :ui="{
+                      cellTrigger:
+                        'data-[outside-view]:invisible data-disabled:cursor-not-allowed data-disabled:opacity-35 data-disabled:pointer-events-none'
+                    }"
+                  />
+                </div>
+              </template>
+            </UPopover>
           </div>
 
           <div class="flex items-center gap-2 ms-auto">
@@ -253,7 +281,11 @@
       </div>
     </div>
 
-    <DetailModal v-model:isOpen="isOpenModal" :employeeData="(empleadoSeleccionado as any)"></DetailModal>
+    <DetailModal
+      v-model:isOpen="isOpenModal"
+      :employeeData="(empleadoSeleccionado as any)"
+      :period-range="periodRange"
+    />
     <EmployeeConceptModal
       v-model:isOpen="isOpenConceptModal"
       :employee="conceptoSeleccionado"
@@ -280,6 +312,7 @@
 </template>
 
 <script setup lang="ts">
+import { CalendarDate, getLocalTimeZone, type DateValue } from '@internationalized/date'
 import { apiFetch } from '~/services/api';
 import DetailModal from './DetailModal.vue';
 import EmployeeConceptModal from './EmployeeConceptModal.vue';
@@ -325,9 +358,108 @@ const props = defineProps<{
   };
 }>()
 
-const startDate = ref('')
-const endDate = ref('')
 const filtroUsuario = ref('')
+
+const toDateInputValue = (value: Date) => {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const formatLatam = (value: Date) =>
+  new Intl.DateTimeFormat('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Lima'
+  }).format(value)
+
+const getPeriodStartMonthForAnchor = (anchor: Date) => {
+  const y = anchor.getFullYear()
+  const m = anchor.getMonth()
+  return anchor.getDate() <= 22 ? new Date(y, m - 1, 1) : new Date(y, m, 1)
+}
+
+const periodStartMonth = ref<Date>(getPeriodStartMonthForAnchor(props.rangeDate?.start ?? fechaActual))
+
+const periodRange = computed(() => {
+  const y = periodStartMonth.value.getFullYear()
+  const m = periodStartMonth.value.getMonth()
+  return {
+    start: new Date(y, m, 23),
+    end: new Date(y, m + 1, 22),
+  }
+})
+
+const startDate = computed(() => toDateInputValue(periodRange.value.start))
+const endDate = computed(() => toDateInputValue(periodRange.value.end))
+
+const periodDisplay = computed(() => `${formatLatam(periodRange.value.start)} - ${formatLatam(periodRange.value.end)}`)
+
+const toCalendarMonth = (date: Date) => new CalendarDate(date.getFullYear(), date.getMonth() + 1, 1)
+const toCalendarDate = (date: Date) => new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate())
+
+const isDateDisabled = (value: DateValue) => {
+  const d = value.toDate(getLocalTimeZone())
+  const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+
+  const start = periodRange.value.start
+  const end = periodRange.value.end
+  const startTs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
+  const endTs = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+
+  return ts < startTs || ts > endTs
+}
+
+const calendarPlaceholder = ref<CalendarDate>(toCalendarMonth(periodStartMonth.value))
+
+watch(periodStartMonth, (value) => {
+  const next = toCalendarMonth(value)
+  if (calendarPlaceholder.value.year === next.year && calendarPlaceholder.value.month === next.month) return
+  calendarPlaceholder.value = next
+})
+
+watch(calendarPlaceholder, (value) => {
+  const next = new Date(value.year, value.month - 1, 1)
+  if (
+    next.getFullYear() === periodStartMonth.value.getFullYear() &&
+    next.getMonth() === periodStartMonth.value.getMonth()
+  ) return
+  periodStartMonth.value = next
+})
+
+const calendarRange = computed({
+  get: () => ({
+    start: toCalendarDate(periodRange.value.start),
+    end: toCalendarDate(periodRange.value.end),
+  }),
+  set: (value: any) => {
+    const anchor = value?.start ?? value?.end
+    if (!anchor) return
+
+    const anchorDate = anchor.toDate(getLocalTimeZone())
+    periodStartMonth.value = getPeriodStartMonthForAnchor(anchorDate)
+  }
+})
+
+watch(
+  () => props.rangeDate,
+  (range) => {
+    if (!range) return
+    periodStartMonth.value = getPeriodStartMonthForAnchor(range.start)
+  },
+  { immediate: true }
+)
+
+watch(
+  periodRange,
+  () => {
+    payload.start_date = startDate.value
+    payload.end_date = endDate.value
+  },
+  { immediate: true }
+)
 
 const yearForReminders = computed(() => {
   const raw = String(startDate.value || '').trim()
@@ -429,32 +561,6 @@ const formatDateLatam = (raw: any) => {
     timeZone: 'America/Lima'
   }).format(date);
 };
-
-const toDateInputValue = (value: Date) => {
-  const year = value.getFullYear()
-  const month = String(value.getMonth() + 1).padStart(2, '0')
-  const day = String(value.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-const initStart = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1)
-const initEnd = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0)
-startDate.value = toDateInputValue(initStart)
-endDate.value = toDateInputValue(initEnd)
-payload.start_date = startDate.value
-payload.end_date = endDate.value
-
-watch(
-  () => props.rangeDate,
-  (range) => {
-    if (!range) return
-    if (range.start) startDate.value = toDateInputValue(range.start)
-    if (range.end) endDate.value = toDateInputValue(range.end)
-    payload.start_date = startDate.value
-    payload.end_date = endDate.value
-  },
-  { immediate: true }
-)
 
 const aplicarFiltros = () => {
   payload.start_date = startDate.value

@@ -211,13 +211,23 @@ watch(
   () => [props.open, props.employee.employee_id, props.year] as const,
   ([isOpen]) => {
     if (!isOpen) return
-    if (props.initialMonth) month.value = props.initialMonth
-    if (props.initialMonth && month.value === props.initialMonth) {
+
+    const targetMonth = props.initialMonth ?? month.value
+    const monthChanged = month.value !== targetMonth
+
+    if (props.initialMonth) month.value = targetMonth
+
+    if (props.initialMonth && targetMonth === props.initialMonth) {
       draft.content = String(props.initialComment ?? '')
       autosaveState.value = 'idle'
     }
+
+    // Si cambiamos el mes aquÃ­, el watch(month) harÃ¡ el load.
+    if (monthChanged) return
+
     load()
-  }
+  },
+  { immediate: true }
 )
 
 watch(month, () => {
