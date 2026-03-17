@@ -216,19 +216,10 @@ const departmentResponse = computed(() => {
 
 const employeeResponse = computed(() => {
     if (props.employeeType === EmployeeType.TECHNICIANS) {
-
-        const employees = new Set(
-            attendance.value.taken.tech.list.map(e => e.Empleado_id)
-        )
-
-        const filteredEmployees = employee.value.tech.list.filter(
-            com => employees.has(com.id)
-        )
-
         return {
             loading: employee.value.tech.loading || attendance.value.taken.tech.loading,
             isError: employee.value.tech.isError,
-            list: filteredEmployees
+            list: employee.value.tech.list
         }
     }
 
