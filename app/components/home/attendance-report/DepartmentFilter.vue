@@ -12,7 +12,7 @@
       </div>
 
       <UButton
-        v-if="!isError && selecteds.length !== department.list.length"
+        v-if="!isError && selecteds.length !== list.length"
         icon="i-lucide-rotate-ccw"
         size="xs"
         variant="ghost"
@@ -83,7 +83,6 @@ import { useAttendanceReportStore } from '~/store/useAttendanceReportStore';
 
 const store = useAttendanceReportStore();
 const { getDepartments } = store;
-const { department } = storeToRefs(store);
 
 
 const props = defineProps<{
@@ -91,6 +90,7 @@ const props = defineProps<{
   isError: boolean
   list: Department[]
   class?: string
+  persistKey?: string
 }>()
 
 const { loading, isError, list, class: extraClass } = toRefs(props)
@@ -106,8 +106,14 @@ const route = useRoute();
 const routeKey = (route.name ?? route.path)
   .toString()
   .replace(/[^a-zA-Z0-9_-]/g, '_');
+const persistKeyRaw = props.persistKey?.toString().trim();
+const persistKey = persistKeyRaw
+  ? persistKeyRaw.replace(/[^a-zA-Z0-9_-]/g, '_')
+  : undefined;
 const savedIds = useCookie<number[]>(
-  `department-filter-${routeKey}`,
+  persistKey
+    ? `department-filter-${routeKey}-${persistKey}`
+    : `department-filter-${routeKey}`,
   { default: () => [], sameSite: 'lax' }
 );
 const hasAppliedSaved = ref(false);
@@ -115,7 +121,7 @@ const hasAppliedSaved = ref(false);
 
 const selecteds = computed<Department[]>({
   get() {
-    return storeSelecteds.value.length ? storeSelecteds.value : department.value.list
+    return storeSelecteds.value.length ? storeSelecteds.value : list.value
   },
 
   set(newSelecteds) {
@@ -125,7 +131,7 @@ const selecteds = computed<Department[]>({
 
 const handleSelectDepartment = (departmentItem: Department) => {
   const allSelected =
-    selecteds.value.length === department.value.list.length;
+    selecteds.value.length === list.value.length;
 
   // Primer click: romper "todos"
   if (allSelected) {
@@ -151,7 +157,7 @@ const handleSelectDepartment = (departmentItem: Department) => {
 
 
 const handleResertFilter = () => {
-  selecteds.value = department.value.list
+  selecteds.value = list.value
   //param.value = undefined;
 }
 

@@ -58,6 +58,7 @@
               :loading="department.daily.loading"
               :is-error="department.daily.isError"
               :list="department.daily.list"
+              persist-key="attendance-home-today"
               v-model:department="department.daily.selecteds"
             />
           </div>
@@ -256,7 +257,7 @@
  
  const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
  
- const excludedDepartmentIds = [2, 5, 7, 10] as const
+ const excludedDepartmentIds = [2, 4, 5, 7, 9, 10] as const
  const excludedDepartmentIdSet = new Set<number>(excludedDepartmentIds)
 
 type FilterMode = 'ADMIN' | 'INGENIEROS'
@@ -472,7 +473,6 @@ onMounted(() => {
   updateFilteredLists()
   if (!store.department.daily.selecteds.length) {
     const ids = department.value.daily.list.map(d => d.id)
-    store.attendance.params.departamento_ids = ids
     store.attendance.taken.daily.params.departamento_ids = ids
   }
 });
@@ -495,16 +495,10 @@ watch(
       ? normalizedSelected.map(d => d.id)
       : department.value.daily.list.map(d => d.id)
 
-    store.attendance.params.departamento_ids = ids;
     store.attendance.taken.daily.params.departamento_ids = ids;
 
     // Actualizar listas filtradas
     updateFilteredLists();
-
-    // Cargar empleados por departamento (esperar a que termine)
-    if (ids.length > 0) {
-      await store.getEmployeesByDepartment();
-    }
 
     // Hacer fetch con debounce
     debouncedFetch();
@@ -544,7 +538,6 @@ watch(
     updateFilteredLists();
     if (!store.department.daily.selecteds.length) {
       const ids = department.value.daily.list.map(d => d.id)
-      store.attendance.params.departamento_ids = ids
       store.attendance.taken.daily.params.departamento_ids = ids
     }
     dailyTakenAttendace.value.pagination.pageIndex = 0;

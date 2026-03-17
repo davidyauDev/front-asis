@@ -113,6 +113,7 @@
                             :is-error="departmentResponse.isError"
                             :list="departmentResponse.list" 
                             class="max-h-72" 
+                            :persist-key="`attendance-home-month-${props.employeeType}`"
                             v-model:department="currentDepartmentSelected"
                             v-model:param="currentParams.departamento_ids" 
                         />
@@ -366,14 +367,16 @@ const currentEmployeeSelected = computed<Employee[]>({
 
 const detalleParams = computed<AttendanceParams>(() => {
   const companyId = attendance.value.taken.all.params.company_id
-  const empresaIds = companyId ? [companyId] : attendance.value.params.empresa_ids
+  const empresaIds = companyId
+    ? [companyId]
+    : (company.value.list.length ? company.value.list.map(c => c.id) : undefined)
 
   const departamentoIds = attendance.value.taken.all.params.departamento_ids ?? []
   const usuarioIds = attendance.value.taken.all.params.empleado_ids ?? []
   const fechas = attendance.value.taken.all.params.fechas ?? []
 
   return {
-    empresa_ids: Array.isArray(empresaIds) ? empresaIds : [empresaIds as number],
+    empresa_ids: empresaIds,
     departamento_ids: departamentoIds.length ? departamentoIds : undefined,
     usuarios: usuarioIds.length ? usuarioIds : undefined,
     fechas: fechas.length ? fechas : undefined,
@@ -425,7 +428,6 @@ watch(
     }
 
     attendance.value.taken.tech.params.departamento_ids = ids;
-    store.attendance.params.departamento_ids = ids;
     if (ids.length) {
       employee.value.tech.list = employee.value.list.filter(emp =>
         ids.includes(emp.department_id)
@@ -445,7 +447,6 @@ watch(
     if (props.employeeType !== EmployeeType.TECHNICIANS) return
     const ids = empleado_ids.map(d => d.id);
     attendance.value.taken.tech.params.empleado_ids = ids;
-    store.attendance.params.empleado_ids = ids;
     getTechTakenAttendances();
     attendance.value.taken.tech.pagination.pageIndex = 0;
   },

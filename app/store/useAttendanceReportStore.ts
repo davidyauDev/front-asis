@@ -333,8 +333,12 @@ export const useAttendanceReportStore = defineStore("attendance-report", {
     async getEmployeesByDepartment() {
       this.employee.department.loading = true;
       try {
+        const departamentoIds = this.attendance.params.departamento_ids;
+        const normalizedDepartamentoIds = Array.isArray(departamentoIds)
+          ? departamentoIds
+          : (typeof departamentoIds === "number" ? [departamentoIds] : undefined);
         const employees = await fetchEmployeesByDepartment(
-          this.attendance.params.departamento_ids
+          normalizedDepartamentoIds
         );
         this.employee.department.list = employees;
 
