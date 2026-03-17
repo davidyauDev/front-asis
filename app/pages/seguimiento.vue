@@ -631,9 +631,11 @@
                                                     title="Sin marcación">
                                                     Sin marcar
                                                 </span>
-                                                <button v-if="getDailyRecord(tecnico)"
-                                                    @click.stop="viewDailyRecord(tecnico)"
-                                                    class="ml-2 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-medium rounded-md">Registro</button>
+                                                 <button v-if="getDailyRecord(tecnico)"
+                                                     @click.stop="viewDailyRecord(tecnico)"
+                                                     :class="`ml-2 px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnico)).color}`">
+                                                     {{ getConceptBadge(getDailyRecord(tecnico)).text }}
+                                                 </button>
 
                                                 <button v-if="shouldShowValidar(tecnico)"
                                                     @click.stop="validarRutaSinRuta(tecnico)"
@@ -667,15 +669,22 @@
             <!-- Modal ligero para mostrar daily_record -->
             <div v-if="showDailyModal" class="fixed inset-0 z-50 flex items-center justify-center">
                 <div class="absolute inset-0 bg-black/50" @click="showDailyModal = false" aria-hidden="true"></div>
-                <div class="relative bg-white dark:bg-gray-950 rounded-lg shadow-lg w-full max-w-2xl mx-4 p-5"
+                <div class="relative rounded-lg shadow-lg w-full max-w-2xl mx-4 p-5"
+                    :class="dailyModalPanelClass"
                     role="dialog" aria-modal="true">
                     <header class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-50">Detalle de Registro</h3>
+                        <div class="flex items-center gap-2 min-w-0">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-50 truncate">Detalle de Registro</h3>
+                            <span v-if="dailyModalContent" :class="`px-2 py-1 text-xs font-medium rounded-md ${dailyModalBadge.color}`">
+                                {{ dailyModalBadge.text }}
+                            </span>
+                        </div>
                         <button @click="showDailyModal = false"
                             class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✕</button>
                     </header>
                     <pre
-                        class="text-xs overflow-auto max-h-[60vh] p-2 bg-gray-50 dark:bg-gray-900 rounded">{{ formatDailyRecord(dailyModalContent) }}</pre>
+                        class="text-xs overflow-auto max-h-[60vh] p-3 rounded border"
+                        :class="dailyModalPreClass">{{ formatDailyRecord(dailyModalContent) }}</pre>
                 </div>
             </div>
         </template>
@@ -934,18 +943,93 @@ const formatDailyRecord = (dr: any) => {
     }
 }
 
+const extractConceptRecord = (value: any, maxDepth = 4): any | null => {
+    const seen = new Set<any>()
+    const hasConceptFields = (obj: any) =>
+        obj &&
+        typeof obj === 'object' &&
+        ('concept_id' in obj ||
+            'conceptId' in obj ||
+            'day_code' in obj ||
+            'dayCode' in obj ||
+            'concept_code' in obj ||
+            'conceptCode' in obj ||
+            'concept_name' in obj ||
+            'conceptName' in obj ||
+            'code' in obj ||
+            'codigo' in obj ||
+            'concept' in obj ||
+            'concepto' in obj)
+
+    const walk = (v: any, depth: number): any | null => {
+        if (v == null || depth < 0) return null
+        if (typeof v !== 'object') return null
+        if (seen.has(v)) return null
+        seen.add(v)
+
+        if (Array.isArray(v)) {
+            for (const item of v) {
+                const found = walk(item, depth - 1)
+                if (found) return found
+            }
+            return null
+        }
+
+        if (hasConceptFields(v)) return v
+
+        for (const [k, child] of Object.entries(v)) {
+            if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue
+            const found = walk(child, depth - 1)
+            if (found) return found
+        }
+
+        return null
+    }
+
+    return walk(value, maxDepth)
+}
+
 const getConceptBadge = (dailyRecord: any) => {
-    if (!dailyRecord || !dailyRecord.concept_id) {
+    if (!dailyRecord) {
         return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
     }
-    
-    const conceptId = dailyRecord.concept_id
-    
-    switch(conceptId) {
-        case 1: // Asistencia
-            return { text: 'Asistencia', color: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' }
+
+    const dr: any = extractConceptRecord(dailyRecord) ?? dailyRecord
+
+    const conceptId = Number(dr?.concept_id)
+    if (!Number.isFinite(conceptId)) {
+        const code =
+            typeof dr === 'string'
+                ? dr.trim().toUpperCase()
+                : String(dr?.day_code ?? dr?.concept_code ?? dr?.code ?? dr?.codigo ?? '')
+                      .trim()
+                      .toUpperCase()
+        const name = String(dr?.concept_name ?? dr?.concepto ?? dr?.concept ?? dr?.name ?? '').trim().toLowerCase()
+
+         if (code === 'V' || name.includes('vacac')) {
+             return { text: 'Vacaciones', color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200' }
+         }
+         if (code === 'DM' || name.includes('descanso') || name.includes('med')) {
+             return { text: 'Descanso Medico', color: 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' }
+         }
+         if (code === 'SR' || name.includes('sin ruta')) {
+             return { text: 'Sin Ruta', color: 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' }
+         }
+         if (code === 'NM' || name.includes('no marc')) {
+             return { text: 'No Marco', color: 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300' }
+         }
+         if (code === 'X' || name.includes('cese')) {
+             return { text: 'Cese', color: 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300' }
+         }
+ 
+         return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
+     }
+     
+     switch(conceptId) {
+         case 1: // Asistencia
+             return { text: 'Asistencia', color: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' }
         case 2: // Vacaciones (V)
-            return { text: 'Vacaciones', color: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' }
+            return { text: 'Vacaciones', color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200' }
         case 3: // Descanso Médico (DM)
             return { text: 'Descanso Médico', color: 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' }
         case 4: // Sin Ruta (SR)
@@ -958,6 +1042,84 @@ const getConceptBadge = (dailyRecord: any) => {
             return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
     }
 }
+
+const dailyModalBadge = computed(() => getConceptBadge(dailyModalContent.value))
+
+ const dailyModalPanelClass = computed(() => {
+     const base = 'bg-white dark:bg-gray-950 border border-gray-200/60 dark:border-gray-800/60'
+ 
+     const raw = dailyModalContent.value
+     const dr: any = extractConceptRecord(raw) ?? raw
+
+     const conceptId = Number((dr as any)?.concept_id)
+     const code =
+         typeof dr === 'string'
+             ? dr.trim().toUpperCase()
+             : String((dr as any)?.day_code ?? (dr as any)?.concept_code ?? (dr as any)?.code ?? (dr as any)?.codigo ?? '')
+                   .trim()
+                   .toUpperCase()
+     const name = String((dr as any)?.concept_name ?? (dr as any)?.concepto ?? (dr as any)?.concept ?? (dr as any)?.name ?? '')
+         .trim()
+         .toLowerCase()
+ 
+     if (conceptId === 1) return 'bg-green-50/60 dark:bg-green-950/10 border border-green-200/70 dark:border-green-800/50'
+     if (conceptId === 2 || code === 'V' || name.includes('vacac')) {
+         return 'bg-amber-50/60 dark:bg-amber-950/10 border border-amber-200/70 dark:border-amber-800/50'
+     }
+     if (conceptId === 3 || code === 'DM' || name.includes('descanso') || name.includes('med')) {
+         return 'bg-purple-50/60 dark:bg-purple-950/10 border border-purple-200/70 dark:border-purple-800/50'
+     }
+     if (conceptId === 4 || code === 'SR' || name.includes('sin ruta')) {
+         return 'bg-orange-50/60 dark:bg-orange-950/10 border border-orange-200/70 dark:border-orange-800/50'
+     }
+     if (conceptId === 5 || code === 'NM' || name.includes('no marc')) {
+         return 'bg-red-50/60 dark:bg-red-950/10 border border-red-200/70 dark:border-red-800/50'
+     }
+     if (conceptId === 6 || code === 'X' || name.includes('cese')) {
+         return 'bg-gray-50/70 dark:bg-gray-950/10 border border-gray-200/70 dark:border-gray-800/50'
+     }
+ 
+     return base
+ })
+
+ const dailyModalPreClass = computed(() => {
+     const base = 'bg-gray-50 dark:bg-gray-900 border-gray-200/60 dark:border-gray-800/60 text-gray-700 dark:text-gray-200'
+ 
+     const raw = dailyModalContent.value
+     const dr: any = extractConceptRecord(raw) ?? raw
+
+     const conceptId = Number((dr as any)?.concept_id)
+     const code =
+         typeof dr === 'string'
+             ? dr.trim().toUpperCase()
+             : String((dr as any)?.day_code ?? (dr as any)?.concept_code ?? (dr as any)?.code ?? (dr as any)?.codigo ?? '')
+                   .trim()
+                   .toUpperCase()
+     const name = String((dr as any)?.concept_name ?? (dr as any)?.concepto ?? (dr as any)?.concept ?? (dr as any)?.name ?? '')
+         .trim()
+         .toLowerCase()
+ 
+     if (conceptId === 1 || code === 'A') {
+         return 'bg-green-50 dark:bg-green-950/20 border-green-200/70 dark:border-green-800/50 text-green-950 dark:text-green-50'
+     }
+     if (conceptId === 2 || code === 'V' || name.includes('vacac')) {
+         return 'bg-amber-50 dark:bg-amber-950/20 border-amber-200/70 dark:border-amber-800/50 text-amber-950 dark:text-amber-50'
+     }
+     if (conceptId === 3 || code === 'DM' || name.includes('descanso') || name.includes('med')) {
+         return 'bg-purple-50 dark:bg-purple-950/20 border-purple-200/70 dark:border-purple-800/50 text-purple-950 dark:text-purple-50'
+     }
+     if (conceptId === 4 || code === 'SR' || name.includes('sin ruta')) {
+         return 'bg-orange-50 dark:bg-orange-950/20 border-orange-200/70 dark:border-orange-800/50 text-orange-950 dark:text-orange-50'
+     }
+     if (conceptId === 5 || code === 'NM' || name.includes('no marc')) {
+         return 'bg-red-50 dark:bg-red-950/20 border-red-200/70 dark:border-red-800/50 text-red-950 dark:text-red-50'
+     }
+     if (conceptId === 6 || code === 'X' || name.includes('cese')) {
+         return 'bg-gray-50 dark:bg-gray-950/20 border-gray-200/70 dark:border-gray-800/50 text-gray-900 dark:text-gray-100'
+     }
+ 
+     return base
+ })
 
 const conceptoMap: Record<string, number> = {
     asistencia: 1,        // 1

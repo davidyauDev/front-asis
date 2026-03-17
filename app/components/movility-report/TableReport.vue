@@ -107,7 +107,9 @@
           <thead>
             <tr class="sticky top-0 z-10 bg-primary-600 text-white border-b border-primary-700/40">
               <th class="px-3 py-3 text-center text-xs font-semibold w-12">
-                N°
+                <button type="button" class="inline-flex items-center gap-1 w-full justify-center" @click="toggleSort('numero')">
+                  N° <UIcon :name="sortIcon('numero')" class="w-3 h-3 opacity-90" />
+                </button>
               </th>
               <th class="px-3 py-3 text-left text-xs font-semibold">
                 <button type="button" class="inline-flex items-center gap-1 w-full" @click="toggleSort('apellidos')">
@@ -178,7 +180,7 @@
               class="transition-colors odd:bg-white even:bg-gray-50/40 hover:bg-primary-50/40 dark:odd:bg-gray-950 dark:even:bg-gray-900/25 dark:hover:bg-primary-900/10"
             >
               <td class="px-3 py-3 text-center text-gray-900 dark:text-gray-100 text-xs font-semibold font-mono tabular-nums w-12">
-                {{ idx + 1 }}
+                {{ sortKey === 'numero' && sortDir === 'desc' ? (datosOrdenados.length - idx) : (idx + 1) }}
               </td>
               <td class="px-3 py-3 min-w-[220px]">
                 <div class="min-w-0 flex flex-col gap-0.5">
@@ -481,6 +483,7 @@ const monthForReminders = computed(() => {
 })
 
 type SortKey =
+  | 'numero'
   | 'dni'
   | 'apellidos'
   | 'nombres'
@@ -613,6 +616,10 @@ const datosOrdenados = computed(() => {
   if (!sortKey.value) return list;
 
   const key = sortKey.value as SortKey;
+  if (key === 'numero') {
+    return sortDir.value === 'asc' ? list : list.reverse();
+  }
+
   list.sort((a, b) => {
     const av = getSortValue(a, key);
     const bv = getSortValue(b, key);
