@@ -18,20 +18,21 @@
       >
         <nav class="w-full">
           <div
-            class="flex gap-1 border-b-2 border-emerald-600 dark:border-emerald-500"
+            class="flex gap-0 border-b-2 border-emerald-600 dark:border-emerald-500"
             role="tablist"
             aria-label="Filtros del reporte de hoy"
           >
             <button
-              v-for="item in filterTabs"
+              v-for="(item, idx) in filterTabs"
               :key="item.value"
               type="button"
               role="tab"
               :aria-selected="item.value === filterMode"
               :tabindex="item.value === filterMode ? 0 : -1"
               @click="filterMode = item.value as FilterMode"
-              class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wide rounded-t-md border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+              class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wide border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 rounded-none first:rounded-tl-md last:rounded-tr-md"
               :class="[
+                idx ? '-ml-px' : '',
                 item.value === filterMode
                   ? 'bg-emerald-600 text-white border-emerald-600 -mb-[2px]'
                   : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'

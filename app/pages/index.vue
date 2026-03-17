@@ -57,21 +57,22 @@
       <UDashboardToolbar>
         <nav class="w-full mt-2">
           <div
-            class="flex gap-1 border-b-2 border-primary-600 dark:border-primary-500"
+            class="flex gap-0 border-b-2 border-primary-600 dark:border-primary-500"
             :class="width < 500 ? 'flex-col items-stretch' : 'items-end flex-wrap'"
             role="tablist"
             aria-label="Reporte de asistencia"
           >
             <button
-              v-for="item in tabItems"
+              v-for="(item, idx) in tabItems"
               :key="item.value"
               type="button"
               role="tab"
               :aria-selected="item.value === currentTabType"
               :tabindex="item.value === currentTabType ? 0 : -1"
               @click="currentTabType = item.value"
-              class="px-6 py-2.5 text-xs font-semibold uppercase tracking-wide rounded-t-md border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              class="px-6 py-2.5 text-xs font-semibold uppercase tracking-wide border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded-none first:rounded-tl-md last:rounded-tr-md"
               :class="[
+                idx ? '-ml-px' : '',
                 item.value === currentTabType
                   ? 'bg-primary-600 text-white border-primary-600 -mb-[2px]'
                   : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'
@@ -94,20 +95,21 @@
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
         <nav class="w-full">
           <div
-            class="flex gap-1 border-b-2 border-primary-600 dark:border-primary-500"
+            class="flex gap-0 border-b-2 border-primary-600 dark:border-primary-500"
             role="tablist"
             aria-label="Tipo de empleado"
           >
             <button
-              v-for="item in employeeItems"
+              v-for="(item, idx) in employeeItems"
               :key="item.value"
               type="button"
               role="tab"
               :aria-selected="item.value === currentEmployeeType"
               :tabindex="item.value === currentEmployeeType ? 0 : -1"
               @click="currentEmployeeType = item.value"
-              class="px-5 py-2 text-[11px] font-semibold uppercase tracking-wide rounded-t-md border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              class="px-5 py-2 text-[11px] font-semibold uppercase tracking-wide border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded-none first:rounded-tl-md last:rounded-tr-md"
               :class="[
+                idx ? '-ml-px' : '',
                 item.value === currentEmployeeType
                   ? 'bg-primary-600 text-white border-primary-600 -mb-[2px]'
                   : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'

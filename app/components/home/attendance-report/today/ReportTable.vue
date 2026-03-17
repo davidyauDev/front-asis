@@ -6,25 +6,40 @@
     @retry="retryFetch"
   >
     <div
-      class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 mb-4 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800"
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800"
     >
-      <UInput
-        icon="i-lucide-search"
-        v-model="dailyTakenAttendaces.globalFilter"
-        class="w-full sm:max-w-sm"
-        :disabled="overrideBlocked"
-        :placeholder="overrideBlocked ? 'Selecciona usuarios para ver resultados...' : 'Buscar por nombre, apellido o DNI...'"
-      />
+      <div class="flex flex-1 items-center gap-2">
+        <UInput
+          icon="i-lucide-search"
+          v-model="dailyTakenAttendaces.globalFilter"
+          class="w-full sm:max-w-md"
+          size="md"
+          :disabled="overrideBlocked"
+          :placeholder="overrideBlocked ? 'Selecciona usuarios para ver resultados...' : 'Buscar por nombre, apellido o DNI...'"
+        />
+
+        <UButton
+          v-if="!overrideBlocked && dailyTakenAttendaces.globalFilter"
+          type="button"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-x"
+          size="sm"
+          square
+          class="shrink-0"
+          @click="dailyTakenAttendaces.globalFilter = ''"
+        />
+      </div>
 
       <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
         <UButton
           color="success"
           variant="solid"
-          size="sm"
+          size="md"
           @click="exportarExcel"
           :loading="exportando"
           :disabled="exportando || !canExport"
-          class="min-w-[170px] justify-center whitespace-nowrap shadow-sm hover:shadow-md disabled:shadow-none transition-all"
+          class="min-w-[190px] justify-center whitespace-nowrap font-semibold shadow-sm hover:shadow-md disabled:shadow-none transition-all"
         >
           <template #leading>
             <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
@@ -48,24 +63,14 @@
         :meta="{ class: { tr: rowClass } }"
         :loading="dataLoading"
         :ui="{
-          base: 'w-full',
-          root: 'max-h-[calc(100vh-400px)] overflow-y-auto relative',
-          thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
-          th: `
-            px-4 py-3 text-left text-xs font-medium
-            text-gray-500 dark:text-gray-400
-            tracking-tight
-          `,
-          td: `
-            px-4 py-3 text-sm
-            text-gray-900 dark:text-gray-100
-            border-b border-gray-100 dark:border-gray-900
-          `,
-          tbody: `
-            [&>tr]:transition-colors
-            [&>tr:hover]:bg-gray-50
-            dark:[&>tr:hover]:bg-gray-900/50
-          `,
+          base: 'min-w-full table-fixed',
+          root: 'relative',
+          wrapper: 'max-h-[calc(100vh-400px)] overflow-y-auto relative',
+          thead: 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-950/60 border-b border-gray-200 dark:border-gray-800',
+          th: 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300',
+          td: 'px-4 py-4 text-sm text-gray-900 dark:text-gray-100 align-top',
+          tr: 'transition-colors',
+          tbody: 'divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-950',
         }"
         :empty="emptyText"
       />
@@ -253,10 +258,37 @@ const getEsRecordatorio = (row: any) => {
 
 const isPreIncidenciaRow = (row: any) => getEsRecordatorio(row);
 
-const rowClass = (row: any) =>
-  isPreIncidenciaRow(row)
-    ? "bg-amber-50/60 dark:bg-amber-950/30"
-    : "";
+const isLateAttendance = (original: TakenAttendaceRow) => {
+  const tardanzaMinutes = Number(original.Tardanza ?? 0)
+  if (tardanzaMinutes > 0) return true
+
+  const ingreso = original.Ingreso
+  const horario = original.Horario
+  if (!ingreso || !horario) return false
+
+  return parse(ingreso, "HH:mm:ss", new Date()) > parse(horario, "HH:mm:ss", new Date())
+}
+
+const rowClass = (row: any) => {
+  const original = row?.original as TakenAttendaceRow | undefined
+  if (!original) {
+    return "hover:bg-gray-50 dark:hover:bg-gray-900/50"
+  }
+
+  if (isPreIncidenciaRow(row)) {
+    return "bg-amber-50/60 dark:bg-amber-950/25 hover:bg-amber-50/80 dark:hover:bg-amber-950/35"
+  }
+
+  if (!original.Ingreso) {
+    return "bg-slate-50 dark:bg-slate-900/30 hover:bg-slate-100/60 dark:hover:bg-slate-900/40"
+  }
+
+  if (isLateAttendance(original)) {
+    return "bg-red-50/60 dark:bg-red-950/20 hover:bg-red-50/80 dark:hover:bg-red-950/30"
+  }
+
+  return "hover:bg-gray-50 dark:hover:bg-gray-900/50"
+}
 
 const token = useCookie<string | null>('auth_token')
 
@@ -465,40 +497,54 @@ const sortColumButton = (column: any, label: string) => {
   return h(UButton, {
     color: "neutral",
     variant: "ghost",
+    size: "xs",
     label,
     icon: isSorted
       ? isSorted === "asc"
         ? "i-lucide-arrow-up-narrow-wide"
         : "i-lucide-arrow-down-wide-narrow"
       : "i-lucide-arrow-up-down",
-    class: "-mx-2.5",
+    class:
+      "-mx-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white",
     onClick: () => column.toggleSorting(isSorted === "asc"),
   });
 };
 
 const columns: TableColumn<TakenAttendace>[] = [
   {
-    accessorKey: "DNI",
-    header: ({ column }) => sortColumButton(column, "DNI"),
-    cell: ({ row }) =>
-      h("span", { class: "font-mono text-sm" }, row.getValue("DNI")),
-  },
-  {
     accessorKey: "Apellidos",
     header: ({ column }) => sortColumButton(column, "Empleado"),
     cell: ({ row }) => {
-      const nombres = row.original.Nombres || "";
-      const apellidos = row.original.Apellidos || "";
-      
-      const primerNombre = nombres.split(" ")[0] || "";
-      const primerApellido = apellidos.split(" ")[0] || "";
-      
+      const nombres = String(row.original.Nombres ?? "").trim();
+      const apellidos = String(row.original.Apellidos ?? "").trim();
+
       return h(
-        "span",
-        { class: "font-medium text-gray-900 dark:text-gray-100 text-sm" },
-        `${primerNombre} ${primerApellido}`.trim()
+        "div",
+        { class: "flex flex-col leading-snug whitespace-normal min-w-[180px]" },
+        [
+          h(
+            "span",
+            { class: "text-sm font-semibold text-emerald-700 dark:text-emerald-300" },
+            apellidos || "—"
+          ),
+          h(
+            "span",
+            { class: "text-sm text-gray-900 dark:text-gray-100" },
+            nombres || "—"
+          ),
+        ]
       );
     },
+  },
+  {
+    accessorKey: "DNI",
+    header: ({ column }) => sortColumButton(column, "DNI"),
+    cell: ({ row }) =>
+      h(
+        "span",
+        { class: "font-mono text-sm font-semibold text-gray-800 dark:text-gray-100" },
+        row.getValue("DNI")
+      ),
   },
   {
     accessorKey: "Departamento",
@@ -523,10 +569,36 @@ const columns: TableColumn<TakenAttendace>[] = [
   {
     accessorKey: "Horario",
     header: ({ column }) => sortColumButton(column, "Horario"),
-    cell: ({ row }) =>
-      row.getValue("Horario") 
-        ? h("span", { class: "font-mono text-sm" }, row.getValue("Horario"))
-        : h("span", { class: "text-sm text-gray-400 dark:text-gray-500" }, "Sin horario"),
+    cell: ({ row }) => {
+      const horario = row.getValue("Horario") as string | null;
+
+      if (!horario) {
+        return h(
+          "span",
+          {
+            class:
+              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold " +
+              "bg-slate-50 text-slate-600 ring-1 ring-slate-200 " +
+              "dark:bg-slate-900/40 dark:text-slate-300 dark:ring-slate-700",
+          },
+          [
+            h(UIcon, { name: "i-lucide-clock", class: "w-4 h-4" }),
+            "Sin horario",
+          ]
+        );
+      }
+
+      return h(
+        "span",
+        {
+          class:
+            "inline-flex items-center rounded-md px-2 py-1 text-sm font-semibold font-mono " +
+            "bg-slate-50 text-slate-700 ring-1 ring-slate-200 " +
+            "dark:bg-slate-900/40 dark:text-slate-200 dark:ring-slate-700",
+        },
+        horario
+      );
+    },
   },
   {
     accessorKey: "Ingreso",
@@ -536,11 +608,35 @@ const columns: TableColumn<TakenAttendace>[] = [
       const horario = row.getValue("Horario") as string | null;
 
       if (!ingreso) {
-        return h("span", { class: "text-sm text-gray-400 dark:text-gray-500" }, "Sin ingreso");
+        return h(
+          "span",
+          {
+            class:
+              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold " +
+              "bg-slate-50 text-slate-600 ring-1 ring-slate-200 " +
+              "dark:bg-slate-900/40 dark:text-slate-300 dark:ring-slate-700",
+          },
+          [
+            h(UIcon, { name: "i-lucide-log-in", class: "w-4 h-4" }),
+            "Sin ingreso",
+          ]
+        );
       }
 
       if (!horario) {
-        return h("span", { class: "font-mono text-sm" }, ingreso);
+        return h(
+          "span",
+          {
+            class:
+              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-semibold font-mono " +
+              "bg-slate-50 text-slate-700 ring-1 ring-slate-200 " +
+              "dark:bg-slate-900/40 dark:text-slate-200 dark:ring-slate-700",
+          },
+          [
+            h(UIcon, { name: "i-lucide-log-in", class: "w-4 h-4" }),
+            ingreso,
+          ]
+        );
       }
 
       const isLate =
@@ -548,22 +644,20 @@ const columns: TableColumn<TakenAttendace>[] = [
         parse(horario, "HH:mm:ss", new Date());
 
       return h(
-        "div",
+        "span",
         {
-          class: "inline-flex items-center gap-1.5",
+          class:
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-semibold font-mono ring-1 " +
+            (isLate
+              ? "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/25 dark:text-red-300 dark:ring-red-900/40"
+              : "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/25 dark:text-emerald-300 dark:ring-emerald-900/40"),
         },
         [
           h(UIcon, {
             name: isLate ? "i-lucide-alert-circle" : "i-lucide-check-circle",
-            class: isLate 
-              ? "w-4 h-4 text-red-500 dark:text-red-400" 
-              : "w-4 h-4 text-green-600 dark:text-green-500",
+            class: "w-4 h-4",
           }),
-          h("span", { 
-            class: isLate 
-              ? "font-mono text-sm text-red-600 dark:text-red-400" 
-              : "font-mono text-sm text-green-600 dark:text-green-500" 
-          }, ingreso),
+          ingreso,
         ]
       );
     },
@@ -613,37 +707,36 @@ const columns: TableColumn<TakenAttendace>[] = [
           content
         )
 
+      const statusPill = (text: string, color: any, icon: string) =>
+        h(
+          UBadge,
+          {
+            color,
+            variant: 'subtle',
+            class: 'inline-flex items-center gap-1.5 whitespace-nowrap'
+          },
+          () => [h(UIcon, { name: icon, class: 'w-4 h-4' }), text]
+        )
+
       // Si ya tiene incidencia registrada
       if (tieneIncidencia) {
         return wrapper(
-          h(
-            'span',
-            { class: 'inline-flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400' },
-            [
-              h(UIcon, { name: 'i-lucide-check-circle-2', class: 'w-4 h-4' }),
-              'Incidencia registrada'
-            ]
-          )
+          statusPill('Incidencia registrada', 'primary', 'i-lucide-check-circle-2')
         )
       }
 
       // Si hay ingreso y tardanza, permitir registrar incidencia (como antes)
       if (hasIngreso && hasTardanza) {
         return wrapper(
-          h(
-            UButton,
-            {
-              size: 'xs',
-              variant: 'outline',
-              color: 'gray',
-              class: 'hover:bg-gray-50 dark:hover:bg-gray-800',
-              onClick: () => openIncidenciaModal(row.original, "tardanza")
-            },
-            () => [
-              h(UIcon, { name: 'i-lucide-file-text', class: 'w-3.5 h-3.5 mr-1.5' }),
-              'Registrar'
-            ]
-          )
+          h(UButton, {
+            size: 'xs',
+            variant: 'soft',
+            color: 'primary',
+            icon: 'i-lucide-file-text',
+            label: 'Justificar',
+            class: 'whitespace-nowrap',
+            onClick: () => openIncidenciaModal(row.original, 'tardanza'),
+          })
         )
       }
 
@@ -651,44 +744,25 @@ const columns: TableColumn<TakenAttendace>[] = [
       if (!hasIngreso) {
         if (esRecordatorio) {
           return wrapper(
-            h(
-              'span',
-              { class: 'inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400' },
-              [
-                h(UIcon, { name: 'i-lucide-check-circle-2', class: 'w-4 h-4' }),
-                'Pre-incidencia registrada'
-              ]
-            )
+            statusPill('Recordatorio registrado', 'neutral', 'i-lucide-bell')
           )
         }
         return wrapper(
-          h(
-            UButton,
-            {
-              size: 'xs',
-              variant: 'outline',
-              color: 'gray',
-              class: 'hover:bg-gray-50 dark:hover:bg-gray-800',
-              onClick: () => openIncidenciaModal(row.original, "preincidencia")
-            },
-            () => [
-              h(UIcon, { name: 'i-lucide-clipboard-list', class: 'w-3.5 h-3.5 mr-1.5' }),
-              'Pre-incidencia'
-            ]
-          )
+          h(UButton, {
+            size: 'xs',
+            variant: 'outline',
+            color: 'primary',
+            icon: 'i-lucide-bell-plus',
+            label: 'Recordatorio',
+            class: 'whitespace-nowrap',
+            onClick: () => openIncidenciaModal(row.original, 'preincidencia'),
+          })
         )
       }
 
       // Si no hay tardanza
       return wrapper(
-        h(
-          'span',
-          { class: 'inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400' },
-          [
-            h(UIcon, { name: 'i-lucide-check-circle', class: 'w-4 h-4' }),
-            'Sin incidencia'
-          ]
-        )
+        statusPill('Sin incidencia', 'neutral', 'i-lucide-check-circle')
       )
     }
   }

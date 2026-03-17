@@ -46,9 +46,10 @@
           :data="tableData"
           :columns="dinamicColumns"
           :ui="{
-            root: 'relative overflow-auto',
+            root: 'relative',
             base: 'min-w-full table-fixed',
-            thead: 'bg-gray-50 dark:bg-gray-900/50',
+            wrapper: 'max-h-[calc(100vh-350px)] overflow-y-auto relative',
+            thead: 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800',
             tbody: 'divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900',
             tr: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
             th: 'px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider',
@@ -250,7 +251,7 @@ const formatDateTimeParts = (raw: string) => {
 const sortColumButton = (column: any, label: string) => {
   const isSorted = column.getIsSorted()
   return h(UButton, {
-    color: 'gray',
+    color: 'neutral',
     variant: 'ghost',
     label,
     icon: isSorted
@@ -265,9 +266,21 @@ const sortColumButton = (column: any, label: string) => {
 }
 
 const columns: TableColumn<MonthlyTakenAttendaceRow>[] = [
-  { accessorKey: 'DNI', header: ({ column }) => sortColumButton(column, 'DNI') },
-  { accessorKey: 'Apellidos', header: ({ column }) => sortColumButton(column, 'Apellidos') },
-  { accessorKey: 'Nombres', header: ({ column }) => sortColumButton(column, 'Nombres') },
+  {
+    accessorKey: 'Apellidos',
+    header: ({ column }) => sortColumButton(column, 'Empleado'),
+    cell: ({ row }) => {
+      const apellidos = String(row.original.Apellidos ?? '').trim()
+      const nombres = String(row.original.Nombres ?? '').trim()
+      const dni = String(row.original.DNI ?? '').trim()
+
+      return h('div', { class: 'flex flex-col leading-snug whitespace-normal min-w-[200px]' }, [
+        h('span', { class: 'text-sm font-semibold text-emerald-700 dark:text-emerald-300' }, apellidos || '—'),
+        h('span', { class: 'text-sm text-gray-900 dark:text-gray-100' }, nombres || '—'),
+        h('span', { class: 'text-xs font-mono text-gray-500 dark:text-gray-400' }, dni || '—'),
+      ])
+    }
+  },
   { accessorKey: 'Departamento', header: ({ column }) => sortColumButton(column, 'Departamento') },
   { accessorKey: 'Empresa', header: ({ column }) => sortColumButton(column, 'Empresa') },
 ]
@@ -375,4 +388,3 @@ const technicianColumns = computed<TableColumn<MonthlyTakenAttendaceRow>[]>(() =
 
 const dinamicColumns = computed(() => [...columns, ...technicianColumns.value])
 </script>
-

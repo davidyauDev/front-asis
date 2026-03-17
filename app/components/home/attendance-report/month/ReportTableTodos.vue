@@ -165,9 +165,21 @@ const formatFecha = (raw: any) => {
 }
 
 const columns: TableColumn<AttendanceDetails>[] = [
-  { accessorKey: 'dni', header: ({ column }) => sortColumButton(column, 'DNI') },
-  { accessorKey: 'apellidos', header: ({ column }) => sortColumButton(column, 'Apellidos') },
-  { accessorKey: 'nombres', header: ({ column }) => sortColumButton(column, 'Nombres') },
+  {
+    accessorKey: 'apellidos',
+    header: ({ column }) => sortColumButton(column, 'Empleado'),
+    cell: ({ row }) => {
+      const apellidos = String(row.original.apellidos ?? '').trim()
+      const nombres = String(row.original.nombres ?? '').trim()
+      const dni = String(row.original.dni ?? '').trim()
+
+      return h('div', { class: 'flex flex-col leading-snug whitespace-normal min-w-[200px]' }, [
+        h('span', { class: 'text-sm font-semibold text-emerald-700 dark:text-emerald-300' }, apellidos || '—'),
+        h('span', { class: 'text-sm text-gray-900 dark:text-gray-100' }, nombres || '—'),
+        h('span', { class: 'text-xs font-mono text-gray-500 dark:text-gray-400' }, dni || '—'),
+      ])
+    }
+  },
   { accessorKey: 'departamento', header: ({ column }) => sortColumButton(column, 'Departamento') },
   { accessorKey: 'empresa', header: ({ column }) => sortColumButton(column, 'Empresa') },
   {
@@ -293,4 +305,3 @@ const exportarExcel = async () => {
   }
 }
 </script>
-

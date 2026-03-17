@@ -1,33 +1,7 @@
 <template>
     <div class="space-y-4">
-        <!-- Botón para mostrar/ocultar filtros -->
-        <div class="flex items-center justify-between">
-            <UButton 
-                @click="mostrarFiltros = !mostrarFiltros"
-                variant="soft"
-                color="gray"
-                icon="i-lucide-filter"
-                size="sm"
-            >
-                {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
-                <UIcon :name="mostrarFiltros ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="ml-2" />
-            </UButton>
-            
-            <span v-if="!mostrarFiltros" class="text-xs text-gray-500 dark:text-gray-400">
-                Los filtros están ocultos
-            </span>
-        </div>
-
-        <!-- Panel de filtros con transición -->
-        <Transition
-            enter-active-class="transition-all duration-300 ease-out"
-            enter-from-class="opacity-0 -translate-y-2"
-            enter-to-class="opacity-100 translate-y-0"
-            leave-active-class="transition-all duration-200 ease-in"
-            leave-from-class="opacity-100 translate-y-0"
-            leave-to-class="opacity-0 -translate-y-2"
-        >
-            <div v-show="mostrarFiltros" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+        <!-- Panel de filtros -->
+            <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
                     <!-- Company Filter + Filtros especiales -->
                     <div class="md:col-span-1 xl:col-span-2 space-y-3">
@@ -143,7 +117,6 @@
                     </div>
                 </div>
             </div>
-        </Transition>
 
         <ReportTableTodos
           v-if="props.employeeType === EmployeeType.ALL"
@@ -219,7 +192,6 @@ watch(
   }
 )
 
-const mostrarFiltros = ref(true)
 const isSpecialFilterActive = (ids: number[]) => {
     const selecteds = props.employeeType === EmployeeType.TECHNICIANS
         ? employee.value.tech.selecteds
