@@ -55,26 +55,25 @@
 
     </div>
 
-    <div class="overflow-x-auto h-[420px] overflow-y-auto">
-  <UTable
-    ref="table"
-    :data="dailyListAttendaces"
-    :columns="columns"
-    :meta="{ class: { tr: rowClass } }"
-    :loading="dataLoading"
-    :ui="{
-      base: 'min-w-full table-fixed',
-      root: 'relative',
-      wrapper: 'relative',
-      thead: 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-950/60 border-b border-gray-200 dark:border-gray-800',
-      th: 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300',
-      td: 'px-4 py-4 text-sm text-gray-900 dark:text-gray-100 align-top',
-      tr: 'transition-colors',
-      tbody: 'divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-950',
-    }"
-    :empty="emptyText"
-  />
-</div>
+    <div class="overflow-x-auto overflow-y-auto h-96">
+      <UTable
+        ref="table"
+        :data="dailyListAttendaces"
+        :columns="columns"
+        :meta="{ class: { tr: rowClass } }"
+        :loading="dataLoading"
+        :ui="{
+          base: 'min-w-full table-fixed',
+          root: 'relative overflow-visible',
+          thead: 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-950/60 border-b border-gray-200 dark:border-gray-800',
+          th: 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300',
+          td: 'px-4 py-4 text-sm text-gray-900 dark:text-gray-100 align-top',
+          tr: 'transition-colors',
+          tbody: 'divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-950',
+        }"
+        :empty="emptyText"
+      />
+    </div>
 
     <div
       class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"

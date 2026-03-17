@@ -48,8 +48,8 @@
           :loading="attendance.details.loading"
           empty="Sin registros"
           :ui="{
-            base: 'w-full',
-            wrapper: 'max-h-[calc(100vh-350px)] overflow-y-auto relative',
+            root: 'relative max-h-[calc(100vh-350px)] overflow-y-auto overflow-x-hidden',
+            base: 'min-w-full',
             thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
             th: `
               px-4 py-3 text-left text-xs font-medium
@@ -258,7 +258,7 @@ const exportarExcel = async () => {
       delete body['fecha_fin']
     }
 
-    const response = await fetch(`${config.public.apiBaseUrl}/api/reporte-asistencia/detalle`, {
+    const response = await fetch(`${config.public.apiBaseUrl}/api/reporte-asistencia/detalle-general`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

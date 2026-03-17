@@ -18,63 +18,7 @@
                             />
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Filtros especiales
-                            </label>
-                            <UCard
-                                :ui="{
-                                    header: 'px-3 py-2 flex items-center justify-between border-b'
-                                }"
-                            >
-                                <template #header>
-                                    <div class="flex items-center gap-2">
-                                        <UIcon name="i-lucide-sparkles" class="size-4 text-primary" />
-                                        <span class="font-semibold text-sm">Filtros especiales</span>
-                                    </div>
-                                </template>
-
-                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                    <div class="flex flex-wrap gap-2">
-                                        <button
-                                            type="button"
-                                            @click="applySpecialFilter([155, 64])"
-                                            :class="[
-                                                'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                                                isSpecialFilterActive([155, 64])
-                                                    ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
-                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
-                                            ]"
-                                        >
-                                            <UIcon
-                                                v-if="isSpecialFilterActive([155, 64])"
-                                                name="i-lucide-check"
-                                                class="size-3.5"
-                                            />
-                                            Ingenieros productos
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            @click="applySpecialFilter([9])"
-                                            :class="[
-                                                'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                                                isSpecialFilterActive([9])
-                                                    ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
-                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
-                                            ]"
-                                        >
-                                            <UIcon
-                                                v-if="isSpecialFilterActive([9])"
-                                                name="i-lucide-check"
-                                                class="size-3.5"
-                                            />
-                                            Ingenieros productos Ydieza
-                                        </button>
-                                    </div>
-                                </div>
-                            </UCard>
-                        </div>
+                      
                     </div>
 
                     <!-- Department Filter -->

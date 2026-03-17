@@ -46,9 +46,8 @@
           :data="tableData"
           :columns="dinamicColumns"
           :ui="{
-            root: 'relative',
+            root: 'relative max-h-[calc(100vh-350px)] overflow-y-auto overflow-x-hidden',
             base: 'min-w-full table-fixed',
-            wrapper: 'max-h-[calc(100vh-350px)] overflow-y-auto relative',
             thead: 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800',
             tbody: 'divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900',
             tr: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',

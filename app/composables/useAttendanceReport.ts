@@ -281,7 +281,7 @@ const _useAttendanceReport = () => {
       }
 
       const res = await $fetch<AttendanceDetails[] | Blob>(
-        `${reportPrefix}/detalle`,
+        `${reportPrefix}/detalle-general`,
         {
           body,
           method: "POST",

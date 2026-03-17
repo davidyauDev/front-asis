@@ -2,8 +2,7 @@
   <div class="overflow-x-auto">
     <UTable :data="data" :columns="columns" :ui="{
       base: 'min-w-full table-fixed border-separate border-spacing-0',
-      root: 'relative',
-      wrapper: 'h-[520px] overflow-y-auto relative',
+      root: 'relative h-[520px] overflow-y-auto overflow-x-hidden',
       thead: 'sticky top-0 z-10 bg-elevated/80 [&>tr]:after:content-none',
       tbody: '[&>tr]:last:[&>td]:border-b-0',
       th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
