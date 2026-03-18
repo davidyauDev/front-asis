@@ -174,6 +174,12 @@ export interface EmployeeConceptOption {
 
 export const employeeConceptOptions: EmployeeConceptOption[] = [
   {
+    id: 1,
+    code: "1",
+    label: "Asistencia",
+    description: "Asistencia (día laborado)",
+  },
+  {
     id: 2,
     code: "V",
     label: "Vacaciones",
