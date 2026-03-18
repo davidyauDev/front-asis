@@ -32,6 +32,13 @@ const managementLinks = [{
   label: 'Usuarios',
   icon: 'i-lucide-users',
   to: '/users',
+  exact: true,
+  onSelect: () => { open.value = false }
+}, {
+  label: 'Empleados BioTime',
+  icon: 'i-lucide-fingerprint',
+  to: '/users/biotime',
+  exact: true,
   onSelect: () => { open.value = false }
 }, {
   label: 'Rutas GPS',

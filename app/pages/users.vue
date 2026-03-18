@@ -9,6 +9,10 @@ type Mode = 'view' | 'edit' | 'create';
 
 definePageMeta({ middleware: "auth" });
 
+const route = useRoute()
+const isUsersRoot = computed(() => route.path === '/users')
+const isBioTimeRoute = computed(() => route.path.startsWith('/users/biotime'))
+
 const {
   users,
   loading,
@@ -250,52 +254,83 @@ onMounted(async () => {
         </template>
       </UDashboardNavbar>
 
-      <UDashboardToolbar>
-        <template #left>
-          <UInput v-model="search" icon="i-lucide-search" placeholder="Buscar usuarios..." class="w-64"
-            :loading="loading" />
-
-
-        </template>
-
-        <template #right>
-          <span v-if="paginationInfo.totalItems" class="text-sm text-muted">
-            {{ paginationInfo.from }}-{{ paginationInfo.to }} de {{ paginationInfo.totalItems }}
-          </span>
-
-          <USelectMenu :search-input="false" :ignoreFilter="true" value-key="value" v-model="selectedPerPage" :items="[
-            { label: '10', value: 10 },
-            { label: '25', value: 25 },
-            { label: '50', value: 50 }
-          ]" :loading="loading" @update:model-value="handlePerPageChange" />
-        </template>
-      </UDashboardToolbar>
-
-      <!-- Panel de filtros expandible -->
-      <div v-if="showFilters" class="border-t">
-        <div class="p-4 flex items-center gap-4">
-          <USelectMenu v-model="selectedRole" :options="[
-            { label: 'Todos los roles', value: '' },
-            { label: 'Gerente', value: 'Gerente' },
-            { label: 'Jefe de Área', value: 'Jefe de Área' },
-            { label: 'Supervisor', value: 'Supervisor' }
-          ]" placeholder="Rol" clearable />
-
-          <USelectMenu v-model="selectedStatus" :options="[
-            { label: 'Todos', value: '' },
-            { label: 'Activo', value: 'active' },
-            { label: 'Inactivo', value: 'inactive' }
-          ]" placeholder="Estado" clearable />
-
-          <UButton variant="ghost" icon="i-lucide-eraser" @click="selectedRole = ''; selectedStatus = ''">
-            Limpiar
-          </UButton>
+      <!-- Submódulos (solo cuando navegas dentro de /users/*) -->
+      <div v-if="isUsersRoot || isBioTimeRoute" class="mx-4 mt-2">
+        <div class="rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden">
+          <div class="flex border-b border-emerald-600">
+            <NuxtLink
+              v-if="!isBioTimeRoute"
+              to="/users"
+              class="px-6 py-3 text-sm font-semibold uppercase tracking-wide"
+              :class="isUsersRoot ? 'bg-emerald-600 text-white' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/40'"
+            >
+              Usuarios
+            </NuxtLink>
+            <NuxtLink
+              to="/users/biotime"
+              class="px-6 py-3 text-sm font-semibold uppercase tracking-wide"
+              :class="isBioTimeRoute ? 'bg-emerald-600 text-white' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/40'"
+            >
+              Empleados BioTime
+            </NuxtLink>
+            <div class="flex-1" />
+          </div>
         </div>
       </div>
+
+      <template v-if="isUsersRoot">
+        <UDashboardToolbar>
+          <template #left>
+            <UInput v-model="search" icon="i-lucide-search" placeholder="Buscar usuarios..." class="w-64"
+              :loading="loading" />
+          </template>
+
+          <template #right>
+            <span v-if="paginationInfo.totalItems" class="text-sm text-muted">
+              {{ paginationInfo.from }}-{{ paginationInfo.to }} de {{ paginationInfo.totalItems }}
+            </span>
+
+            <USelectMenu :search-input="false" :ignoreFilter="true" value-key="value" v-model="selectedPerPage" :items="[
+              { label: '10', value: 10 },
+              { label: '25', value: 25 },
+              { label: '50', value: 50 }
+            ]" :loading="loading" @update:model-value="handlePerPageChange" />
+          </template>
+        </UDashboardToolbar>
+
+        <!-- Panel de filtros expandible -->
+        <div v-if="showFilters" class="border-t">
+          <div class="p-4 flex items-center gap-4">
+            <USelectMenu v-model="selectedRole" :options="[
+              { label: 'Todos los roles', value: '' },
+              { label: 'Gerente', value: 'Gerente' },
+              { label: 'Jefe de Área', value: 'Jefe de Área' },
+              { label: 'Supervisor', value: 'Supervisor' }
+            ]" placeholder="Rol" clearable />
+
+            <USelectMenu v-model="selectedStatus" :options="[
+              { label: 'Todos', value: '' },
+              { label: 'Activo', value: 'active' },
+              { label: 'Inactivo', value: 'inactive' }
+            ]" placeholder="Estado" clearable />
+
+            <UButton variant="ghost" icon="i-lucide-eraser" @click="selectedRole = ''; selectedStatus = ''">
+              Limpiar
+            </UButton>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- Contenido principal -->
     <template #body>
+      <template v-if="!isUsersRoot">
+        <div class="mx-4 mb-4 rounded-b-lg border border-gray-200 dark:border-gray-800 border-t-0 bg-white dark:bg-gray-950 overflow-hidden">
+          <NuxtPage />
+        </div>
+      </template>
+
+      <template v-else>
       <!-- Estado de carga -->
       <Transition enter-active-class="transition-all duration-500 ease-out" enter-from-class="opacity-0 scale-95"
         enter-to-class="opacity-100 scale-100" leave-active-class="transition-all duration-300 ease-in"
@@ -385,9 +420,10 @@ onMounted(async () => {
             @go-to-page="goToPage" />
         </div>
       </Transition>
+      </template>
     </template>
   </UDashboardPanel>
-  <UModal v-model:open="showUserPreview" @update:open="(isOpen: boolean) => {
+  <UModal v-if="isUsersRoot" v-model:open="showUserPreview" @update:open="(isOpen: boolean) => {
     if (!isOpen) {
       
       showUserPreview = false;

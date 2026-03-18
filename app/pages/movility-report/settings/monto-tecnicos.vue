@@ -1,15 +1,15 @@
 <template>
   <div>
-    <UPageCard
-      title="Monto Técnicos"
-      description="Administra los montos de movilidad por técnico."
-      variant="naked"
-      class="mb-3"
-    />
+    <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 overflow-hidden">
+      <div class="flex border-b border-emerald-600">
+        <div class="bg-emerald-600 text-white px-6 py-3 text-sm font-semibold uppercase tracking-wide">
+          Monto Técnicos
+        </div>
+        <div class="flex-1" />
+      </div>
 
-    <UPageCard variant="subtle" :ui="{ body: 'p-4' }">
       <EmployeeMobilityAdmin />
-    </UPageCard>
+    </div>
   </div>
 </template>
 

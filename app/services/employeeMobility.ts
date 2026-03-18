@@ -1,14 +1,18 @@
 import { apiFetch } from '~/services/api'
 
 export type EmployeeMobilityRow = {
-  id: number
+  id: number | null
   employee_id: number
   year: number
-  amount: number | string
+  amount: number | string | null
+  is_active?: boolean | null
   created_at: string | null
   emp_code: string
   first_name: string
   last_name: string
+  department_name?: string | null
+  position_name?: string | null
+  has_mobility?: boolean
 }
 
 export type ApiSuccess<T> = {
@@ -45,10 +49,15 @@ export type ListEmployeeMobilityParams = {
   paginate?: boolean
 }
 
-export type EmployeeMobilityPayload = {
+export type EmployeeMobilityCreatePayload = {
   employee_id: number
   year: number
   amount: number
+  is_active?: boolean | null
+}
+
+export type EmployeeMobilityUpdatePayload = EmployeeMobilityCreatePayload & {
+  is_active?: boolean | null
 }
 
 export type EmployeeMobilityMonthlyComment = {
@@ -109,14 +118,14 @@ export async function listEmployeeMobility(
   return apiFetch(url, { method: 'GET' })
 }
 
-export async function createEmployeeMobility(payload: EmployeeMobilityPayload) {
+export async function createEmployeeMobility(payload: EmployeeMobilityCreatePayload) {
   return apiFetch('/api/employee-mobility', {
     method: 'POST',
     body: JSON.stringify(payload),
   }) as Promise<ApiSuccess<EmployeeMobilityRow>>
 }
 
-export async function updateEmployeeMobility(id: number, payload: EmployeeMobilityPayload) {
+export async function updateEmployeeMobility(id: number, payload: EmployeeMobilityUpdatePayload) {
   return apiFetch(`/api/employee-mobility/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),

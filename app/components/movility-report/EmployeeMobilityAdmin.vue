@@ -1,67 +1,83 @@
 <template>
-    <div class="space-y-4">
-      <div
-        class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 p-4"
-      >
+    <div>
+      <div class="p-4 sm:p-5">
         <div class="flex flex-wrap items-end gap-3">
-        <UFormGroup label="Buscar (código o nombres)" size="sm" class="w-full sm:w-[320px]">
-          <UInput
-            v-model="filters.search"
-            placeholder="Ej: TEC001, Juan, Pérez..."
-            size="sm"
-            icon="i-lucide-search"
-          />
-        </UFormGroup>
+          <UFormGroup label="Buscar (código o nombres)" size="sm" class="w-full sm:w-[320px]">
+            <UInput
+              v-model="filters.search"
+              placeholder="Ej: TEC001, Juan, Pérez..."
+              size="sm"
+              icon="i-lucide-search"
+            />
+          </UFormGroup>
 
-        <UFormGroup label="Año" size="sm" class="w-[140px]">
-          <UInput
-            v-model="filters.year"
-            type="text"
-            inputmode="numeric"
-            placeholder="2026"
-            size="sm"
-          />
-        </UFormGroup>
+          <UFormGroup label="Año" size="sm" class="w-[140px]">
+            <UInput
+              v-model="filters.year"
+              type="text"
+              inputmode="numeric"
+              placeholder="2026"
+              size="sm"
+            />
+          </UFormGroup>
 
-        <UFormGroup label="Per page" size="sm" class="w-[140px]">
-          <USelect
-            v-model="filters.perPage"
-            :items="perPageOptions"
-            size="sm"
-          />
-        </UFormGroup>
+          <UFormGroup label="Empleado ID" size="sm" class="w-[160px]">
+            <UInput
+              v-model="filters.employeeId"
+              type="text"
+              inputmode="numeric"
+              placeholder="Ej: 9"
+              size="sm"
+              @keydown.enter.prevent="refresh()"
+            />
+          </UFormGroup>
 
-        <div class="pb-1">
-          <UCheckbox v-model="filters.paginate" label="Paginado" />
+          <UFormGroup label="Estado" size="sm" class="w-[200px]">
+            <USelect v-model="filters.status" :items="statusOptions" size="sm" />
+          </UFormGroup>
+
+          <UFormGroup label="Registros" size="sm" class="w-[140px]">
+            <USelect v-model="filters.perPage" :items="perPageOptions" size="sm" />
+          </UFormGroup>
+
+          <div class="flex items-center gap-2 pb-1">
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-refresh-cw"
+              :loading="loading"
+              @click="refresh()"
+            >
+              Actualizar
+            </UButton>
+
+            <UButton size="sm" color="primary" icon="i-lucide-plus" @click="openCreate()">
+              Nuevo
+            </UButton>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <UButton
-            size="sm"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-search"
-            :loading="loading"
-            @click="refresh()"
+        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <span>
+            Mostrando <span class="font-semibold text-gray-700 dark:text-gray-200">{{ rowsFiltered.length }}</span>
+            de <span class="font-semibold text-gray-700 dark:text-gray-200">{{ rows.length }}</span>
+          </span>
+          <span class="text-gray-300 dark:text-gray-700">•</span>
+          <span
+            class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 px-2 py-0.5"
           >
-            Buscar
-          </UButton>
-
-          <UButton
-            size="sm"
-            color="primary"
-            icon="i-lucide-plus"
-            @click="openCreate()"
+            Sin monto: <span class="ml-1 font-semibold text-gray-700 dark:text-gray-200">{{ missingAmountCount }}</span>
+          </span>
+          <span
+            class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 px-2 py-0.5"
           >
-            Nuevo
-          </UButton>
+            Inactivos:
+            <span class="ml-1 font-semibold text-gray-700 dark:text-gray-200">{{ inactiveCount }}</span>
+          </span>
         </div>
-      </div>
 
-      <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-        Endpoint: <span class="font-mono">/api/employee-mobility</span>
       </div>
-    </div>
 
     <DataState
       :loading="loading"
@@ -69,95 +85,80 @@
       :error-message="errorMessage"
       @retry="refresh()"
     >
-      <div
-        class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden"
-      >
-        <UTable :data="rowsFiltered" :columns="columns" empty="Sin registros" />
-
-        <div
-          v-if="filters.search && filters.paginate"
-          class="px-4 py-2 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-200 dark:border-amber-900"
-        >
-          La búsqueda filtra solo la página actual. Desactiva “Paginado” para buscar en todos los registros.
-        </div>
-
-        <div
-          v-if="filters.paginate && pagination.total > pagination.perPage"
-          class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-gray-200 dark:border-gray-800"
-        >
-          <div class="text-sm text-gray-600 dark:text-gray-300">
-            Mostrando
-            <span class="font-medium">{{ pagination.from }}</span>
-            -
-            <span class="font-medium">{{ pagination.to }}</span>
-            de
-            <span class="font-semibold">{{ pagination.total }}</span>
-            registros
-          </div>
-
-          <UPagination
-            :model-value="pagination.currentPage"
-            :total="pagination.total"
-            :items-per-page="pagination.perPage"
-            @update:page="goToPage"
-            :max="7"
-            size="sm"
-            show-first
-            show-last
-            :prev-button="{ icon: 'i-lucide-chevron-left', label: '', color: 'neutral' as const }"
-            :next-button="{ icon: 'i-lucide-chevron-right', label: '', color: 'neutral' as const }"
-            :first-button="{ icon: 'i-lucide-chevrons-left', label: '' }"
-            :last-button="{ icon: 'i-lucide-chevrons-right', label: '' }"
+      <div class="border-t border-gray-200 dark:border-gray-800">
+        <div class="h-[650px] overflow-auto">
+          <UTable
+            sticky
+            :data="rowsFiltered"
+            :columns="columns"
+            :loading="loading"
+            :ui="tableUi"
+            :meta="tableMeta"
+            empty="Sin registros"
           />
         </div>
+
       </div>
     </DataState>
-
-    <EmployeeMonthlyReminderModal
-      v-if="reminderRow"
-      :open="isReminderOpen"
-      :employee="{
-        employee_id: reminderRow.employee_id,
-        emp_code: reminderRow.emp_code,
-        first_name: reminderRow.first_name,
-        last_name: reminderRow.last_name,
-      }"
-      :year="reminderRow.year"
-      @update:open="handleReminderOpenUpdate"
-    />
 
     <UModal v-model:open="isModalOpen" :title="modalTitle">
       <template #content>
         <div class="space-y-4 p-4">
-          <div v-if="editingMeta" class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/30 p-3">
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              <div class="text-gray-700 dark:text-gray-200">
-                <span class="text-gray-500 dark:text-gray-400">Código:</span>
-                <span class="ml-1 font-mono font-semibold">{{ editingMeta.emp_code }}</span>
+          <div
+            v-if="editingMeta"
+            class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/30 p-3"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="text-xs font-medium tracking-wide text-gray-500 dark:text-gray-400">
+                  {{ editingMeta.id != null ? 'Editando' : 'Asignando monto' }}
+                  </div>
+                  <div class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {{ editingMeta.full_name }}
+                  </div>
+                <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  Código: <span class="font-mono font-semibold text-gray-700 dark:text-gray-200">{{ editingMeta.emp_code }}</span>
+                </div>
               </div>
-              <div class="text-gray-700 dark:text-gray-200">
-                <span class="text-gray-500 dark:text-gray-400">Empleado:</span>
-                <span class="ml-1 font-semibold">{{ editingMeta.full_name }}</span>
+
+              <div class="flex flex-wrap items-center justify-start sm:justify-end gap-1.5">
+                <span
+                  v-if="editingMeta.id != null"
+                  class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/40 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-200"
+                >
+                  Movilidad #{{ editingMeta.id }}
+                </span>
+                <span
+                  v-else
+                  class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/40 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-200"
+                >
+                  Sin registro
+                </span>
+                <span
+                  class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/40 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-200"
+                >
+                  Empleado ID #{{ editingMeta.employee_id }}
+                </span>
               </div>
-            </div>
-            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              ID movilidad: <span class="font-mono">{{ editingMeta.id }}</span> · Employee ID:
-              <span class="font-mono">{{ editingMeta.employee_id }}</span>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div v-if="!editingMeta" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <UFormGroup label="Empleado ID" size="sm" required>
-              <UInput
-                v-model="form.employee_id"
-                type="text"
-                inputmode="numeric"
-                placeholder="Ej: 123"
-                size="sm"
-                :disabled="Boolean(editingId)"
-              />
+              <div class="space-y-1">
+                <UInput
+                  v-model="form.employee_id"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="Ej: 123"
+                  size="sm"
+                />
+                <p class="text-xs text-gray-500 dark:text-gray-400">Requerido para crear</p>
+              </div>
             </UFormGroup>
+          </div>
 
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <UFormGroup label="Año" size="sm" required>
               <UInput
                 v-model="form.year"
@@ -165,7 +166,6 @@
                 inputmode="numeric"
                 placeholder="2000..2100"
                 size="sm"
-                :disabled="Boolean(editingId)"
               />
             </UFormGroup>
 
@@ -211,14 +211,13 @@
 import type { TableColumn } from '@nuxt/ui'
 import { computed, h, onMounted, reactive, ref, resolveComponent } from 'vue'
 import DataState from '~/components/common/DataState.vue'
-import EmployeeMonthlyReminderModal from '~/components/movility-report/EmployeeMonthlyReminderModal.vue'
 import {
   createEmployeeMobility,
   getApiErrorMessage,
   isApiValidationError,
   listEmployeeMobility,
   updateEmployeeMobility,
-  type EmployeeMobilityPayload,
+  type EmployeeMobilityCreatePayload,
   type EmployeeMobilityRow,
 } from '~/services/employeeMobility'
 
@@ -227,9 +226,17 @@ const toast = useToast()
 const filters = reactive({
   search: '',
   year: '' as string | number,
+  employeeId: '' as string | number,
+  status: 'all' as 'all' | 'active' | 'inactive' | 'missing_amount',
   perPage: 50 as number,
-  paginate: true,
 })
+
+const statusOptions = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Activos', value: 'active' },
+  { label: 'Inactivos', value: 'inactive' },
+  { label: 'Sin monto', value: 'missing_amount' },
+]
 
 const perPageOptions = [
   { label: '5', value: 5 },
@@ -246,30 +253,57 @@ const errorMessage = ref('No se pudieron cargar los montos de movilidad.')
 
 const rows = ref<EmployeeMobilityRow[]>([])
 
+const isMissingAmount = (row: EmployeeMobilityRow) => row.amount === null || row.amount === undefined || row.amount === ''
+
 const rowsFiltered = computed(() => {
   const q = String(filters.search || '').trim().toLowerCase()
-  if (!q) return rows.value
+  let list = rows.value
 
-  return rows.value.filter((r) => {
-    const empCode = String(r.emp_code || '').toLowerCase()
-    const firstName = String(r.first_name || '').toLowerCase()
-    const lastName = String(r.last_name || '').toLowerCase()
-    const fullName = `${firstName} ${lastName}`.trim()
-    return empCode.includes(q) || firstName.includes(q) || lastName.includes(q) || fullName.includes(q)
-  })
+  if (q) {
+    list = list.filter((r) => {
+      const empCode = String(r.emp_code || '').toLowerCase()
+      const firstName = String(r.first_name || '').toLowerCase()
+      const lastName = String(r.last_name || '').toLowerCase()
+      const fullName = `${firstName} ${lastName}`.trim()
+      return empCode.includes(q) || firstName.includes(q) || lastName.includes(q) || fullName.includes(q)
+    })
+  }
+
+  if (filters.status === 'active') {
+    list = list.filter((r) => r.is_active === true)
+  } else if (filters.status === 'inactive') {
+    list = list.filter((r) => r.is_active === false)
+  } else if (filters.status === 'missing_amount') {
+    list = list.filter((r) => isMissingAmount(r))
+  }
+
+  return list
 })
 
-const pagination = reactive({
-  currentPage: 1,
-  perPage: 50,
-  total: 0,
-  from: 0,
-  to: 0,
-})
+const missingAmountCount = computed(() => rowsFiltered.value.filter(isMissingAmount).length)
+const inactiveCount = computed(() => rowsFiltered.value.filter((r) => r.is_active === false).length)
+
+const tableUi = {
+  base: 'table-fixed border-separate border-spacing-0',
+  thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+  tbody: '[&>tr]:last:[&>td]:border-b-0',
+  tr: 'transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/40',
+  th: 'py-2 px-3 text-xs font-semibold text-gray-600 dark:text-gray-300 border-y border-default first:border-l last:border-r first:rounded-l-lg last:rounded-r-lg',
+  td: 'px-3 py-2 text-sm border-b border-default',
+  separator: 'h-0',
+} as const
+
+const tableMeta = {
+  class: {
+    tr: (row: any) =>
+      row?.original?.is_active === false
+        ? 'bg-red-50 dark:bg-red-950/25 hover:bg-red-100 dark:hover:bg-red-950/35'
+        : '',
+  },
+} as const
 
 const UButton = resolveComponent('UButton')
 const UIcon = resolveComponent('UIcon')
-const UBadge = resolveComponent('UBadge')
 
 const toNumberOrUndefined = (value: unknown) => {
   if (value === '' || value === null || value === undefined) return undefined
@@ -277,7 +311,7 @@ const toNumberOrUndefined = (value: unknown) => {
   return Number.isFinite(n) ? n : undefined
 }
 
-const refresh = async (page = 1) => {
+const refresh = async () => {
   loading.value = true
   isError.value = false
   errorMessage.value = 'No se pudieron cargar los montos de movilidad.'
@@ -285,36 +319,16 @@ const refresh = async (page = 1) => {
   try {
     const year = toNumberOrUndefined(filters.year)
     const per_page = toNumberOrUndefined(filters.perPage) ?? 50
-
-    if (filters.paginate) {
-      const res = await listEmployeeMobility({
-        year,
-        per_page,
-        page,
-      })
-
-      const pageData = res.data
-      rows.value = pageData.data
-      pagination.currentPage = pageData.current_page
-      pagination.perPage = pageData.per_page
-      pagination.total = pageData.total
-      pagination.from = pageData.from ?? 0
-      pagination.to = pageData.to ?? 0
-      return
-    }
+    const employee_id = toNumberOrUndefined(filters.employeeId)
 
     const res = await listEmployeeMobility({
       year,
+      employee_id,
       per_page,
       paginate: false,
     })
 
-    rows.value = res.data
-    pagination.currentPage = 1
-    pagination.perPage = res.data.length || per_page
-    pagination.total = res.data.length
-    pagination.from = res.data.length ? 1 : 0
-    pagination.to = res.data.length
+    rows.value = (res as any).data ?? []
   } catch (error: unknown) {
     isError.value = true
     const msg = getApiErrorMessage(error)
@@ -329,33 +343,87 @@ const refresh = async (page = 1) => {
   }
 }
 
-const goToPage = (page: number) => {
-  refresh(page)
-}
-
 onMounted(() => {
   refresh()
 })
 
 const formatMoney = (value: EmployeeMobilityRow['amount']) => {
+  if (value === null || value === undefined || value === '') return ''
   const n = Number(value)
   if (Number.isFinite(n)) return n.toFixed(2)
   return String(value ?? '')
 }
 
+const updatingActiveId = ref<number | null>(null)
 
-const isReminderOpen = ref(false)
-const reminderRow = ref<EmployeeMobilityRow | null>(null)
+const toggleActive = async (row: EmployeeMobilityRow) => {
+  if (row.id == null) {
+    toast.add({
+      title: 'Sin registro',
+      description: 'Primero asigna un monto para poder activar/desactivar.',
+      icon: 'i-lucide-alert-circle',
+      color: 'neutral',
+      timeout: 3500,
+    })
+    return
+  }
 
-const openReminder = (row: EmployeeMobilityRow) => {
-  reminderRow.value = row
-  isReminderOpen.value = true
+  if (isMissingAmount(row)) {
+    toast.add({
+      title: 'Monto pendiente',
+      description: 'Primero asigna un monto para poder activar/desactivar.',
+      icon: 'i-lucide-alert-circle',
+      color: 'neutral',
+      timeout: 3500,
+    })
+    return
+  }
+
+  if (updatingActiveId.value === row.id) return
+  updatingActiveId.value = row.id
+
+  const next = !(row.is_active ?? false)
+  try {
+    const amount = Number(row.amount)
+    if (!Number.isFinite(amount)) {
+      toast.add({
+        title: 'Monto inválido',
+        description: 'El monto actual no es numérico. Edita el registro y guarda un monto válido.',
+        icon: 'i-lucide-alert-circle',
+        color: 'neutral',
+        timeout: 4500,
+      })
+      return
+    }
+
+    await updateEmployeeMobility(row.id, {
+      employee_id: Number(row.employee_id),
+      year: Number(row.year),
+      amount,
+      is_active: next,
+    })
+    rows.value = rows.value.map((r) => (r.id === row.id ? { ...r, is_active: next } : r))
+    toast.add({
+      title: next ? 'Activado' : 'Desactivado',
+      description: `Estado actualizado (ID movilidad: ${row.id}).`,
+      icon: 'i-lucide-check-circle',
+      color: 'green',
+      timeout: 2500,
+    })
+  } catch (error: unknown) {
+    const msg = getApiErrorMessage(error)
+    toast.add({
+      title: 'Error',
+      description: msg,
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+      timeout: 6000,
+    })
+  } finally {
+    updatingActiveId.value = null
+  }
 }
 
-const handleReminderOpenUpdate = (v: boolean) => {
-  isReminderOpen.value = v
-  if (!v) reminderRow.value = null
-}
 
 const columns: TableColumn<EmployeeMobilityRow>[] = [
   {
@@ -369,35 +437,60 @@ const columns: TableColumn<EmployeeMobilityRow>[] = [
     cell: ({ row }) => row.getValue('first_name'),
   },
   { accessorKey: 'last_name', header: 'Apellidos', cell: ({ row }) => row.getValue('last_name') },
+  {
+    id: 'org',
+    header: 'Área / Cargo',
+    cell: ({ row }) => {
+      const r = row.original
+      return h('div', { class: 'text-xs' }, [
+        h('div', { class: 'truncate text-gray-900 dark:text-gray-100' }, r.department_name || '—'),
+        h('div', { class: 'truncate text-[11px] text-gray-500 dark:text-gray-400' }, r.position_name || '—'),
+      ])
+    },
+  },
   { accessorKey: 'year', header: 'Año', cell: ({ row }) => row.getValue('year') },
   {
     accessorKey: 'amount',
     header: 'Monto',
-    cell: ({ row }) =>
-      h('span', { class: 'font-mono tabular-nums' }, formatMoney(row.getValue('amount') as any)),
+    cell: ({ row }) => {
+      const original = row.original
+      if (isMissingAmount(original)) {
+        return h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, 'Sin asignar')
+      }
+      return h('span', { class: 'font-mono tabular-nums' }, formatMoney(original.amount as any))
+    },
   },
   {
-    id: 'reminder',
-    header: 'Recordatorio',
+    id: 'has_mobility',
+    header: 'Movilidad',
     cell: ({ row }) => {
       const r = row.original
+      const has = r.has_mobility === true || r.id != null
       return h(
-        'div',
-        { class: 'flex items-center gap-2' },
-        [
-          h(
-            UButton,
-            {
-              size: 'xs',
-              color: 'neutral',
-              variant: 'outline',
-              onClick: () => openReminder(r),
-            },
-            () => [
-              h(UIcon, { name: 'i-lucide-sticky-note', class: 'w-3.5 h-3.5 mr-1.5' }),
-              'Abrir',
-            ]
-          ),
+        'span',
+        { class: has ? 'text-xs font-medium text-emerald-700 dark:text-emerald-300' : 'text-xs text-gray-500 dark:text-gray-400' },
+        has ? 'Sí' : 'No'
+      )
+    },
+  },
+  {
+    id: 'active',
+    header: 'Activo',
+    cell: ({ row }) => {
+      const r = row.original
+      const isActive = r.is_active === true
+      return h(
+        UButton,
+        {
+          size: 'xs',
+          color: (isActive ? 'success' : 'error') as any,
+          variant: 'outline',
+          loading: r.id != null && updatingActiveId.value === r.id,
+          onClick: () => toggleActive(r),
+        },
+        () => [
+          h(UIcon, { name: isActive ? 'i-lucide-toggle-right' : 'i-lucide-toggle-left', class: 'w-3.5 h-3.5 mr-1.5' }),
+          isActive ? 'Activo' : 'Inactivo',
         ]
       )
     },
@@ -405,17 +498,24 @@ const columns: TableColumn<EmployeeMobilityRow>[] = [
   {
     id: 'actions',
     header: 'Acciones',
-    cell: ({ row }) =>
-      h(
+    cell: ({ row }) => {
+      const original = row.original
+      const needsAssign = original.id == null || isMissingAmount(original) || original.has_mobility === false
+
+      return h(
         UButton,
         {
           size: 'xs',
           color: 'neutral',
           variant: 'outline',
-          onClick: () => openEdit(row.original),
+          onClick: () => openEdit(original),
         },
-        () => [h(UIcon, { name: 'i-lucide-pencil', class: 'w-3.5 h-3.5 mr-1.5' }), 'Editar']
-      ),
+        () => [
+          h(UIcon, { name: needsAssign ? 'i-lucide-plus' : 'i-lucide-pencil', class: 'w-3.5 h-3.5 mr-1.5' }),
+          needsAssign ? 'Asignar' : 'Editar',
+        ]
+      )
+    },
   },
 ]
 
@@ -423,20 +523,24 @@ const isModalOpen = ref(false)
 const saving = ref(false)
 const editingId = ref<number | null>(null)
 const editingMeta = ref<null | {
-  id: number
+  id: number | null
   employee_id: number
   emp_code: string
   full_name: string
 }>(null)
 const formError = ref<string | null>(null)
 
-const form = reactive<EmployeeMobilityPayload>({
+const form = reactive<EmployeeMobilityCreatePayload>({
   employee_id: 0,
   year: new Date().getFullYear(),
   amount: 0,
 })
 
-const modalTitle = computed(() => (editingId.value ? 'Editar monto (Movilidad)' : 'Nuevo monto (Movilidad)'))
+const modalTitle = computed(() => {
+  if (editingId.value) return 'Editar monto (Movilidad)'
+  if (editingMeta.value) return 'Asignar monto (Movilidad)'
+  return 'Nuevo monto (Movilidad)'
+})
 
 const openCreate = () => {
   editingId.value = null
@@ -449,6 +553,22 @@ const openCreate = () => {
 }
 
 const openEdit = (row: EmployeeMobilityRow) => {
+  if (row.id == null) {
+    editingId.value = null
+    editingMeta.value = {
+      id: null,
+      employee_id: row.employee_id,
+      emp_code: row.emp_code,
+      full_name: `${row.first_name ?? ''} ${row.last_name ?? ''}`.trim(),
+    }
+    form.employee_id = Number(row.employee_id)
+    form.year = Number(row.year) || (toNumberOrUndefined(filters.year) ?? new Date().getFullYear())
+    form.amount = Number(row.amount) || 0
+    formError.value = null
+    isModalOpen.value = true
+    return
+  }
+
   editingId.value = row.id
   editingMeta.value = {
     id: row.id,
@@ -469,7 +589,7 @@ const save = async () => {
 
   saving.value = true
   try {
-    const payload: EmployeeMobilityPayload = {
+    const payload: EmployeeMobilityCreatePayload = {
       employee_id: Number(form.employee_id),
       year: Number(form.year),
       amount: Number(form.amount),
@@ -511,7 +631,7 @@ const save = async () => {
     }
 
     isModalOpen.value = false
-    await refresh(filters.paginate ? pagination.currentPage : 1)
+    await refresh()
   } catch (error: unknown) {
     if (isApiValidationError(error) && error.errors) {
       const firstField = Object.keys(error.errors)[0]
