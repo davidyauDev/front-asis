@@ -42,7 +42,7 @@
 
                         <!-- Notificaciones -->
                         <UTooltip text="Técnicos sin marcación">
-                            <UButton color="gray" variant="ghost" square class="relative group">
+                            <UButton color="neutral" variant="ghost" square class="relative group">
                                 <div class="relative">
                                     <UIcon name="i-heroicons-bell"
                                         class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
@@ -347,7 +347,7 @@
                                             <template v-for="[dni, tecnicoData] in datosConRutasActual" :key="dni">
                                                 <tr
                                                     class="cursor-pointer hover:bg-gray-50/70 dark:hover:bg-gray-900/30 transition-colors"
-                                                    :class="(!Array.isArray(tecnicoData.iclock_transactions) || tecnicoData.iclock_transactions.length === 0)
+                                                    :class="(!hasMarcaciones(tecnicoData.iclock_transactions))
                                                         ? 'bg-red-50/50 dark:bg-red-950/10'
                                                         : 'bg-white dark:bg-gray-950'"
                                                     @click="toggleTecnico(dni)"
@@ -402,16 +402,16 @@
 
                                                     <td class="px-3 py-3 align-top">
                                                         <span
-                                                            v-if="!Array.isArray(tecnicoData.iclock_transactions) || tecnicoData.iclock_transactions.length === 0"
+                                                            v-if="!hasMarcaciones(tecnicoData.iclock_transactions)"
                                                             class="inline-flex items-center rounded-md bg-red-600/90 dark:bg-red-500/90 px-2.5 py-1 text-xs font-semibold text-white">
                                                             Sin marcar
                                                         </span>
                                                         <span
                                                             v-else
                                                             class="inline-flex items-center rounded-md bg-emerald-100/80 dark:bg-emerald-900/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
-                                                            :title="`${tecnicoData.iclock_transactions.length} marcación(es)`"
+                                                            :title="`${getMarcacionesCount(tecnicoData.iclock_transactions)} marcación(es)`"
                                                         >
-                                                            {{ tecnicoData.iclock_transactions.length }}
+                                                            {{ getMarcacionesCount(tecnicoData.iclock_transactions) }}
                                                         </span>
                                                     </td>
 
@@ -437,7 +437,7 @@
                                                             </button>
 
                                                             <button
-                                                                v-if="!Array.isArray(tecnicoData.iclock_transactions) || tecnicoData.iclock_transactions.length === 0"
+                                                                v-if="!hasMarcaciones(tecnicoData.iclock_transactions)"
                                                                 @click.stop="enviarWhatsApp(tecnicoData)"
                                                                 class="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow"
                                                                 title="Enviar WhatsApp">
@@ -509,9 +509,7 @@
                                                                             Marcaciones
                                                                         </div>
                                                                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                                            <span v-if="Array.isArray(tecnicoData.iclock_transactions)">{{
-                                                                                tecnicoData.iclock_transactions.length }}</span>
-                                                                            <span v-else>0</span>
+                                                                            {{ getMarcacionesCount(tecnicoData.iclock_transactions) }}
                                                                         </div>
                                                                     </div>
                                                                     <div class="max-h-80 overflow-auto">
@@ -520,7 +518,7 @@
                                                                             {{ tecnicoData.iclock_transactions.message }}
                                                                         </div>
                                                                         <div
-                                                                            v-else-if="Array.isArray(tecnicoData.iclock_transactions) && tecnicoData.iclock_transactions.length === 0"
+                                                                            v-else-if="getMarcacionesCount(tecnicoData.iclock_transactions) === 0"
                                                                             class="p-4 text-sm text-gray-600 dark:text-gray-300">
                                                                             Sin marcaciones registradas.
                                                                         </div>
@@ -611,10 +609,10 @@
                                                     Sin marcación
                                                 </span>
                                                 <span
-                                                    v-else-if="Array.isArray(tecnicoData.iclock_transactions) && tecnicoData.iclock_transactions.length > 0"
+                                                    v-else-if="hasMarcaciones(tecnicoData.iclock_transactions)"
                                                     class="px-2.5 py-1 bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-md"
-                                                    :title="`${tecnicoData.iclock_transactions.length} marcación(es)`">
-                                                    {{ tecnicoData.iclock_transactions.length }}
+                                                    :title="`${getMarcacionesCount(tecnicoData.iclock_transactions)} marcación(es)`">
+                                                    {{ getMarcacionesCount(tecnicoData.iclock_transactions) }}
                                                 </span>
 
                                                 <span
@@ -655,7 +653,7 @@
                                                 </button>
 
                                                 <!-- Mostrar daily_record si existe y no hay marcación -->
-                                                <div v-if="getDailyRecord(tecnicoData) && (esObjetoSinMarcacion(tecnicoData.iclock_transactions) || (Array.isArray(tecnicoData.iclock_transactions) && tecnicoData.iclock_transactions.length === 0))"
+                                                <div v-if="getDailyRecord(tecnicoData) && !hasMarcaciones(tecnicoData.iclock_transactions)"
                                                     class="flex items-center gap-2">
                                                    
                                                     <div v-if="showDailyRecord[getKeyForTecnico(tecnicoData)]"
@@ -826,33 +824,7 @@
 
                         <!-- TÉCNICOS SIN RUTAS -->
                         <div v-show="tabActivo === 'sin-rutas'" class="animate-fadeIn">
-                            <div
-                                class="mb-5 text-sm bg-white dark:bg-gray-950 rounded-lg p-5 border border-gray-200/60 dark:border-gray-800/60 shadow-sm">
-                                <div class="flex items-center justify-between mb-4">
-                                    <span class="font-medium text-gray-600 dark:text-gray-400">
-                                        Mostrando <span class="font-semibold text-gray-950 dark:text-gray-50">{{
-                                            tecnicosSinRutasActual.length }}</span> técnico(s) sin rutas
-                                        <span v-if="search"
-                                            class="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded text-xs ml-1">(filtrado)</span>
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500/80"></div>
-                                        <span class="text-xs text-gray-600 dark:text-gray-400">
-                                            <span class="font-semibold text-emerald-700 dark:text-emerald-400">{{
-                                                tecnicosSinRutasConMarcacion }}</span> marcaron
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-2 h-2 rounded-full bg-red-500/80"></div>
-                                        <span class="text-xs text-gray-600 dark:text-gray-400">
-                                            <span class="font-semibold text-red-700 dark:text-red-400">{{
-                                                tecnicosSinRutasSinMarcacion }}</span> no marcaron
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                           
 
                             <div
                                 class="max-h-[calc(100vh-400px)] overflow-auto rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 shadow-sm">
@@ -926,7 +898,7 @@
 
                                                     <td class="px-3 py-3 align-top">
                                                         <span
-                                                            v-if="Array.isArray(tecnico.marcaciones) && tecnico.marcaciones.length > 0"
+                                                            v-if="hasMarcaciones(tecnico.marcaciones)"
                                                             class="inline-flex items-center rounded-md bg-emerald-100/80 dark:bg-emerald-900/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
                                                         >
                                                             ✓ Marcó
@@ -970,15 +942,14 @@
                                                                         Marcaciones
                                                                     </div>
                                                                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                                        <span v-if="Array.isArray(tecnico.marcaciones)">{{ tecnico.marcaciones.length }}</span>
-                                                                        <span v-else>0</span>
+                                                                        {{ getMarcacionesCount(tecnico.marcaciones) }}
                                                                     </div>
                                                                 </div>
                                                                 <div class="max-h-80 overflow-auto">
                                                                     <div v-if="!Array.isArray(tecnico.marcaciones)" class="p-4 text-sm text-gray-600 dark:text-gray-300">
                                                                         {{ (tecnico.marcaciones && tecnico.marcaciones.message) || 'Sin marcaciones.' }}
                                                                     </div>
-                                                                    <div v-else-if="tecnico.marcaciones.length === 0" class="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                                    <div v-else-if="getMarcacionesCount(tecnico.marcaciones) === 0" class="p-4 text-sm text-gray-600 dark:text-gray-300">
                                                                         Sin marcaciones registradas.
                                                                     </div>
                                                                     <div v-else class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
@@ -1058,7 +1029,7 @@
                                                 </span>
 
                                                 <span
-                                                    v-if="Array.isArray(tecnico.marcaciones) && tecnico.marcaciones.length > 0"
+                                                    v-if="hasMarcaciones(tecnico.marcaciones)"
                                                     class="px-2.5 py-1 bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-md"
                                                     title="Con marcación">
                                                     ✓ Marcó
@@ -1200,7 +1171,7 @@ interface Usuario {
     email: string
     mobile: string
     status: number
-    marcaciones: Marcacion[] | { message: string }
+    marcaciones: Marcacion[] | SinMarcacionMessage
     rutas: Ruta[]
 }
 
@@ -1218,12 +1189,19 @@ interface ApiResponse {
 interface TecnicoData {
     usuario: Usuario
     rutas: Ruta[]
-    iclock_transactions: Marcacion[] | { message: string }
+    iclock_transactions: Marcacion[] | SinMarcacionMessage
 }
 
-const esObjetoSinMarcacion = (obj: any): obj is { message: string } => {
-    return obj && typeof obj === 'object' && 'message' in obj && !Array.isArray(obj)
+type SinMarcacionMessage = { message: string }
+
+const esObjetoSinMarcacion = (obj: unknown): obj is SinMarcacionMessage => {
+    return !!obj && typeof obj === 'object' && 'message' in obj && !Array.isArray(obj)
 }
+
+const getMarcacionesCount = (value: Marcacion[] | SinMarcacionMessage | null | undefined) =>
+    Array.isArray(value) ? value.length : 0
+
+const hasMarcaciones = (value: Marcacion[] | SinMarcacionMessage | null | undefined) => getMarcacionesCount(value) > 0
 
 const search = ref('')
 const showFilters = ref(false)
@@ -1252,7 +1230,7 @@ const toggleTecnico = (dni: string) => {
     tecnicosExpandidos.value[dni] = !tecnicosExpandidos.value[dni]
 }
 
-const enviarWhatsApp = (tecnicoData: any) => {
+const enviarWhatsApp = (tecnicoData: TecnicoData) => {
     const normalizeWhatsAppPhone = (raw: string) => {
         const digits = String(raw || '').replace(/[^\d]/g, '')
         if (!digits) return null
@@ -1332,9 +1310,9 @@ const shouldShowValidar = (t: any) => {
     let noMarcacion = false
     if (t == null) return false
     if ('iclock_transactions' in t) {
-        noMarcacion = esObjetoSinMarcacion(t.iclock_transactions) || (Array.isArray(t.iclock_transactions) && t.iclock_transactions.length === 0)
+        noMarcacion = !hasMarcaciones(t.iclock_transactions)
     } else if ('marcaciones' in t) {
-        noMarcacion = !Array.isArray(t.marcaciones) || t.marcaciones.length === 0
+        noMarcacion = !hasMarcaciones(t.marcaciones)
     }
     return noMarcacion && !hasDailyRecordForTecnico(t)
 }
@@ -1737,7 +1715,7 @@ const tecnicosSinRutasFiltrados = computed(() => {
 
     if (filtroEstado.value === 'con-marcacion') {
         tecnicos = tecnicos.filter((tecnico) =>
-            Array.isArray(tecnico.marcaciones) && tecnico.marcaciones.length > 0
+        hasMarcaciones(tecnico.marcaciones)
         )
     } else if (filtroEstado.value === 'sin-marcacion') {
         tecnicos = tecnicos.filter((tecnico) =>
@@ -1781,11 +1759,11 @@ const datosAgrupadosFiltrados = computed(() => {
 
     if (filtroEstado.value === 'con-marcacion') {
         datos = datos.filter(([_, tecnicoData]: [string, any]) =>
-            Array.isArray(tecnicoData.iclock_transactions) && tecnicoData.iclock_transactions.length > 0
+            hasMarcaciones(tecnicoData.iclock_transactions)
         )
     } else if (filtroEstado.value === 'sin-marcacion') {
         datos = datos.filter(([_, tecnicoData]: [string, any]) =>
-            esObjetoSinMarcacion(tecnicoData.iclock_transactions)
+            !hasMarcaciones(tecnicoData.iclock_transactions)
         )
     }
 
@@ -1798,8 +1776,8 @@ const datosAgrupadosFiltrados = computed(() => {
             } else if (ordenarPor.value === 'rutas') {
                 return dataB.rutas.length - dataA.rutas.length
             } else if (ordenarPor.value === 'marcaciones') {
-                const marcacionesA = Array.isArray(dataA.iclock_transactions) ? dataA.iclock_transactions.length : 0
-                const marcacionesB = Array.isArray(dataB.iclock_transactions) ? dataB.iclock_transactions.length : 0
+                const marcacionesA = getMarcacionesCount(dataA.iclock_transactions)
+                const marcacionesB = getMarcacionesCount(dataB.iclock_transactions)
                 return marcacionesB - marcacionesA
             }
             return 0
@@ -1808,8 +1786,8 @@ const datosAgrupadosFiltrados = computed(() => {
         datos.sort(([dniA, dataA]: [string, any], [dniB, dataB]: [string, any]) => {
             const txA = dataA.iclock_transactions
             const txB = dataB.iclock_transactions
-            const aSinMarcacion = !Array.isArray(txA) || txA.length === 0
-            const bSinMarcacion = !Array.isArray(txB) || txB.length === 0
+            const aSinMarcacion = !hasMarcaciones(txA)
+            const bSinMarcacion = !hasMarcaciones(txB)
 
             if (aSinMarcacion && !bSinMarcacion) return -1
             if (!aSinMarcacion && bSinMarcacion) return 1
