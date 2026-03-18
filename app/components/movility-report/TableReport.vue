@@ -180,7 +180,7 @@
               class="transition-colors odd:bg-white even:bg-gray-50/40 hover:bg-primary-50/40 dark:odd:bg-gray-950 dark:even:bg-gray-900/25 dark:hover:bg-primary-900/10"
             >
               <td class="px-3 py-3 text-center text-gray-900 dark:text-gray-100 text-xs font-semibold font-mono tabular-nums w-12">
-                {{ sortKey === 'numero' && sortDir === 'desc' ? (datosOrdenados.length - idx) : (idx + 1) }}
+                {{ sortKey && sortDir === 'desc' ? (datosOrdenados.length - idx) : (idx + 1) }}
               </td>
               <td class="px-3 py-3 min-w-[220px]">
                 <div class="min-w-0 flex flex-col gap-0.5">
@@ -314,6 +314,7 @@
       :year="yearForReminders"
       :initial-month="monthForReminders"
       :initial-comment="recordatorioSeleccionado.summary.monthly_comment ?? null"
+      @saved="handleReminderSaved"
       @update:open="handleReminderOpenUpdate"
     />
   </div>
@@ -481,6 +482,36 @@ const monthForReminders = computed(() => {
   if (Number.isFinite(month) && month >= 1 && month <= 12) return month
   return new Date().getMonth() + 1
 })
+
+const periodMonthForReminders = computed(
+  () => `${yearForReminders.value}-${String(monthForReminders.value).padStart(2, '0')}-01`
+)
+
+const handleReminderSaved = (payload: { employee_id: number; period_month: string; monthly_comment: string | null }) => {
+  // La insignia en tabla refleja el mes del reporte actual (startDate).
+  if (payload.period_month !== periodMonthForReminders.value) return
+
+  datosMoilityReports.value = datosMoilityReports.value.map((r) => {
+    if (r.employee.id !== payload.employee_id) return r
+    return {
+      ...r,
+      summary: {
+        ...(r.summary as any),
+        monthly_comment: payload.monthly_comment,
+      },
+    } as any
+  })
+
+  if (recordatorioSeleccionado.value?.employee?.id === payload.employee_id) {
+    recordatorioSeleccionado.value = {
+      ...(recordatorioSeleccionado.value as any),
+      summary: {
+        ...((recordatorioSeleccionado.value as any).summary ?? {}),
+        monthly_comment: payload.monthly_comment,
+      },
+    } as any
+  }
+}
 
 type SortKey =
   | 'numero'

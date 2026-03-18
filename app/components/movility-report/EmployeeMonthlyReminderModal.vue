@@ -128,6 +128,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
+  (e: 'saved', payload: { employee_id: number; period_month: string; monthly_comment: string | null }): void
 }>()
 
 const toast = useToast()
@@ -237,18 +238,26 @@ watch(month, () => {
 
 const debouncedAutosave = useDebounceFn(() => {
   if (!props.open) return
+  if (saving.value) return
   if (suppressAutosave.value) return
   autosaveState.value = 'saving'
-  upsertEmployeeMobilityMonthlyComment({
+  const payload = {
     employee_id: props.employee.employee_id,
     period_month: periodMonth.value,
     monthly_comment: draft.content.trim() ? draft.content : null,
+  }
+  upsertEmployeeMobilityMonthlyComment({
+    employee_id: payload.employee_id,
+    period_month: payload.period_month,
+    monthly_comment: payload.monthly_comment,
   })
     .then(() => {
       autosaveState.value = 'saved'
+      emit('saved', payload)
     })
     .catch((e) => {
       autosaveState.value = 'idle'
+      if (saving.value) return
       toast.add({
         title: 'No se pudo guardar',
         description: getApiErrorMessage(e),
@@ -268,12 +277,19 @@ watch(
 )
 
 const saveNow = async (opts?: { close?: boolean; title?: string }) => {
+  if (saving.value) return
+  debouncedAutosave.cancel?.()
   saving.value = true
   try {
-    const res = await upsertEmployeeMobilityMonthlyComment({
+    const payload = {
       employee_id: props.employee.employee_id,
       period_month: periodMonth.value,
       monthly_comment: draft.content.trim() ? draft.content : null,
+    }
+    const res = await upsertEmployeeMobilityMonthlyComment({
+      employee_id: payload.employee_id,
+      period_month: payload.period_month,
+      monthly_comment: payload.monthly_comment,
     })
     autosaveState.value = 'saved'
 
@@ -286,6 +302,8 @@ const saveNow = async (opts?: { close?: boolean; title?: string }) => {
       icon: 'i-lucide-check-circle',
       color: 'success',
     })
+
+    emit('saved', payload)
 
     if (opts?.close) emit('update:open', false)
   } catch (e) {
@@ -302,6 +320,7 @@ const saveNow = async (opts?: { close?: boolean; title?: string }) => {
 }
 
 const clearCurrent = () => {
+  debouncedAutosave.cancel?.()
   suppressAutosave.value = true
   draft.content = ''
   autosaveState.value = 'idle'

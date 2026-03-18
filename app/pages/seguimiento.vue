@@ -61,9 +61,150 @@
         </template>
 
         <template #body>
-            <div class="p-2">
+            <div class="p-4 sm:p-5 space-y-4">
                 <div
-                    class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200/60 dark:border-gray-800/60 p-5 mb-6 shadow-sm">
+                    class="rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden"
+                >
+                    <div class="flex border-b border-emerald-600 divide-x divide-gray-200 dark:divide-gray-800">
+                        <button
+                            type="button"
+                            class="px-6 py-3 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
+                            :class="tabActivo === 'con-rutas'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
+                            @click="tabActivo = 'con-rutas'"
+                        >
+                            Con Rutas
+                            <span
+                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
+                                :class="tabActivo === 'con-rutas'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
+                            >
+                                {{ tecnicosConRutas }}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="px-6 py-3 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
+                            :class="tabActivo === 'sin-rutas'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
+                            @click="tabActivo = 'sin-rutas'"
+                        >
+                            Sin Rutas
+                            <span
+                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
+                                :class="tabActivo === 'sin-rutas'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
+                            >
+                                {{ tecnicosSinRutas }}
+                            </span>
+                        </button>
+
+                        <div class="flex-1" />
+                    </div>
+                </div>
+
+                <!-- SUBTABS (MarcaciÃ³n) -->
+                <div
+                    v-if="tabActivo === 'con-rutas'"
+                    class="rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden"
+                >
+                    <div class="flex border-b border-emerald-600 divide-x divide-gray-200 dark:divide-gray-800">
+                        <button
+                            type="button"
+                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
+                            :class="subTabConRutas === 'marcaron'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
+                            @click="subTabConRutas = 'marcaron'"
+                        >
+                            Marcaron
+                            <span
+                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
+                                :class="subTabConRutas === 'marcaron'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
+                            >
+                                {{ conRutasMarcados.length }}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
+                            :class="subTabConRutas === 'no-marcaron'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
+                            @click="subTabConRutas = 'no-marcaron'"
+                        >
+                            No marcaron
+                            <span
+                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
+                                :class="subTabConRutas === 'no-marcaron'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
+                            >
+                                {{ conRutasNoMarcados.length }}
+                            </span>
+                        </button>
+
+                        <div class="flex-1" />
+                    </div>
+                </div>
+
+                <div
+                    v-else
+                    class="rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden"
+                >
+                    <div class="flex border-b border-emerald-600 divide-x divide-gray-200 dark:divide-gray-800">
+                        <button
+                            type="button"
+                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
+                            :class="subTabSinRutas === 'marcaron'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
+                            @click="subTabSinRutas = 'marcaron'"
+                        >
+                            Marcaron
+                            <span
+                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
+                                :class="subTabSinRutas === 'marcaron'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
+                            >
+                                {{ sinRutasMarcados.length }}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
+                            :class="subTabSinRutas === 'no-marcaron'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
+                            @click="subTabSinRutas = 'no-marcaron'"
+                        >
+                            No marcaron
+                            <span
+                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
+                                :class="subTabSinRutas === 'no-marcaron'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
+                            >
+                                {{ sinRutasNoMarcados.length }}
+                            </span>
+                        </button>
+
+                        <div class="flex-1" />
+                    </div>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200/60 dark:border-gray-800/60 p-5 shadow-sm">
                     <div class="flex flex-wrap gap-2 items-center">
                         <div class="relative flex-1 min-w-[300px]">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -79,7 +220,7 @@
                             <div v-if="search" class="absolute inset-y-0 right-0 pr-3 flex items-center">
                                 <span
                                     class="text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded">
-                                    {{ datosAgrupadosFiltrados.length }}
+                                    {{ currentListCount }}
                                 </span>
                             </div>
                         </div>
@@ -140,54 +281,6 @@
                     </div>
                 </div>
 
-               
-
-                <!-- TABS -->
-                <div class="mb-6">
-                    <div class="flex gap-1 border-b border-gray-200/60 dark:border-gray-800/60">
-                        <button @click="tabActivo = 'con-rutas'"
-                            class="px-5 py-3 text-sm font-medium transition-all duration-200 relative" :class="{
-                                'text-gray-950 dark:text-gray-50 border-b-2 border-gray-950 dark:border-gray-50': tabActivo === 'con-rutas',
-                                'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300': tabActivo !== 'con-rutas'
-                            }">
-                            <span class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                                Con Rutas
-                                <span class="ml-1 px-2 py-0.5 rounded-md text-xs font-medium" :class="{
-                                    'bg-gray-950 dark:bg-gray-50 text-white dark:text-gray-950': tabActivo === 'con-rutas',
-                                    'bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400': tabActivo !== 'con-rutas'
-                                }">
-                                    {{ tecnicosConRutas }}
-                                </span>
-                            </span>
-                        </button>
-                        <button @click="tabActivo = 'sin-rutas'"
-                            class="px-5 py-3 text-sm font-medium transition-all duration-200 relative" :class="{
-                                'text-gray-950 dark:text-gray-50 border-b-2 border-gray-950 dark:border-gray-50': tabActivo === 'sin-rutas',
-                                'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300': tabActivo !== 'sin-rutas'
-                            }">
-                            <span class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                                Sin Rutas
-                                <span class="ml-1 px-2 py-0.5 rounded-md text-xs font-medium" :class="{
-                                    'bg-gray-950 dark:bg-gray-50 text-white dark:text-gray-950': tabActivo === 'sin-rutas',
-                                    'bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400': tabActivo !== 'sin-rutas'
-                                }">
-                                    {{ tecnicosSinRutas }}
-                                </span>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
                 <section>
                     <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
                         <svg class="animate-spin h-10 w-10 text-gray-950 dark:text-gray-50 mb-4"
@@ -220,36 +313,248 @@
                     <div v-else>
                         <!-- TÉCNICOS CON RUTAS -->
                         <div v-show="tabActivo === 'con-rutas'" class="animate-fadeIn">
+                           
+
                             <div
-                                class="mb-5 text-sm bg-white dark:bg-gray-950 rounded-lg p-5 border border-gray-200/60 dark:border-gray-800/60 shadow-sm">
-                                <div class="flex items-center justify-between mb-4">
-                                    <span class="font-medium text-gray-600 dark:text-gray-400">
-                                        Mostrando <span class="font-semibold text-gray-950 dark:text-gray-50">{{
-                                            datosAgrupadosFiltrados.length }}</span> técnico(s) con rutas
-                                        <span v-if="search || filtroEstado !== 'todos'"
-                                            class="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded text-xs ml-1">(filtrado)</span>
-                                    </span>
-                                  
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500/80"></div>
-                                        <span class="text-xs text-gray-600 dark:text-gray-400">
-                                            <span class="font-semibold text-emerald-700 dark:text-emerald-400">{{
-                                                tecnicosConRutasConMarcacion }}</span> marcaron
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-2 h-2 rounded-full bg-red-500/80"></div>
-                                        <span class="text-xs text-gray-600 dark:text-gray-400">
-                                            <span class="font-semibold text-red-700 dark:text-red-400">{{
-                                                tecnicosConRutasSinMarcacion }}</span> no marcaron
-                                        </span>
-                                    </div>
-                                </div>
+                                class="max-h-[calc(100vh-400px)] overflow-auto rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 shadow-sm">
+                                <table class="min-w-full table-fixed">
+                                    <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50">
+                                        <tr
+                                            class="text-left text-xs font-semibold text-gray-600 dark:text-gray-300 border-b border-gray-200/60 dark:border-gray-800/60">
+                                            <th class="w-[44px] px-3 py-3"></th>
+                                            <th class="w-[150px] px-3 py-3">DNI</th>
+                                            <th class="px-3 py-3">Técnico</th>
+                                            <th class="w-[110px] px-3 py-3">Rutas</th>
+                                            <th class="w-[140px] px-3 py-3">Marcación</th>
+                                            <th class="w-[260px] px-3 py-3">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
+                                        <template v-if="datosConRutasActual.length === 0">
+                                            <tr>
+                                                <td colspan="6" class="px-4 py-10 text-center">
+                                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        No se encontraron técnicos
+                                                    </p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                                        Ajusta los filtros de búsqueda
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </template>
+
+                                        <template v-else>
+                                            <template v-for="[dni, tecnicoData] in datosConRutasActual" :key="dni">
+                                                <tr
+                                                    class="cursor-pointer hover:bg-gray-50/70 dark:hover:bg-gray-900/30 transition-colors"
+                                                    :class="(!Array.isArray(tecnicoData.iclock_transactions) || tecnicoData.iclock_transactions.length === 0)
+                                                        ? 'bg-red-50/50 dark:bg-red-950/10'
+                                                        : 'bg-white dark:bg-gray-950'"
+                                                    @click="toggleTecnico(dni)"
+                                                >
+                                                    <td class="px-3 py-3 align-top">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform"
+                                                            :class="{ 'rotate-180': tecnicosExpandidos[dni] }" fill="none"
+                                                            viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top">
+                                                        <span v-if="dni && dni !== 'null' && dni !== 'undefined'"
+                                                            class="font-mono text-xs text-gray-700 dark:text-gray-200">
+                                                            {{ dni }}
+                                                        </span>
+                                                        <span v-else class="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                                            Sin técnico
+                                                        </span>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top">
+                                                        <div class="flex items-center gap-3 min-w-0">
+                                                            <div
+                                                                class="w-9 h-9 rounded-md bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 flex items-center justify-center text-xs font-semibold shrink-0">
+                                                                {{ tecnicoData.rutas[0]?.firstname?.charAt(0) || '' }}{{
+                                                                    tecnicoData.rutas[0]?.lastname?.charAt(0) || '' }}
+                                                            </div>
+                                                            <div class="min-w-0">
+                                                                <div class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                    {{ tecnicoData.rutas[0]?.firstname || '' }} {{
+                                                                        tecnicoData.rutas[0]?.lastname || '' }}
+                                                                </div>
+                                                                <div class="truncate text-xs text-gray-500 dark:text-gray-400">
+                                                                    {{ tecnicoData.rutas[0]?.agencia || '—' }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top">
+                                                        <span
+                                                            class="inline-flex items-center rounded-md bg-gray-100/80 dark:bg-gray-800/80 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
+                                                            :title="`${tecnicoData.rutas.length} ruta(s)`"
+                                                        >
+                                                            {{ tecnicoData.rutas.length }}
+                                                        </span>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top">
+                                                        <span
+                                                            v-if="!Array.isArray(tecnicoData.iclock_transactions) || tecnicoData.iclock_transactions.length === 0"
+                                                            class="inline-flex items-center rounded-md bg-red-600/90 dark:bg-red-500/90 px-2.5 py-1 text-xs font-semibold text-white">
+                                                            Sin marcar
+                                                        </span>
+                                                        <span
+                                                            v-else
+                                                            class="inline-flex items-center rounded-md bg-emerald-100/80 dark:bg-emerald-900/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
+                                                            :title="`${tecnicoData.iclock_transactions.length} marcación(es)`"
+                                                        >
+                                                            {{ tecnicoData.iclock_transactions.length }}
+                                                        </span>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top" @click.stop>
+                                                        <div class="flex items-center justify-end gap-2">
+                                                            <button v-if="getDailyRecord(tecnicoData)"
+                                                                @click.stop="viewDailyRecord(tecnicoData)"
+                                                                :class="`px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnicoData)).color}`">
+                                                                {{ getConceptBadge(getDailyRecord(tecnicoData)).text }}
+                                                            </button>
+
+                                                            <button v-if="shouldShowValidar(tecnicoData)"
+                                                                @click.stop="validarRuta(tecnicoData)"
+                                                                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow text-xs font-medium flex items-center gap-1.5"
+                                                                title="Validar asistencia manualmente">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
+                                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                Validar
+                                                            </button>
+
+                                                            <button
+                                                                v-if="!Array.isArray(tecnicoData.iclock_transactions) || tecnicoData.iclock_transactions.length === 0"
+                                                                @click.stop="enviarWhatsApp(tecnicoData)"
+                                                                class="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow"
+                                                                title="Enviar WhatsApp">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                                                                    fill="currentColor" viewBox="0 0 24 24">
+                                                                    <path
+                                                                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.197 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.875 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.414.248-.694.248-1.289.173-1.414-.074-.124-.272-.198-.57-.347M12 2a10 10 0 0 0-8.65 15.02L2 22l5.13-1.35A10 10 0 1 0 12 2" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+                                                <tr v-show="tecnicosExpandidos[dni]">
+                                                    <td colspan="6" class="p-0">
+                                                        <div
+                                                            class="p-5 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-200/60 dark:border-gray-800/60">
+                                                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                                <div
+                                                                    class="rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 overflow-hidden">
+                                                                    <div
+                                                                        class="px-4 py-3 border-b border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between">
+                                                                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                                            Rutas asignadas
+                                                                        </div>
+                                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                            {{ tecnicoData.rutas.length }}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="max-h-80 overflow-auto divide-y divide-gray-200/60 dark:divide-gray-800/60">
+                                                                        <div v-for="ruta in tecnicoData.rutas" :key="ruta.ticket_id"
+                                                                            class="p-4">
+                                                                            <div class="flex items-start justify-between gap-3">
+                                                                                <div class="min-w-0">
+                                                                                    <div class="flex items-center gap-2">
+                                                                                        <span
+                                                                                            class="text-xs font-medium bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md text-gray-700 dark:text-gray-200">
+                                                                                            {{ ruta.number }}
+                                                                                        </span>
+                                                                                        <span class="text-xs font-medium px-2 py-0.5 rounded-md"
+                                                                                            :class="{
+                                                                                                'bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': ruta.estado === 'Programado',
+                                                                                                'bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': ruta.estado === 'Completado',
+                                                                                                'bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': ruta.estado === 'En Proceso'
+                                                                                            }">
+                                                                                            {{ ruta.estado }}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                                                        {{ ruta.agencia }}
+                                                                                    </div>
+                                                                                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                                                        {{ ruta.topic }} · {{ ruta.cliente }}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                                                                                    {{ ruta.fecha_programada?.split(' ')[1] || '—' }}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div
+                                                                    class="rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 overflow-hidden">
+                                                                    <div
+                                                                        class="px-4 py-3 border-b border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between">
+                                                                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                                            Marcaciones
+                                                                        </div>
+                                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                            <span v-if="Array.isArray(tecnicoData.iclock_transactions)">{{
+                                                                                tecnicoData.iclock_transactions.length }}</span>
+                                                                            <span v-else>0</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="max-h-80 overflow-auto">
+                                                                        <div v-if="esObjetoSinMarcacion(tecnicoData.iclock_transactions)"
+                                                                            class="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                                            {{ tecnicoData.iclock_transactions.message }}
+                                                                        </div>
+                                                                        <div
+                                                                            v-else-if="Array.isArray(tecnicoData.iclock_transactions) && tecnicoData.iclock_transactions.length === 0"
+                                                                            class="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                                            Sin marcaciones registradas.
+                                                                        </div>
+                                                                        <div v-else class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
+                                                                            <div v-for="m in (Array.isArray(tecnicoData.iclock_transactions) ? tecnicoData.iclock_transactions : [])"
+                                                                                :key="m.id || m.punch_time"
+                                                                                class="p-4 flex items-start justify-between gap-4">
+                                                                                <div class="min-w-0">
+                                                                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                                        {{ String(m.punch_time || '').split(' ')[1] || m.punch_time || '—' }}
+                                                                                    </div>
+                                                                                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                                                        {{ m.terminal_alias || m.area_alias || m.gps_location || '—' }}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div v-if="m.imagen_url" class="shrink-0">
+                                                                                    <img :src="m.imagen_url" alt="Foto"
+                                                                                        class="w-14 h-14 object-cover rounded-md border border-gray-200/60 dark:border-gray-800/60" />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </template>
+                                    </tbody>
+                                </table>
                             </div>
 
-                            <div class="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+                            <div v-if="false" class="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
                                 <div v-if="datosAgrupadosFiltrados.length === 0"
                                     class="text-center py-16 bg-gray-50/50 dark:bg-gray-900/30 rounded-lg border border-gray-200/60 dark:border-gray-800/60">
                                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -526,7 +831,7 @@
                                 <div class="flex items-center justify-between mb-4">
                                     <span class="font-medium text-gray-600 dark:text-gray-400">
                                         Mostrando <span class="font-semibold text-gray-950 dark:text-gray-50">{{
-                                            tecnicosSinRutasFiltrados.length }}</span> técnico(s) sin rutas
+                                            tecnicosSinRutasActual.length }}</span> técnico(s) sin rutas
                                         <span v-if="search"
                                             class="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded text-xs ml-1">(filtrado)</span>
                                     </span>
@@ -549,7 +854,161 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+                            <div
+                                class="max-h-[calc(100vh-400px)] overflow-auto rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 shadow-sm">
+                                <table class="min-w-full table-fixed">
+                                    <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50">
+                                        <tr
+                                            class="text-left text-xs font-semibold text-gray-600 dark:text-gray-300 border-b border-gray-200/60 dark:border-gray-800/60">
+                                            <th class="w-[44px] px-3 py-3"></th>
+                                            <th class="w-[150px] px-3 py-3">DNI</th>
+                                            <th class="px-3 py-3">Técnico</th>
+                                            <th class="w-[140px] px-3 py-3">Marcación</th>
+                                            <th class="w-[260px] px-3 py-3">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
+                                        <template v-if="tecnicosSinRutasActual.length === 0">
+                                            <tr>
+                                                <td colspan="5" class="px-4 py-10 text-center">
+                                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Todos los técnicos tienen rutas asignadas
+                                                    </p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                                        No hay técnicos sin rutas para la fecha seleccionada
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </template>
+
+                                        <template v-else>
+                                            <template v-for="tecnico in tecnicosSinRutasActual" :key="getExpandKey(tecnico)">
+                                                <tr
+                                                    class="cursor-pointer hover:bg-gray-50/70 dark:hover:bg-gray-900/30 transition-colors bg-amber-50/30 dark:bg-amber-950/10"
+                                                    @click="toggleTecnico(getExpandKey(tecnico))"
+                                                >
+                                                    <td class="px-3 py-3 align-top">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform"
+                                                            :class="{ 'rotate-180': tecnicosExpandidos[getExpandKey(tecnico)] }" fill="none"
+                                                            viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top">
+                                                        <span v-if="tecnico.dni && tecnico.dni !== 'null'"
+                                                            class="font-mono text-xs text-gray-700 dark:text-gray-200">
+                                                            {{ tecnico.dni }}
+                                                        </span>
+                                                        <span v-else class="text-xs text-gray-500 dark:text-gray-400">
+                                                            Sin DNI
+                                                        </span>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top">
+                                                        <div class="flex items-center gap-3 min-w-0">
+                                                            <div
+                                                                class="w-9 h-9 rounded-md bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 flex items-center justify-center text-xs font-semibold shrink-0">
+                                                                {{ tecnico.nombre?.charAt(0) || 'T' }}{{ tecnico.apellido?.charAt(0) || 'S' }}
+                                                            </div>
+                                                            <div class="min-w-0">
+                                                                <div class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                    {{ tecnico.nombre_completo || 'Sin nombre' }}
+                                                                </div>
+                                                                <div class="truncate text-xs text-gray-500 dark:text-gray-400">
+                                                                    {{ tecnico.departamento || '—' }} · {{ tecnico.posicion || '—' }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top">
+                                                        <span
+                                                            v-if="Array.isArray(tecnico.marcaciones) && tecnico.marcaciones.length > 0"
+                                                            class="inline-flex items-center rounded-md bg-emerald-100/80 dark:bg-emerald-900/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
+                                                        >
+                                                            ✓ Marcó
+                                                        </span>
+                                                        <span v-else
+                                                            class="inline-flex items-center rounded-md bg-red-100/80 dark:bg-red-900/30 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-red-300">
+                                                            Sin marcar
+                                                        </span>
+                                                    </td>
+
+                                                    <td class="px-3 py-3 align-top" @click.stop>
+                                                        <div class="flex items-center justify-end gap-2">
+                                                            <button v-if="getDailyRecord(tecnico)"
+                                                                @click.stop="viewDailyRecord(tecnico)"
+                                                                :class="`px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnico)).color}`">
+                                                                {{ getConceptBadge(getDailyRecord(tecnico)).text }}
+                                                            </button>
+
+                                                            <button v-if="shouldShowValidar(tecnico)"
+                                                                @click.stop="validarRutaSinRuta(tecnico)"
+                                                                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow text-xs font-medium flex items-center gap-1.5"
+                                                                title="Validar asistencia manualmente">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
+                                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                Validar
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+                                                <tr v-show="tecnicosExpandidos[getExpandKey(tecnico)]">
+                                                    <td colspan="5" class="p-0">
+                                                        <div class="p-5 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-200/60 dark:border-gray-800/60">
+                                                            <div class="rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 overflow-hidden">
+                                                                <div class="px-4 py-3 border-b border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between">
+                                                                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                                        Marcaciones
+                                                                    </div>
+                                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                        <span v-if="Array.isArray(tecnico.marcaciones)">{{ tecnico.marcaciones.length }}</span>
+                                                                        <span v-else>0</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="max-h-80 overflow-auto">
+                                                                    <div v-if="!Array.isArray(tecnico.marcaciones)" class="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                                        {{ (tecnico.marcaciones && tecnico.marcaciones.message) || 'Sin marcaciones.' }}
+                                                                    </div>
+                                                                    <div v-else-if="tecnico.marcaciones.length === 0" class="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                                        Sin marcaciones registradas.
+                                                                    </div>
+                                                                    <div v-else class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
+                                                                        <div v-for="m in tecnico.marcaciones" :key="m.id || m.punch_time" class="p-4 flex items-start justify-between gap-4">
+                                                                            <div class="min-w-0">
+                                                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                                    {{ String(m.punch_time || '').split(' ')[1] || m.punch_time || '—' }}
+                                                                                </div>
+                                                                                <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                                                    {{ m.terminal_alias || m.area_alias || m.gps_location || '—' }}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div v-if="m.imagen_url" class="shrink-0">
+                                                                                <img :src="m.imagen_url" alt="Foto"
+                                                                                    class="w-14 h-14 object-cover rounded-md border border-gray-200/60 dark:border-gray-800/60" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div v-if="false" class="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
                                 <div v-if="tecnicosSinRutasFiltrados.length === 0"
                                     class="text-center py-16 bg-gray-50/50 dark:bg-gray-900/30 rounded-lg border border-gray-200/60 dark:border-gray-800/60">
                                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -773,6 +1232,8 @@ const ordenarPor = ref('original')
 const tecnicosExpandidos = ref<Record<string, boolean>>({})
 const fechaSeleccionada = ref(new Date().toISOString().split('T')[0])
 const tabActivo = ref<'con-rutas' | 'sin-rutas'>('con-rutas')
+const subTabConRutas = ref<'marcaron' | 'no-marcaron'>('marcaron')
+const subTabSinRutas = ref<'marcaron' | 'no-marcaron'>('marcaron')
 
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -885,6 +1346,11 @@ const dailyModalContent = ref<any | null>(null)
 
 const getKeyForTecnico = (t: any) => {
     return String(t?.usuario?.dni || t?.dni || t?.emp_code || t?.usuario?.id || t?.id || '')
+}
+
+const getExpandKey = (t: any) => {
+    const k = getKeyForTecnico(t)
+    return k || String(t?.id || t?.dni || t?.emp_code || '')
 }
 
 const toggleDailyRecord = (t: any) => {
@@ -1239,8 +1705,8 @@ const tecnicosConRutasConMarcacion = computed(() => {
 })
 
 const tecnicosConRutasSinMarcacion = computed(() => {
-    return usuariosConRutaData.value.filter(u =>
-        esObjetoSinMarcacion(u.marcaciones)
+    return usuariosConRutaData.value.filter(
+        (u) => !Array.isArray(u.marcaciones) || u.marcaciones.length === 0
     ).length
 })
 
@@ -1251,8 +1717,8 @@ const tecnicosSinRutasConMarcacion = computed(() => {
 })
 
 const tecnicosSinRutasSinMarcacion = computed(() => {
-    return usuariosSinRutaData.value.filter(u =>
-        esObjetoSinMarcacion(u.marcaciones)
+    return usuariosSinRutaData.value.filter(
+        (u) => !Array.isArray(u.marcaciones) || u.marcaciones.length === 0
     ).length
 })
 
@@ -1340,8 +1806,10 @@ const datosAgrupadosFiltrados = computed(() => {
         })
     } else {
         datos.sort(([dniA, dataA]: [string, any], [dniB, dataB]: [string, any]) => {
-            const aSinMarcacion = esObjetoSinMarcacion(dataA.iclock_transactions)
-            const bSinMarcacion = esObjetoSinMarcacion(dataB.iclock_transactions)
+            const txA = dataA.iclock_transactions
+            const txB = dataB.iclock_transactions
+            const aSinMarcacion = !Array.isArray(txA) || txA.length === 0
+            const bSinMarcacion = !Array.isArray(txB) || txB.length === 0
 
             if (aSinMarcacion && !bSinMarcacion) return -1
             if (!aSinMarcacion && bSinMarcacion) return 1
@@ -1351,6 +1819,40 @@ const datosAgrupadosFiltrados = computed(() => {
     }
 
     return datos
+})
+
+const conRutasMarcados = computed(() => {
+    return datosAgrupadosFiltrados.value.filter(([_, tecnicoData]: [string, any]) => {
+        const tx = tecnicoData?.iclock_transactions
+        return Array.isArray(tx) && tx.length > 0
+    })
+})
+
+const conRutasNoMarcados = computed(() => {
+    return datosAgrupadosFiltrados.value.filter(([_, tecnicoData]: [string, any]) => {
+        const tx = tecnicoData?.iclock_transactions
+        return !Array.isArray(tx) || tx.length === 0
+    })
+})
+
+const datosConRutasActual = computed(() => {
+    return subTabConRutas.value === 'marcaron' ? conRutasMarcados.value : conRutasNoMarcados.value
+})
+
+const sinRutasMarcados = computed(() => {
+    return tecnicosSinRutasFiltrados.value.filter((t) => Array.isArray(t.marcaciones) && t.marcaciones.length > 0)
+})
+
+const sinRutasNoMarcados = computed(() => {
+    return tecnicosSinRutasFiltrados.value.filter((t) => !Array.isArray(t.marcaciones) || t.marcaciones.length === 0)
+})
+
+const tecnicosSinRutasActual = computed(() => {
+    return subTabSinRutas.value === 'marcaron' ? sinRutasMarcados.value : sinRutasNoMarcados.value
+})
+
+const currentListCount = computed(() => {
+    return tabActivo.value === 'con-rutas' ? datosConRutasActual.value.length : tecnicosSinRutasActual.value.length
 })
 
 const cargarDatos = async () => {

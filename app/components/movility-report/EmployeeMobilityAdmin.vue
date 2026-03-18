@@ -354,77 +354,6 @@ const formatMoney = (value: EmployeeMobilityRow['amount']) => {
   return String(value ?? '')
 }
 
-const updatingActiveId = ref<number | null>(null)
-
-const toggleActive = async (row: EmployeeMobilityRow) => {
-  if (row.id == null) {
-    toast.add({
-      title: 'Sin registro',
-      description: 'Primero asigna un monto para poder activar/desactivar.',
-      icon: 'i-lucide-alert-circle',
-      color: 'neutral',
-      timeout: 3500,
-    })
-    return
-  }
-
-  if (isMissingAmount(row)) {
-    toast.add({
-      title: 'Monto pendiente',
-      description: 'Primero asigna un monto para poder activar/desactivar.',
-      icon: 'i-lucide-alert-circle',
-      color: 'neutral',
-      timeout: 3500,
-    })
-    return
-  }
-
-  if (updatingActiveId.value === row.id) return
-  updatingActiveId.value = row.id
-
-  const next = !(row.is_active ?? false)
-  try {
-    const amount = Number(row.amount)
-    if (!Number.isFinite(amount)) {
-      toast.add({
-        title: 'Monto inválido',
-        description: 'El monto actual no es numérico. Edita el registro y guarda un monto válido.',
-        icon: 'i-lucide-alert-circle',
-        color: 'neutral',
-        timeout: 4500,
-      })
-      return
-    }
-
-    await updateEmployeeMobility(row.id, {
-      employee_id: Number(row.employee_id),
-      year: Number(row.year),
-      amount,
-      is_active: next,
-    })
-    rows.value = rows.value.map((r) => (r.id === row.id ? { ...r, is_active: next } : r))
-    toast.add({
-      title: next ? 'Activado' : 'Desactivado',
-      description: `Estado actualizado (ID movilidad: ${row.id}).`,
-      icon: 'i-lucide-check-circle',
-      color: 'green',
-      timeout: 2500,
-    })
-  } catch (error: unknown) {
-    const msg = getApiErrorMessage(error)
-    toast.add({
-      title: 'Error',
-      description: msg,
-      icon: 'i-lucide-alert-circle',
-      color: 'error',
-      timeout: 6000,
-    })
-  } finally {
-    updatingActiveId.value = null
-  }
-}
-
-
 const columns: TableColumn<EmployeeMobilityRow>[] = [
   {
     accessorKey: 'emp_code',
@@ -470,28 +399,6 @@ const columns: TableColumn<EmployeeMobilityRow>[] = [
         'span',
         { class: has ? 'text-xs font-medium text-emerald-700 dark:text-emerald-300' : 'text-xs text-gray-500 dark:text-gray-400' },
         has ? 'Sí' : 'No'
-      )
-    },
-  },
-  {
-    id: 'active',
-    header: 'Activo',
-    cell: ({ row }) => {
-      const r = row.original
-      const isActive = r.is_active === true
-      return h(
-        UButton,
-        {
-          size: 'xs',
-          color: (isActive ? 'success' : 'error') as any,
-          variant: 'outline',
-          loading: r.id != null && updatingActiveId.value === r.id,
-          onClick: () => toggleActive(r),
-        },
-        () => [
-          h(UIcon, { name: isActive ? 'i-lucide-toggle-right' : 'i-lucide-toggle-left', class: 'w-3.5 h-3.5 mr-1.5' }),
-          isActive ? 'Activo' : 'Inactivo',
-        ]
       )
     },
   },

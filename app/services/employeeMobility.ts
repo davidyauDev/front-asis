@@ -161,7 +161,25 @@ export async function upsertEmployeeMobilityMonthlyComment(payload: EmployeeMobi
   } catch (e) {
     const status = e && typeof e === 'object' && 'status' in e ? Number((e as any).status) : null
     if (status === 404) {
-      return createEmployeeMobilityMonthlyComment(payload)
+      try {
+        return await createEmployeeMobilityMonthlyComment(payload)
+      } catch (createError) {
+        const createStatus =
+          createError && typeof createError === 'object' && 'status' in createError ? Number((createError as any).status) : null
+        const msg = getApiErrorMessage(createError).toLowerCase()
+        const isConflict =
+          createStatus === 409 ||
+          msg.includes('ya existe') ||
+          msg.includes('already exists') ||
+          msg.includes('duplicate')
+
+        if (isConflict) {
+          // Carrera: otro request creÃ³ el comentario entre el PUT (404) y el POST.
+          return updateEmployeeMobilityMonthlyComment(payload)
+        }
+
+        throw createError
+      }
     }
     throw e
   }
