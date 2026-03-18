@@ -49,7 +49,7 @@ const tardanzaLabel = computed(() => {
 });
 
 const tiposIncidencia = ref([
-  { label: "Descanso MÃ©dico", value: "DESCANSO_MEDICO" },
+  { label: "Descanso Medico", value: "DESCANSO_MEDICO" },
   { label: "Falta", value: "FALTA" },
   { label: "Trabajo en Campo", value: "TRABAJO_EN_CAMPO" },
   { label: "Llegada Tarde", value: "LLEGADA_TARDE" },
@@ -151,7 +151,7 @@ async function cargarTardanza() {
       method: "POST",
       body: JSON.stringify({
         empleado_ids: [props.empleadoId],
-        fechas: [form.value.fecha],
+        fecha: form.value.fecha,
       }),
     });
 
