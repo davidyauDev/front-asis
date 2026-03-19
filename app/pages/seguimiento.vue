@@ -1,1907 +1,578 @@
-<template>
-    <UDashboardPanel id="seguimiento">
-        <template #header>
-            <UDashboardNavbar :ui="{ right: 'gap-3' }">
-                <template #leading>
-                    <div class="flex items-center gap-3">
-                        <UDashboardSidebarCollapse />
-                        <div class="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-800">
-                            <div class="hidden sm:flex items-center gap-2">
-                                <div
-                                    class="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                    <UIcon name="i-heroicons-map-pin"
-                                        class="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                                </div>
-                                <div>
-                                    <h1 class="text-base font-semibold text-gray-900 dark:text-white">
-                                        Seguimiento de Técnicos
-                                    </h1>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                        <UIcon name="i-heroicons-signal" class="w-3 h-3" />
-                                        Monitoreo en tiempo real
-                                    </p>
-                                </div>
-                            </div>
-                            <h1 class="sm:hidden text-base font-semibold text-gray-900 dark:text-white">
-                                Seguimiento
-                            </h1>
-                        </div>
-                    </div>
-                </template>
-
-                <template #right>
-                    <div class="flex items-center gap-2">
-                        <!-- Indicador de sincronización -->
-                        <UTooltip text="Datos actualizados">
-                            <div
-                                class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
-                                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-pulse"></div>
-                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">En vivo</span>
-                            </div>
-                        </UTooltip>
-
-                        <!-- Notificaciones -->
-                        <UTooltip text="Técnicos sin marcación">
-                            <UButton color="neutral" variant="ghost" square class="relative group">
-                                <div class="relative">
-                                    <UIcon name="i-heroicons-bell"
-                                        class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
-
-                                    <!-- Contador badge -->
-                                    <div
-                                        class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 text-[9px] font-medium rounded-full flex items-center justify-center border border-white dark:border-gray-900">
-                                        3
-                                    </div>
-                                </div>
-                            </UButton>
-                        </UTooltip>
-                    </div>
-                </template>
-            </UDashboardNavbar>
-        </template>
-
-        <template #body>
-            <div class="p-4 sm:p-5 space-y-4">
-                <div
-                    class="rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden"
-                >
-                    <div class="flex border-b border-emerald-600 divide-x divide-gray-200 dark:divide-gray-800">
-                        <button
-                            type="button"
-                            class="px-6 py-3 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
-                            :class="tabActivo === 'con-rutas'
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
-                            @click="tabActivo = 'con-rutas'"
-                        >
-                            Con Rutas
-                            <span
-                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
-                                :class="tabActivo === 'con-rutas'
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
-                            >
-                                {{ tecnicosConRutas }}
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            class="px-6 py-3 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
-                            :class="tabActivo === 'sin-rutas'
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
-                            @click="tabActivo = 'sin-rutas'"
-                        >
-                            Sin Rutas
-                            <span
-                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
-                                :class="tabActivo === 'sin-rutas'
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
-                            >
-                                {{ tecnicosSinRutas }}
-                            </span>
-                        </button>
-
-                        <div class="flex-1" />
-                    </div>
-                </div>
-
-                <!-- SUBTABS (MarcaciÃ³n) -->
-                <div
-                    v-if="tabActivo === 'con-rutas'"
-                    class="rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden"
-                >
-                    <div class="flex border-b border-emerald-600 divide-x divide-gray-200 dark:divide-gray-800">
-                        <button
-                            type="button"
-                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
-                            :class="subTabConRutas === 'marcaron'
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
-                            @click="subTabConRutas = 'marcaron'"
-                        >
-                            Marcaron
-                            <span
-                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
-                                :class="subTabConRutas === 'marcaron'
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
-                            >
-                                {{ conRutasMarcados.length }}
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
-                            :class="subTabConRutas === 'no-marcaron'
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
-                            @click="subTabConRutas = 'no-marcaron'"
-                        >
-                            No marcaron
-                            <span
-                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
-                                :class="subTabConRutas === 'no-marcaron'
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
-                            >
-                                {{ conRutasNoMarcados.length }}
-                            </span>
-                        </button>
-
-                        <div class="flex-1" />
-                    </div>
-                </div>
-
-                <div
-                    v-else
-                    class="rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden"
-                >
-                    <div class="flex border-b border-emerald-600 divide-x divide-gray-200 dark:divide-gray-800">
-                        <button
-                            type="button"
-                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
-                            :class="subTabSinRutas === 'marcaron'
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
-                            @click="subTabSinRutas = 'marcaron'"
-                        >
-                            Marcaron
-                            <span
-                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
-                                :class="subTabSinRutas === 'marcaron'
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
-                            >
-                                {{ sinRutasMarcados.length }}
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            class="px-6 py-2.5 text-sm font-semibold uppercase tracking-wide flex items-center gap-2"
-                            :class="subTabSinRutas === 'no-marcaron'
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900/40'"
-                            @click="subTabSinRutas = 'no-marcaron'"
-                        >
-                            No marcaron
-                            <span
-                                class="inline-flex items-center justify-center min-w-[28px] h-5 px-2 rounded-full text-xs font-semibold"
-                                :class="subTabSinRutas === 'no-marcaron'
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'"
-                            >
-                                {{ sinRutasNoMarcados.length }}
-                            </span>
-                        </button>
-
-                        <div class="flex-1" />
-                    </div>
-                </div>
-
-                <div
-                    class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200/60 dark:border-gray-800/60 p-5 shadow-sm">
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <div class="relative flex-1 min-w-[300px]">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-600"
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-                            <input v-model="search" type="text"
-                                placeholder="Buscar por nombre, DNI, agencia o cliente..."
-                                class="w-full pl-10 pr-10 py-2.5 border border-gray-200/80 dark:border-gray-800/80 rounded-md bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-500" />
-                            <div v-if="search" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <span
-                                    class="text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded">
-                                    {{ currentListCount }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="relative">
-                            <select v-model="filtroEstado"
-                                class="appearance-none border border-gray-200/80 dark:border-gray-800/80 rounded-md pl-3 pr-8 py-2.5 bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-gray-300 dark:hover:border-gray-700">
-                                <option value="todos">Todos los técnicos</option>
-                                <option value="con-marcacion">Con marcación</option>
-                                <option value="sin-marcacion">Sin marcación</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                <svg class="h-4 w-4 text-gray-400 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        <div class="relative">
-                            <select v-model="ordenarPor"
-                                class="appearance-none border border-gray-200/80 dark:border-gray-800/80 rounded-md pl-3 pr-8 py-2.5 bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-gray-300 dark:hover:border-gray-700">
-                                <option value="original">Orden del sistema</option>
-                                <option value="nombre">Ordenar: Nombre</option>
-                                <option value="rutas">Más rutas</option>
-                                <option value="marcaciones">Más marcaciones</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                <svg class="h-4 w-4 text-gray-400 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        <div class="relative">
-                            <input v-model="fechaSeleccionada" type="date" @change="cargarDatos"
-                                class="border border-gray-200/80 dark:border-gray-800/80 rounded-md px-3 py-2.5 bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-gray-300 dark:hover:border-gray-700" />
-                        </div>
-
-                       
-
-                        <button @click="recargarDatos" :disabled="isLoading"
-                            class="border border-gray-200/80 dark:border-gray-800/80 bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium shadow-sm"
-                            title="Recargar datos">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                                :class="{ 'animate-spin': isLoading }" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span class="hidden sm:inline">{{ isLoading ? 'Cargando...' : 'Actualizar' }}</span>
-                        </button>
-                    </div>
-                </div>
-
-                <section>
-                    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
-                        <svg class="animate-spin h-10 w-10 text-gray-950 dark:text-gray-50 mb-4"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
-                        </svg>
-                        <p class="text-gray-600 dark:text-gray-400 font-medium text-sm">Cargando datos...</p>
-                    </div>
-
-                    <div v-else-if="error"
-                        class="bg-red-50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/60 rounded-lg p-8 text-center shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                            class="h-12 w-12 text-red-500/70 dark:text-red-400/70 mx-auto mb-4" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h3 class="text-base font-medium text-red-800 dark:text-red-200 mb-2">Error al cargar datos</h3>
-                        <p class="text-red-600/80 dark:text-red-400/80 mb-5 text-sm">{{ error }}</p>
-                        <button @click="recargarDatos"
-                            class="bg-red-600 dark:bg-red-500 text-white px-5 py-2.5 rounded-md hover:bg-red-700 dark:hover:bg-red-600 transition-all duration-200 text-sm font-medium shadow-sm">
-                            Intentar nuevamente
-                        </button>
-                    </div>
-
-                    <div v-else>
-                        <!-- TÉCNICOS CON RUTAS -->
-                        <div v-show="tabActivo === 'con-rutas'" class="animate-fadeIn">
-                           
-
-                            <div
-                                class="max-h-[calc(100vh-400px)] overflow-auto rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 shadow-sm">
-                                <table class="min-w-full table-fixed">
-                                    <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50">
-                                        <tr
-                                            class="text-left text-xs font-semibold text-gray-600 dark:text-gray-300 border-b border-gray-200/60 dark:border-gray-800/60">
-                                            <th class="w-[44px] px-3 py-3"></th>
-                                            <th class="w-[150px] px-3 py-3">DNI</th>
-                                            <th class="px-3 py-3">Técnico</th>
-                                            <th class="w-[110px] px-3 py-3">Rutas</th>
-                                            <th class="w-[140px] px-3 py-3">Marcación</th>
-                                            <th class="w-[260px] px-3 py-3">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
-                                        <template v-if="datosConRutasActual.length === 0">
-                                            <tr>
-                                                <td colspan="6" class="px-4 py-10 text-center">
-                                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                        No se encontraron técnicos
-                                                    </p>
-                                                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                                        Ajusta los filtros de búsqueda
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </template>
-
-                                        <template v-else>
-                                            <template v-for="[dni, tecnicoData] in datosConRutasActual" :key="dni">
-                                                <tr
-                                                    class="cursor-pointer hover:bg-gray-50/70 dark:hover:bg-gray-900/30 transition-colors"
-                                                    :class="(!hasMarcaciones(tecnicoData.iclock_transactions))
-                                                        ? 'bg-red-50/50 dark:bg-red-950/10'
-                                                        : 'bg-white dark:bg-gray-950'"
-                                                    @click="toggleTecnico(dni)"
-                                                >
-                                                    <td class="px-3 py-3 align-top">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            class="h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform"
-                                                            :class="{ 'rotate-180': tecnicosExpandidos[dni] }" fill="none"
-                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top">
-                                                        <span v-if="dni && dni !== 'null' && dni !== 'undefined'"
-                                                            class="font-mono text-xs text-gray-700 dark:text-gray-200">
-                                                            {{ dni }}
-                                                        </span>
-                                                        <span v-else class="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                                            Sin técnico
-                                                        </span>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top">
-                                                        <div class="flex items-center gap-3 min-w-0">
-                                                            <div
-                                                                class="w-9 h-9 rounded-md bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 flex items-center justify-center text-xs font-semibold shrink-0">
-                                                                {{ tecnicoData.rutas[0]?.firstname?.charAt(0) || '' }}{{
-                                                                    tecnicoData.rutas[0]?.lastname?.charAt(0) || '' }}
-                                                            </div>
-                                                            <div class="min-w-0">
-                                                                <div class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                                    {{ tecnicoData.rutas[0]?.firstname || '' }} {{
-                                                                        tecnicoData.rutas[0]?.lastname || '' }}
-                                                                </div>
-                                                                <div class="truncate text-xs text-gray-500 dark:text-gray-400">
-                                                                    {{ tecnicoData.rutas[0]?.agencia || '—' }}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top">
-                                                        <span
-                                                            class="inline-flex items-center rounded-md bg-gray-100/80 dark:bg-gray-800/80 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
-                                                            :title="`${tecnicoData.rutas.length} ruta(s)`"
-                                                        >
-                                                            {{ tecnicoData.rutas.length }}
-                                                        </span>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top">
-                                                        <span
-                                                            v-if="!hasMarcaciones(tecnicoData.iclock_transactions)"
-                                                            class="inline-flex items-center rounded-md bg-red-600/90 dark:bg-red-500/90 px-2.5 py-1 text-xs font-semibold text-white">
-                                                            Sin marcar
-                                                        </span>
-                                                        <span
-                                                            v-else
-                                                            class="inline-flex items-center rounded-md bg-emerald-100/80 dark:bg-emerald-900/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
-                                                            :title="`${getMarcacionesCount(tecnicoData.iclock_transactions)} marcación(es)`"
-                                                        >
-                                                            {{ getMarcacionesCount(tecnicoData.iclock_transactions) }}
-                                                        </span>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top" @click.stop>
-                                                        <div class="flex items-center justify-end gap-2">
-                                                            <button v-if="getDailyRecord(tecnicoData)"
-                                                                @click.stop="viewDailyRecord(tecnicoData)"
-                                                                :class="`px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnicoData)).color}`">
-                                                                {{ getConceptBadge(getDailyRecord(tecnicoData)).text }}
-                                                            </button>
-
-                                                            <button v-if="shouldShowValidar(tecnicoData)"
-                                                                @click.stop="validarRuta(tecnicoData)"
-                                                                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow text-xs font-medium flex items-center gap-1.5"
-                                                                title="Validar asistencia manualmente">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
-                                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        stroke-width="2"
-                                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                </svg>
-                                                                Validar
-                                                            </button>
-
-                                                            <button
-                                                                v-if="!hasMarcaciones(tecnicoData.iclock_transactions)"
-                                                                @click.stop="enviarWhatsApp(tecnicoData)"
-                                                                class="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow"
-                                                                title="Enviar WhatsApp">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                                                                    fill="currentColor" viewBox="0 0 24 24">
-                                                                    <path
-                                                                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.197 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.875 1.213 3.074c.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.414.248-.694.248-1.289.173-1.414-.074-.124-.272-.198-.57-.347M12 2a10 10 0 0 0-8.65 15.02L2 22l5.13-1.35A10 10 0 1 0 12 2" />
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-
-                                                <tr v-show="tecnicosExpandidos[dni]">
-                                                    <td colspan="6" class="p-0">
-                                                        <div
-                                                            class="p-5 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-200/60 dark:border-gray-800/60">
-                                                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                                <div
-                                                                    class="rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 overflow-hidden">
-                                                                    <div
-                                                                        class="px-4 py-3 border-b border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between">
-                                                                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                                                            Rutas asignadas
-                                                                        </div>
-                                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                                            {{ tecnicoData.rutas.length }}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="max-h-80 overflow-auto divide-y divide-gray-200/60 dark:divide-gray-800/60">
-                                                                        <div v-for="ruta in tecnicoData.rutas" :key="ruta.ticket_id"
-                                                                            class="p-4">
-                                                                            <div class="flex items-start justify-between gap-3">
-                                                                                <div class="min-w-0">
-                                                                                    <div class="flex items-center gap-2">
-                                                                                        <span
-                                                                                            class="text-xs font-medium bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md text-gray-700 dark:text-gray-200">
-                                                                                            {{ ruta.number }}
-                                                                                        </span>
-                                                                                        <span class="text-xs font-medium px-2 py-0.5 rounded-md"
-                                                                                            :class="{
-                                                                                                'bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': ruta.estado === 'Programado',
-                                                                                                'bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': ruta.estado === 'Completado',
-                                                                                                'bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': ruta.estado === 'En Proceso'
-                                                                                            }">
-                                                                                            {{ ruta.estado }}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    <div class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                                                        {{ ruta.agencia }}
-                                                                                    </div>
-                                                                                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                                                        {{ ruta.topic }} · {{ ruta.cliente }}
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
-                                                                                    {{ ruta.fecha_programada?.split(' ')[1] || '—' }}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div
-                                                                    class="rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 overflow-hidden">
-                                                                    <div
-                                                                        class="px-4 py-3 border-b border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between">
-                                                                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                                                            Marcaciones
-                                                                        </div>
-                                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                                            {{ getMarcacionesCount(tecnicoData.iclock_transactions) }}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="max-h-80 overflow-auto">
-                                                                        <div v-if="esObjetoSinMarcacion(tecnicoData.iclock_transactions)"
-                                                                            class="p-4 text-sm text-gray-600 dark:text-gray-300">
-                                                                            {{ tecnicoData.iclock_transactions.message }}
-                                                                        </div>
-                                                                        <div
-                                                                            v-else-if="getMarcacionesCount(tecnicoData.iclock_transactions) === 0"
-                                                                            class="p-4 text-sm text-gray-600 dark:text-gray-300">
-                                                                            Sin marcaciones registradas.
-                                                                        </div>
-                                                                        <div v-else class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
-                                                                            <div v-for="m in (Array.isArray(tecnicoData.iclock_transactions) ? tecnicoData.iclock_transactions : [])"
-                                                                                :key="m.id || m.punch_time"
-                                                                                class="p-4 flex items-start justify-between gap-4">
-                                                                                <div class="min-w-0">
-                                                                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                                                        {{ String(m.punch_time || '').split(' ')[1] || m.punch_time || '—' }}
-                                                                                    </div>
-                                                                                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                                                        {{ m.terminal_alias || m.area_alias || m.gps_location || '—' }}
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div v-if="m.imagen_url" class="shrink-0">
-                                                                                    <img :src="m.imagen_url" alt="Foto"
-                                                                                        class="w-14 h-14 object-cover rounded-md border border-gray-200/60 dark:border-gray-800/60" />
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div v-if="false" class="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
-                                <div v-if="datosAgrupadosFiltrados.length === 0"
-                                    class="text-center py-16 bg-gray-50/50 dark:bg-gray-900/30 rounded-lg border border-gray-200/60 dark:border-gray-800/60">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <p class="text-gray-700 dark:text-gray-300 font-medium text-sm mb-1">No se
-                                        encontraron técnicos</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-500">Intenta ajustar los filtros de
-                                        búsqueda</p>
-                                </div>
-
-                                <div v-for="[dni, tecnicoData] in datosAgrupadosFiltrados" :key="dni"
-                                    class="bg-white dark:bg-gray-950 rounded-lg overflow-hidden transition-all duration-200 shadow-sm hover:shadow"
-                                    :class="{
-                                        'border-2 border-red-500/70 dark:border-red-500/70': esObjetoSinMarcacion(tecnicoData.iclock_transactions),
-                                        'border border-gray-200/60 dark:border-gray-800/60': !esObjetoSinMarcacion(tecnicoData.iclock_transactions)
-                                    }">
-                                    <div class="p-5 cursor-pointer transition-all duration-200" :class="{
-                                        'bg-red-50/50 dark:bg-red-950/10 hover:bg-red-50 dark:hover:bg-red-950/20': esObjetoSinMarcacion(tecnicoData.iclock_transactions),
-                                        'hover:bg-gray-50/50 dark:hover:bg-gray-900/30': !esObjetoSinMarcacion(tecnicoData.iclock_transactions)
-                                    }" @click="toggleTecnico(dni)">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-3">
-                                                <div
-                                                    class="w-11 h-11 bg-gray-900 dark:bg-gray-100 rounded-md flex items-center justify-center text-white dark:text-gray-900 font-medium text-sm shrink-0 shadow-sm">
-                                                    {{ tecnicoData.rutas[0]?.firstname?.charAt(0) || '' }}{{
-                                                    tecnicoData.rutas[0]?.lastname?.charAt(0) || '' }}
-                                                </div>
-
-                                                <div class="min-w-0">
-                                                    <h3
-                                                        class="text-sm font-medium text-gray-950 dark:text-gray-50 truncate">
-                                                        {{ tecnicoData.rutas[0]?.firstname || '' }} {{
-                                                        tecnicoData.rutas[0]?.lastname || '' }}
-                                                    </h3>
-                                                    <p class="text-xs mt-0.5">
-                                                        <span v-if="dni && dni !== 'null' && dni !== 'undefined'"
-                                                            class="text-gray-500 dark:text-gray-400">DNI: {{ dni
-                                                            }}</span>
-                                                        <span v-else
-                                                            class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-md font-medium">Sin
-                                                            técnico asignado</span>
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div class="flex items-center gap-2 shrink-0">
-                                                <span v-if="esObjetoSinMarcacion(tecnicoData.iclock_transactions)"
-                                                    class="px-2.5 py-1 bg-red-600/90 dark:bg-red-500/90 text-white text-xs font-medium rounded-md shadow-sm"
-                                                    title="Sin marcación">
-                                                    Sin marcación
-                                                </span>
-                                                <span
-                                                    v-else-if="hasMarcaciones(tecnicoData.iclock_transactions)"
-                                                    class="px-2.5 py-1 bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-md"
-                                                    :title="`${getMarcacionesCount(tecnicoData.iclock_transactions)} marcación(es)`">
-                                                    {{ getMarcacionesCount(tecnicoData.iclock_transactions) }}
-                                                </span>
-
-                                                <span
-                                                    class="px-2.5 py-1 bg-gray-100/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-md"
-                                                    :title="`${tecnicoData.rutas.length} ruta(s)`">
-                                                    {{ tecnicoData.rutas.length }} rutas
-                                                </span>
-
-                                                <!-- Badge que muestra si existe daily_record (click para ver modal) -->
-                                                <button v-if="getDailyRecord(tecnicoData)"
-                                                    @click.stop="viewDailyRecord(tecnicoData)"
-                                                    :class="`ml-2 px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnicoData)).color}`">
-                                                    {{ getConceptBadge(getDailyRecord(tecnicoData)).text }}
-                                                </button>
-
-                                                <button v-if="shouldShowValidar(tecnicoData)"
-                                                    @click.stop="validarRuta(tecnicoData)"
-                                                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow text-xs font-medium flex items-center gap-1.5"
-                                                    title="Validar asistencia manualmente">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
-                                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    Validar
-                                                </button>
-
-                                                <button v-if="esObjetoSinMarcacion(tecnicoData.iclock_transactions)"
-                                                    @click.stop="enviarWhatsApp(tecnicoData)"
-                                                    class="p-2 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow"
-                                                    title="Enviar WhatsApp">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                                                        fill="currentColor" viewBox="0 0 24 24">
-                                                        <path
-                                                            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                                                    </svg>
-                                                </button>
-
-                                                <!-- Mostrar daily_record si existe y no hay marcación -->
-                                                <div v-if="getDailyRecord(tecnicoData) && !hasMarcaciones(tecnicoData.iclock_transactions)"
-                                                    class="flex items-center gap-2">
-                                                   
-                                                    <div v-if="showDailyRecord[getKeyForTecnico(tecnicoData)]"
-                                                        class="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs w-full border border-gray-200/60 dark:border-gray-800/60">
-                                                        <pre
-                                                            class="whitespace-pre-wrap">{{ formatDailyRecord(getDailyRecord(tecnicoData)) }}</pre>
-                                                    </div>
-                                                </div>
-
-                                                <!-- daily_record panel is shown inside the Registro button block above -->
-
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="h-4 w-4 text-gray-400 dark:text-gray-600 transition-transform duration-200"
-                                                    :class="{ 'rotate-180': tecnicosExpandidos[dni] }" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div v-show="tecnicosExpandidos[dni]"
-                                        class="p-6 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-200/60 dark:border-gray-800/60">
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            <div>
-                                                <div
-                                                    class="flex items-center gap-2.5 mb-5 pb-3 border-b border-gray-200/60 dark:border-gray-800/60">
-                                                    <div
-                                                        class="w-9 h-9 bg-gray-100 dark:bg-gray-800/80 rounded-md flex items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            class="h-4 w-4 text-gray-600 dark:text-gray-400" fill="none"
-                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                        </svg>
-                                                    </div>
-                                                    <h4 class="text-sm font-medium text-gray-950 dark:text-gray-50">
-                                                        Rutas Asignadas</h4>
-                                                </div>
-                                                <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                                                    <div v-for="ruta in tecnicoData.rutas" :key="ruta.ticket_id"
-                                                        class="bg-white dark:bg-gray-950 border border-gray-200/60 dark:border-gray-800/60 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 shadow-sm hover:shadow">
-                                                        <div class="flex items-start justify-between mb-2.5">
-                                                            <div class="flex items-center gap-2">
-                                                                <span
-                                                                    class="text-xs font-medium bg-gray-100 dark:bg-gray-800/80 px-2.5 py-1 rounded-md text-gray-700 dark:text-gray-300">{{
-                                                                    ruta.number }}</span>
-                                                                <span class="text-xs font-medium px-2.5 py-1 rounded-md"
-                                                                    :class="{
-                                                                        'bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': ruta.estado === 'Programado',
-                                                                        'bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': ruta.estado === 'Completado',
-                                                                        'bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': ruta.estado === 'En Proceso'
-                                                                    }">
-                                                                    {{ ruta.estado }}
-                                                                </span>
-                                                            </div>
-                                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{
-                                                                ruta.fecha_programada?.split(' ')[1] }}</span>
-                                                        </div>
-                                                        <p
-                                                            class="text-sm font-medium text-gray-950 dark:text-gray-50 mb-2.5">
-                                                            {{ ruta.agencia }}
-                                                        </p>
-                                                        <div
-                                                            class="space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
-                                                            <p>
-                                                                <span
-                                                                    class="font-medium text-gray-700 dark:text-gray-300">Equipo:</span>
-                                                                {{ ruta.equipo }}
-                                                            </p>
-                                                            <p>
-                                                                <span
-                                                                    class="font-medium text-gray-700 dark:text-gray-300">Servicio:</span>
-                                                                {{ ruta.topic }}
-                                                            </p>
-                                                            <p>
-                                                                <span
-                                                                    class="font-medium text-gray-700 dark:text-gray-300">Cliente:</span>
-                                                                {{ ruta.cliente }}
-                                                            </p>
-                                                        </div>
-                                                        <p v-if="ruta.subject !== 'S/N'"
-                                                            class="text-xs text-gray-500 dark:text-gray-400 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-800/60">
-                                                            {{ ruta.subject }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div
-                                                    class="flex items-center gap-2.5 mb-5 pb-3 border-b border-gray-200/60 dark:border-gray-800/60">
-                                                    <div
-                                                        class="w-9 h-9 bg-gray-100 dark:bg-gray-800/80 rounded-md flex items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            class="h-4 w-4 text-gray-600 dark:text-gray-400" fill="none"
-                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                    </div>
-                                                    <h4 class="text-sm font-medium text-gray-950 dark:text-gray-50">
-                                                        Marcaciones de Asistencia</h4>
-                                                </div>
-                                                <div v-if="esObjetoSinMarcacion(tecnicoData.iclock_transactions)"
-                                                    class="bg-red-50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/60 rounded-lg p-5 text-center shadow-sm">
-                                                    <div
-                                                        class="inline-flex items-center justify-center w-11 h-11 bg-red-100 dark:bg-red-900/30 rounded-full mb-3">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            class="h-5 w-5 text-red-600 dark:text-red-400" fill="none"
-                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                        </svg>
-                                                    </div>
-                                                    <p class="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
-                                                        Sin registro de marcación</p>
-                                                    <p class="text-xs text-red-600/80 dark:text-red-400/80">El técnico
-                                                        no ha registrado asistencia hoy</p>
-                                                </div>
-
-                                                <div v-else-if="Array.isArray(tecnicoData.iclock_transactions)"
-                                                    class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                                                    <div v-for="marcacion in tecnicoData.iclock_transactions"
-                                                        :key="marcacion.id"
-                                                        class="bg-white dark:bg-gray-950 border border-gray-200/60 dark:border-gray-800/60 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 shadow-sm hover:shadow">
-                                                        <div class="flex items-start justify-between gap-3">
-                                                            <div class="flex-1 min-w-0">
-                                                                <div class="flex items-center justify-between mb-2.5">
-                                                                    <div>
-                                                                        <p
-                                                                            class="text-sm font-medium text-gray-950 dark:text-gray-50">
-                                                                            {{ new
-                                                                                Date(marcacion.punch_time).toLocaleTimeString('es-PE',
-                                                                            { hour: '2-digit', minute: '2-digit' }) }}
-                                                                        </p>
-                                                                        <p
-                                                                            class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                                            {{ marcacion.terminal_sn }}</p>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="text-xs text-gray-600 dark:text-gray-400">
-                                                                    <p class="mb-1.5">{{ marcacion.gps_location }}</p>
-                                                                    <p class="text-gray-400 dark:text-gray-500">
-                                                                        {{ marcacion.latitude }}, {{ marcacion.longitude
-                                                                        }}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div v-if="marcacion.imagen_url" class="flex-shrink-0">
-                                                                <img :src="marcacion.imagen_url" alt="Foto"
-                                                                    class="w-16 h-16 object-cover rounded-md border border-gray-200/60 dark:border-gray-800/60 hover:scale-105 transition-transform duration-200 cursor-pointer shadow-sm"
-                                                                    :title="'Ver imagen'" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TÉCNICOS SIN RUTAS -->
-                        <div v-show="tabActivo === 'sin-rutas'" class="animate-fadeIn">
-                           
-
-                            <div
-                                class="max-h-[calc(100vh-400px)] overflow-auto rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 shadow-sm">
-                                <table class="min-w-full table-fixed">
-                                    <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50">
-                                        <tr
-                                            class="text-left text-xs font-semibold text-gray-600 dark:text-gray-300 border-b border-gray-200/60 dark:border-gray-800/60">
-                                            <th class="w-[44px] px-3 py-3"></th>
-                                            <th class="w-[150px] px-3 py-3">DNI</th>
-                                            <th class="px-3 py-3">Técnico</th>
-                                            <th class="w-[140px] px-3 py-3">Marcación</th>
-                                            <th class="w-[260px] px-3 py-3">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
-                                        <template v-if="tecnicosSinRutasActual.length === 0">
-                                            <tr>
-                                                <td colspan="5" class="px-4 py-10 text-center">
-                                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                        Todos los técnicos tienen rutas asignadas
-                                                    </p>
-                                                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                                        No hay técnicos sin rutas para la fecha seleccionada
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </template>
-
-                                        <template v-else>
-                                            <template v-for="tecnico in tecnicosSinRutasActual" :key="getExpandKey(tecnico)">
-                                                <tr
-                                                    class="cursor-pointer hover:bg-gray-50/70 dark:hover:bg-gray-900/30 transition-colors bg-amber-50/30 dark:bg-amber-950/10"
-                                                    @click="toggleTecnico(getExpandKey(tecnico))"
-                                                >
-                                                    <td class="px-3 py-3 align-top">
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                            class="h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform"
-                                                            :class="{ 'rotate-180': tecnicosExpandidos[getExpandKey(tecnico)] }" fill="none"
-                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top">
-                                                        <span v-if="tecnico.dni && tecnico.dni !== 'null'"
-                                                            class="font-mono text-xs text-gray-700 dark:text-gray-200">
-                                                            {{ tecnico.dni }}
-                                                        </span>
-                                                        <span v-else class="text-xs text-gray-500 dark:text-gray-400">
-                                                            Sin DNI
-                                                        </span>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top">
-                                                        <div class="flex items-center gap-3 min-w-0">
-                                                            <div
-                                                                class="w-9 h-9 rounded-md bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 flex items-center justify-center text-xs font-semibold shrink-0">
-                                                                {{ tecnico.nombre?.charAt(0) || 'T' }}{{ tecnico.apellido?.charAt(0) || 'S' }}
-                                                            </div>
-                                                            <div class="min-w-0">
-                                                                <div class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                                    {{ tecnico.nombre_completo || 'Sin nombre' }}
-                                                                </div>
-                                                                <div class="truncate text-xs text-gray-500 dark:text-gray-400">
-                                                                    {{ tecnico.departamento || '—' }} · {{ tecnico.posicion || '—' }}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top">
-                                                        <span
-                                                            v-if="hasMarcaciones(tecnico.marcaciones)"
-                                                            class="inline-flex items-center rounded-md bg-emerald-100/80 dark:bg-emerald-900/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
-                                                        >
-                                                            ✓ Marcó
-                                                        </span>
-                                                        <span v-else
-                                                            class="inline-flex items-center rounded-md bg-red-100/80 dark:bg-red-900/30 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-red-300">
-                                                            Sin marcar
-                                                        </span>
-                                                    </td>
-
-                                                    <td class="px-3 py-3 align-top" @click.stop>
-                                                        <div class="flex items-center justify-end gap-2">
-                                                            <button v-if="getDailyRecord(tecnico)"
-                                                                @click.stop="viewDailyRecord(tecnico)"
-                                                                :class="`px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnico)).color}`">
-                                                                {{ getConceptBadge(getDailyRecord(tecnico)).text }}
-                                                            </button>
-
-                                                            <button v-if="shouldShowValidar(tecnico)"
-                                                                @click.stop="validarRutaSinRuta(tecnico)"
-                                                                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow text-xs font-medium flex items-center gap-1.5"
-                                                                title="Validar asistencia manualmente">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
-                                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        stroke-width="2"
-                                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                </svg>
-                                                                Validar
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-
-                                                <tr v-show="tecnicosExpandidos[getExpandKey(tecnico)]">
-                                                    <td colspan="5" class="p-0">
-                                                        <div class="p-5 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-200/60 dark:border-gray-800/60">
-                                                            <div class="rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 overflow-hidden">
-                                                                <div class="px-4 py-3 border-b border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between">
-                                                                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                                                        Marcaciones
-                                                                    </div>
-                                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                                        {{ getMarcacionesCount(tecnico.marcaciones) }}
-                                                                    </div>
-                                                                </div>
-                                                                <div class="max-h-80 overflow-auto">
-                                                                    <div v-if="!Array.isArray(tecnico.marcaciones)" class="p-4 text-sm text-gray-600 dark:text-gray-300">
-                                                                        {{ (tecnico.marcaciones && tecnico.marcaciones.message) || 'Sin marcaciones.' }}
-                                                                    </div>
-                                                                    <div v-else-if="getMarcacionesCount(tecnico.marcaciones) === 0" class="p-4 text-sm text-gray-600 dark:text-gray-300">
-                                                                        Sin marcaciones registradas.
-                                                                    </div>
-                                                                    <div v-else class="divide-y divide-gray-200/60 dark:divide-gray-800/60">
-                                                                        <div v-for="m in tecnico.marcaciones" :key="m.id || m.punch_time" class="p-4 flex items-start justify-between gap-4">
-                                                                            <div class="min-w-0">
-                                                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                                                    {{ String(m.punch_time || '').split(' ')[1] || m.punch_time || '—' }}
-                                                                                </div>
-                                                                                <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                                                    {{ m.terminal_alias || m.area_alias || m.gps_location || '—' }}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div v-if="m.imagen_url" class="shrink-0">
-                                                                                <img :src="m.imagen_url" alt="Foto"
-                                                                                    class="w-14 h-14 object-cover rounded-md border border-gray-200/60 dark:border-gray-800/60" />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div v-if="false" class="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
-                                <div v-if="tecnicosSinRutasFiltrados.length === 0"
-                                    class="text-center py-16 bg-gray-50/50 dark:bg-gray-900/30 rounded-lg border border-gray-200/60 dark:border-gray-800/60">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <p class="text-gray-700 dark:text-gray-300 font-medium text-sm mb-1">Todos los
-                                        técnicos tienen rutas asignadas</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-500">No hay técnicos sin rutas para
-                                        la fecha seleccionada</p>
-                                </div>
-
-                                <div v-for="tecnico in tecnicosSinRutasFiltrados" :key="tecnico.dni"
-                                    class="bg-white dark:bg-gray-950 rounded-lg overflow-hidden transition-all duration-200 border border-amber-200/70 dark:border-amber-900/70 shadow-sm hover:shadow">
-                                    <div class="p-5 bg-amber-50/50 dark:bg-amber-950/10">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-3">
-                                                <div
-                                                    class="w-11 h-11 bg-gray-900 dark:bg-gray-100 rounded-md flex items-center justify-center text-white dark:text-gray-900 font-medium text-sm shrink-0 shadow-sm">
-                                                    {{ tecnico.nombre?.charAt(0) || 'T' }}{{ tecnico.apellido?.charAt(0)
-                                                    || 'S' }}
-                                                </div>
-
-                                                <div class="min-w-0">
-                                                    <h3
-                                                        class="text-sm font-medium text-gray-950 dark:text-gray-50 truncate">
-                                                        {{ tecnico.nombre_completo || 'Sin nombre' }}
-                                                    </h3>
-                                                    <p class="text-xs mt-0.5">
-                                                        <span v-if="tecnico.dni && tecnico.dni !== 'null'"
-                                                            class="text-gray-500 dark:text-gray-400">DNI: {{ tecnico.dni
-                                                            }}</span>
-                                                        <span v-else
-                                                            class="bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-md font-medium">Sin
-                                                            DNI</span>
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div class="flex items-center gap-2 shrink-0">
-                                                <span
-                                                    class="px-2.5 py-1 bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded-md"
-                                                    title="Sin rutas asignadas">
-                                                    Sin rutas
-                                                </span>
-
-                                                <span
-                                                    v-if="hasMarcaciones(tecnico.marcaciones)"
-                                                    class="px-2.5 py-1 bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-md"
-                                                    title="Con marcación">
-                                                    ✓ Marcó
-                                                </span>
-                                                <span v-else
-                                                    class="px-2.5 py-1 bg-red-100/80 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-md"
-                                                    title="Sin marcación">
-                                                    Sin marcar
-                                                </span>
-                                                 <button v-if="getDailyRecord(tecnico)"
-                                                     @click.stop="viewDailyRecord(tecnico)"
-                                                     :class="`ml-2 px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnico)).color}`">
-                                                     {{ getConceptBadge(getDailyRecord(tecnico)).text }}
-                                                 </button>
-
-                                                <button v-if="shouldShowValidar(tecnico)"
-                                                    @click.stop="validarRutaSinRuta(tecnico)"
-                                                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow text-xs font-medium flex items-center gap-1.5"
-                                                    title="Validar asistencia manualmente">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
-                                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    Validar
-                                                </button>
-                                            </div>
-                                            <div v-if="showDailyRecord[getKeyForTecnico(tecnico)]"
-                                                class="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs w-full border border-gray-200/60 dark:border-gray-800/60">
-                                                <pre
-                                                    class="whitespace-pre-wrap">{{ formatDailyRecord(getDailyRecord(tecnico)) }}</pre>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-            <ValidationModal v-model:show="showValidationModal" :tecnico="validationTarget"
-                :loading="validationLoading" @submit="onValidationSubmit" />
-
-            <!-- Modal ligero para mostrar daily_record -->
-            <div v-if="showDailyModal" class="fixed inset-0 z-50 flex items-center justify-center">
-                <div class="absolute inset-0 bg-black/50" @click="showDailyModal = false" aria-hidden="true"></div>
-                <div class="relative rounded-lg shadow-lg w-full max-w-2xl mx-4 p-5"
-                    :class="dailyModalPanelClass"
-                    role="dialog" aria-modal="true">
-                    <header class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-2 min-w-0">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-50 truncate">Detalle de Registro</h3>
-                            <span v-if="dailyModalContent" :class="`px-2 py-1 text-xs font-medium rounded-md ${dailyModalBadge.color}`">
-                                {{ dailyModalBadge.text }}
-                            </span>
-                        </div>
-                        <button @click="showDailyModal = false"
-                            class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✕</button>
-                    </header>
-                    <pre
-                        class="text-xs overflow-auto max-h-[60vh] p-3 rounded border"
-                        :class="dailyModalPreClass">{{ formatDailyRecord(dailyModalContent) }}</pre>
-                </div>
-            </div>
-        </template>
-    </UDashboardPanel>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { apiFetch } from '~/services/api'
+import { computed, onMounted, ref } from 'vue'
+import SeguimientoConRutasTable from '~/components/seguimiento/SeguimientoConRutasTable.vue'
+import SeguimientoDailyRecordModal from '~/components/seguimiento/SeguimientoDailyRecordModal.vue'
+import SeguimientoFilters from '~/components/seguimiento/SeguimientoFilters.vue'
+import SeguimientoSinRutasTable from '~/components/seguimiento/SeguimientoSinRutasTable.vue'
+import SeguimientoTabs from '~/components/seguimiento/SeguimientoTabs.vue'
 import ValidationModal from '~/components/seguimiento/ValidationModal.vue'
-
-interface Ruta {
-    ticket_id: number
-    number: string
-    fecha_programada: string
-    fecha_programada_formateada: string
-    fecha_actual: string
-    id_tecnico: number
-    firstname: string
-    lastname: string
-    dni: string
-    equipo: string
-    serie: string
-    agencia: string
-    topic_id: number
-    topic: string
-    cliente: string
-    status_id: number
-    estado: string
-    subject: string
-    id_solucion: number | null
-    incidencia: string | null
-    falla: string | null
-}
-
-interface Marcacion {
-    id?: number
-    emp_code: string
-    punch_time: string
-    punch_state?: string
-    verify_type?: number
-    work_code?: string | null
-    terminal_sn: string
-    terminal_alias?: string | null
-    area_alias?: string | null
-    longitude?: string
-    latitude?: string
-    gps_location?: string
-    mobile?: string
-    source?: number
-    purpose?: number
-    crc?: string | null
-    is_attendance?: number
-    reserved?: string | null
-    upload_time?: string
-    sync_status?: number
-    sync_time?: string | null
-    emp_id?: number
-    terminal_id?: number | null
-    is_mask?: number
-    temperature?: string
-    identificador?: string | null
-    imagen_url?: string | null
-}
-
-interface Usuario {
-    id: number
-    dni: string
-    nombre: string
-    apellido: string
-    nombre_completo: string
-    department_id: number
-    departamento: string
-    position_id: number
-    posicion: string
-    email: string
-    mobile: string
-    status: number
-    marcaciones: Marcacion[] | SinMarcacionMessage
-    rutas: Ruta[]
-}
-
-interface ApiResponse {
-    success: boolean
-    fecha: string
-    dni: string | null
-    total_usuarios: number
-    total_con_ruta: number
-    total_sin_ruta: number
-    usuarios_con_ruta: Usuario[]
-    usuarios_sin_ruta: Usuario[]
-}
-
-interface TecnicoData {
-    usuario: Usuario
-    rutas: Ruta[]
-    iclock_transactions: Marcacion[] | SinMarcacionMessage
-}
-
-type SinMarcacionMessage = { message: string }
-
-const esObjetoSinMarcacion = (obj: unknown): obj is SinMarcacionMessage => {
-    return !!obj && typeof obj === 'object' && 'message' in obj && !Array.isArray(obj)
-}
-
-const getMarcacionesCount = (value: Marcacion[] | SinMarcacionMessage | null | undefined) =>
-    Array.isArray(value) ? value.length : 0
-
-const hasMarcaciones = (value: Marcacion[] | SinMarcacionMessage | null | undefined) => getMarcacionesCount(value) > 0
+import { apiFetch } from '~/services/api'
+import type {
+  ApiResponse,
+  SeguimientoSubTab,
+  SeguimientoTab,
+  TecnicoConRutaEntry,
+  TecnicoData,
+  Usuario,
+  ValidationTarget,
+} from '~/types/seguimiento'
+import {
+  getDailyRecord,
+  getMarcacionesCount,
+  hasMarcaciones,
+} from '~/utils/seguimiento'
 
 const search = ref('')
-const showFilters = ref(false)
 const filtroEstado = ref('todos')
 const ordenarPor = ref('original')
-const tecnicosExpandidos = ref<Record<string, boolean>>({})
-const fechaSeleccionada = ref(new Date().toISOString().split('T')[0])
-const tabActivo = ref<'con-rutas' | 'sin-rutas'>('con-rutas')
-const subTabConRutas = ref<'marcaron' | 'no-marcaron'>('marcaron')
-const subTabSinRutas = ref<'marcaron' | 'no-marcaron'>('marcaron')
+const fechaSeleccionada = ref(new Date().toISOString().split('T')[0] || '')
+const tabActivo = ref<SeguimientoTab>('con-rutas')
+const subTabConRutas = ref<SeguimientoSubTab>('marcaron')
+const subTabSinRutas = ref<SeguimientoSubTab>('marcaron')
 
 const isLoading = ref(false)
 const error = ref<string | null>(null)
-
-// Datos de usuarios con y sin rutas
 const usuariosConRutaData = ref<Usuario[]>([])
 const usuariosSinRutaData = ref<Usuario[]>([])
+const tecnicosExpandidos = ref<Record<string, boolean>>({})
 
+const showValidationModal = ref(false)
+const validationTarget = ref<ValidationTarget | null>(null)
+const validationLoading = ref(false)
 
+const showDailyModal = ref(false)
+const dailyModalContent = ref<unknown | null>(null)
 
-const generarReporte = () => {
-    alert('Funcionalidad de generación de reporte (mock)')
+const conceptoMap: Record<string, number> = {
+  asistencia: 1,
+  vacaciones: 2,
+  descanso_medico: 3,
+  sin_ruta: 4,
+  no_marco: 5,
+  cese: 6,
 }
 
-const toggleTecnico = (dni: string) => {
-    tecnicosExpandidos.value[dni] = !tecnicosExpandidos.value[dni]
+const toggleTecnico = (key: string) => {
+  tecnicosExpandidos.value[key] = !tecnicosExpandidos.value[key]
+}
+
+const openValidationModal = (target: ValidationTarget) => {
+  validationTarget.value = target
+  showValidationModal.value = true
+}
+
+const viewDailyRecord = (target: ValidationTarget) => {
+  dailyModalContent.value = getDailyRecord(target)
+  showDailyModal.value = true
 }
 
 const enviarWhatsApp = (tecnicoData: TecnicoData) => {
-    const normalizeWhatsAppPhone = (raw: string) => {
-        const digits = String(raw || '').replace(/[^\d]/g, '')
-        if (!digits) return null
-
-        let phone = digits
-
-        if (phone.startsWith('00')) phone = phone.slice(2)
-        if (phone.startsWith('0')) phone = phone.slice(1)
-
-        // Heurística Perú: 9 dígitos (celular) -> prefijar 51
-        if (phone.length === 9 && phone.startsWith('9')) phone = `51${phone}`
-
-        if (phone.length < 10) return null
-        return phone
+  const normalizeWhatsAppPhone = (raw: string) => {
+    const digits = String(raw || '').replace(/[^\d]/g, '')
+    if (!digits) {
+      return null
     }
 
-    const usuario = tecnicoData?.usuario || {}
-    const nombre = usuario?.nombre_completo || 'Técnico'
-    const mobileRaw = usuario?.mobile || ''
-    const phone = normalizeWhatsAppPhone(mobileRaw)
+    let phone = digits
 
-    if (!phone) {
-        alert(`No se pudo enviar WhatsApp: el técnico "${nombre}" no tiene un número válido en el campo mobile.`)
-        return
+    if (phone.startsWith('00')) {
+      phone = phone.slice(2)
     }
 
-    const fecha = fechaSeleccionada.value
-    const departamento = usuario?.departamento ? ` (${usuario.departamento})` : ''
-    const mensaje = [
-        `Hola ${nombre}${departamento},`,
-        '',
-        `Te escribo por el seguimiento de asistencia del día ${fecha}.`,
-        'Veo que no se registró tu marcación.',
-        '',
-        '¿Puedes confirmarme si tuviste algún inconveniente?'
-    ].join('\n')
-
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`
-    const w = window.open(url, '_blank', 'noopener,noreferrer')
-    if (!w) window.location.href = url
-}
-// Modal de validación
-const showValidationModal = ref(false)
-const validationTarget = ref<any | null>(null)
-const validationLoading = ref(false)
-
-const validarRuta = (tecnicoData: any) => {
-    validationTarget.value = tecnicoData
-    showValidationModal.value = true
-}
-
-const validarRutaSinRuta = (tecnico: any) => {
-    validationTarget.value = tecnico
-    showValidationModal.value = true
-}
-
-// Detecta si ya existe un daily_record en distintas estructuras posibles
-const hasDailyRecordForTecnico = (t: any) => {
-    if (!t) return false
-    if (t.daily_record) return true
-    if (t.usuario && t.usuario.daily_record) return true
-    if (Array.isArray(t.rutas)) {
-        if (t.rutas.some((r: any) => r.daily_record)) return true
+    if (phone.startsWith('0')) {
+      phone = phone.slice(1)
     }
-    if (Array.isArray(t.marcaciones)) {
-        if (t.marcaciones.some((m: any) => (m as any).daily_record)) return true
+
+    if (phone.length === 9 && phone.startsWith('9')) {
+      phone = `51${phone}`
     }
-    // also check iclock_transactions items
-    if (Array.isArray(t.iclock_transactions)) {
-        if (t.iclock_transactions.some((m: any) => m.daily_record)) return true
+
+    return phone.length < 10 ? null : phone
+  }
+
+  const usuario = tecnicoData.usuario || ({} as Usuario)
+  const nombre = usuario.nombre_completo || 'Técnico'
+  const mobileRaw = usuario.mobile || ''
+  const phone = normalizeWhatsAppPhone(mobileRaw)
+
+  if (!phone) {
+    alert(`No se pudo enviar WhatsApp: el técnico "${nombre}" no tiene un número válido en el campo mobile.`)
+    return
+  }
+
+  const fecha = fechaSeleccionada.value
+  const departamento = usuario.departamento ? ` (${usuario.departamento})` : ''
+  const mensaje = [
+    `Hola ${nombre}${departamento},`,
+    '',
+    `Te escribo por el seguimiento de asistencia del día ${fecha}.`,
+    'Veo que no se registró tu marcación.',
+    '',
+    '¿Puedes confirmarme si tuviste algún inconveniente?',
+  ].join('\n')
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`
+  const openedWindow = window.open(url, '_blank', 'noopener,noreferrer')
+  if (!openedWindow) {
+    window.location.href = url
+  }
+}
+
+const handleFechaSeleccionada = (value: string) => {
+  fechaSeleccionada.value = value
+  cargarDatos()
+}
+
+const onValidationSubmit = async (payload: { motivo: string | number; comentario?: string }) => {
+  if (!validationTarget.value) {
+    return
+  }
+
+  validationLoading.value = true
+
+  try {
+    const usuario =
+      'usuario' in validationTarget.value
+        ? validationTarget.value.usuario
+        : validationTarget.value
+
+    const employeeId = usuario.id || null
+    const empCode = usuario.dni || ''
+    let conceptId: number | null = null
+
+    if (typeof payload.motivo === 'number') {
+      conceptId = payload.motivo
+    } else if (typeof payload.motivo === 'string') {
+      conceptId = conceptoMap[payload.motivo] || null
     }
-    return false
-}
 
-// Lógica combinada para mostrar el botón Validar: no hay marcación y no existe daily_record
-const shouldShowValidar = (t: any) => {
-    let noMarcacion = false
-    if (t == null) return false
-    if ('iclock_transactions' in t) {
-        noMarcacion = !hasMarcaciones(t.iclock_transactions)
-    } else if ('marcaciones' in t) {
-        noMarcacion = !hasMarcaciones(t.marcaciones)
+    const body = {
+      employee_id: employeeId,
+      emp_code: empCode,
+      concept_id: conceptId,
+      start_date: fechaSeleccionada.value,
+      end_date: fechaSeleccionada.value,
+      comment: payload.comentario || null,
     }
-    return noMarcacion && !hasDailyRecordForTecnico(t)
-}
 
-// Estado para mostrar paneles de daily_record
-const showDailyRecord = ref<Record<string, boolean>>({})
-const showDailyModal = ref(false)
-const dailyModalContent = ref<any | null>(null)
+    await apiFetch('/api/employee-concepts', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
 
-const getKeyForTecnico = (t: any) => {
-    return String(t?.usuario?.dni || t?.dni || t?.emp_code || t?.usuario?.id || t?.id || '')
-}
-
-const getExpandKey = (t: any) => {
-    const k = getKeyForTecnico(t)
-    return k || String(t?.id || t?.dni || t?.emp_code || '')
-}
-
-const toggleDailyRecord = (t: any) => {
-    const k = getKeyForTecnico(t)
-    showDailyRecord.value[k] = !showDailyRecord.value[k]
-}
-
-const viewDailyRecord = (t: any) => {
-    dailyModalContent.value = getDailyRecord(t)
-    showDailyModal.value = true
-}
-
-const getDailyRecord = (t: any) => {
-    if (!t) return null
-    if (t.daily_record) return t.daily_record
-    if (t.usuario && t.usuario.daily_record) return t.usuario.daily_record
-    if (Array.isArray(t.rutas)) {
-        for (const r of t.rutas) if (r.daily_record) return r.daily_record
+    const fakeDaily = {
+      id: Date.now(),
+      date: fechaSeleccionada.value,
+      employee_id: employeeId,
+      emp_code: empCode,
+      concept_id: conceptId,
+      day_code: '1',
+      mobility_eligible: false,
+      source: 'employee_concepts',
+      notes: payload.comentario || 'Registro manual',
+      processed: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }
-    if (Array.isArray(t.marcaciones)) {
-        for (const m of t.marcaciones) if (m.daily_record) return m.daily_record
+
+    if ('usuario' in validationTarget.value) {
+      validationTarget.value.usuario.daily_record = fakeDaily
+    } else {
+      validationTarget.value.daily_record = fakeDaily
     }
-    if (Array.isArray(t.iclock_transactions)) {
-        for (const m of t.iclock_transactions) if (m.daily_record) return m.daily_record
-    }
-    return null
-}
 
-const formatDailyRecord = (dr: any) => {
-    try {
-        return dr ? JSON.stringify(dr, null, 2) : ''
-    } catch (e) {
-        return String(dr)
-    }
-}
-
-const extractConceptRecord = (value: any, maxDepth = 4): any | null => {
-    const seen = new Set<any>()
-    const hasConceptFields = (obj: any) =>
-        obj &&
-        typeof obj === 'object' &&
-        ('concept_id' in obj ||
-            'conceptId' in obj ||
-            'day_code' in obj ||
-            'dayCode' in obj ||
-            'concept_code' in obj ||
-            'conceptCode' in obj ||
-            'concept_name' in obj ||
-            'conceptName' in obj ||
-            'code' in obj ||
-            'codigo' in obj ||
-            'concept' in obj ||
-            'concepto' in obj)
-
-    const walk = (v: any, depth: number): any | null => {
-        if (v == null || depth < 0) return null
-        if (typeof v !== 'object') return null
-        if (seen.has(v)) return null
-        seen.add(v)
-
-        if (Array.isArray(v)) {
-            for (const item of v) {
-                const found = walk(item, depth - 1)
-                if (found) return found
-            }
-            return null
+    if (empCode || employeeId) {
+      usuariosConRutaData.value = usuariosConRutaData.value.map((usuarioItem) => {
+        if ((usuarioItem.dni || '') === String(empCode) || usuarioItem.id === employeeId) {
+          usuarioItem.daily_record = fakeDaily
         }
+        return usuarioItem
+      })
 
-        if (hasConceptFields(v)) return v
-
-        for (const [k, child] of Object.entries(v)) {
-            if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue
-            const found = walk(child, depth - 1)
-            if (found) return found
+      usuariosSinRutaData.value = usuariosSinRutaData.value.map((usuarioItem) => {
+        if ((usuarioItem.dni || '') === String(empCode) || usuarioItem.id === employeeId) {
+          usuarioItem.daily_record = fakeDaily
         }
-
-        return null
+        return usuarioItem
+      })
     }
 
-    return walk(value, maxDepth)
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    showValidationModal.value = false
+    validationTarget.value = null
+  } catch (err: any) {
+    console.error('Error al registrar concepto del empleado:', err)
+  } finally {
+    validationLoading.value = false
+  }
 }
 
-const getConceptBadge = (dailyRecord: any) => {
-    if (!dailyRecord) {
-        return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
-    }
-
-    const dr: any = extractConceptRecord(dailyRecord) ?? dailyRecord
-
-    const conceptId = Number(dr?.concept_id)
-    if (!Number.isFinite(conceptId)) {
-        const code =
-            typeof dr === 'string'
-                ? dr.trim().toUpperCase()
-                : String(dr?.day_code ?? dr?.concept_code ?? dr?.code ?? dr?.codigo ?? '')
-                      .trim()
-                      .toUpperCase()
-        const name = String(dr?.concept_name ?? dr?.concepto ?? dr?.concept ?? dr?.name ?? '').trim().toLowerCase()
-
-         if (code === 'V' || name.includes('vacac')) {
-             return { text: 'Vacaciones', color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200' }
-         }
-         if (code === 'DM' || name.includes('descanso') || name.includes('med')) {
-             return { text: 'Descanso Medico', color: 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' }
-         }
-         if (code === 'SR' || name.includes('sin ruta')) {
-             return { text: 'Sin Ruta', color: 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' }
-         }
-         if (code === 'NM' || name.includes('no marc')) {
-             return { text: 'No Marco', color: 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300' }
-         }
-         if (code === 'X' || name.includes('cese')) {
-             return { text: 'Cese', color: 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300' }
-         }
- 
-         return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
-     }
-     
-     switch(conceptId) {
-         case 1: // Asistencia
-             return { text: 'Asistencia', color: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' }
-        case 2: // Vacaciones (V)
-            return { text: 'Vacaciones', color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200' }
-        case 3: // Descanso Médico (DM)
-            return { text: 'Descanso Médico', color: 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' }
-        case 4: // Sin Ruta (SR)
-            return { text: 'Sin Ruta', color: 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' }
-        case 5: // No Marcó (NM)
-            return { text: 'No Marcó', color: 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300' }
-        case 6: // Cese (X)
-            return { text: 'Cese', color: 'bg-gray-50 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300' }
-        default:
-            return { text: 'Registro', color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' }
-    }
-}
-
-const dailyModalBadge = computed(() => getConceptBadge(dailyModalContent.value))
-
- const dailyModalPanelClass = computed(() => {
-     const base = 'bg-white dark:bg-gray-950 border border-gray-200/60 dark:border-gray-800/60'
- 
-     const raw = dailyModalContent.value
-     const dr: any = extractConceptRecord(raw) ?? raw
-
-     const conceptId = Number((dr as any)?.concept_id)
-     const code =
-         typeof dr === 'string'
-             ? dr.trim().toUpperCase()
-             : String((dr as any)?.day_code ?? (dr as any)?.concept_code ?? (dr as any)?.code ?? (dr as any)?.codigo ?? '')
-                   .trim()
-                   .toUpperCase()
-     const name = String((dr as any)?.concept_name ?? (dr as any)?.concepto ?? (dr as any)?.concept ?? (dr as any)?.name ?? '')
-         .trim()
-         .toLowerCase()
- 
-     if (conceptId === 1) return 'bg-green-50/60 dark:bg-green-950/10 border border-green-200/70 dark:border-green-800/50'
-     if (conceptId === 2 || code === 'V' || name.includes('vacac')) {
-         return 'bg-amber-50/60 dark:bg-amber-950/10 border border-amber-200/70 dark:border-amber-800/50'
-     }
-     if (conceptId === 3 || code === 'DM' || name.includes('descanso') || name.includes('med')) {
-         return 'bg-purple-50/60 dark:bg-purple-950/10 border border-purple-200/70 dark:border-purple-800/50'
-     }
-     if (conceptId === 4 || code === 'SR' || name.includes('sin ruta')) {
-         return 'bg-orange-50/60 dark:bg-orange-950/10 border border-orange-200/70 dark:border-orange-800/50'
-     }
-     if (conceptId === 5 || code === 'NM' || name.includes('no marc')) {
-         return 'bg-red-50/60 dark:bg-red-950/10 border border-red-200/70 dark:border-red-800/50'
-     }
-     if (conceptId === 6 || code === 'X' || name.includes('cese')) {
-         return 'bg-gray-50/70 dark:bg-gray-950/10 border border-gray-200/70 dark:border-gray-800/50'
-     }
- 
-     return base
- })
-
- const dailyModalPreClass = computed(() => {
-     const base = 'bg-gray-50 dark:bg-gray-900 border-gray-200/60 dark:border-gray-800/60 text-gray-700 dark:text-gray-200'
- 
-     const raw = dailyModalContent.value
-     const dr: any = extractConceptRecord(raw) ?? raw
-
-     const conceptId = Number((dr as any)?.concept_id)
-     const code =
-         typeof dr === 'string'
-             ? dr.trim().toUpperCase()
-             : String((dr as any)?.day_code ?? (dr as any)?.concept_code ?? (dr as any)?.code ?? (dr as any)?.codigo ?? '')
-                   .trim()
-                   .toUpperCase()
-     const name = String((dr as any)?.concept_name ?? (dr as any)?.concepto ?? (dr as any)?.concept ?? (dr as any)?.name ?? '')
-         .trim()
-         .toLowerCase()
- 
-     if (conceptId === 1 || code === 'A') {
-         return 'bg-green-50 dark:bg-green-950/20 border-green-200/70 dark:border-green-800/50 text-green-950 dark:text-green-50'
-     }
-     if (conceptId === 2 || code === 'V' || name.includes('vacac')) {
-         return 'bg-amber-50 dark:bg-amber-950/20 border-amber-200/70 dark:border-amber-800/50 text-amber-950 dark:text-amber-50'
-     }
-     if (conceptId === 3 || code === 'DM' || name.includes('descanso') || name.includes('med')) {
-         return 'bg-purple-50 dark:bg-purple-950/20 border-purple-200/70 dark:border-purple-800/50 text-purple-950 dark:text-purple-50'
-     }
-     if (conceptId === 4 || code === 'SR' || name.includes('sin ruta')) {
-         return 'bg-orange-50 dark:bg-orange-950/20 border-orange-200/70 dark:border-orange-800/50 text-orange-950 dark:text-orange-50'
-     }
-     if (conceptId === 5 || code === 'NM' || name.includes('no marc')) {
-         return 'bg-red-50 dark:bg-red-950/20 border-red-200/70 dark:border-red-800/50 text-red-950 dark:text-red-50'
-     }
-     if (conceptId === 6 || code === 'X' || name.includes('cese')) {
-         return 'bg-gray-50 dark:bg-gray-950/20 border-gray-200/70 dark:border-gray-800/50 text-gray-900 dark:text-gray-100'
-     }
- 
-     return base
- })
-
-const conceptoMap: Record<string, number> = {
-    asistencia: 1,        // 1
-    vacaciones: 2,        // V (2)
-    descanso_medico: 3,   // DM (3)
-    sin_ruta: 4,          // SR (4)
-    no_marco: 5,          // NM (5)
-    cese: 6               // X (6)
-}
-
-const onValidationSubmit = async (payload: { motivo: string; comentario?: string }) => {
-    validationLoading.value = true
-    try {
-        const usuario = validationTarget.value?.usuario || validationTarget.value || {}
-        const employee_id = usuario.id || null
-        const emp_code = (usuario.dni || usuario.emp_code || usuario.codigo || '')
-        let concept_id: number | null = null
-        if (typeof payload.motivo === 'number') {
-            concept_id = payload.motivo
-        } else if (typeof payload.motivo === 'string') {
-            concept_id = conceptoMap[payload.motivo] || null
-        }
-        const start_date = fechaSeleccionada.value
-        const end_date = fechaSeleccionada.value
-
-        const body = {
-            employee_id,
-            emp_code,
-            concept_id,
-            start_date,
-            end_date,
-            comment: payload.comentario || null
-        }
-
-        // Llamada al endpoint solicitado por el backend
-        await apiFetch('/api/employee-concepts', { method: 'POST', body: JSON.stringify(body) })
-
-        // Si no lanza error, considerar exitoso: marcar localmente el registro diario
-        const fakeDaily = {
-            id: Date.now(),
-            date: start_date,
-            employee_id,
-            emp_code,
-            concept_id,
-            day_code: '1',
-            mobility_eligible: false,
-            source: 'employee_concepts',
-            notes: payload.comentario || 'Registro manual',
-            processed: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        }
-
-        // Actualizar objeto objetivo en memoria para que la UI oculte el botón inmediatamente
-        if (validationTarget.value) {
-            // si es la estructura que contiene usuario
-            if (validationTarget.value.usuario) {
-                validationTarget.value.usuario.daily_record = fakeDaily
-            } else {
-                validationTarget.value.daily_record = fakeDaily
-            }
-        }
-
-        // también actualizar en los arrays de usuarios si es posible
-        const dniKey = emp_code || usuario.dni || null
-        if (dniKey) {
-            usuariosConRutaData.value = usuariosConRutaData.value.map(u => {
-                if ((u.dni || '') === String(dniKey) || u.id === employee_id) {
-                    // @ts-ignore
-                    u.daily_record = fakeDaily
-                }
-                return u
-            })
-            usuariosSinRutaData.value = usuariosSinRutaData.value.map(u => {
-                if ((u.dni || '') === String(dniKey) || u.id === employee_id) {
-                    // @ts-ignore
-                    u.daily_record = fakeDaily
-                }
-                return u
-            })
-        }
-
-        // Simular delay para mejor UX
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        showValidationModal.value = false
-        validationTarget.value = null
-        validationLoading.value = false
-    } catch (err: any) {
-        validationLoading.value = false
-        console.error('Error al registrar concepto del empleado:', err)
-    }
-}
-
-const tecnicosActivos = computed(() => {
-    return usuariosConRutaData.value.length + usuariosSinRutaData.value.length
-})
-
-const tecnicosConMarcacion = computed(() => {
-    const conRutaConMarcacion = usuariosConRutaData.value.filter(u =>
-        Array.isArray(u.marcaciones) && u.marcaciones.length > 0
-    ).length
-    const sinRutaConMarcacion = usuariosSinRutaData.value.filter(u =>
-        Array.isArray(u.marcaciones) && u.marcaciones.length > 0
-    ).length
-    return conRutaConMarcacion + sinRutaConMarcacion
-})
-
-const tecnicosSinMarcacion = computed(() => {
-    const conRutaSinMarcacion = usuariosConRutaData.value.filter(u =>
-        esObjetoSinMarcacion(u.marcaciones)
-    ).length
-    const sinRutaSinMarcacion = usuariosSinRutaData.value.filter(u =>
-        esObjetoSinMarcacion(u.marcaciones)
-    ).length
-    return conRutaSinMarcacion + sinRutaSinMarcacion
-})
-
-const totalRutas = computed(() => {
-    return usuariosConRutaData.value.reduce((total, usuario) =>
-        total + usuario.rutas.length, 0
-    )
-})
-
-// Computeds para técnicos con y sin rutas
-const tecnicosConRutas = computed(() => {
-    return usuariosConRutaData.value.length
-})
-
-const tecnicosSinRutas = computed(() => {
-    return usuariosSinRutaData.value.length
-})
-
-// Computeds para estadísticas de marcación por tab
-const tecnicosConRutasConMarcacion = computed(() => {
-    return usuariosConRutaData.value.filter(u =>
-        Array.isArray(u.marcaciones) && u.marcaciones.length > 0
-    ).length
-})
-
-const tecnicosConRutasSinMarcacion = computed(() => {
-    return usuariosConRutaData.value.filter(
-        (u) => !Array.isArray(u.marcaciones) || u.marcaciones.length === 0
-    ).length
-})
-
-const tecnicosSinRutasConMarcacion = computed(() => {
-    return usuariosSinRutaData.value.filter(u =>
-        Array.isArray(u.marcaciones) && u.marcaciones.length > 0
-    ).length
-})
-
-const tecnicosSinRutasSinMarcacion = computed(() => {
-    return usuariosSinRutaData.value.filter(
-        (u) => !Array.isArray(u.marcaciones) || u.marcaciones.length === 0
-    ).length
-})
+const tecnicosConRutas = computed(() => usuariosConRutaData.value.length)
+const tecnicosSinRutas = computed(() => usuariosSinRutaData.value.length)
 
 const tecnicosSinRutasFiltrados = computed(() => {
-    let tecnicos = usuariosSinRutaData.value
+  let tecnicos = usuariosSinRutaData.value
 
-    if (search.value.trim()) {
-        const searchLower = search.value.toLowerCase()
-        tecnicos = tecnicos.filter((tecnico) => {
-            const nombre = tecnico.nombre_completo.toLowerCase()
-            const dni = (tecnico.dni || '').toString().toLowerCase()
-
-            return dni.includes(searchLower) || nombre.includes(searchLower)
-        })
-    }
-
-    if (filtroEstado.value === 'con-marcacion') {
-        tecnicos = tecnicos.filter((tecnico) =>
-        hasMarcaciones(tecnico.marcaciones)
-        )
-    } else if (filtroEstado.value === 'sin-marcacion') {
-        tecnicos = tecnicos.filter((tecnico) =>
-            esObjetoSinMarcacion(tecnico.marcaciones)
-        )
-    }
-
-    return tecnicos
-})
-
-
-
-const datosAgrupadosFiltrados = computed(() => {
-    let datos: [string, any][]
-
-    // Convertir usuariosConRutaData a formato de datosAgrupados
-    const agrupados: Record<string, TecnicoData> = {}
-    usuariosConRutaData.value.forEach(usuario => {
-        agrupados[usuario.dni] = {
-            usuario,
-            rutas: usuario.rutas,
-            iclock_transactions: usuario.marcaciones
-        }
+  if (search.value.trim()) {
+    const searchLower = search.value.toLowerCase()
+    tecnicos = tecnicos.filter((tecnico) => {
+      const nombre = tecnico.nombre_completo.toLowerCase()
+      const dni = String(tecnico.dni || '').toLowerCase()
+      return dni.includes(searchLower) || nombre.includes(searchLower)
     })
+  }
 
-    datos = Object.entries(agrupados)
+  if (filtroEstado.value === 'con-marcacion') {
+    tecnicos = tecnicos.filter((tecnico) => hasMarcaciones(tecnico.marcaciones))
+  } else if (filtroEstado.value === 'sin-marcacion') {
+    tecnicos = tecnicos.filter((tecnico) => !hasMarcaciones(tecnico.marcaciones))
+  }
 
-    if (search.value.trim()) {
-        const searchLower = search.value.toLowerCase()
-        datos = datos.filter(([dni, tecnicoData]: [string, any]) => {
-            const nombre = tecnicoData.usuario.nombre_completo.toLowerCase()
-            const agencias = tecnicoData.rutas.map((r: any) => r.agencia?.toLowerCase() || '').join(' ')
-            const cliente = tecnicoData.rutas.map((r: any) => r.cliente?.toLowerCase() || '').join(' ')
-
-            return dni.includes(searchLower) ||
-                nombre.includes(searchLower) ||
-                agencias.includes(searchLower) ||
-                cliente.includes(searchLower)
-        })
-    }
-
-    if (filtroEstado.value === 'con-marcacion') {
-        datos = datos.filter(([_, tecnicoData]: [string, any]) =>
-            hasMarcaciones(tecnicoData.iclock_transactions)
-        )
-    } else if (filtroEstado.value === 'sin-marcacion') {
-        datos = datos.filter(([_, tecnicoData]: [string, any]) =>
-            !hasMarcaciones(tecnicoData.iclock_transactions)
-        )
-    }
-
-    if (ordenarPor.value !== 'original') {
-        datos.sort(([dniA, dataA]: [string, any], [dniB, dataB]: [string, any]) => {
-            if (ordenarPor.value === 'nombre') {
-                const nombreA = dataA.usuario.nombre_completo
-                const nombreB = dataB.usuario.nombre_completo
-                return nombreA.localeCompare(nombreB)
-            } else if (ordenarPor.value === 'rutas') {
-                return dataB.rutas.length - dataA.rutas.length
-            } else if (ordenarPor.value === 'marcaciones') {
-                const marcacionesA = getMarcacionesCount(dataA.iclock_transactions)
-                const marcacionesB = getMarcacionesCount(dataB.iclock_transactions)
-                return marcacionesB - marcacionesA
-            }
-            return 0
-        })
-    } else {
-        datos.sort(([dniA, dataA]: [string, any], [dniB, dataB]: [string, any]) => {
-            const txA = dataA.iclock_transactions
-            const txB = dataB.iclock_transactions
-            const aSinMarcacion = !hasMarcaciones(txA)
-            const bSinMarcacion = !hasMarcaciones(txB)
-
-            if (aSinMarcacion && !bSinMarcacion) return -1
-            if (!aSinMarcacion && bSinMarcacion) return 1
-
-            return 0
-        })
-    }
-
-    return datos
+  return tecnicos
 })
 
-const conRutasMarcados = computed(() => {
-    return datosAgrupadosFiltrados.value.filter(([_, tecnicoData]: [string, any]) => {
-        const tx = tecnicoData?.iclock_transactions
-        return Array.isArray(tx) && tx.length > 0
+const datosAgrupadosFiltrados = computed<TecnicoConRutaEntry[]>(() => {
+  const agrupados: Record<string, TecnicoData> = {}
+
+  usuariosConRutaData.value.forEach((usuario) => {
+    agrupados[usuario.dni] = {
+      usuario,
+      rutas: usuario.rutas,
+      iclock_transactions: usuario.marcaciones,
+    }
+  })
+
+  let datos = Object.entries(agrupados) as TecnicoConRutaEntry[]
+
+  if (search.value.trim()) {
+    const searchLower = search.value.toLowerCase()
+    datos = datos.filter(([dni, tecnicoData]) => {
+      const nombre = tecnicoData.usuario.nombre_completo.toLowerCase()
+      const agencias = tecnicoData.rutas.map((ruta) => ruta.agencia?.toLowerCase() || '').join(' ')
+      const cliente = tecnicoData.rutas.map((ruta) => ruta.cliente?.toLowerCase() || '').join(' ')
+
+      return (
+        dni.includes(searchLower) ||
+        nombre.includes(searchLower) ||
+        agencias.includes(searchLower) ||
+        cliente.includes(searchLower)
+      )
     })
-})
+  }
 
-const conRutasNoMarcados = computed(() => {
-    return datosAgrupadosFiltrados.value.filter(([_, tecnicoData]: [string, any]) => {
-        const tx = tecnicoData?.iclock_transactions
-        return !Array.isArray(tx) || tx.length === 0
+  if (filtroEstado.value === 'con-marcacion') {
+    datos = datos.filter(([, tecnicoData]) => hasMarcaciones(tecnicoData.iclock_transactions))
+  } else if (filtroEstado.value === 'sin-marcacion') {
+    datos = datos.filter(([, tecnicoData]) => !hasMarcaciones(tecnicoData.iclock_transactions))
+  }
+
+  if (ordenarPor.value !== 'original') {
+    datos.sort(([, dataA], [, dataB]) => {
+      if (ordenarPor.value === 'nombre') {
+        return dataA.usuario.nombre_completo.localeCompare(dataB.usuario.nombre_completo)
+      }
+
+      if (ordenarPor.value === 'rutas') {
+        return dataB.rutas.length - dataA.rutas.length
+      }
+
+      if (ordenarPor.value === 'marcaciones') {
+        return (
+          getMarcacionesCount(dataB.iclock_transactions) -
+          getMarcacionesCount(dataA.iclock_transactions)
+        )
+      }
+
+      return 0
     })
+  } else {
+    datos.sort(([, dataA], [, dataB]) => {
+      const aSinMarcacion = !hasMarcaciones(dataA.iclock_transactions)
+      const bSinMarcacion = !hasMarcaciones(dataB.iclock_transactions)
+
+      if (aSinMarcacion && !bSinMarcacion) {
+        return -1
+      }
+
+      if (!aSinMarcacion && bSinMarcacion) {
+        return 1
+      }
+
+      return 0
+    })
+  }
+
+  return datos
 })
 
-const datosConRutasActual = computed(() => {
-    return subTabConRutas.value === 'marcaron' ? conRutasMarcados.value : conRutasNoMarcados.value
-})
+const conRutasMarcados = computed(() =>
+  datosAgrupadosFiltrados.value.filter(([, tecnicoData]) => {
+    const marcaciones = tecnicoData.iclock_transactions
+    return Array.isArray(marcaciones) && marcaciones.length > 0
+  }),
+)
 
-const sinRutasMarcados = computed(() => {
-    return tecnicosSinRutasFiltrados.value.filter((t) => Array.isArray(t.marcaciones) && t.marcaciones.length > 0)
-})
+const conRutasNoMarcados = computed(() =>
+  datosAgrupadosFiltrados.value.filter(([, tecnicoData]) => {
+    const marcaciones = tecnicoData.iclock_transactions
+    return !Array.isArray(marcaciones) || marcaciones.length === 0
+  }),
+)
 
-const sinRutasNoMarcados = computed(() => {
-    return tecnicosSinRutasFiltrados.value.filter((t) => !Array.isArray(t.marcaciones) || t.marcaciones.length === 0)
-})
+const datosConRutasActual = computed(() =>
+  subTabConRutas.value === 'marcaron' ? conRutasMarcados.value : conRutasNoMarcados.value,
+)
 
-const tecnicosSinRutasActual = computed(() => {
-    return subTabSinRutas.value === 'marcaron' ? sinRutasMarcados.value : sinRutasNoMarcados.value
-})
+const sinRutasMarcados = computed(() =>
+  tecnicosSinRutasFiltrados.value.filter(
+    (tecnico) => Array.isArray(tecnico.marcaciones) && tecnico.marcaciones.length > 0,
+  ),
+)
 
-const currentListCount = computed(() => {
-    return tabActivo.value === 'con-rutas' ? datosConRutasActual.value.length : tecnicosSinRutasActual.value.length
-})
+const sinRutasNoMarcados = computed(() =>
+  tecnicosSinRutasFiltrados.value.filter(
+    (tecnico) => !Array.isArray(tecnico.marcaciones) || tecnico.marcaciones.length === 0,
+  ),
+)
+
+const tecnicosSinRutasActual = computed(() =>
+  subTabSinRutas.value === 'marcaron' ? sinRutasMarcados.value : sinRutasNoMarcados.value,
+)
+
+const currentListCount = computed(() =>
+  tabActivo.value === 'con-rutas'
+    ? datosConRutasActual.value.length
+    : tecnicosSinRutasActual.value.length,
+)
 
 const cargarDatos = async () => {
-    isLoading.value = true
-    error.value = null
+  isLoading.value = true
+  error.value = null
 
-    try {
-        const params = new URLSearchParams()
-        if (fechaSeleccionada.value) {
-            params.append('fecha', fechaSeleccionada.value)
-        }
-
-        const url = `/api/seguimiento-tecnico${params.toString() ? '?' + params.toString() : ''}`
-        const response: ApiResponse = await apiFetch(url)
-
-        if (response.success) {
-            usuariosConRutaData.value = response.usuarios_con_ruta || []
-            usuariosSinRutaData.value = response.usuarios_sin_ruta || []
-        } else {
-            usuariosConRutaData.value = []
-            usuariosSinRutaData.value = []
-        }
-
-    } catch (err: any) {
-        console.error('Error al cargar datos de seguimiento:', err)
-        error.value = err.message || 'Error al cargar los datos'
-        usuariosConRutaData.value = []
-        usuariosSinRutaData.value = []
-    } finally {
-        isLoading.value = false
+  try {
+    const params = new URLSearchParams()
+    if (fechaSeleccionada.value) {
+      params.append('fecha', fechaSeleccionada.value)
     }
+
+    const url = `/api/seguimiento-tecnico${params.toString() ? `?${params.toString()}` : ''}`
+    const response: ApiResponse = await apiFetch(url)
+
+    if (response.success) {
+      usuariosConRutaData.value = response.usuarios_con_ruta || []
+      usuariosSinRutaData.value = response.usuarios_sin_ruta || []
+    } else {
+      usuariosConRutaData.value = []
+      usuariosSinRutaData.value = []
+    }
+  } catch (err: any) {
+    console.error('Error al cargar datos de seguimiento:', err)
+    error.value = err.message || 'Error al cargar los datos'
+    usuariosConRutaData.value = []
+    usuariosSinRutaData.value = []
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const recargarDatos = () => {
-    cargarDatos()
+  cargarDatos()
 }
 
 onMounted(() => {
-    cargarDatos()
+  cargarDatos()
 })
-
 </script>
 
+<template>
+  <UDashboardPanel id="seguimiento">
+    <template #header>
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
+        <template #leading>
+          <div class="flex items-center gap-3">
+            <UDashboardSidebarCollapse />
+
+            <div class="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-800">
+              <div class="hidden sm:flex items-center gap-2">
+                <div class="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <UIcon name="i-heroicons-map-pin" class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                </div>
+
+                <div>
+                  <h1 class="text-base font-semibold text-gray-900 dark:text-white">
+                    Seguimiento de Técnicos
+                  </h1>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <UIcon name="i-heroicons-signal" class="w-3 h-3" />
+                    Monitoreo en tiempo real
+                  </p>
+                </div>
+              </div>
+
+              <h1 class="sm:hidden text-base font-semibold text-gray-900 dark:text-white">
+                Seguimiento
+              </h1>
+            </div>
+          </div>
+        </template>
+
+        <template #right>
+          <div class="flex items-center gap-2">
+            <UTooltip text="Datos actualizados">
+              <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-pulse" />
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">En vivo</span>
+              </div>
+            </UTooltip>
+
+            <UTooltip text="Técnicos sin marcación">
+              <UButton color="neutral" variant="ghost" square class="relative group">
+                <div class="relative">
+                  <UIcon
+                    name="i-heroicons-bell"
+                    class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors"
+                  />
+
+                  <div class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 text-[9px] font-medium rounded-full flex items-center justify-center border border-white dark:border-gray-900">
+                    {{ conRutasNoMarcados.length + sinRutasNoMarcados.length }}
+                  </div>
+                </div>
+              </UButton>
+            </UTooltip>
+          </div>
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="p-4 sm:p-5 space-y-4">
+        <SeguimientoTabs
+          :tab-activo="tabActivo"
+          :sub-tab-con-rutas="subTabConRutas"
+          :sub-tab-sin-rutas="subTabSinRutas"
+          :tecnicos-con-rutas="tecnicosConRutas"
+          :tecnicos-sin-rutas="tecnicosSinRutas"
+          :con-rutas-marcados="conRutasMarcados.length"
+          :con-rutas-no-marcados="conRutasNoMarcados.length"
+          :sin-rutas-marcados="sinRutasMarcados.length"
+          :sin-rutas-no-marcados="sinRutasNoMarcados.length"
+          @update:tab-activo="tabActivo = $event"
+          @update:sub-tab-con-rutas="subTabConRutas = $event"
+          @update:sub-tab-sin-rutas="subTabSinRutas = $event"
+        />
+
+        <SeguimientoFilters
+          :search="search"
+          :filtro-estado="filtroEstado"
+          :ordenar-por="ordenarPor"
+          :fecha-seleccionada="fechaSeleccionada"
+          :current-list-count="currentListCount"
+          :is-loading="isLoading"
+          @update:search="search = $event"
+          @update:filtro-estado="filtroEstado = $event"
+          @update:ordenar-por="ordenarPor = $event"
+          @update:fecha-seleccionada="fechaSeleccionada = $event"
+          @change-date="handleFechaSeleccionada"
+          @reload="recargarDatos"
+        />
+
+        <section>
+          <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
+            <svg
+              class="animate-spin h-10 w-10 text-gray-950 dark:text-gray-50 mb-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <p class="text-gray-600 dark:text-gray-400 font-medium text-sm">Cargando datos...</p>
+          </div>
+
+          <div
+            v-else-if="error"
+            class="bg-red-50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/60 rounded-lg p-8 text-center shadow-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-12 w-12 text-red-500/70 dark:text-red-400/70 mx-auto mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-base font-medium text-red-800 dark:text-red-200 mb-2">Error al cargar datos</h3>
+            <p class="text-red-600/80 dark:text-red-400/80 mb-5 text-sm">{{ error }}</p>
+            <button
+              class="bg-red-600 dark:bg-red-500 text-white px-5 py-2.5 rounded-md hover:bg-red-700 dark:hover:bg-red-600 transition-all duration-200 text-sm font-medium shadow-sm"
+              @click="recargarDatos"
+            >
+              Intentar nuevamente
+            </button>
+          </div>
+
+          <div v-else class="space-y-4">
+            <div v-show="tabActivo === 'con-rutas'" class="animate-fadeIn">
+              <SeguimientoConRutasTable
+                :items="datosConRutasActual"
+                :expanded="tecnicosExpandidos"
+                @toggle="toggleTecnico"
+                @view-daily-record="viewDailyRecord"
+                @validar="openValidationModal"
+                @send-whats-app="enviarWhatsApp"
+              />
+            </div>
+
+            <div v-show="tabActivo === 'sin-rutas'" class="animate-fadeIn">
+              <SeguimientoSinRutasTable
+                :items="tecnicosSinRutasActual"
+                :expanded="tecnicosExpandidos"
+                @toggle="toggleTecnico"
+                @view-daily-record="viewDailyRecord"
+                @validar="openValidationModal"
+              />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <ValidationModal
+        v-model:show="showValidationModal"
+        :tecnico="validationTarget"
+        :loading="validationLoading"
+        @submit="onValidationSubmit"
+      />
+
+      <SeguimientoDailyRecordModal
+        :show="showDailyModal"
+        :daily-record="dailyModalContent"
+        @close="showDailyModal = false"
+      />
+    </template>
+  </UDashboardPanel>
+</template>
+
 <style scoped>
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.animate-spin {
-    animation: spin 1s linear infinite;
-}
-
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadeIn {
-    animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 </style>

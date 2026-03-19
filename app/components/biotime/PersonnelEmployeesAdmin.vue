@@ -91,7 +91,7 @@
         <div class="h-[650px] overflow-auto">
           <UTable
             sticky
-            :data="employees"
+            :data="sortedEmployees"
             :columns="columns"
             :loading="loading"
             :ui="tableUi"
@@ -289,6 +289,96 @@ const UButton = resolveComponent('UButton')
 const UIcon = resolveComponent('UIcon')
 const UBadge = resolveComponent('UBadge')
 
+type SortDirection = 'asc' | 'desc'
+type SortKey = 'emp_code' | 'full_name' | 'contact' | 'org' | 'has_mobility' | 'status'
+
+const sortKey = ref<SortKey>('emp_code')
+const sortDirection = ref<SortDirection>('asc')
+
+const toggleSort = (key: SortKey) => {
+  if (sortKey.value === key) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+    return
+  }
+
+  sortKey.value = key
+  sortDirection.value = 'asc'
+}
+
+const getSortIcon = (key: SortKey) => {
+  if (sortKey.value !== key) return 'i-lucide-arrow-up-down'
+  return sortDirection.value === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'
+}
+
+const getSortButtonClass = (key: SortKey) => {
+  const base =
+    'group inline-flex w-full items-center gap-1 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors'
+  return sortKey.value === key ? `${base} !text-gray-900 dark:!text-gray-100` : base
+}
+
+const normalizeForSort = (value: unknown) =>
+  String(value ?? '')
+    .trim()
+    .toLocaleLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+const getEmployeeSortValue = (row: BioTimePersonnelEmployee, key: SortKey): string | number => {
+  switch (key) {
+    case 'emp_code':
+      return normalizeForSort(row.emp_code)
+    case 'full_name':
+      return normalizeForSort(`${row.first_name ?? ''} ${row.last_name ?? ''}`)
+    case 'contact':
+      return normalizeForSort(`${row.email ?? ''} ${row.mobile ?? ''}`)
+    case 'org':
+      return normalizeForSort(`${row.department_name ?? ''} ${row.position_name ?? ''}`)
+    case 'has_mobility':
+      return row.has_mobility ? 1 : 0
+    case 'status':
+      return Number(row.status ?? 0)
+    default:
+      return ''
+  }
+}
+
+const compareSortValues = (a: string | number, b: string | number) => {
+  if (typeof a === 'number' && typeof b === 'number') return a - b
+  return String(a).localeCompare(String(b), 'es', { numeric: true, sensitivity: 'base' })
+}
+
+const sortedEmployees = computed(() => {
+  const data = employees.value.slice()
+  const multiplier = sortDirection.value === 'asc' ? 1 : -1
+
+  data.sort((a, b) => {
+    const av = getEmployeeSortValue(a, sortKey.value)
+    const bv = getEmployeeSortValue(b, sortKey.value)
+    return compareSortValues(av, bv) * multiplier
+  })
+
+  return data
+})
+
+const sortableHeader = (label: string, key: SortKey) => {
+  return () =>
+    h(
+      'button',
+      {
+        type: 'button',
+        class: getSortButtonClass(key),
+        onClick: (event: MouseEvent) => {
+          event.stopPropagation()
+          toggleSort(key)
+        },
+      },
+      [
+        h('span', { class: 'truncate' }, label),
+        h(UIcon, { name: getSortIcon(key), class: 'w-3 h-3 opacity-60 group-hover:opacity-100' }),
+      ]
+    )
+}
+
 const updatingStatusId = ref<number | null>(null)
 
 const toggleStatus = async (row: BioTimePersonnelEmployee) => {
@@ -323,13 +413,13 @@ const toggleStatus = async (row: BioTimePersonnelEmployee) => {
 const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   {
     accessorKey: 'emp_code',
-    header: 'DNI',
+    header: sortableHeader('DNI', 'emp_code'),
     meta: { class: { th: 'w-[140px]', td: 'w-[140px]' } },
     cell: ({ row }) => h('span', { class: 'font-mono text-xs' }, String(row.getValue('emp_code') ?? '')),
   },
   {
     id: 'full_name',
-    header: 'Empleado',
+    header: sortableHeader('Empleado', 'full_name'),
     meta: { class: { th: 'w-[260px]', td: 'w-[260px]' } },
     cell: ({ row }) => {
       const r = row.original
@@ -342,7 +432,7 @@ const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   },
   {
     id: 'contact',
-    header: 'Contacto',
+    header: sortableHeader('Contacto', 'contact'),
     meta: { class: { th: 'w-[260px]', td: 'w-[260px]' } },
     cell: ({ row }) => {
       const r = row.original
@@ -357,7 +447,7 @@ const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   },
   {
     id: 'org',
-    header: 'Área / Cargo',
+    header: sortableHeader('Área / Cargo', 'org'),
     meta: { class: { th: 'w-[220px]', td: 'w-[220px]' } },
     cell: ({ row }) => {
       const r = row.original
@@ -369,7 +459,7 @@ const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   },
   {
     id: 'mobility',
-    header: 'Movilidad',
+    header: sortableHeader('Movilidad', 'has_mobility'),
     meta: { class: { th: 'w-[140px]', td: 'w-[140px]' } },
     cell: ({ row }) => {
       const enabled = Boolean(row.original.has_mobility)
@@ -382,7 +472,7 @@ const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   },
   {
     id: 'active',
-    header: 'Estado',
+    header: sortableHeader('Estado', 'status'),
     meta: { class: { th: 'w-[150px]', td: 'w-[150px]' } },
     cell: ({ row }) => {
       const r = row.original
