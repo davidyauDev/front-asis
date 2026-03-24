@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import SeguimientoConRutasTable from '~/components/seguimiento/SeguimientoConRutasTable.vue'
-import SeguimientoDailyRecordModal from '~/components/seguimiento/SeguimientoDailyRecordModal.vue'
 import SeguimientoFilters from '~/components/seguimiento/SeguimientoFilters.vue'
 import SeguimientoSinRutasTable from '~/components/seguimiento/SeguimientoSinRutasTable.vue'
 import SeguimientoTabs from '~/components/seguimiento/SeguimientoTabs.vue'
@@ -16,11 +15,7 @@ import type {
   Usuario,
   ValidationTarget,
 } from '~/types/seguimiento'
-import {
-  getDailyRecord,
-  getMarcacionesCount,
-  hasMarcaciones,
-} from '~/utils/seguimiento'
+import { getMarcacionesCount, hasMarcaciones } from '~/utils/seguimiento'
 
 const search = ref('')
 const filtroEstado = ref('todos')
@@ -40,9 +35,6 @@ const showValidationModal = ref(false)
 const validationTarget = ref<ValidationTarget | null>(null)
 const validationLoading = ref(false)
 
-const showDailyModal = ref(false)
-const dailyModalContent = ref<unknown | null>(null)
-
 const conceptoMap: Record<string, number> = {
   asistencia: 1,
   vacaciones: 2,
@@ -59,11 +51,6 @@ const toggleTecnico = (key: string) => {
 const openValidationModal = (target: ValidationTarget) => {
   validationTarget.value = target
   showValidationModal.value = true
-}
-
-const viewDailyRecord = (target: ValidationTarget) => {
-  dailyModalContent.value = getDailyRecord(target)
-  showDailyModal.value = true
 }
 
 const enviarWhatsApp = (tecnicoData: TecnicoData) => {
@@ -524,7 +511,6 @@ onMounted(() => {
                 :items="datosConRutasActual"
                 :expanded="tecnicosExpandidos"
                 @toggle="toggleTecnico"
-                @view-daily-record="viewDailyRecord"
                 @validar="openValidationModal"
                 @send-whats-app="enviarWhatsApp"
               />
@@ -535,7 +521,6 @@ onMounted(() => {
                 :items="tecnicosSinRutasActual"
                 :expanded="tecnicosExpandidos"
                 @toggle="toggleTecnico"
-                @view-daily-record="viewDailyRecord"
                 @validar="openValidationModal"
               />
             </div>
@@ -548,12 +533,6 @@ onMounted(() => {
         :tecnico="validationTarget"
         :loading="validationLoading"
         @submit="onValidationSubmit"
-      />
-
-      <SeguimientoDailyRecordModal
-        :show="showDailyModal"
-        :daily-record="dailyModalContent"
-        @close="showDailyModal = false"
       />
     </template>
   </UDashboardPanel>

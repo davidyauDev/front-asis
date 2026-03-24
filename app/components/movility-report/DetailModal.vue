@@ -79,7 +79,7 @@
                   {{ calendarHeading }}
                 </h2>
                 <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Corte 23–22 · {{ periodLabel }}
+                  Mes calendario · máximo 30 días · {{ periodLabel }}
                 </div>
               </div>
               <UButton
@@ -413,6 +413,14 @@ const rightYear = computed(() => rightDate.value.getFullYear());
 const formatDMY = (date: Date) =>
   new Intl.DateTimeFormat("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
 
+const getMonthDateLimit = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+const getMonthlyRangeMax30 = (anchor: Date) => ({
+  start: new Date(anchor.getFullYear(), anchor.getMonth(), 1),
+  end: new Date(anchor.getFullYear(), anchor.getMonth(), Math.min(30, getMonthDateLimit(anchor))),
+});
+
 const calendarHeading = computed(() => {
   const leftLabel = monthNames[currentMonth.value];
   const rightLabel = monthNames[rightMonth.value];
@@ -424,12 +432,8 @@ const calendarHeading = computed(() => {
 });
 
 const periodRange = computed(() => {
-  const y = currentYear.value;
-  const m = currentMonth.value;
-  return {
-    start: new Date(y, m, 23),
-    end: new Date(y, m + 1, 22),
-  };
+  if (props.periodRange) return props.periodRange;
+  return getMonthlyRangeMax30(currentDate.value);
 });
 
 const periodLabel = computed(() => `${formatDMY(periodRange.value.start)} - ${formatDMY(periodRange.value.end)}`);
@@ -604,7 +608,7 @@ const parseFlexibleKeyToDate = (key: string) => {
   }
 
   if (/^\d{1,2}-[A-Za-z]{3}$/.test(key)) {
-    const [dayRaw, monRaw] = key.split("-");
+    const [dayRaw, monRaw = ""] = key.split("-");
     const monthIndex = monthShortMap[monRaw.toLowerCase()];
     if (monthIndex == null) return null;
     const year = currentDate.value.getFullYear();
@@ -738,8 +742,10 @@ watch(() => props.employeeData, (newData) => {
   eventos.value = newEventos
   
   // Si hay eventos, navegar al mes del primer evento
-  if (firstEventDate && !props.periodRange) {
-    currentDate.value = new Date(firstEventDate.getFullYear(), firstEventDate.getMonth(), 1)
+  const firstEventDateValue = firstEventDate as Date | null
+
+  if (firstEventDateValue && !props.periodRange) {
+    currentDate.value = new Date(firstEventDateValue.getFullYear(), firstEventDateValue.getMonth(), 1)
   }
 }, { immediate: true })
 </script>

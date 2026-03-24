@@ -16,7 +16,6 @@ defineProps<{
 
 const emit = defineEmits<{
   toggle: [key: string]
-  viewDailyRecord: [tecnico: TecnicoData]
   validar: [tecnico: TecnicoData]
   sendWhatsApp: [tecnico: TecnicoData]
 }>()
@@ -32,7 +31,7 @@ const emit = defineEmits<{
           <th class="px-3 py-3">Técnico</th>
           <th class="w-[110px] px-3 py-3">Rutas</th>
           <th class="w-[140px] px-3 py-3">Marcación</th>
-          <th class="w-[260px] px-3 py-3">Acciones</th>
+          <th class="w-[260px] px-3 py-3 text-right">Acciones</th>
         </tr>
       </thead>
 
@@ -121,13 +120,12 @@ const emit = defineEmits<{
 
               <td class="px-3 py-3 align-top" @click.stop>
                 <div class="flex items-center justify-end gap-2">
-                  <button
+                  <span
                     v-if="getDailyRecord(tecnicoData)"
                     :class="`px-2 py-1 text-xs font-medium rounded-md ${getConceptBadge(getDailyRecord(tecnicoData)).color}`"
-                    @click.stop="emit('viewDailyRecord', tecnicoData)"
                   >
                     {{ getConceptBadge(getDailyRecord(tecnicoData)).text }}
-                  </button>
+                  </span>
 
                   <button
                     v-if="shouldShowValidar(tecnicoData)"

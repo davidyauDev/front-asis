@@ -5,19 +5,21 @@
 </template>
 
 <script setup lang="ts">
-import { endOfMonth, startOfMonth } from 'date-fns'
+import { getDaysInMonth, startOfMonth } from 'date-fns'
 import TableReport from '~/components/movility-report/TableReport.vue'
 
 definePageMeta({ middleware: 'auth' })
 
-const modelValue = shallowRef({
-  start: toCalendarDate(startOfMonth(new Date())),
-  end: toCalendarDate(endOfMonth(new Date())),
-})
+const getMonthlyRangeMax30 = (date: Date) => {
+  const start = startOfMonth(date)
+  const end = new Date(
+    start.getFullYear(),
+    start.getMonth(),
+    Math.min(30, getDaysInMonth(start))
+  )
 
-const rangeDate = computed(() => ({
-  start: fromCalToDate(modelValue.value.start),
-  end: fromCalToDate(modelValue.value.end),
-}))
+  return { start, end }
+}
+
+const rangeDate = computed(() => getMonthlyRangeMax30(new Date()))
 </script>
-

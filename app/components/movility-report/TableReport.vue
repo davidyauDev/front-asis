@@ -27,7 +27,7 @@
               <button
                 type="button"
                 class="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors inline-flex items-center gap-2"
-                title="Seleccionar periodo (corte 23 al 22)"
+                title="Seleccionar mes (máximo 30 días)"
               >
                 <UIcon name="i-lucide-calendar-range" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono tabular-nums">
@@ -40,7 +40,7 @@
                 <div class="p-3">
                   <div class="flex items-center justify-between gap-3 mb-2">
                     <div class="text-xs text-gray-700 dark:text-gray-200">
-                      Corte: <span class="font-semibold">23</span> al <span class="font-semibold">22</span>
+                      Mes calendario · <span class="font-semibold">máximo 30 días</span>
                     </div>
                     <div class="text-[11px] text-gray-500 dark:text-gray-400 font-mono">
                       {{ periodDisplay }}
@@ -50,7 +50,7 @@
                   <UCalendar
                     range
                     locale="es"
-                    :number-of-months="2"
+                    :number-of-months="1"
                     :year-controls="true"
                     :month-controls="true"
                     :disable-days-outside-current-view="true"
@@ -384,22 +384,25 @@ const formatLatam = (value: Date) =>
     timeZone: 'America/Lima'
   }).format(value)
 
-const getPeriodStartMonthForAnchor = (anchor: Date) => {
-  const y = anchor.getFullYear()
-  const m = anchor.getMonth()
-  return anchor.getDate() <= 22 ? new Date(y, m - 1, 1) : new Date(y, m, 1)
+const getMonthDateLimit = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+
+const getMonthlyRangeMax30 = (anchor: Date) => {
+  const year = anchor.getFullYear()
+  const month = anchor.getMonth()
+  const start = new Date(year, month, 1)
+  const end = new Date(year, month, Math.min(30, getMonthDateLimit(anchor)))
+
+  return { start, end }
 }
 
-const periodStartMonth = ref<Date>(getPeriodStartMonthForAnchor(props.rangeDate?.start ?? fechaActual))
+const selectedMonth = ref<Date>(new Date(
+  (props.rangeDate?.start ?? fechaActual).getFullYear(),
+  (props.rangeDate?.start ?? fechaActual).getMonth(),
+  1
+))
 
-const periodRange = computed(() => {
-  const y = periodStartMonth.value.getFullYear()
-  const m = periodStartMonth.value.getMonth()
-  return {
-    start: new Date(y, m, 23),
-    end: new Date(y, m + 1, 22),
-  }
-})
+const periodRange = computed(() => getMonthlyRangeMax30(selectedMonth.value))
 
 const startDate = computed(() => toDateInputValue(periodRange.value.start))
 const endDate = computed(() => toDateInputValue(periodRange.value.end))
@@ -421,9 +424,9 @@ const isDateDisabled = (value: DateValue) => {
   return ts < startTs || ts > endTs
 }
 
-const calendarPlaceholder = ref<CalendarDate>(toCalendarMonth(periodStartMonth.value))
+const calendarPlaceholder = ref<any>(toCalendarMonth(selectedMonth.value))
 
-watch(periodStartMonth, (value) => {
+watch(selectedMonth, (value) => {
   const next = toCalendarMonth(value)
   if (calendarPlaceholder.value.year === next.year && calendarPlaceholder.value.month === next.month) return
   calendarPlaceholder.value = next
@@ -432,10 +435,10 @@ watch(periodStartMonth, (value) => {
 watch(calendarPlaceholder, (value) => {
   const next = new Date(value.year, value.month - 1, 1)
   if (
-    next.getFullYear() === periodStartMonth.value.getFullYear() &&
-    next.getMonth() === periodStartMonth.value.getMonth()
+    next.getFullYear() === selectedMonth.value.getFullYear() &&
+    next.getMonth() === selectedMonth.value.getMonth()
   ) return
-  periodStartMonth.value = next
+  selectedMonth.value = next
 })
 
 const calendarRange = computed({
@@ -448,7 +451,7 @@ const calendarRange = computed({
     if (!anchor) return
 
     const anchorDate = anchor.toDate(getLocalTimeZone())
-    periodStartMonth.value = getPeriodStartMonthForAnchor(anchorDate)
+    selectedMonth.value = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1)
   }
 })
 
@@ -456,7 +459,7 @@ watch(
   () => props.rangeDate,
   (range) => {
     if (!range) return
-    periodStartMonth.value = getPeriodStartMonthForAnchor(range.start)
+    selectedMonth.value = new Date(range.start.getFullYear(), range.start.getMonth(), 1)
   },
   { immediate: true }
 )
