@@ -124,7 +124,7 @@
             Tiempo de tardanza
           </p>
           <p class="font-semibold text-orange-900 dark:text-orange-100">
-            {{ incidenciaForm.minutosTardanza }} minutos
+            {{ tardanzaLabel }}
           </p>
         </div>
       </div>
@@ -390,9 +390,28 @@ const incidenciaMode = ref<"tardanza" | "preincidencia">("tardanza");
 const isPreIncidencia = computed(() => incidenciaMode.value === "preincidencia");
 const incidenciaForm = reactive({
   fecha: "",
-  minutosTardanza: 0,
+  duracionSegundos: 0,
   motivo: "",
 });
+
+const formatDuration = (totalSeconds: number) => {
+  const safeTotal = Math.max(0, Math.trunc(totalSeconds))
+  const hours = Math.floor(safeTotal / 3600)
+  const minutes = Math.floor((safeTotal % 3600) / 60)
+  const seconds = safeTotal % 60
+  const clock = hours > 0
+    ? `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`
+    : `${pad2(minutes)}:${pad2(seconds)}`
+
+  const parts = []
+  if (hours > 0) parts.push(`${hours} h`)
+  if (minutes > 0) parts.push(`${minutes} min`)
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds} s`)
+
+  return `${parts.join(" ")} (${clock})`
+}
+
+const tardanzaLabel = computed(() => formatDuration(incidenciaForm.duracionSegundos))
 
 const selectedRow = ref<TakenAttendace | null>(null);
 
@@ -405,8 +424,8 @@ const openIncidenciaModal = (
 
   incidenciaForm.fecha = new Date().toISOString().slice(0, 10);
 
-  incidenciaForm.minutosTardanza =
-    mode === "tardanza" && row.Tardanza
+  incidenciaForm.duracionSegundos =
+    mode === "tardanza"
       ? calcularTardanza(row.Ingreso, row.Horario)
       : 0;
 
@@ -426,7 +445,7 @@ const calcularTardanza = (
 
   if (ingresoDate <= horarioDate) return 0;
 
-  return Math.floor((ingresoDate.getTime() - horarioDate.getTime()) / 60000);
+  return Math.floor((ingresoDate.getTime() - horarioDate.getTime()) / 1000);
 };
 
 
@@ -449,7 +468,7 @@ const guardarIncidencia = async () => {
     creado_por: user.value.id,
     usuario_id: selectedRow.value.usuario_id,
     fecha: incidenciaForm.fecha,
-    minutos: isPreIncidencia.value ? 0 : incidenciaForm.minutosTardanza,
+    duracion_segundos: isPreIncidencia.value ? 0 : incidenciaForm.duracionSegundos,
     es_recordatorio: isPreIncidencia.value,
     tipo : 'LLEGADA_TARDE',
     motivo: incidenciaForm.motivo,
@@ -695,7 +714,7 @@ const columns: TableColumn<TakenAttendace>[] = [
 
     cell: ({ row }) => {
       const hasIngreso = Boolean(row.original.Ingreso)
-      const hasTardanza = Boolean(row.original.Tardanza)
+      const hasTardanza = isLateAttendance(row.original)
       const tieneIncidencia = Boolean(row.original.Tiene_Incidencia)
       const esRecordatorio = getEsRecordatorio(row)
 

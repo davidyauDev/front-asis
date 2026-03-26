@@ -90,34 +90,52 @@ const sortIcon = (campo: 'dni' | 'nombre' | 'departamento' | 'empresa') => {
         ? 'i-heroicons-arrow-up'
         : 'i-heroicons-arrow-down';
 };
-const convertirAMinutos = (t: string) => {
+const convertirASegundos = (t?: string | null) => {
     if (!t || t === "-") return 0;
 
-    const p = t.split(":").map((v) => Number.parseInt(v, 10));
-    const [h = 0, m = 0, s = 0] = p;
+    const partes = t.split(":").map((v) => Number.parseInt(v, 10));
+    if (partes.some((valor) => !Number.isFinite(valor))) return 0;
 
-    return p.length >= 3
-        ? h * 60 + m + Math.round(s / 60)
-        : h * 60 + m;
+    const [h = 0, m = 0, s = 0] = partes;
+    return partes.length >= 3
+        ? h * 3600 + m * 60 + s
+        : h * 3600 + m * 60;
 };
 
+const formatearSegundosAHHMMSS = (totalSegundos: number) => {
+    const safe = Math.max(0, Math.trunc(totalSegundos));
+    const horas = Math.floor(safe / 3600);
+    const minutos = Math.floor((safe % 3600) / 60);
+    const segundos = safe % 60;
 
-const normalizarHHMM = (t?: string | null) => {
-    if (!t || t === '-') return '00:00';
+    return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+};
 
-    const [hRaw, mRaw] = t.split(':');
-    const h = Number.parseInt(hRaw ?? '', 10);
-    const m = Number.parseInt(mRaw ?? '', 10);
+const obtenerSegundos = (emp: any, campo: 'bruto' | 'incidencias' | 'neto') => {
+    const valor = emp?.[`${campo}_segundos`];
+    if (typeof valor === 'number' && Number.isFinite(valor)) return Math.max(0, Math.trunc(valor));
 
-    if (!Number.isFinite(h) || !Number.isFinite(m)) return '00:00';
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    const hhmmss = emp?.[`${campo}_hhmmss`];
+    if (typeof hhmmss === 'string' && hhmmss.trim()) return convertirASegundos(hhmmss);
+
+    const hhmm = emp?.[`${campo}_hhmm`];
+    if (typeof hhmm === 'string' && hhmm.trim()) return convertirASegundos(hhmm);
+
+    return 0;
+};
+
+const obtenerDuracionExacta = (emp: any, campo: 'bruto' | 'incidencias' | 'neto') => {
+    const hhmmss = emp?.[`${campo}_hhmmss`];
+    if (typeof hhmmss === 'string' && hhmmss.trim() && hhmmss !== '-') return hhmmss;
+
+    return formatearSegundosAHHMMSS(obtenerSegundos(emp, campo));
 };
 
 const loadingEmail = ref<{ [key: string]: boolean }>({});
 
 const emailKey = (emp: any) => String(emp.dni ?? emp.email ?? '');
 
-const tardanzaNetaCero = (emp: any) => convertirAMinutos(String(emp.neto_hhmm ?? '-')) === 0;
+const tardanzaNetaCero = (emp: any) => obtenerSegundos(emp, 'neto') === 0;
 
 const confirmarEnvioOpen = ref(false);
 const empConfirmacion = shallowRef<any | null>(null);
@@ -128,7 +146,7 @@ const payloadConfirmacion = computed(() => {
     return {
         email: String(empConfirmacion.value.email ?? '').trim(),
         nombre: String(empConfirmacion.value.nombre ?? '').trim(),
-        minutos_tardanza: normalizarHHMM(empConfirmacion.value.neto_hhmm),
+        minutos_tardanza: obtenerDuracionExacta(empConfirmacion.value, 'neto'),
         start_date: props.fechaInicio,
         end_date: props.fechaFin,
     };
@@ -181,7 +199,7 @@ async function enviarEmail(emp: any): Promise<boolean> {
         const payload = {
             email: String(emp.email ?? '').trim(),
             nombre: String(emp.nombre ?? '').trim(),
-            minutos_tardanza: normalizarHHMM(emp.neto_hhmm),
+            minutos_tardanza: obtenerDuracionExacta(emp, 'neto'),
             start_date: props.fechaInicio,
             end_date: props.fechaFin,
             nro:emp.id,
@@ -225,8 +243,7 @@ async function enviarEmail(emp: any): Promise<boolean> {
 }
 
 const esMayorAUnaHora = (hhmm: string) => {
-    const minutos = convertirAMinutos(hhmm)
-    return minutos > 60
+    return convertirASegundos(hhmm) > 3600
 }
 
 const cargarIncidencias = async () => {
@@ -453,18 +470,18 @@ defineExpose({
                     </td>
 
                     <td class="border px-2 text-center bg-blue-50 dark:bg-blue-900 dark:text-blue-200 dark:border-gray-700">
-                        {{ emp.bruto_hhmm }}
+                        {{ obtenerDuracionExacta(emp, 'bruto') }}
                     </td>
 
                     <td class="border px-2 text-center bg-purple-50 font-bold dark:bg-purple-900 dark:text-purple-200 dark:border-gray-700">
-                        {{ emp.incidencias_hhmm }}
+                        {{ obtenerDuracionExacta(emp, 'incidencias') }}
                     </td>
 
-                    <td class="border px-2 text-center font-bold dark:border-gray-700" :class="esMayorAUnaHora(emp.neto_hhmm)
+                    <td class="border px-2 text-center font-bold dark:border-gray-700" :class="esMayorAUnaHora(obtenerDuracionExacta(emp, 'neto'))
                         ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                         : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         ">
-                        {{ emp.neto_hhmm }}
+                        {{ obtenerDuracionExacta(emp, 'neto') }}
                     </td>
                     <td class="border px-2 text-center dark:border-gray-700">
                         <UButton

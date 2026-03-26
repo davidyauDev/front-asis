@@ -6,6 +6,7 @@ type FormIncidencia = {
   fecha: string;
   descripcion: string;
   minutos: number | undefined;
+  duracionSegundos?: number | undefined;
   tipo: string | undefined;
   motivo: string;
 };
@@ -23,6 +24,7 @@ const form = ref<FormIncidencia>({
   fecha: "",
   descripcion: "",
   minutos: undefined,
+  duracionSegundos: undefined,
   tipo: undefined,
   motivo: "",
 });
@@ -35,6 +37,7 @@ const motivoError = computed(() => {
 
 const duracionHoras = shallowRef<string>("");
 const duracionMinutos = shallowRef<string>("");
+const duracionSegundos = shallowRef<string>("");
 
 const tardanza = shallowRef<number | null>(null);
 const tardanzaLoading = shallowRef(false);
@@ -42,10 +45,7 @@ const tardanzaError = shallowRef<string | null>(null);
 
 const tardanzaLabel = computed(() => {
   if (tardanza.value == null) return null;
-  const safe = Math.max(0, Math.trunc(tardanza.value));
-  const h = Math.floor(safe / 60);
-  const m = safe % 60;
-  return `${safe} min (${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")})`;
+  return formatDurationLabel(tardanza.value);
 });
 
 const tiposIncidencia = ref([
@@ -93,32 +93,57 @@ function parseNonNegativeInt(raw: string): number | undefined {
   return Math.max(0, Math.trunc(n));
 }
 
+function formatDurationLabel(totalSeconds: number): string {
+  const safe = Math.max(0, Math.trunc(totalSeconds));
+  const h = Math.floor(safe / 3600);
+  const m = Math.floor((safe % 3600) / 60);
+  const s = safe % 60;
+  const clock = h > 0
+    ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+    : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+
+  const parts = [];
+  if (h > 0) parts.push(`${h} h`);
+  if (m > 0) parts.push(`${m} min`);
+  if (s > 0 || parts.length === 0) parts.push(`${s} s`);
+
+  return `${parts.join(" ")} (${clock})`;
+}
+
 watch(
-  () => form.value.minutos,
-  (total) => {
-    if (!total || total < 1) {
+  () => form.value.duracionSegundos,
+  (totalSeconds) => {
+    if (!totalSeconds || totalSeconds < 1) {
       duracionHoras.value = "";
       duracionMinutos.value = "";
+      duracionSegundos.value = "";
       return;
     }
 
-    const safeTotal = Math.max(0, Math.trunc(total));
-    duracionHoras.value = String(Math.floor(safeTotal / 60));
-    duracionMinutos.value = String(safeTotal % 60);
+    const safeTotal = Math.max(0, Math.trunc(totalSeconds));
+    duracionHoras.value = String(Math.floor(safeTotal / 3600));
+    duracionMinutos.value = String(Math.floor((safeTotal % 3600) / 60));
+    duracionSegundos.value = String(safeTotal % 60);
   },
   { immediate: true }
 );
 
 watch(
-  () => [duracionHoras.value, duracionMinutos.value, requiereMinutos.value] as const,
+  () => [duracionHoras.value, duracionMinutos.value, duracionSegundos.value, requiereMinutos.value] as const,
   () => {
-    if (!requiereMinutos.value) return;
+    if (!requiereMinutos.value) {
+      form.value.duracionSegundos = undefined;
+      form.value.minutos = undefined;
+      return;
+    }
 
     const horas = parseNonNegativeInt(duracionHoras.value) ?? 0;
     const minutos = parseNonNegativeInt(duracionMinutos.value) ?? 0;
-    const total = horas * 60 + minutos;
+    const segundos = parseNonNegativeInt(duracionSegundos.value) ?? 0;
+    const total = horas * 3600 + minutos * 60 + segundos;
 
-    form.value.minutos = total > 0 ? total : undefined;
+    form.value.duracionSegundos = total > 0 ? total : undefined;
+    form.value.minutos = total > 0 ? Math.floor(total / 60) : undefined;
   }
 );
 
@@ -134,6 +159,53 @@ function timeToSeconds(value: string | null | undefined): number | null {
   const [h, m, s = 0] = parts;
   if (h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59) return null;
   return h * 3600 + m * 60 + s;
+}
+
+function resolveTardanzaSegundos(row: any): number | null {
+  const exactSecondsCandidates = [
+    row?.tardanza_segundos,
+    row?.Tardanza_segundos,
+    row?.tardanzaSegundos,
+    row?.TardanzaSegundos,
+  ];
+
+  for (const candidate of exactSecondsCandidates) {
+    if (typeof candidate === "number" && Number.isFinite(candidate)) {
+      return Math.max(0, Math.trunc(candidate));
+    }
+    if (candidate != null && candidate !== "" && Number.isFinite(Number(candidate))) {
+      return Math.max(0, Math.trunc(Number(candidate)));
+    }
+  }
+
+  const exactClockCandidates = [
+    row?.tardanza_hhmmss,
+    row?.Tardanza_hhmmss,
+    row?.tardanzaHhmmss,
+    row?.TardanzaHhmmss,
+  ];
+
+  for (const candidate of exactClockCandidates) {
+    const seconds = timeToSeconds(candidate);
+    if (seconds != null) return seconds;
+  }
+
+  const horarioSec = timeToSeconds(row?.Horario);
+  const ingresoSec = timeToSeconds(row?.Ingreso);
+
+  if (horarioSec != null && ingresoSec != null) {
+    return Math.max(0, ingresoSec - horarioSec);
+  }
+
+  const raw = row?.Tardanza;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return Math.max(0, Math.trunc(raw * 60));
+  }
+  if (raw != null && raw !== "" && Number.isFinite(Number(raw))) {
+    return Math.max(0, Math.trunc(Number(raw) * 60));
+  }
+
+  return null;
 }
 
 async function cargarTardanza() {
@@ -164,37 +236,23 @@ async function cargarTardanza() {
               String(r?.Fecha) === String(form.value.fecha)
           ) ?? list[0]
         : null;
-
-    const horarioSec = timeToSeconds(row?.Horario);
-    const ingresoSec = timeToSeconds(row?.Ingreso);
-
-    let value: number | null = null;
-
-    if (horarioSec != null && ingresoSec != null) {
-      const delta = Math.max(0, ingresoSec - horarioSec);
-      value = Math.floor(delta / 60);
-    } else {
-      const raw = row?.Tardanza;
-      value =
-        typeof raw === "number"
-          ? raw
-          : raw != null && raw !== "" && Number.isFinite(Number(raw))
-            ? Number(raw)
-            : null;
-    }
+    const value = resolveTardanzaSegundos(row);
 
     tardanza.value = value;
 
     const horasActual = duracionHoras.value.trim();
     const minutosActual = duracionMinutos.value.trim();
+    const segundosActual = duracionSegundos.value.trim();
     const sinDuracion =
       (!horasActual || horasActual === "0") &&
-      (!minutosActual || minutosActual === "0");
+      (!minutosActual || minutosActual === "0") &&
+      (!segundosActual || segundosActual === "0");
 
-    if (value != null && value > 0 && !form.value.minutos && sinDuracion) {
+    if (value != null && value > 0 && !form.value.duracionSegundos && sinDuracion) {
       const safeTotal = Math.max(0, Math.trunc(value));
-      duracionHoras.value = String(Math.floor(safeTotal / 60));
-      duracionMinutos.value = String(safeTotal % 60);
+      duracionHoras.value = String(Math.floor(safeTotal / 3600));
+      duracionMinutos.value = String(Math.floor((safeTotal % 3600) / 60));
+      duracionSegundos.value = String(safeTotal % 60);
     }
   } catch (e: any) {
     tardanza.value = null;
@@ -206,7 +264,8 @@ async function cargarTardanza() {
 
 function usarTardanza() {
   if (!tardanza.value || tardanza.value < 1) return;
-  form.value.minutos = tardanza.value;
+  form.value.duracionSegundos = tardanza.value;
+  form.value.minutos = Math.floor(tardanza.value / 60);
 }
 
 watch(
@@ -238,12 +297,14 @@ function resetForm() {
     fecha: "",
     descripcion: "",
     minutos: undefined,
+    duracionSegundos: undefined,
     tipo: undefined,
     motivo: "",
   };
   motivoTouched.value = false;
   duracionHoras.value = "";
   duracionMinutos.value = "";
+  duracionSegundos.value = "";
   tardanza.value = null;
   tardanzaLoading.value = false;
   tardanzaError.value = null;
@@ -372,6 +433,22 @@ function resetForm() {
               </label>
               <UInput
                 v-model="duracionMinutos"
+                type="number"
+                min="0"
+                max="59"
+                placeholder="0"
+                class="w-full"
+                size="lg"
+                :ui="{ rounded: 'rounded-lg' }"
+              />
+            </div>
+
+            <div>
+              <label class="block font-semibold mb-1 text-gray-700">
+                Segundos
+              </label>
+              <UInput
+                v-model="duracionSegundos"
                 type="number"
                 min="0"
                 max="59"

@@ -46,6 +46,14 @@ interface Empleado {
   dias: Record<string, Dia>;
 }
 
+interface FormIncidenciaPayload {
+  fecha: string;
+  minutos?: number;
+  duracionSegundos?: number;
+  tipo?: string;
+  motivo: string;
+}
+
 const toast = useToast()
 const datosEmpleados = ref<Empleado[]>([]);
 const cargando = ref(true);
@@ -245,7 +253,7 @@ const formatCreatedBy = (raw: any) => {
 
   return 'Admin';
 };
-const guardarIncidencia = async (formIncidencia: FormIncidencia) => {
+const guardarIncidencia = async (formIncidencia: FormIncidenciaPayload) => {
   const user = useCookie<{ id: number } | null>('auth_user')
   if (!user.value) {
     toast.add({
@@ -260,7 +268,11 @@ const guardarIncidencia = async (formIncidencia: FormIncidencia) => {
     usuario_id: usuarioSeleccionado.value,
     tipo: formIncidencia.tipo,
     fecha: formIncidencia.fecha,
-    minutos: formIncidencia.minutos,
+    duracion_segundos: formIncidencia.duracionSegundos ?? (
+      typeof formIncidencia.minutos === 'number'
+        ? formIncidencia.minutos * 60
+        : undefined
+    ),
     motivo: formIncidencia.motivo
   }
   try {

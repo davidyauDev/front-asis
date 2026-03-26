@@ -6,33 +6,64 @@ const props = defineProps<{ historialUser: any }>();
 const emit = defineEmits(['refetch']);
 const toast = useToast();
 const editandoId = ref<string | null>(null);
-const valorEdicion = ref('');
+const horasEdicion = ref('');
+const minutosEdicion = ref('');
+const segundosEdicion = ref('');
 const motivoEdicion = ref('');
 const eliminandoId = ref<string | null>(null);
 
+const parseDurationToSeconds = (value: unknown) => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (/^\d+$/.test(trimmed)) {
+      return Number(trimmed) * 60;
+    }
+
+    const parts = trimmed.split(':').map(Number);
+    if ((parts.length === 2 || parts.length === 3) && parts.every((part) => Number.isFinite(part))) {
+      const [hh, mm, ss = 0] = parts;
+      return Math.max(0, hh * 3600 + mm * 60 + ss);
+    }
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.trunc(value * 60));
+  }
+
+  return 0;
+};
+
+const setDurationFields = (totalSeconds: number) => {
+  const safe = Math.max(0, Math.trunc(totalSeconds));
+  horasEdicion.value = String(Math.floor(safe / 3600));
+  minutosEdicion.value = String(Math.floor((safe % 3600) / 60));
+  segundosEdicion.value = String(safe % 60);
+};
+
 const iniciarEdicion = (fecha: string, dia: any) => {
   editandoId.value = dia.id;
-  if (typeof dia.valor === 'string' && /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(dia.valor)) {
-    const [hh, mm] = dia.valor.split(':').map(Number);
-    valorEdicion.value = String(hh * 60 + mm);
-  } else {
-    valorEdicion.value = dia.valor ? String(dia.valor) : '';
-  }
+  setDurationFields(parseDurationToSeconds(dia.valor));
   motivoEdicion.value = dia.motivo || '';
 };
 
 const cancelarEdicion = () => {
   editandoId.value = null;
-  valorEdicion.value = '';
+  horasEdicion.value = '';
+  minutosEdicion.value = '';
+  segundosEdicion.value = '';
   motivoEdicion.value = '';
 };
 
 const guardarEdicion = async (fecha: string) => {
-  const minutosInt = valorEdicion.value ? parseInt(valorEdicion.value, 10) : undefined;
-  if (!minutosInt || isNaN(minutosInt) || minutosInt < 1) {
+  const horas = horasEdicion.value ? parseInt(horasEdicion.value, 10) : 0;
+  const minutos = minutosEdicion.value ? parseInt(minutosEdicion.value, 10) : 0;
+  const segundos = segundosEdicion.value ? parseInt(segundosEdicion.value, 10) : 0;
+  const duracionSegundos = horas * 3600 + minutos * 60 + segundos;
+
+  if (!Number.isFinite(duracionSegundos) || duracionSegundos < 1) {
     toast.add({
       title: 'Error',
-      description: 'El campo minutos es obligatorio y debe ser mayor a 0.',
+      description: 'La duración debe ser mayor a 0 segundos.',
       color: 'error'
     });
     return;
@@ -42,7 +73,7 @@ const guardarEdicion = async (fecha: string) => {
       method: 'PUT',
       body: JSON.stringify({
         motivo: motivoEdicion.value,
-        minutos: minutosInt
+        duracion_segundos: duracionSegundos
       })
     });
 
@@ -151,7 +182,7 @@ const eliminarIncidencia = async (id: string) => {
                   dia.valor === 'DM' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
                   dia.valor === 'V' ? 'bg-green-50 text-green-700 border-green-200' :
                   dia.valor === 'TC' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                  /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(dia.valor) ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                  /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/.test(dia.valor) ? 'bg-blue-50 text-blue-700 border-blue-200' :
                   'bg-gray-50 text-gray-700 border-gray-200'
                 ]">
                 {{ dia.valor }}
@@ -184,15 +215,39 @@ const eliminarIncidencia = async (id: string) => {
             <div class="space-y-2">
               <p class="text-xs font-medium text-gray-700">{{ fecha }}</p>
 
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">Horas</label>
+                  <UInput
+                    v-model="horasEdicion"
+                    size="sm"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    class="font-mono text-xs"
+                  />
+                </div>
                 <div>
                   <label class="block text-xs text-gray-600 mb-1">Minutos</label>
                   <UInput
-                    v-model="valorEdicion"
+                    v-model="minutosEdicion"
                     size="sm"
                     type="number"
-                    min="1"
-                    placeholder="Ej: 20"
+                    min="0"
+                    max="59"
+                    placeholder="0"
+                    class="font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">Segundos</label>
+                  <UInput
+                    v-model="segundosEdicion"
+                    size="sm"
+                    type="number"
+                    min="0"
+                    max="59"
+                    placeholder="0"
                     class="font-mono text-xs"
                   />
                 </div>
