@@ -170,7 +170,7 @@ useHead({
         <div class="relative z-10 flex w-full max-w-[620px] flex-col justify-center">
           <div class="max-w-[560px] lg:-mt-4">
             <h2 class="text-[3.2rem] font-extrabold uppercase leading-[0.95] tracking-[-0.045em] text-white">
-              MAS DE <span class="text-[#ff7a1a]">25 ANOS</span>
+              MAS DE <span class="text-[#ff7a1a]">25 AÑOS</span>
               <br>
               <span class="text-[#ff7a1a]">DE EXPERIENCIA</span>
             </h2>
