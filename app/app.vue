@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import logoIcon from '~/assets/images/logo-icon.svg'
+
 const colorMode = useColorMode()
 
 const color = computed(() => colorMode.value === 'dark' ? '#1b1718' : 'white')
@@ -10,7 +12,7 @@ useHead({
     { key: 'theme-color', name: 'theme-color', content: color }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { rel: 'icon', type: 'image/svg+xml', href: logoIcon }
   ],
   htmlAttrs: {
     lang: 'en'
