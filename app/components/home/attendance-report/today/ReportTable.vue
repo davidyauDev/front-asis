@@ -33,13 +33,13 @@
 
       <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
         <UButton
-          color="success"
+          color="neutral"
           variant="solid"
           size="md"
           @click="exportarExcel"
           :loading="exportando"
           :disabled="exportando || !canExport"
-          class="min-w-[190px] justify-center whitespace-nowrap font-semibold shadow-sm hover:shadow-md disabled:shadow-none transition-all"
+          class="min-w-[190px] justify-center whitespace-nowrap border-transparent !bg-[#2d5fc0] !text-white font-semibold shadow-sm transition-all hover:!bg-[#244ea4] active:!bg-[#1d428d] disabled:shadow-none"
         >
           <template #leading>
             <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />

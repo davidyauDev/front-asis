@@ -7,8 +7,8 @@
     <!-- HEADER -->
     <template #header>
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-network" class="size-4 text-primary" />
-        <span class="font-semibold text-sm">Departamento</span>
+        <UIcon name="i-lucide-network" class="size-4 text-[#2d5fc0] dark:text-[#9cb7f5]" />
+        <span class="font-semibold text-sm text-[#1d3f7f] dark:text-[#d9e5ff]">Departamento</span>
       </div>
 
       <UButton
@@ -56,8 +56,8 @@
               'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer',
               'flex items-center gap-1.5',
               selecteds.some(s => s.id === item.id) 
-                ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20' 
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
+                ? 'bg-[#2d5fc0] text-white border border-[#2d5fc0] shadow-sm ring-2 ring-[#2d5fc0]/15' 
+                : 'border border-[#d7e1f5] bg-[#f7faff] text-[#4d6ea8] hover:bg-[#ebf2ff] dark:border-[#314d7d] dark:bg-[#13203a] dark:text-[#c2d2f8] dark:hover:bg-[#1a2c51]'
             ]"
           >
             <UIcon

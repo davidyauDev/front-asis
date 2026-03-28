@@ -16,32 +16,13 @@
           space-y-4
         "
       >
-        <nav class="w-full">
-          <div
-            class="flex gap-0 border-b-2 border-emerald-600 dark:border-emerald-500"
-            role="tablist"
-            aria-label="Filtros del reporte de hoy"
-          >
-            <button
-              v-for="(item, idx) in filterTabs"
-              :key="item.value"
-              type="button"
-              role="tab"
-              :aria-selected="item.value === filterMode"
-              :tabindex="item.value === filterMode ? 0 : -1"
-              @click="filterMode = item.value as FilterMode"
-              class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wide border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 rounded-none first:rounded-tl-md last:rounded-tr-md"
-              :class="[
-                idx ? '-ml-px' : '',
-                item.value === filterMode
-                  ? 'bg-emerald-600 text-white border-emerald-600 -mb-[2px]'
-                  : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'
-              ]"
-            >
-              {{ item.label }}
-            </button>
-          </div>
-        </nav>
+        <AppTabs
+          v-model="filterMode"
+          aria-label="Filtros del reporte de hoy"
+          size="sm"
+          :items="filterTabs"
+          list-class="items-end flex-wrap"
+        />
 
         <div v-if="filterMode === 'ADMIN'" class="grid grid-cols-12 gap-4 items-start">
           <div class="col-span-12 md:col-span-2 min-w-0">
@@ -83,8 +64,8 @@
             >
               <template #header>
                 <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-sparkles" class="size-4 text-primary" />
-                  <span class="font-semibold text-sm">Ingenieros productos</span>
+                  <UIcon name="i-lucide-sparkles" class="size-4 text-[#2d5fc0] dark:text-[#9cb7f5]" />
+                  <span class="font-semibold text-sm text-[#1d3f7f] dark:text-[#d9e5ff]">Ingenieros productos</span>
                 </div>
               </template>
 
@@ -103,8 +84,8 @@
                       :class="[
                         'px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
                         specialCompanyKey === item.key
-                          ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
+                          ? 'bg-[#2d5fc0] text-white border border-[#2d5fc0] shadow-sm ring-2 ring-[#2d5fc0]/15'
+                          : 'border border-[#d7e1f5] bg-[#f7faff] text-[#4d6ea8] hover:bg-[#ebf2ff] dark:border-[#314d7d] dark:bg-[#13203a] dark:text-[#c2d2f8] dark:hover:bg-[#1a2c51]'
                       ]"
                     >
                       <UIcon
@@ -137,8 +118,8 @@
                       :class="[
                         'px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5',
                         specialEmployeeIds.includes(emp.id)
-                          ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 ring-2 ring-primary/20'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-105'
+                          ? 'bg-[#2d5fc0] text-white border border-[#2d5fc0] shadow-sm ring-2 ring-[#2d5fc0]/15'
+                          : 'border border-[#d7e1f5] bg-[#f7faff] text-[#4d6ea8] hover:bg-[#ebf2ff] dark:border-[#314d7d] dark:bg-[#13203a] dark:text-[#c2d2f8] dark:hover:bg-[#1a2c51]'
                       ]"
                     >
                       <UIcon
@@ -204,13 +185,13 @@
                     <span
                       v-for="emp in selectedSpecialEmployees"
                       :key="emp.key"
-                      class="inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-100 border border-emerald-200 dark:border-emerald-900"
+                      class="inline-flex items-center gap-2 rounded-full border border-[#cfdcf7] bg-[#eef4ff] px-3 py-1.5 text-xs font-semibold text-[#30508f] dark:border-[#314d7d] dark:bg-[#162542] dark:text-[#d6e3ff]"
                     >
                       <span class="truncate max-w-[240px]">{{ emp.label }}</span>
                       <button
                         v-if="emp.id != null"
                         type="button"
-                        class="rounded-full p-0.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                        class="rounded-full p-0.5 transition-colors hover:bg-[#dbe7ff] dark:hover:bg-[#223862]"
                         @click="toggleSpecialEmployee(emp.id)"
                         aria-label="Quitar usuario"
                       >

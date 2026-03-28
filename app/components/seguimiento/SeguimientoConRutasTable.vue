@@ -22,7 +22,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="max-h-[calc(100vh-400px)] overflow-auto rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 shadow-sm">
+  <div class="max-h-[calc(300vh-400px)] overflow-auto rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-950 shadow-sm">
     <table class="min-w-full table-fixed">
       <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50">
         <tr class="text-left text-xs font-semibold text-gray-600 dark:text-gray-300 border-b border-gray-200/60 dark:border-gray-800/60">

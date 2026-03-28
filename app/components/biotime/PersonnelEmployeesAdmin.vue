@@ -1,30 +1,12 @@
 <template>
   <div>
-    <div class="p-4 sm:p-5">
+    <div>
       <div class="mb-4 rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden">
-        <div class="flex border-b border-emerald-600">
-          <button
-            type="button"
-            class="px-6 py-3 text-sm font-semibold uppercase tracking-wide"
-            :class="statusTab === 'active'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/40'"
-            @click="setStatusTab('active')"
-          >
-            Activos
-          </button>
-          <button
-            type="button"
-            class="px-6 py-3 text-sm font-semibold uppercase tracking-wide"
-            :class="statusTab === 'inactive'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/40'"
-            @click="setStatusTab('inactive')"
-          >
-            Inactivos
-          </button>
-          <div class="flex-1" />
-        </div>
+        <AppTabs
+          v-model="statusTabModel"
+          aria-label="Tabs de estado BioTime"
+          :items="statusTabItems"
+        />
       </div>
 
       <div class="flex flex-wrap items-end gap-3">
@@ -215,11 +197,18 @@ import {
 const toast = useToast()
 
 const statusTab = ref<'active' | 'inactive'>('active')
+const statusTabItems = [
+  { label: 'Activos', value: 'active' },
+  { label: 'Inactivos', value: 'inactive' },
+] as const
 
-const setStatusTab = (tab: 'active' | 'inactive') => {
-  statusTab.value = tab
-  refresh()
-}
+const statusTabModel = computed<'active' | 'inactive'>({
+  get: () => statusTab.value,
+  set: (tab) => {
+    statusTab.value = tab
+    refresh()
+  },
+})
 
 const filters = reactive({
   q: '',

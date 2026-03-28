@@ -37,7 +37,7 @@ const managementLinks = [{
 }, {
   label: 'Empleados BioTime',
   icon: 'i-lucide-fingerprint',
-  to: '/users/biotime',
+  to: '/empleados-biotime',
   exact: true,
   onSelect: () => { open.value = false }
 }, {
@@ -213,11 +213,40 @@ onMounted(async () => {
 
 .sidebar-nav :deep(a[aria-current='page']),
 .sidebar-nav :deep(button[aria-current='page']) {
-  background: rgb(var(--ui-primary) / 0.12);
-  color: rgb(var(--ui-primary));
+  background: rgb(45 95 192 / 0.1);
+  color: rgb(45 95 192);
+  box-shadow: inset 0 0 0 1px rgb(45 95 192 / 0.15);
 }
 
-.sidebar-nav :deep(span[class^='i-']) {
+.sidebar-nav :deep(a[aria-current='page'] span[class*='i-']),
+.sidebar-nav :deep(a[aria-current='page'] .iconify),
+.sidebar-nav :deep(a[aria-current='page'] svg),
+.sidebar-nav :deep(button[aria-current='page'] span[class*='i-']),
+.sidebar-nav :deep(button[aria-current='page'] .iconify),
+.sidebar-nav :deep(button[aria-current='page'] svg) {
+  color: rgb(45 95 192);
+  stroke: currentColor;
+}
+
+:global(.dark) .sidebar-nav :deep(a[aria-current='page']),
+:global(.dark) .sidebar-nav :deep(button[aria-current='page']) {
+  background: rgb(45 95 192 / 0.18);
+  color: rgb(201 217 255);
+  box-shadow: inset 0 0 0 1px rgb(111 143 218 / 0.22);
+}
+
+:global(.dark) .sidebar-nav :deep(a[aria-current='page'] span[class*='i-']),
+:global(.dark) .sidebar-nav :deep(a[aria-current='page'] .iconify),
+:global(.dark) .sidebar-nav :deep(a[aria-current='page'] svg),
+:global(.dark) .sidebar-nav :deep(button[aria-current='page'] span[class*='i-']),
+:global(.dark) .sidebar-nav :deep(button[aria-current='page'] .iconify),
+:global(.dark) .sidebar-nav :deep(button[aria-current='page'] svg) {
+  color: rgb(201 217 255);
+}
+
+.sidebar-nav :deep(span[class*='i-']),
+.sidebar-nav :deep(.iconify),
+.sidebar-nav :deep(svg) {
   width: 1.1rem;
   height: 1.1rem;
 }

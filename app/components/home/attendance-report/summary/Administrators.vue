@@ -15,32 +15,11 @@
         </section>
 
         <section class="rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <nav class="w-full">
-                <div
-                    class="flex gap-0 border-b-2 border-primary-600 dark:border-primary-500"
-                    role="tablist"
-                    aria-label="Tipo de reporte"
-                >
-                    <button
-                        v-for="(item, idx) in reportTabs"
-                        :key="item.value"
-                        type="button"
-                        role="tab"
-                        :aria-selected="item.value === currentReportType"
-                        :tabindex="item.value === currentReportType ? 0 : -1"
-                        @click="currentReportType = item.value"
-                        class="px-6 py-2.5 text-xs font-semibold uppercase tracking-wide border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded-none first:rounded-tl-md last:rounded-tr-md"
-                        :class="[
-                            idx ? '-ml-px' : '',
-                            item.value === currentReportType
-                                ? 'bg-primary-600 text-white border-primary-600 -mb-[2px]'
-                                : 'bg-gray-100 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/70'
-                        ]"
-                    >
-                        {{ item.label }}
-                    </button>
-                </div>
-            </nav>
+            <AppTabs
+                v-model="currentReportType"
+                aria-label="Tipo de reporte"
+                :items="reportTabs"
+            />
 
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
                 <UInput
