@@ -1,10 +1,5 @@
 <template>
   <div class="space-y-6 text-gray-900 dark:text-gray-100">
-    <!-- METRICS -->
-    <!-- <section>
-      <MetricCards :metrics="metricsData" />
-    </section> -->
-
     <!-- FILTROS -->
     <section class="grid grid-cols-1 gap-6 items-start">
       <div
@@ -18,7 +13,7 @@
       >
         <AppTabs
           v-model="filterMode"
-          aria-label="Filtros del reporte de hoy"
+          ariaLabel="Filtros del reporte de hoy"
           size="sm"
           :items="filterTabs"
           list-class="items-end flex-wrap"
@@ -230,7 +225,6 @@
  import DepartmentFilter from "../DepartmentFilter.vue";
  import EmployeeFilter from "../EmployeeFilter.vue";
  import ReportTable from "./ReportTable.vue";
- import MetricCards from "~/components/home/MetricCards.vue";
  import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
  
  const store = useAttendanceReportStore();
@@ -354,38 +348,7 @@ const effectiveDailyParams = computed(() => {
   }
 })
 
-const metricsData = computed(() => {
-  const summary = dailyTakenAttendace.value.summary;
-  const total = dailyTakenAttendace.value.list.length;
-  const incidencias = dailyTakenAttendace.value.list.filter(item => item.Tiene_Incidencia).length;
-  
-  return [
-    {
-      title: 'Total Empleados',
-      value: total.toString(),
-      change: '100%',
-      description: 'Empleados registrados'
-    },
-    {
-      title: 'Asistencias',
-      value: summary.asistencias.toString(),
-      change: total ? `${Math.round((summary.asistencias / total) * 100)}%` : '0%',
-      description: 'Asistieron a tiempo'
-    },
-    {
-      title: 'Tardanzas',
-      value: summary.tardanzas.toString(),
-      change: total ? `${Math.round((summary.tardanzas / total) * 100)}%` : '0%',
-      description: 'Llegaron tarde'
-    },
-    {
-      title: 'Incidencias',
-      value: incidencias.toString(),
-      change: summary.tardanzas ? `${Math.round((incidencias / summary.tardanzas) * 100)}%` : '0%',
-      description: 'Justificadas'
-    }
-  ];
-});
+
 
 /* =========================
    WATCHERS - REFACTORIZADO

@@ -8,12 +8,11 @@
         :notification-shortcuts="['N']"
         @notification-click="isNotificationsSlideoverOpen = true"
       />
-
       <UDashboardToolbar>
         <div class="mt-2 w-full">
           <AppTabs
             v-model="currentTabType"
-            aria-label="Reporte de asistencia"
+            ariaLabel="Reporte de asistencia"
             :items="tabItems"
             :list-class="width < 500 ? 'flex-col items-stretch' : 'items-end flex-wrap'"
           />
@@ -23,10 +22,10 @@
       <UDashboardToolbar v-if="currentTabType === ItemType.TECHNICIANS">
         <AppTabs
           v-model="currentEmployeeType"
-          aria-label="Tipo de empleado"
+          ariaLabel="Tipo de empleado"
           size="sm"
           :items="employeeItems"
-          list-class="border-[#2d5fc0]/75 dark:border-[#6f8fda]/80"
+          :list-class="'border-[#2d5fc0]/75 dark:border-[#6f8fda]/80'"
         />
       </UDashboardToolbar>
     </template>
@@ -45,13 +44,12 @@
 </template>
 
 <script setup lang="ts">
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 
 import MonthlyAttendanceReport from '~/components/home/attendance-report/month/AttendaceReport.vue'
 import DailyAttendanceReport from '~/components/home/attendance-report/today/Today.vue'
 import ReporteAsistenciasAdministrators from '~/components/home/attendance-report/summary/Administrators.vue'
 import { EmployeeType, ItemType, useAttendanceReportStore } from '~/store/useAttendanceReportStore'
+import { formatToDayMonthYear } from '~/utils/date'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -61,24 +59,34 @@ const { isNotificationsSlideoverOpen } = useDashboard()
 const currentTabType = ref<ItemType>(ItemType.TODAY)
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS)
 
-const fechaActual = new Date()
-const fechaFormateada = format(fechaActual, 'dd MMMM yyyy', {
-  locale: es,
-})
+const fechaFormateada = formatToDayMonthYear()
 
 const store = useAttendanceReportStore()
 const { getCompanies, getDepartments, getTakenAttendances, getEmployees } = store
 const { company, department } = storeToRefs(store)
 
-onMounted(() => {
-  if (!company.value.list.length && !department.value.list.length) {
-    getCompanies()
-    getDepartments()
+onMounted(async () => {
+  try {
+    const promises: Promise<any>[] = []
+    // Cargar empresas y departamentos solo si no existen
+    if (!company.value.list.length && !department.value.list.length) {
+      promises.push(
+        getCompanies(),
+        getDepartments()
+      )
+    }
+    // Siempre cargar estos
+    promises.push(
+      getEmployees(),
+      getTakenAttendances()
+    )
+    await Promise.all(promises)
+
+  } catch (error) {
+    console.error('Error al inicializar el módulo', error)
   }
 })
 
-onMounted(getEmployees)
-onMounted(getTakenAttendances)
 
 const tabItems = computed(() => [
   {
