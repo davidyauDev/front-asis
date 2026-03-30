@@ -91,7 +91,39 @@ export interface TecnicoData {
   iclock_transactions: Marcacion[] | SinMarcacionMessage | null
 }
 
+export type SeguimientoEstadoFiltro = 'todos' | 'con-marcacion' | 'sin-marcacion'
+export type SeguimientoOrden = 'original' | 'nombre' | 'rutas' | 'marcaciones'
 export type SeguimientoTab = 'con-rutas' | 'sin-rutas'
 export type SeguimientoSubTab = 'marcaron' | 'no-marcaron'
 export type TecnicoConRutaEntry = [string, TecnicoData]
 export type ValidationTarget = TecnicoData | Usuario
+export type SeguimientoTableSource = SeguimientoTab
+export type ValidationSubmitPayload = {
+  motivo: string | number
+  comentario?: string
+}
+
+export type CreateEmployeeConceptPayload = {
+  employee_id: number | null
+  emp_code: string
+  concept_id: number | null
+  start_date: string
+  end_date: string
+  comment: string | null
+}
+
+export type SeguimientoTableRow = {
+  key: string
+  source: SeguimientoTableSource
+  usuario: Usuario
+  nombre: string
+  subtitle: string
+  initials: string
+  dni: string
+  rutas: Ruta[]
+  rutasCount: number
+  marcaciones: Marcacion[] | SinMarcacionMessage | null
+  validationTarget: ValidationTarget
+  whatsappTarget: TecnicoData | null
+  dailyRecord: unknown
+}

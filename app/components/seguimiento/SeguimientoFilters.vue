@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { SeguimientoEstadoFiltro, SeguimientoOrden } from '~/types/seguimiento'
+
 const props = defineProps<{
   search: string
-  filtroEstado: string
-  ordenarPor: string
+  filtroEstado: SeguimientoEstadoFiltro
+  ordenarPor: SeguimientoOrden
   fechaSeleccionada: string
   currentListCount: number
   isLoading: boolean
@@ -10,8 +12,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:search': [value: string]
-  'update:filtroEstado': [value: string]
-  'update:ordenarPor': [value: string]
+  'update:filtroEstado': [value: SeguimientoEstadoFiltro]
+  'update:ordenarPor': [value: SeguimientoOrden]
   'update:fechaSeleccionada': [value: string]
   'change-date': [value: string]
   reload: []
@@ -22,11 +24,17 @@ const onSearchInput = (event: Event) => {
 }
 
 const onEstadoChange = (event: Event) => {
-  emit('update:filtroEstado', (event.target as HTMLSelectElement).value)
+  emit(
+    'update:filtroEstado',
+    (event.target as HTMLSelectElement).value as SeguimientoEstadoFiltro,
+  )
 }
 
 const onOrdenChange = (event: Event) => {
-  emit('update:ordenarPor', (event.target as HTMLSelectElement).value)
+  emit(
+    'update:ordenarPor',
+    (event.target as HTMLSelectElement).value as SeguimientoOrden,
+  )
 }
 
 const onFechaChange = (event: Event) => {
