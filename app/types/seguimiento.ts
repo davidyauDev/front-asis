@@ -120,6 +120,8 @@ export type SeguimientoTableRow = {
   subtitle: string
   initials: string
   dni: string
+  posicion: string
+  email: string
   rutas: Ruta[]
   rutasCount: number
   marcaciones: Marcacion[] | SinMarcacionMessage | null

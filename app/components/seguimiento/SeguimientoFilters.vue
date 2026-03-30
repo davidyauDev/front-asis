@@ -19,144 +19,164 @@ const emit = defineEmits<{
   reload: []
 }>()
 
-const onSearchInput = (event: Event) => {
-  emit('update:search', (event.target as HTMLInputElement).value)
-}
+const estadoOptions = [
+  { label: 'Todos los tecnicos', value: 'todos' },
+  { label: 'Con marcacion', value: 'con-marcacion' },
+  { label: 'Sin marcacion', value: 'sin-marcacion' },
+] satisfies Array<{ label: string; value: SeguimientoEstadoFiltro }>
 
-const onEstadoChange = (event: Event) => {
-  emit(
-    'update:filtroEstado',
-    (event.target as HTMLSelectElement).value as SeguimientoEstadoFiltro,
-  )
-}
+const orderOptions = [
+  { label: 'Orden del sistema', value: 'original' },
+  { label: 'Ordenar por nombre', value: 'nombre' },
+  { label: 'Mas rutas', value: 'rutas' },
+  { label: 'Mas marcaciones', value: 'marcaciones' },
+] satisfies Array<{ label: string; value: SeguimientoOrden }>
 
-const onOrdenChange = (event: Event) => {
-  emit(
-    'update:ordenarPor',
-    (event.target as HTMLSelectElement).value as SeguimientoOrden,
-  )
-}
+const todayDate = new Date().toISOString().split('T')[0] || ''
+const hasSearch = computed(() => props.search.trim().length > 0)
+const hasCustomDate = computed(() =>
+  props.fechaSeleccionada.length > 0 && props.fechaSeleccionada !== todayDate,
+)
 
-const onFechaChange = (event: Event) => {
-  const value = (event.target as HTMLInputElement).value
-  emit('update:fechaSeleccionada', value)
-  emit('change-date', value)
+const activeFiltersCount = computed(() => {
+  let count = 0
+
+  if (hasSearch.value) {
+    count += 1
+  }
+
+  if (props.filtroEstado !== 'todos') {
+    count += 1
+  }
+
+  if (props.ordenarPor !== 'original') {
+    count += 1
+  }
+
+  if (hasCustomDate.value) {
+    count += 1
+  }
+
+  return count
+})
+
+const onFechaChange = (value: string | number) => {
+  const normalizedValue = String(value || '')
+  emit('update:fechaSeleccionada', normalizedValue)
+  emit('change-date', normalizedValue)
 }
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-950 rounded-lg border border-gray-200/60 dark:border-gray-800/60 p-5 shadow-sm">
-    <div class="flex flex-wrap gap-2 items-center">
-      <div class="relative flex-1 min-w-[300px]">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 text-gray-400 dark:text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+  <div class="border-b border-gray-200/70 px-4 py-4 dark:border-gray-800/70">
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <UBadge color="neutral" variant="soft" class="rounded-full px-3 py-1">
+            {{ props.currentListCount }} registros
+          </UBadge>
+          <UBadge
+            :color="activeFiltersCount > 0 ? 'primary' : 'neutral'"
+            variant="subtle"
+            class="rounded-full px-3 py-1"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+            {{ activeFiltersCount }} filtros
+          </UBadge>
         </div>
 
-        <input
-          :value="props.search"
-          type="text"
-          placeholder="Buscar por nombre, DNI, agencia o cliente..."
-          class="w-full pl-10 pr-10 py-2.5 border border-gray-200/80 dark:border-gray-800/80 rounded-md bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-500"
-          @input="onSearchInput"
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="props.isLoading"
+          :disabled="props.isLoading"
+          class="rounded-xl"
+          @click="emit('reload')"
+        >
+          Actualizar
+        </UButton>
+      </div>
+
+      <div class="grid gap-3 xl:grid-cols-[minmax(0,1.9fr)_repeat(3,minmax(0,1fr))]">
+        <UInput
+          :model-value="props.search"
+          icon="i-lucide-search"
+          size="md"
+          autocomplete="off"
+          placeholder="Buscar por tecnico, DNI, agencia o cliente..."
+          class="w-full"
+          :ui="{ base: 'rounded-xl' }"
+          @update:model-value="emit('update:search', String($event || ''))"
         />
 
-        <div v-if="props.search" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded">
-            {{ props.currentListCount }}
-          </span>
-        </div>
-      </div>
+        <USelect
+          :model-value="props.filtroEstado"
+          :items="estadoOptions"
+          item-label="label"
+          item-value="value"
+          size="md"
+          class="w-full"
+          :ui="{ base: 'rounded-xl' }"
+          @update:model-value="emit('update:filtroEstado', $event as SeguimientoEstadoFiltro)"
+        />
 
-      <div class="relative">
-        <select
-          :value="props.filtroEstado"
-          class="appearance-none border border-gray-200/80 dark:border-gray-800/80 rounded-md pl-3 pr-8 py-2.5 bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-gray-300 dark:hover:border-gray-700"
-          @change="onEstadoChange"
-        >
-          <option value="todos">Todos los técnicos</option>
-          <option value="con-marcacion">Con marcación</option>
-          <option value="sin-marcacion">Sin marcación</option>
-        </select>
+        <USelect
+          :model-value="props.ordenarPor"
+          :items="orderOptions"
+          item-label="label"
+          item-value="value"
+          size="md"
+          class="w-full"
+          :ui="{ base: 'rounded-xl' }"
+          @update:model-value="emit('update:ordenarPor', $event as SeguimientoOrden)"
+        />
 
-        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <svg class="h-4 w-4 text-gray-400 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fill-rule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </div>
-      </div>
-
-      <div class="relative">
-        <select
-          :value="props.ordenarPor"
-          class="appearance-none border border-gray-200/80 dark:border-gray-800/80 rounded-md pl-3 pr-8 py-2.5 bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-gray-300 dark:hover:border-gray-700"
-          @change="onOrdenChange"
-        >
-          <option value="original">Orden del sistema</option>
-          <option value="nombre">Ordenar: Nombre</option>
-          <option value="rutas">Más rutas</option>
-          <option value="marcaciones">Más marcaciones</option>
-        </select>
-
-        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <svg class="h-4 w-4 text-gray-400 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fill-rule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </div>
-      </div>
-
-      <div class="relative">
-        <input
-          :value="props.fechaSeleccionada"
+        <UInput
+          :model-value="props.fechaSeleccionada"
           type="date"
-          class="border border-gray-200/80 dark:border-gray-800/80 rounded-md px-3 py-2.5 bg-white dark:bg-gray-950 focus:border-gray-400 dark:focus:border-gray-600 focus:ring-0 transition-all duration-200 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-gray-300 dark:hover:border-gray-700"
-          @change="onFechaChange"
+          icon="i-lucide-calendar-days"
+          size="md"
+          class="w-full"
+          :ui="{ base: 'rounded-xl' }"
+          @update:model-value="onFechaChange"
         />
       </div>
 
-      <button
-        class="border border-gray-200/80 dark:border-gray-800/80 bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium shadow-sm"
-        title="Recargar datos"
-        :disabled="props.isLoading"
-        @click="emit('reload')"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4"
-          :class="{ 'animate-spin': props.isLoading }"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      <div class="flex flex-wrap items-center gap-2">
+        <UBadge
+          v-if="hasSearch"
+          color="primary"
+          variant="soft"
+          class="rounded-full px-3 py-1"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
-        <span class="hidden sm:inline">{{ props.isLoading ? 'Cargando...' : 'Actualizar' }}</span>
-      </button>
+          Busqueda activa
+        </UBadge>
+        <UBadge
+          v-if="props.filtroEstado !== 'todos'"
+          color="warning"
+          variant="soft"
+          class="rounded-full px-3 py-1"
+        >
+          Estado filtrado
+        </UBadge>
+        <UBadge
+          v-if="props.ordenarPor !== 'original'"
+          color="info"
+          variant="soft"
+          class="rounded-full px-3 py-1"
+        >
+          Orden personalizado
+        </UBadge>
+        <UBadge
+          v-if="hasCustomDate"
+          color="success"
+          variant="soft"
+          class="rounded-full px-3 py-1"
+        >
+          Fecha {{ props.fechaSeleccionada }}
+        </UBadge>
+      </div>
     </div>
   </div>
 </template>

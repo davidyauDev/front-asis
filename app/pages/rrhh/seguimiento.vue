@@ -66,21 +66,6 @@ const {
           :no-marcados="tableSource === 'con-rutas' ? conRutasNoMarcados.length : sinRutasNoMarcados.length"
         />
 
-        <SeguimientoFilters
-          :search="search"
-          :filtro-estado="filtroEstado"
-          :ordenar-por="ordenarPor"
-          :fecha-seleccionada="fechaSeleccionada"
-          :current-list-count="currentListCount"
-          :is-loading="isLoading"
-          @update:search="search = $event"
-          @update:filtro-estado="filtroEstado = $event"
-          @update:ordenar-por="ordenarPor = $event"
-          @update:fecha-seleccionada="fechaSeleccionada = $event"
-          @change-date="handleFechaSeleccionada"
-          @reload="recargarDatos"
-        />
-
         <section>
           <UCard v-if="isLoading" class="border-gray-200/70 dark:border-gray-800/70">
             <div class="space-y-6 p-2">
@@ -140,15 +125,35 @@ const {
             </template>
           </UAlert>
 
-          <SeguimientoTable
+          <UCard
             v-else
-            :items="tableRows"
-            :expanded="tecnicosExpandidos"
-            :empty-state="currentEmptyState"
-            @toggle="toggleTecnico"
-            @validar="openValidationModal"
-            @send-whats-app="enviarWhatsApp"
-          />
+            class="overflow-hidden border-gray-200/70 bg-white/95 shadow-sm backdrop-blur-sm dark:border-gray-800/70 dark:bg-gray-950/90"
+            :ui="{ body: 'p-0' }"
+          >
+            <SeguimientoFilters
+              :search="search"
+              :filtro-estado="filtroEstado"
+              :ordenar-por="ordenarPor"
+              :fecha-seleccionada="fechaSeleccionada"
+              :current-list-count="currentListCount"
+              :is-loading="isLoading"
+              @update:search="search = $event"
+              @update:filtro-estado="filtroEstado = $event"
+              @update:ordenar-por="ordenarPor = $event"
+              @update:fecha-seleccionada="fechaSeleccionada = $event"
+              @change-date="handleFechaSeleccionada"
+              @reload="recargarDatos"
+            />
+
+            <SeguimientoTable
+              :items="tableRows"
+              :expanded="tecnicosExpandidos"
+              :empty-state="currentEmptyState"
+              @toggle="toggleTecnico"
+              @validar="openValidationModal"
+              @send-whats-app="enviarWhatsApp"
+            />
+          </UCard>
         </section>
       </div>
 

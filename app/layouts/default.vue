@@ -18,7 +18,7 @@ const open = ref(false)
 const dashboardLinks = [{
   label: 'Asistencias',
   icon: 'i-lucide-clipboard-check',
-  to: '/',
+  to: '/rrhh',
   onSelect: () => { open.value = false }
 }]
 
@@ -26,24 +26,24 @@ const dashboardLinks = [{
 const managementLinks = [{
   label: 'Seguimiento',
   icon: 'i-lucide-map-pin',
-  to: '/seguimiento',
+  to: '/rrhh/seguimiento',
   onSelect: () => { open.value = false }
 }, {
   label: 'Usuarios',
   icon: 'i-lucide-users',
-  to: '/users',
+  to: '/rrhh/users',
   exact: true,
   onSelect: () => { open.value = false }
 }, {
   label: 'Empleados BioTime',
   icon: 'i-lucide-fingerprint',
-  to: '/empleados-biotime',
+  to: '/rrhh/empleados-biotime',
   exact: true,
   onSelect: () => { open.value = false }
 }, {
   label: 'Rutas GPS',
   icon: 'i-lucide-route',
-  to: '/rutas',
+  to: '/rrhh/rutas',
   onSelect: () => { open.value = false }
 }]
 
@@ -51,7 +51,7 @@ const managementLinks = [{
 const reportLinks = [{
   label: 'Incidencias',
   icon: 'i-lucide-alert-triangle',
-  to: '/incidencias',
+  to: '/rrhh/incidencias',
   onSelect: () => { open.value = false }
 }, {
   label: 'Movilidad',
@@ -59,20 +59,20 @@ const reportLinks = [{
   children: [{
     label: 'Reporte',
     icon: 'i-lucide-file-text',
-    to: '/movility-report',
+    to: '/rrhh/movility-report',
     exact: true,
     onSelect: () => { open.value = false }
   }, {
     label: 'Monto Técnicos',
     icon: 'i-lucide-hand-coins',
-    to: '/movility-report/settings/monto-tecnicos',
+    to: '/rrhh/movility-report/settings/monto-tecnicos',
     exact: true,
     onSelect: () => { open.value = false }
   }]
 }, {
   label: 'Eventos',
   icon: 'i-lucide-calendar-days',
-  to: '/eventos',
+  to: '/rrhh/eventos',
   onSelect: () => { open.value = false }
 }]
 
@@ -80,7 +80,7 @@ const reportLinks = [{
 const systemLinks = [{
   label: 'Configuración',
   icon: 'i-lucide-settings',
-  to: '/settings',
+  to: '/rrhh/settings',
   onSelect: () => { open.value = false }
 }]
 
@@ -251,3 +251,4 @@ onMounted(async () => {
   height: 1.1rem;
 }
 </style>
+
