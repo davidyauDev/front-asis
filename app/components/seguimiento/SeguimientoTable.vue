@@ -153,12 +153,12 @@ const getConceptUi = (row: SeguimientoTableRow) => {
       <table class="min-w-[1280px] table-fixed">
         <thead class="bg-gray-50/90 dark:bg-gray-900/60">
           <tr class="border-b border-gray-200/70 text-left text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:border-gray-800/70 dark:text-gray-400">
-            <th class="w-[56px] px-4 py-4">Ver</th>
-            <th class="w-[460px] px-4 py-4">Tecnico</th>
-            <th class="w-[280px] px-4 py-4">Perfil</th>
-            <th class="w-[220px] px-4 py-4">Operacion</th>
-            <th class="w-[350px] px-4 py-4">Asistencia</th>
-            <th class="w-[170px] px-4 py-4 text-right">Acciones</th>
+           <th class="w-[5%] px-4 py-4">Ver</th>
+<th class="w-[25%] px-4 py-4">Tecnico</th>
+<th class="w-[15%] px-4 py-4">Perfil</th>
+<th class="w-[15%] px-4 py-4">Operacion</th>
+<th class="w-[30%] px-4 py-4">Asistencia</th>
+<th class="w-[10%] px-4 py-4 text-right">Acciones</th>
           </tr>
         </thead>
 
