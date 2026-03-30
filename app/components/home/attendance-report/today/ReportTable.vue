@@ -83,95 +83,173 @@
       </p>
     </div>
   </DataState>
-
   <UModal
     v-model:open="isIncidenciaOpen"
     :title="modalTitle"
     :transition="true"
   >
-  <template #body>
-    <div class="space-y-6">
-
-      <!-- Contexto -->
-      <div
-        class="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4"
-      >
-        <div class="flex items-center gap-2 text-amber-900 dark:text-amber-100 font-semibold">
-          <UIcon name="i-lucide-alert-circle" class="w-5 h-5" />
-          <span v-if="!isPreIncidencia">Se detecto una tardanza</span>
-          <span v-else>Aun no marco ingreso</span>
-        </div>
-        <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
-          <span v-if="!isPreIncidencia">Registra el motivo para justificar esta incidencia.</span>
-          <span v-else>Registra un recordatorio sin minutos. Se completara al aprobar.</span>
-        </p>
-      </div>
-
-      <!-- Datos clave -->
-      <div class="grid grid-cols-2 gap-4">
-        <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3">
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Fecha</p>
-          <p class="font-semibold text-gray-900 dark:text-gray-100">
-            {{ incidenciaForm.fecha }}
+    <template #body>
+      <div class="space-y-5">
+        <div class="rounded-xl border border-amber-200 bg-amber-50/90 p-4 dark:border-amber-900 dark:bg-amber-950/25">
+          <div class="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
+            <UIcon name="i-lucide-alert-circle" class="h-5 w-5" />
+            <span v-if="!isPreIncidencia">Se detecto una tardanza</span>
+            <span v-else>Aun no marco ingreso</span>
+          </div>
+          <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+            <span v-if="!isPreIncidencia">Registra el motivo para justificar esta incidencia.</span>
+            <span v-else>Registra un recordatorio sin minutos. Se completara al aprobar.</span>
           </p>
         </div>
 
-        <div
-          v-if="!isPreIncidencia"
-          class="rounded-lg border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 p-3"
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+              Fecha
+            </p>
+            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {{ incidenciaForm.fecha }}
+            </p>
+          </div>
+
+          <div
+            v-if="!isPreIncidencia"
+            class="rounded-xl border border-orange-200 bg-orange-50 p-3 dark:border-orange-900 dark:bg-orange-950/25"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700 dark:text-orange-300">
+              Tiempo de tardanza
+            </p>
+            <p class="mt-1 text-sm font-semibold text-orange-900 dark:text-orange-100">
+              {{ tardanzaLabel }}
+            </p>
+          </div>
+        </div>
+
+        <UFormGroup
+          label="Motivo de la incidencia"
+          description="Describe brevemente el motivo"
+          required
         >
-          <p class="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">
-            Tiempo de tardanza
+          <UTextarea
+            v-model="incidenciaForm.motivo"
+            placeholder="Ej. trafico intenso, transporte publico, clima, etc."
+            :rows="4"
+            autofocus
+            class="w-full"
+          />
+        </UFormGroup>
+
+        <div class="space-y-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">Imagen opcional</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                JPG, PNG o WEBP. Maximo 5 MB.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-upload"
+                @click="imagenInput?.click()"
+              >
+                {{ incidenciaForm.imagenFile || incidenciaForm.imagenUrl ? 'Cambiar imagen' : 'Subir imagen' }}
+              </UButton>
+
+              <UButton
+                v-if="incidenciaForm.imagenFile"
+                type="button"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                icon="i-lucide-x"
+                @click="clearImagenSeleccionada"
+              >
+                Quitar archivo
+              </UButton>
+            </div>
+          </div>
+
+          <input
+            ref="imagenInput"
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            class="hidden"
+            @change="onImagenChange"
+          />
+
+          <p v-if="imagenError" class="text-sm font-medium text-red-600 dark:text-red-400">
+            {{ imagenError }}
           </p>
-          <p class="font-semibold text-orange-900 dark:text-orange-100">
-            {{ tardanzaLabel }}
-          </p>
+
+          <div
+            v-if="selectedImageUrl"
+            class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+          >
+            <img
+              :src="selectedImageUrl"
+              alt="Vista previa de la imagen de incidencia"
+              class="h-48 w-full object-cover"
+            />
+          </div>
+
+          <div
+            v-if="incidenciaForm.imagenUrl && !incidenciaForm.imagenFile"
+            class="flex items-start justify-between gap-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div>
+              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Imagen actual</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Puedes marcarla para eliminarla antes de guardar.
+              </p>
+            </div>
+
+            <UCheckbox
+              v-model="incidenciaForm.eliminarImagen"
+              label="Eliminar imagen"
+              :disabled="savingIncidencia"
+            />
+          </div>
+
+          <div
+            v-if="incidenciaForm.imagenFile"
+            class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/25 dark:text-emerald-100"
+          >
+            Nueva imagen lista para guardar.
+          </div>
         </div>
       </div>
+    </template>
 
-      <UFormGroup
-  label="Motivo de la incidencia"
-  description="Describe brevemente el motivo"
-  required
->
-  <UTextarea
-    v-model="incidenciaForm.motivo"
-    placeholder="Ej. tráfico intenso, transporte público, clima, etc."
-    :rows="4"
-    autofocus
-    class="w-full"
-  />
-</UFormGroup>
+    <template #footer>
+      <div class="flex items-center justify-end gap-3">
+        <UButton
+          variant="outline"
+          color="gray"
+          size="sm"
+          @click="isIncidenciaOpen = false"
+        >
+          Cancelar
+        </UButton>
 
-
-    </div>
-  </template>
-
-  <template #footer>
-    <div class="flex justify-end items-center gap-3">
-      <UButton
-        variant="outline"
-        color="gray"
-        size="sm"
-        @click="isIncidenciaOpen = false"
-      >
-        Cancelar
-      </UButton>
-      
-      <UButton
-        variant="solid"
-        color="gray"
-        size="sm"
-        :loading="savingIncidencia"
-        :disabled="!incidenciaForm.motivo || savingIncidencia"
-        @click="guardarIncidencia"
-      >
-        <UIcon name="i-lucide-save" class="w-4 h-4 mr-1.5" />
-        {{ savingIncidencia ? 'Guardando…' : 'Guardar' }}
-      </UButton>
-    </div>
-  </template>
-</UModal>
+        <UButton
+          variant="solid"
+          color="gray"
+          size="sm"
+          :loading="savingIncidencia"
+          :disabled="!incidenciaForm.motivo || savingIncidencia"
+          @click="guardarIncidencia"
+        >
+          <UIcon name="i-lucide-save" class="mr-1.5 h-4 w-4" />
+          {{ savingIncidencia ? 'Guardando…' : 'Guardar' }}
+        </UButton>
+      </div>
+    </template>
+  </UModal>
 
 </template>
 
@@ -180,7 +258,6 @@ import type { TableColumn } from "@nuxt/ui";
 import { parse } from "date-fns";
 import DataState from "~/components/common/DataState.vue";
 import { useAttendanceReportStore } from "~/store/useAttendanceReportStore";
-import { apiFetch } from '@/services/api'
 import type { TakenAttendaceParams } from "~/composables/useAttendanceReport";
 
 const props = defineProps<{
@@ -306,7 +383,7 @@ const exportarExcel = async () => {
   
   toast.add({
     id: 'exportando',
-    title: 'Preparando exportación',
+    title: 'Preparando exportaciÃ³n',
     description: 'Generando archivo Excel...',
     icon: 'i-lucide-loader-2',
   })
@@ -375,7 +452,7 @@ const exportarExcel = async () => {
 const modalTitle = computed(() => {
   if (!selectedRow.value) return "Incidencia";
 
-  return `Incidencia – ${selectedRow.value.Apellidos} ${selectedRow.value.Nombres}`;
+  return `Incidencia - ${selectedRow.value.Apellidos} ${selectedRow.value.Nombres}`;
 });
 
 const table = useTemplateRef("table");
@@ -384,6 +461,15 @@ const UButton = resolveComponent("UButton");
 const UIcon = resolveComponent("UIcon");
 const UTooltip = resolveComponent("UTooltip");
 const savingIncidencia = ref(false)
+const imagenInput = ref<HTMLInputElement | null>(null)
+const imagenError = ref<string | null>(null)
+const allowedImageTypes = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+])
+const maxImageSizeBytes = 5 * 1024 * 1024
 
 const isIncidenciaOpen = ref(false);
 const incidenciaMode = ref<"tardanza" | "preincidencia">("tardanza");
@@ -392,6 +478,10 @@ const incidenciaForm = reactive({
   fecha: "",
   duracionSegundos: 0,
   motivo: "",
+  imagenFile: null as File | null,
+  imagenPreviewUrl: "",
+  imagenUrl: "",
+  eliminarImagen: false,
 });
 
 const formatDuration = (totalSeconds: number) => {
@@ -413,12 +503,120 @@ const formatDuration = (totalSeconds: number) => {
 
 const tardanzaLabel = computed(() => formatDuration(incidenciaForm.duracionSegundos))
 
-const selectedRow = ref<TakenAttendace | null>(null);
+const selectedImageUrl = computed(() =>
+  incidenciaForm.imagenPreviewUrl || (!incidenciaForm.eliminarImagen ? incidenciaForm.imagenUrl : ''),
+)
+
+const selectedRow = ref<(TakenAttendace & {
+  imagen_url?: string | null;
+  imagenUrl?: string | null;
+  Imagen_url?: string | null;
+  imagen_path?: string | null;
+  incidencia?: {
+    imagen_url?: string | null;
+    imagenUrl?: string | null;
+    Imagen_url?: string | null;
+    imagen_path?: string | null;
+  } | null;
+}) | null>(null);
+
+const revokeImagePreview = () => {
+  if (incidenciaForm.imagenPreviewUrl) {
+    window.URL.revokeObjectURL(incidenciaForm.imagenPreviewUrl)
+  }
+  incidenciaForm.imagenPreviewUrl = ''
+}
+
+const resetImageState = () => {
+  revokeImagePreview()
+  incidenciaForm.imagenFile = null
+  incidenciaForm.imagenUrl = ''
+  incidenciaForm.eliminarImagen = false
+  imagenError.value = null
+
+  if (imagenInput.value) {
+    imagenInput.value.value = ''
+  }
+}
+
+const resolveIncidenciaImageUrl = (row: typeof selectedRow.value) => {
+  const candidates = [
+    row?.imagen_url,
+    row?.imagenUrl,
+    row?.Imagen_url,
+    row?.imagen_path,
+    row?.incidencia?.imagen_url,
+    row?.incidencia?.imagenUrl,
+    row?.incidencia?.Imagen_url,
+    row?.incidencia?.imagen_path,
+  ]
+
+  return candidates.find((value) => Boolean(value)) || ''
+}
+
+const onImagenChange = (event: Event) => {
+  imagenError.value = null
+
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0] || null
+
+  if (!file) {
+    return
+  }
+
+  if (!allowedImageTypes.has(file.type)) {
+    imagenError.value = 'La imagen debe ser JPG, PNG o WEBP.'
+    toast.add({
+      title: 'Formato invalido',
+      description: imagenError.value,
+      color: 'error',
+    })
+    input.value = ''
+    return
+  }
+
+  if (file.size > maxImageSizeBytes) {
+    imagenError.value = 'La imagen no puede superar los 5 MB.'
+    toast.add({
+      title: 'Archivo muy grande',
+      description: imagenError.value,
+      color: 'error',
+    })
+    input.value = ''
+    return
+  }
+
+  revokeImagePreview()
+  incidenciaForm.imagenFile = file
+  incidenciaForm.imagenPreviewUrl = window.URL.createObjectURL(file)
+  incidenciaForm.eliminarImagen = false
+}
+
+const clearImagenSeleccionada = () => {
+  revokeImagePreview()
+  incidenciaForm.imagenFile = null
+  imagenError.value = null
+
+  if (imagenInput.value) {
+    imagenInput.value.value = ''
+  }
+}
+
+watch(isIncidenciaOpen, (isOpen) => {
+  if (!isOpen) {
+    resetImageState()
+    incidenciaForm.fecha = ''
+    incidenciaForm.duracionSegundos = 0
+    incidenciaForm.motivo = ''
+    selectedRow.value = null
+  }
+})
 
 const openIncidenciaModal = (
   row: TakenAttendace,
   mode: "tardanza" | "preincidencia" = "tardanza"
 ) => {
+  resetImageState()
   selectedRow.value = row;
   incidenciaMode.value = mode;
 
@@ -430,6 +628,7 @@ const openIncidenciaModal = (
       : 0;
 
   incidenciaForm.motivo = "";
+  incidenciaForm.imagenUrl = resolveIncidenciaImageUrl(row as typeof selectedRow.value);
 
   isIncidenciaOpen.value = true;
 };
@@ -461,24 +660,80 @@ const guardarIncidencia = async () => {
     });
     return;
   }
+
+  if (!incidenciaForm.motivo.trim()) {
+    toast.add({
+      title: 'Motivo obligatorio',
+      description: 'Ingresa el motivo para guardar la incidencia.',
+      color: 'error',
+    });
+    return;
+  }
+
+  if (imagenError.value) {
+    toast.add({
+      title: 'Corrige la imagen',
+      description: imagenError.value,
+      color: 'error',
+    });
+    return;
+  }
+
   savingIncidencia.value = true;
 
-  const payload = {
-    ID_Marcacion: selectedRow.value.ID_Marcacion,
-    creado_por: user.value.id,
-    usuario_id: selectedRow.value.usuario_id,
-    fecha: incidenciaForm.fecha,
-    duracion_segundos: isPreIncidencia.value ? 0 : incidenciaForm.duracionSegundos,
-    es_recordatorio: isPreIncidencia.value,
-    tipo : 'LLEGADA_TARDE',
-    motivo: incidenciaForm.motivo,
-  };
+  const totalSeconds = Math.max(0, Math.trunc(incidenciaForm.duracionSegundos || 0))
+  const minutos = totalSeconds > 0 ? Math.floor(totalSeconds / 60) : 0
+  const segundos = totalSeconds > 0 ? totalSeconds % 60 : 0
+
+  const formData = new FormData()
+  formData.append('creado_por', String(user.value.id))
+  formData.append('usuario_id', String(selectedRow.value.usuario_id ?? ''))
+  formData.append('fecha', incidenciaForm.fecha)
+  formData.append('tipo', 'LLEGADA_TARDE')
+  formData.append('motivo', incidenciaForm.motivo.trim())
+
+  formData.append('minutos', String(isPreIncidencia.value ? 0 : minutos))
+  formData.append('segundos', String(isPreIncidencia.value ? 0 : segundos))
+  formData.append(
+    'duracion_segundos',
+    String(isPreIncidencia.value ? 0 : totalSeconds),
+  )
+  formData.append('es_recordatorio', isPreIncidencia.value ? '1' : '0')
+
+  if (incidenciaForm.imagenFile) {
+    formData.append('imagen', incidenciaForm.imagenFile)
+  }
+
+  if (incidenciaForm.eliminarImagen) {
+    formData.append('eliminar_imagen', '1')
+  }
 
   try {
-    await apiFetch('/api/incidencias/store', {
+    const token = useCookie<string | null>('auth_token')
+    const response = await fetch(`${config.public.apiBaseUrl}/api/incidencias/store`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      headers: {
+        Accept: 'application/json',
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+      },
+      body: formData,
     });
+
+    const raw = await response.text()
+    const data = raw ? (() => {
+      try {
+        return JSON.parse(raw)
+      } catch {
+        return raw
+      }
+    })() : null
+
+    if (!response.ok) {
+      throw new Error(
+        (data && typeof data === 'object' && 'message' in data && String((data as any).message)) ||
+          'No se pudo registrar la incidencia',
+      )
+    }
 
     toast.add({
       title: 'Incidencia registrada',
@@ -502,7 +757,7 @@ const guardarIncidencia = async () => {
 
     toast.add({
       title: 'Error',
-      description: 'No se pudo registrar la incidencia',
+      description: error instanceof Error ? error.message : 'No se pudo registrar la incidencia',
       color: 'error',
     });
   } finally {
@@ -543,12 +798,12 @@ const columns: TableColumn<TakenAttendace>[] = [
           h(
             "span",
             { class: "text-sm font-semibold text-emerald-700 dark:text-emerald-300" },
-            apellidos || "—"
+            apellidos || "â€”"
           ),
           h(
             "span",
             { class: "text-sm text-gray-900 dark:text-gray-100" },
-            nombres || "—"
+            nombres || "â€”"
           ),
         ]
       );
@@ -786,3 +1041,5 @@ const columns: TableColumn<TakenAttendace>[] = [
   }
 ];
 </script>
+
+

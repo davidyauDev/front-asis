@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { ref, shallowRef, computed, watch, nextTick, onMounted } from 'vue';
 import { apiFetch } from '~/services/api';
 import HistoriaIncidencia from './Modales/HistoriaIncidencia.vue';
 import AddIncidencia from './Modales/AddIncidencia.vue';
@@ -27,12 +27,21 @@ const usuarioNombreSeleccionado = ref<string>("");
 const isIncidenciaOpen = ref(false);
 const isHistorialOpen = ref(false);
 const valuetrackingIncidencia = ref<Record<string, any> | null>(null);
+const imagenPreviewOpen = ref(false);
+const imagenPreview = shallowRef<{
+  src: string;
+  titulo: string;
+  detalle: string;
+} | null>(null);
 
 interface Dia {
   valor?: string;
   motivo?: string;
   created_at?: string;
   creado_por?: any;
+  imagen_url?: string | null;
+  imagenUrl?: string | null;
+  imagen_path?: string | null;
 }
 
 interface Empleado {
@@ -52,6 +61,7 @@ interface FormIncidenciaPayload {
   duracionSegundos?: number;
   tipo?: string;
   motivo: string;
+  imagenFile?: File | null;
 }
 
 const toast = useToast()
@@ -253,6 +263,39 @@ const formatCreatedBy = (raw: any) => {
 
   return 'Admin';
 };
+
+const resolveDiaImageUrl = (dia?: Dia | null) => {
+  const candidates = [
+    dia?.imagen_url,
+    dia?.imagenUrl,
+    dia?.imagen_path,
+  ];
+
+  return candidates.find((value) => Boolean(value)) || '';
+};
+
+const openDiaImagePreview = (dia: Dia | undefined | null, emp: Empleado) => {
+  const src = resolveDiaImageUrl(dia);
+  if (!src) return;
+
+  imagenPreview.value = {
+    src,
+    titulo: dia?.motivo || 'Vista previa de la incidencia',
+    detalle: `${emp.apellidos} ${emp.nombre}`.trim(),
+  };
+  imagenPreviewOpen.value = true;
+};
+
+const closeDiaImagePreview = () => {
+  imagenPreviewOpen.value = false;
+  imagenPreview.value = null;
+};
+
+watch(imagenPreviewOpen, (isOpen) => {
+  if (!isOpen) {
+    closeDiaImagePreview();
+  }
+});
 const guardarIncidencia = async (formIncidencia: FormIncidenciaPayload) => {
   const user = useCookie<{ id: number } | null>('auth_user')
   if (!user.value) {
@@ -263,22 +306,45 @@ const guardarIncidencia = async (formIncidencia: FormIncidenciaPayload) => {
     })
     return
   }
-  const payload = {
-    creado_por: user.value.id,
-    usuario_id: usuarioSeleccionado.value,
-    tipo: formIncidencia.tipo,
-    fecha: formIncidencia.fecha,
-    duracion_segundos: formIncidencia.duracionSegundos ?? (
-      typeof formIncidencia.minutos === 'number'
-        ? formIncidencia.minutos * 60
-        : undefined
-    ),
-    motivo: formIncidencia.motivo
-  }
   try {
-    await apiFetch('/api/incidencias/store', {
+    const config = useRuntimeConfig()
+    const token = useCookie<string | null>('auth_token')
+    const formData = new FormData()
+
+    formData.append('creado_por', String(user.value.id))
+    formData.append('usuario_id', String(usuarioSeleccionado.value ?? ''))
+    formData.append('tipo', String(formIncidencia.tipo ?? ''))
+    formData.append('fecha', formIncidencia.fecha)
+    formData.append(
+      'duracion_segundos',
+      String(
+        formIncidencia.duracionSegundos ??
+          (typeof formIncidencia.minutos === 'number'
+            ? formIncidencia.minutos * 60
+            : 0)
+      )
+    )
+    formData.append('motivo', formIncidencia.motivo)
+
+    if (typeof formIncidencia.minutos === 'number') {
+      formData.append('minutos', String(formIncidencia.minutos))
+    }
+
+    if (typeof formIncidencia.duracionSegundos === 'number') {
+      formData.append('segundos', String(formIncidencia.duracionSegundos % 60))
+    }
+
+    if (formIncidencia.imagenFile) {
+      formData.append('imagen', formIncidencia.imagenFile)
+    }
+
+    await fetch(`${config.public.apiBaseUrl}/api/incidencias/store`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      headers: {
+        Accept: 'application/json',
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+      },
+      body: formData
     })
 
     toast.add({
@@ -639,7 +705,7 @@ defineExpose({
           esDomingo(f) ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100' : '',
         ]">
           <UPopover
-            v-if="emp.dias[f]?.motivo"
+            v-if="emp.dias[f]?.motivo || resolveDiaImageUrl(emp.dias[f])"
             mode="hover"
             :portal="true"
             :arrow="true"
@@ -655,16 +721,58 @@ defineExpose({
               </template>
             </template>
             <template #content>
-              <div class="w-60 p-3 bg-white/95 border border-gray-200 rounded-xl shadow-xl text-left text-xs text-gray-700 dark:bg-gray-900/95 dark:border-gray-700 dark:text-gray-200 backdrop-blur">
-                <div class="font-semibold text-gray-900 mb-1.5 dark:text-gray-100">
-                  Motivo: {{ emp.dias[f].motivo }}
+              <div class="w-96 max-w-[90vw] overflow-hidden rounded-2xl border border-gray-200 bg-white/95 shadow-2xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
+                <div class="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+                  <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                    Motivo
+                  </div>
+                  <div class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {{ emp.dias[f].motivo || 'Sin motivo registrado' }}
+                  </div>
                 </div>
-                <div class="h-px bg-gray-100 dark:bg-gray-800 my-1.5"></div>
-                <div class="text-gray-600 dark:text-gray-300">
-                  <span class="font-medium">Creado por:</span> {{ formatCreatedBy(emp.dias[f].creado_por) }}
-                </div>
-                <div class="text-gray-500 dark:text-gray-400">
-                  <span class="font-medium">Fecha:</span> {{ formatCreatedAt(emp.dias[f].created_at) }}
+
+                <div class="space-y-3 px-4 py-3 text-xs text-gray-700 dark:text-gray-200">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="text-gray-600 dark:text-gray-300">
+                      <span class="font-medium">Creado por:</span> {{ formatCreatedBy(emp.dias[f].creado_por) }}
+                    </div>
+                    <div class="text-right text-gray-500 dark:text-gray-400">
+                      <span class="font-medium">Fecha:</span> {{ formatCreatedAt(emp.dias[f].created_at) }}
+                    </div>
+                  </div>
+
+                  <div v-if="resolveDiaImageUrl(emp.dias[f])" class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                        Imagen adjunta
+                      </span>
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-maximize-2"
+                        @click.stop="openDiaImagePreview(emp.dias[f], emp)"
+                      >
+                        Ampliar
+                      </UButton>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="group block w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-left transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                      @click.stop="openDiaImagePreview(emp.dias[f], emp)"
+                    >
+                      <img
+                        :src="resolveDiaImageUrl(emp.dias[f])"
+                        alt="Imagen de incidencia"
+                        class="h-40 w-full object-cover"
+                      />
+                      <div class="flex items-center justify-between px-3 py-2 text-[11px] text-gray-500 dark:text-gray-400">
+                        <span>Haz clic para ampliar</span>
+                        <UIcon name="i-lucide-zoom-in" class="h-3.5 w-3.5" />
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
             </template>
@@ -699,6 +807,33 @@ defineExpose({
     </tbody>
       </table>
     </div>
+    <UModal
+      v-model:open="imagenPreviewOpen"
+      title="Vista previa de la imagen"
+      :close="{ color: 'neutral', variant: 'ghost' }"
+      class="max-w-4xl w-full"
+    >
+      <template #body>
+        <div v-if="imagenPreview" class="space-y-4 p-4">
+          <div class="space-y-1">
+            <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {{ imagenPreview.titulo }}
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ imagenPreview.detalle }}
+            </p>
+          </div>
+
+          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-gray-950 shadow-2xl dark:border-gray-800">
+            <img
+              :src="imagenPreview.src"
+              alt="Imagen ampliada de la incidencia"
+              class="max-h-[78vh] w-full object-contain bg-black"
+            />
+          </div>
+        </div>
+      </template>
+    </UModal>
     <AddIncidencia
       v-model:isOpen="isIncidenciaOpen"
       :empleadoId="usuarioSeleccionado"
