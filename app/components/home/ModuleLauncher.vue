@@ -30,6 +30,14 @@ const modules = [
     accent: 'from-blue-500/20 to-indigo-500/10',
   },
   {
+    title: 'Mesa de ayuda',
+    description: 'Tickets, llamadas, WhatsApp y configuracion de soporte.',
+    icon: 'i-lucide-lifebuoy',
+    status: 'Disponible',
+    to: '/mesa-de-ayuda',
+    accent: 'from-cyan-500/20 to-sky-500/10',
+  },
+  {
     title: 'Logistica',
     description: 'Despachos, rutas y coordinacion operativa.',
     icon: 'i-lucide-truck',
