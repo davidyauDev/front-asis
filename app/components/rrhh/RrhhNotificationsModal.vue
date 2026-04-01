@@ -204,7 +204,7 @@ watch(
 
 const tabs = computed(() => [
   {
-    label: 'Cumpleanos',
+    label: 'Cumpleaños',
     value: 'birthdays' as TabKey,
     badge: totalBirthdays.value || birthdayNotifications.value.length || 0,
   },
@@ -241,7 +241,7 @@ const close = () => {
             Hola{{ props.userName ? `, ${props.userName}` : '' }}. Revisa estos avisos.
           </h3>
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Cumpleanos y tecnicos sin asistencia. La informacion de tecnicos se consume desde el endpoint real.
+            Cumpleaños y tecnicos sin asistencia. La informacion de tecnicos se consume desde el endpoint real.
           </p>
         </div>
       </div>
@@ -261,7 +261,7 @@ const close = () => {
           <div class="flex items-center justify-between gap-3 rounded-2xl border border-[#c9d9ff] bg-[#eef4ff]/60 px-4 py-3 dark:border-[#29406f] dark:bg-[#13203a]/60">
             <div>
               <p class="text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
-                Cumpleanos del mes: {{ birthdayMonthLabel || currentMonthLabel }}
+                Cumpleaños del mes: {{ birthdayMonthLabel || currentMonthLabel }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 Casos cargados desde el endpoint mensual.
@@ -292,7 +292,7 @@ const close = () => {
                   Hoy cumple{{ todayBirthdayNotifications.length > 1 ? 'n' : '' }} {{ todayBirthdayNotifications.length }} colaborador{{ todayBirthdayNotifications.length > 1 ? 'es' : '' }}
                 </p>
                 <p class="text-xs text-amber-700 dark:text-amber-200">
-                  Se resalta con una animacion suave en la tarjeta del cumpleanos de hoy.
+                  Se resalta con una animacion suave en la tarjeta del cumpleaños de hoy.
                 </p>
               </div>
             </div>
@@ -379,7 +379,7 @@ const close = () => {
                     {{ item.birthday }}
                   </p>
 
-                  <div class="mt-3 flex items-center justify-between gap-3">
+                  <!-- <div class="mt-3 flex items-center justify-between gap-3">
                     <span class="text-[11px] font-mono text-gray-400 dark:text-gray-500">
                       Tipo: {{ item.type }}
                     </span>
@@ -393,7 +393,7 @@ const close = () => {
                     >
                       Ver eventos
                     </UButton>
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </div>
@@ -494,7 +494,14 @@ const close = () => {
                       Tipo: {{ item.type }}
                     </span>
                     <UButton
-                      to="/rrhh/seguimiento"
+                      :to="{
+                        path: '/rrhh/seguimiento',
+                        query: {
+                          tab: 'con-rutas',
+                          subtab: 'no-marcaron',
+                          fecha: item.fecha_referencia,
+                        },
+                      }"
                       size="sm"
                       color="primary"
                       variant="solid"

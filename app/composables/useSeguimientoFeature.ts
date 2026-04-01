@@ -38,13 +38,23 @@ import {
 
 export function useSeguimientoFeature() {
   const toast = useToast()
+  const route = useRoute()
 
   const search = shallowRef('')
   const filtroEstado = shallowRef<SeguimientoEstadoFiltro>('todos')
   const ordenarPor = shallowRef<SeguimientoOrden>('original')
-  const fechaSeleccionada = shallowRef(new Date().toISOString().split('T')[0] || '')
-  const tabActivo = shallowRef<SeguimientoTab>('con-rutas')
-  const subTabConRutas = shallowRef<SeguimientoSubTab>('marcaron')
+  const todayIso = new Date().toISOString().split('T')[0] || ''
+  const queryTab = Array.isArray(route.query.tab) ? route.query.tab[0] : route.query.tab
+  const querySubTab = Array.isArray(route.query.subtab) ? route.query.subtab[0] : route.query.subtab
+  const queryFecha = Array.isArray(route.query.fecha) ? route.query.fecha[0] : route.query.fecha
+
+  const fechaSeleccionada = shallowRef(
+    typeof queryFecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(queryFecha)
+      ? queryFecha
+      : todayIso,
+  )
+  const tabActivo = shallowRef<SeguimientoTab>(queryTab === 'sin-rutas' ? 'sin-rutas' : 'con-rutas')
+  const subTabConRutas = shallowRef<SeguimientoSubTab>(querySubTab === 'no-marcaron' ? 'no-marcaron' : 'marcaron')
   const subTabSinRutas = shallowRef<SeguimientoSubTab>('marcaron')
 
   const isLoading = shallowRef(false)
@@ -274,6 +284,33 @@ export function useSeguimientoFeature() {
     fechaSeleccionada.value = value
     cargarDatos()
   }
+
+  watch(
+    () => route.query,
+    (query) => {
+      const nextTab = Array.isArray(query.tab) ? query.tab[0] : query.tab
+      const nextSubTab = Array.isArray(query.subtab) ? query.subtab[0] : query.subtab
+      const nextFecha = Array.isArray(query.fecha) ? query.fecha[0] : query.fecha
+
+      if (typeof nextFecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(nextFecha) && nextFecha !== fechaSeleccionada.value) {
+        fechaSeleccionada.value = nextFecha
+        cargarDatos()
+      }
+
+      if (nextTab === 'con-rutas' || nextTab === 'sin-rutas') {
+        tabActivo.value = nextTab
+      }
+
+      if (nextSubTab === 'marcaron' || nextSubTab === 'no-marcaron') {
+        if (tabActivo.value === 'con-rutas') {
+          subTabConRutas.value = nextSubTab
+        } else {
+          subTabSinRutas.value = nextSubTab
+        }
+      }
+    },
+    { immediate: true },
+  )
 
   onMounted(() => {
     cargarDatos()

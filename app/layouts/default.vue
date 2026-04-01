@@ -5,7 +5,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 const { isLoggedIn } = useAuth()
 const { user } = useAuth()
 const route = useRoute()
-const { isOpen: rrhhNotificationsOpen } = useRrhhNotificationsPanel()
+const { isOpen: rrhhNotificationsOpen, closeNotifications: closeRrhhNotifications } = useRrhhNotificationsPanel()
 
 // Proteger el layout - redirigir a login si no está autenticado
 definePageMeta({
@@ -15,11 +15,9 @@ definePageMeta({
 const open = ref(false)
 
 watch(
-  () => route.path,
-  (path) => {
-    if (!path.startsWith('/rrhh')) {
-      rrhhNotificationsOpen.value = false
-    }
+  () => route.fullPath,
+  () => {
+    closeRrhhNotifications()
   },
   { immediate: true }
 )
