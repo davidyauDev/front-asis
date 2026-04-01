@@ -2,22 +2,19 @@
 import TablaIncidencias from "~/components/Incidencias/TablaIncidencias.vue";
 import TablaCalculo from "~/components/Incidencias/Tardanzas/TablaCalculo.vue";
 const hoy = new Date();
-// Por defecto: fechaInicio = 23 del mes anterior, fechaFin = 22 del mes actual
-const defaultFechaInicio = (() => {
-  const anio = hoy.getFullYear();
-  let mes = hoy.getMonth(); // mes actual (0-11)
-  if (mes === 0) {
-    return `${anio - 1}-12-23`;
-  }
-  const mesStr = (mes).toString().padStart(2, '0');
-  return `${anio}-${mesStr}-23`;
-})();
-const defaultFechaFin = (() => {
-  const anio = hoy.getFullYear();
-  const mes = hoy.getMonth() + 1;
-  const mesStr = (mes).toString().padStart(2, '0');
-  return `${anio}-${mesStr}-22`;
-})();
+const pad2 = (value: number) => String(value).padStart(2, '0')
+
+const formatYmd = (date: Date) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+
+const getCurrentCycleStart = (date: Date) => {
+  const startMonthOffset = date.getDate() >= 23 ? 0 : -1
+  return new Date(date.getFullYear(), date.getMonth() + startMonthOffset, 23)
+}
+
+// Ciclo mensual: del 23 al 22, con arranque por defecto en el último 23 hasta hoy.
+const defaultFechaInicio = formatYmd(getCurrentCycleStart(hoy));
+const defaultFechaFin = formatYmd(hoy);
 
 // Persistir rango entre cambios de módulo
 const fechaInicio = useCookie<string>('incidencias-fecha-inicio', {
@@ -130,8 +127,8 @@ async function descargarExcel() {
       />
     </template>
     <template #body>
-      <div >
-        <div class="bg-white   dark:bg-gray-900">
+      <div class="space-y-4 bg-gradient-to-b from-[#f7fbff] via-white to-[#f4fbf8] px-2 pb-2 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900">
+        <div class="rounded-2xl border border-[#d7e1f5] bg-white/95 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
           <AppTabs
             v-model="tabActivo"
             aria-label="Tabs de incidencias"
@@ -148,8 +145,8 @@ async function descargarExcel() {
               class="px-6 py-4 text-sm font-semibold transition-colors"
               :class="
                 tabActivo === 'incidencias'
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30 dark:text-blue-300 dark:bg-blue-900/40 dark:border-blue-400'
-                  : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50 dark:text-gray-400 dark:hover:text-blue-300 dark:hover:bg-gray-800'
+                  ? 'text-[#2d5fc0] border-b-2 border-[#2d5fc0] bg-[#eef4ff] dark:text-[#9cb7f5] dark:bg-[#13203a] dark:border-[#8fb0ff]'
+                  : 'text-slate-500 hover:text-[#2d5fc0] hover:bg-slate-50 dark:text-gray-400 dark:hover:text-[#9cb7f5] dark:hover:bg-gray-800'
               "
             >
               Incidencias Justificadas
@@ -160,37 +157,48 @@ async function descargarExcel() {
               class="px-6 py-4 text-sm font-semibold transition-colors"
               :class="
                 tabActivo === 'calculo'
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30 dark:text-blue-300 dark:bg-blue-900/40 dark:border-blue-400'
-                  : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50 dark:text-gray-400 dark:hover:text-blue-300 dark:hover:bg-gray-800'
+                  ? 'text-[#2d5fc0] border-b-2 border-[#2d5fc0] bg-[#eef4ff] dark:text-[#9cb7f5] dark:bg-[#13203a] dark:border-[#8fb0ff]'
+                  : 'text-slate-500 hover:text-[#2d5fc0] hover:bg-slate-50 dark:text-gray-400 dark:hover:text-[#9cb7f5] dark:hover:bg-gray-800'
               "
             >
               Cálculo de Tardanzas
             </button>
           </div>
         </div>
-        <div
-          class="px-4 py-3 bg-white dark:bg-gray-900 border-y border-slate-200 dark:border-gray-700 flex items-center justify-between gap-4 flex-wrap"
-        >
+        <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d7e1f5] bg-white/95 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
           <!-- IZQUIERDA: filtros -->
           <div class="flex items-end gap-4 flex-wrap">
             <!-- RANGO DE FECHAS -->
             <div class="flex flex-col gap-0.5">
-              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Desde</label>
-              <input type="date" v-model="fechaInicioTemp" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-36 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Desde</label>
+              <input
+                v-model="fechaInicioTemp"
+                type="date"
+                class="w-36 rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
+              />
             </div>
             <div class="flex flex-col gap-0.5">
-              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Hasta</label>
-              <input type="date" v-model="fechaFinTemp" class="border rounded-md px-2 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-36 text-center focus:ring-2 focus:ring-indigo-500 outline-none" />
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Hasta</label>
+              <input
+                v-model="fechaFinTemp"
+                type="date"
+                class="w-36 rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
+              />
             </div>
             <div class="flex flex-col justify-end">
-              <button @click="aplicarRangoFechas" class="mt-2 px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Aplicar</button>
+              <button
+                @click="aplicarRangoFechas"
+                class="mt-2 rounded bg-[#2d5fc0] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#244ea4] dark:bg-[#4a7dff] dark:hover:bg-[#3566d8]"
+              >
+                Aplicar
+              </button>
             </div>
 
 
             <!-- BUSCADOR (protagonista) -->
             <div class="flex flex-col gap-0.5">
               <label
-                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide"
+                class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
               >
                 Usuario
               </label>
@@ -198,17 +206,17 @@ async function descargarExcel() {
                 v-model="filtroUsuario"
                 type="text"
                 placeholder="DNI, apellido o nombre"
-                class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-64 focus:ring-2 focus:ring-indigo-500 outline-none"
+                class="w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
               />
             </div>
 
             <div class="flex flex-col gap-0.5">
-              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Empresa
               </label>
               <select
                 v-model="filtroEmpresa"
-                class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-48 focus:ring-2 focus:ring-indigo-500 outline-none"
+                class="w-48 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
               >
                 <option value="">Todas</option>
                 <option value="Ydieza SAC">Ydieza SAC</option>
@@ -217,12 +225,12 @@ async function descargarExcel() {
             </div>
 
             <div class="flex flex-col gap-0.5">
-              <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Departamento
               </label>
               <select
                 v-model="filtroDepartamento"
-                class="border rounded-md px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-200 text-sm w-56 focus:ring-2 focus:ring-indigo-500 outline-none"
+                class="w-56 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
               >
                 <option value="">Todos</option>
                 <option value="Sistemas_C">Sistemas_C</option>
@@ -239,21 +247,23 @@ async function descargarExcel() {
           </div>
 
           <!-- DERECHA: acciones -->
-          <div class="flex items-center gap-2 pl-4 border-slate-200 dark:border-gray-700">
+          <div class="flex items-center gap-2 pl-4">
             <!-- DESCARGAR EXCEL (acción secundaria) -->
 
             <UButton
-          variant="outline"
-          color="neutral"
-        size="sm"
-        @click="descargarExcel"
-        :loading="exportando"
-        :disabled="exportando"
-        class="whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-200 transition-colors"
-      >
-        <UIcon name="i-lucide-download" class="w-4 h-4 mr-2" />
-        {{ exportando ? 'Exportando...' : 'Exportar' }}
-      </UButton>
+              variant="solid"
+              color="primary"
+              size="md"
+              @click="descargarExcel"
+              :loading="exportando"
+              :disabled="exportando"
+              class="min-w-[176px] h-11 justify-center whitespace-nowrap rounded-xl border border-[#2d5fc0] !bg-[#2d5fc0] !text-white px-4 font-semibold shadow-sm transition-all hover:!bg-[#244ea4] hover:shadow-md active:scale-[0.99] disabled:border-[#9cb7f5] disabled:!bg-[#9cb7f5] disabled:shadow-none dark:border-[#4a7dff] dark:!bg-[#4a7dff] dark:hover:!bg-[#3f6fe0] dark:disabled:!bg-[#2b4f9f]"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-file-spreadsheet" class="h-4 w-4" />
+              </template>
+              {{ exportando ? 'Descargando...' : 'Descargar Excel' }}
+            </UButton>
            
           
           </div>

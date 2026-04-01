@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, watch, nextTick, onMounted } from 'vue';
+import { ref, shallowRef, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { apiFetch } from '~/services/api';
 import HistoriaIncidencia from './Modales/HistoriaIncidencia.vue';
 import AddIncidencia from './Modales/AddIncidencia.vue';
@@ -67,6 +67,10 @@ interface FormIncidenciaPayload {
 const toast = useToast()
 const datosEmpleados = ref<Empleado[]>([]);
 const cargando = ref(true);
+const topScrollRef = ref<HTMLElement | null>(null);
+const tableScrollRef = ref<HTMLElement | null>(null);
+const tableScrollWidth = ref(0);
+let tableResizeObserver: ResizeObserver | null = null;
 
 type SortKey = 'apellidos' | 'nombre' | 'departamento' | 'empresa';
 const sortKey = useCookie<SortKey | ''>('incidencias-sort-key', {
@@ -105,6 +109,36 @@ const obtenerValorOrden = (emp: Empleado, key: SortKey) => {
       return '';
   }
 };
+
+const syncHorizontalScroll = (source: HTMLElement | null, target: HTMLElement | null) => {
+  if (!source || !target) return
+
+  const nextLeft = source.scrollLeft
+  if (target.scrollLeft !== nextLeft) {
+    target.scrollLeft = nextLeft
+  }
+}
+
+const syncTopToTable = () => syncHorizontalScroll(topScrollRef.value, tableScrollRef.value)
+const syncTableToTop = () => syncHorizontalScroll(tableScrollRef.value, topScrollRef.value)
+
+const updateTableScrollWidth = () => {
+  tableScrollWidth.value = tableScrollRef.value?.scrollWidth || 0
+}
+
+const setupTableScrollSync = () => {
+  tableResizeObserver?.disconnect()
+  tableResizeObserver = null
+
+  if (tableScrollRef.value && typeof ResizeObserver !== 'undefined') {
+    tableResizeObserver = new ResizeObserver(() => {
+      updateTableScrollWidth()
+    })
+    tableResizeObserver.observe(tableScrollRef.value)
+  }
+
+  updateTableScrollWidth()
+}
 
 const empleadosFiltrados = computed(() => {
   let list = datosEmpleados.value.slice();
@@ -214,7 +248,7 @@ const obtenerColorCelda = (valor: string): string => {
   if (v === 'DM') return 'bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100';
   if (v === 'V') return 'bg-green-200 text-green-900 dark:bg-green-800 dark:text-green-100';
   if (v === 'TC') return 'bg-orange-300 text-orange-900 dark:bg-orange-800 dark:text-orange-100';
-  if (validarFormatoTiempo(valor)) return 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100';
+  if (validarFormatoTiempo(valor)) return 'bg-[#eef4ff] text-[#2d5fc0] dark:bg-[#13203a] dark:text-[#9cb7f5]';
   return 'bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100';
 };
 
@@ -531,14 +565,33 @@ watch(filaSeleccionada, async () => {
 });
 
 
-onMounted(() => {
-  cargarIncidencias();
+onMounted(async () => {
+  await cargarIncidencias();
+  await nextTick();
+  setupTableScrollSync();
 });
 
 watch([
   () => props.fechaInicio,
   () => props.fechaFin
-], cargarIncidencias);
+], async () => {
+  await cargarIncidencias();
+  await nextTick();
+  setupTableScrollSync();
+});
+
+watch(
+  () => columnasFechas.value.length,
+  async () => {
+    await nextTick()
+    updateTableScrollWidth()
+  }
+)
+
+onBeforeUnmount(() => {
+  tableResizeObserver?.disconnect()
+  tableResizeObserver = null
+});
 
 // Exponer la función para que el padre pueda llamarla
 defineExpose({
@@ -584,14 +637,28 @@ defineExpose({
         <span class="text-lg font-semibold mb-2">No hay incidencias para el rango seleccionado</span>
         <span class="text-sm">Ajusta el filtro de fechas o verifica los datos.</span>
       </div>
-      <table v-else class="w-full text-xs dark:text-gray-200">
+      <div v-else class="space-y-0">
+        <div
+          ref="topScrollRef"
+          class="h-5 overflow-x-scroll overflow-y-hidden rounded-t-lg border border-b-0 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+          @scroll="syncTopToTable"
+        >
+          <div :style="{ width: `${tableScrollWidth || 0}px` }" class="h-1 min-w-full" />
+        </div>
+
+        <div
+          ref="tableScrollRef"
+          class="overflow-x-auto rounded-b-lg border border-gray-200 shadow dark:border-gray-700 dark:bg-gray-900"
+          @scroll="syncTableToTop"
+        >
+          <table class="w-full text-xs dark:text-gray-200">
     <!-- HEADER -->
     <thead>
   <!-- FILA 1: CONTEXTO -->
   <tr>
     <th
       colspan="5"
-      class="bg-[#1f4e78] text-white text-center py-3 font-bold border dark:bg-blue-900 dark:text-gray-100 dark:border-gray-700"
+      class="bg-gradient-to-r from-[#2d5fc0] to-[#4a7dff] text-white text-center py-3 font-bold border dark:from-[#244a95] dark:to-[#355fba] dark:text-gray-100 dark:border-gray-700"
     >
       INCIDENCIAS JUSTIFICADAS 
     </th>
@@ -610,7 +677,7 @@ defineExpose({
       <span class="text-[10px] font-semibold">{{ inicialDia(f) }}</span>
     </th>
 
-    <th class="bg-purple-600 text-white px-3 text-sm dark:bg-purple-900 dark:text-gray-100">
+    <th class="bg-emerald-600 text-white px-3 text-sm dark:bg-emerald-900 dark:text-gray-100">
       TOTAL
     </th>
 
@@ -677,7 +744,7 @@ defineExpose({
       <span class="text-xs">{{ Number(f.split('-')[0]) }}</span>
     </th>
 
-    <th class="border px-3 py-2 text-center font-semibold text-purple-700 dark:border-gray-700 dark:text-purple-300">
+    <th class="border px-3 py-2 text-center font-semibold text-emerald-700 dark:border-gray-700 dark:text-emerald-300">
       HH:MM
     </th>
 
@@ -691,7 +758,7 @@ defineExpose({
     <tbody>
       <tr v-for="emp in empleadosFiltrados" :key="emp.id" :ref="el => setFilaRef(el, emp)"
         class="cursor-pointer transition-colors dark:hover:bg-gray-800"
-        :class="filaSeleccionada === emp.id ? 'bg-blue-100 ring-2 ring-blue-500 ring-inset dark:bg-blue-900 dark:ring-blue-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800'">
+        :class="filaSeleccionada === emp.id ? 'bg-[#eef4ff] ring-2 ring-[#2d5fc0]/35 ring-inset dark:bg-[#13203a] dark:ring-[#8fb0ff]/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800'">
         <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.apellidos }}</td>
         <td class="border px-3 dark:border-gray-700">{{ emp.nombre }}</td>
@@ -714,7 +781,7 @@ defineExpose({
             <template #default>
               <template v-if="emp.dias[f]">
                 <input v-if="filaSeleccionada === emp.id" v-model="emp.dias[f].valor"
-                  class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded dark:bg-gray-800 dark:text-gray-200" />
+                  class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-[#2d5fc0] rounded dark:bg-gray-800 dark:text-gray-200" />
                 <span v-else class="font-medium" :title="emp.dias[f].motivo || ''">
                   {{ emp.dias[f].valor }}
                 </span>
@@ -780,32 +847,34 @@ defineExpose({
 
           <template v-else-if="emp.dias[f]">
             <input v-if="filaSeleccionada === emp.id" v-model="emp.dias[f].valor"
-              class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded dark:bg-gray-800 dark:text-gray-200" />
+              class="w-full bg-transparent text-center focus:outline-none focus:ring-2 focus:ring-[#2d5fc0] rounded dark:bg-gray-800 dark:text-gray-200" />
             <span v-else class="font-medium" :title="emp.dias[f].motivo || ''">
               {{ emp.dias[f].valor }}
             </span>
           </template>
         </td>
 
-        <td class="border px-2 text-center font-bold bg-purple-50 text-purple-900 dark:bg-purple-900 dark:text-yellow-300 dark:border-gray-700">
-          <span class="dark:text-yellow-300 text-purple-900">{{ emp.incidencias_hhmm }}</span>
+        <td class="border px-2 text-center font-bold bg-emerald-50 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200 dark:border-gray-700">
+          <span class="dark:text-emerald-200 text-emerald-900">{{ emp.incidencias_hhmm }}</span>
         </td>
         <td class="border px-2 text-center dark:border-gray-700">
           <div class="inline-flex items-center gap-1">
             <UTooltip text="Ver tracking">
               <UButton size="xs" color="primary" variant="ghost" icon="i-heroicons-eye"
-                class="transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/60 dark:text-gray-200" @click.stop="verTracking(emp)" />
+                class="transition-colors hover:bg-[#eef4ff] dark:hover:bg-gray-800/60 dark:text-gray-200" @click.stop="verTracking(emp)" />
             </UTooltip>
             <UTooltip text="Agregar incidencia">
               <UButton size="xs" color="emerald" variant="ghost" icon="i-heroicons-plus"
-                class="transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/60 dark:text-gray-200" @click.stop="agregarIncidencia(emp)" />
+                class="transition-colors hover:bg-emerald-50 dark:hover:bg-gray-800/60 dark:text-gray-200" @click.stop="agregarIncidencia(emp)" />
             </UTooltip>
           </div>
         </td>
 
       </tr>
     </tbody>
-      </table>
+          </table>
+        </div>
+      </div>
     </div>
     <UModal
       v-model:open="imagenPreviewOpen"
