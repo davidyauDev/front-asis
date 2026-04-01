@@ -37,6 +37,8 @@ const {
   validationTarget,
   enviarWhatsApp,
 } = useSeguimientoFeature()
+
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
 </script>
 
 <template>
@@ -47,7 +49,8 @@ const {
         mobile-title="Seguimiento"
         subtitle-icon="i-heroicons-signal"
         notification-tooltip="Tecnicos sin marcacion"
-        :notification-count="pendingCount"
+        notification-attention
+        @notification-click="openRrhhNotifications"
       />
     </template>
 

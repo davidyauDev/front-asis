@@ -175,6 +175,7 @@ const viewUser = (user: UserListItem, type: Mode) => openUserPreview(user, type)
 
 
 const deleteUser = (user: UserListItem) => deleteUserFromList(user.id);
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel();
 
 watchDebounced(
   search,
@@ -205,7 +206,8 @@ onMounted(async () => {
         mobile-title="Usuarios"
         subtitle-icon="i-heroicons-user-circle"
         notification-tooltip="Usuarios pendientes"
-        :notification-count="2"
+        notification-attention
+        @notification-click="openRrhhNotifications"
       />
 
       <!-- Submódulos (solo cuando navegas dentro de /users/*) -->

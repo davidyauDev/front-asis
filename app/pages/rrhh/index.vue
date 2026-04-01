@@ -4,9 +4,9 @@
       <AppDashboardHeader
         title="Reporte de Asistencia"
         mobile-title="Reportes"
-        :notification-count="8"
+        notification-attention
         :notification-shortcuts="['N']"
-        @notification-click="showRrhhNotificationsModal = true"
+        @notification-click="openRrhhNotifications"
       />
       <UDashboardToolbar>
         <div class="mt-2 w-full">
@@ -40,10 +40,6 @@
     </template>
   </UDashboardPanel>
 
-  <RrhhNotificationsModal
-    v-model:open="showRrhhNotificationsModal"
-    :user-name="user?.name"
-  />
   <RrhhWelcomeModal
     v-model:open="showRrhhWelcomeModal"
     :user-name="user?.name"
@@ -66,9 +62,9 @@ const { user } = useAuth()
 
 const currentTabType = ref<ItemType>(ItemType.TODAY)
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS)
-const showRrhhNotificationsModal = ref(false)
 const showRrhhWelcomeModal = ref(false)
 let welcomeModalTimer: number | null = null
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
 
 const fechaFormateada = formatToDayMonthYear()
 

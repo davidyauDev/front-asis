@@ -6,7 +6,8 @@
         mobile-title="Movilidad"
         subtitle-icon="i-heroicons-map"
         notification-tooltip="Vehículos con alertas"
-        :notification-count="2"
+        notification-attention
+        @notification-click="openRrhhNotifications"
       />
     </template>
 
@@ -20,4 +21,6 @@
 
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
+
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
 </script>

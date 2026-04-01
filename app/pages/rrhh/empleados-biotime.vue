@@ -6,6 +6,8 @@
         mobile-title="BioTime"
         subtitle-icon="i-lucide-users"
         notification-tooltip="Empleados pendientes"
+        notification-attention
+        @notification-click="openRrhhNotifications"
       />
     </template>
 
@@ -19,4 +21,6 @@
 import PersonnelEmployeesAdmin from '~/components/biotime/PersonnelEmployeesAdmin.vue'
 
 definePageMeta({ middleware: 'auth' })
+
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
 </script>
