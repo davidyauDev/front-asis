@@ -1,7 +1,7 @@
 <template>
     <div class="space-y-4">
         <!-- Panel de filtros -->
-            <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+            <div v-show="filtersVisible" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
                     <!-- Company Filter + Filtros especiales -->
                     <div class="md:col-span-1 xl:col-span-2 space-y-3">
@@ -65,10 +65,14 @@
         <ReportTableTodos
           v-if="props.employeeType === EmployeeType.ALL"
           :params="detalleParams"
+          :filters-visible="filtersVisible"
+          @toggle-filters="filtersVisible = !filtersVisible"
         />
         <ReportTable
           v-else
           :employee-type="props.employeeType"
+          :filters-visible="filtersVisible"
+          @toggle-filters="filtersVisible = !filtersVisible"
         />
     </div>
 </template>
@@ -90,6 +94,8 @@ const { company, department, employee, attendance } = storeToRefs(store);
 const props = defineProps<{
   employeeType: EmployeeType
 }>()
+
+const filtersVisible = shallowRef(true)
 
 const technicianDefaultDepartmentIds = [2, 5, 7, 9, 10] as const
 const technicianDepartmentIdSet = new Set<number>(technicianDefaultDepartmentIds)

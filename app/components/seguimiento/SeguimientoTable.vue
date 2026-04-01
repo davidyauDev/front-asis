@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Marcacion, SeguimientoTableRow, TecnicoData, ValidationTarget } from '~/types/seguimiento'
+import type { Marcacion, SeguimientoSubTab, SeguimientoTableRow, TecnicoData, ValidationTarget } from '~/types/seguimiento'
 import {
   esObjetoSinMarcacion,
   getConceptBadge,
@@ -11,6 +11,7 @@ import {
 const props = defineProps<{
   items: SeguimientoTableRow[]
   expanded: Record<string, boolean>
+  subTab: SeguimientoSubTab
   emptyState: {
     title: string
     description: string
@@ -20,7 +21,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   toggle: [key: string]
   validar: [tecnico: ValidationTarget]
-  sendWhatsApp: [tecnico: TecnicoData]
+  sendWhatsApp: [tecnico: TecnicoData, mode: 'saludo' | 'seguimiento']
 }>()
 
 const getRowClass = (row: SeguimientoTableRow) => {
@@ -66,7 +67,7 @@ const getMarkBadge = (row: SeguimientoTableRow) => {
 }
 
 const canSendWhatsApp = (row: SeguimientoTableRow) =>
-  Boolean(row.whatsappTarget) && !hasMarcaciones(row.marcaciones)
+  Boolean(row.whatsappTarget) && (props.subTab === 'marcaron' || !hasMarcaciones(row.marcaciones))
 
 const getRouteStatusColor = (estado: string) => {
   switch (estado) {
@@ -301,7 +302,7 @@ const getConceptUi = (row: SeguimientoTableRow) => {
                       size="sm"
                       icon="i-lucide-message-circle"
                       class="rounded-xl"
-                      @click.stop="emit('sendWhatsApp', row.whatsappTarget)"
+                      @click.stop="emit('sendWhatsApp', row.whatsappTarget, props.subTab === 'marcaron' ? 'saludo' : 'seguimiento')"
                     >
                       WhatsApp
                     </UButton>

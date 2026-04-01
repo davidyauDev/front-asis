@@ -148,6 +148,7 @@ const {
             <SeguimientoTable
               :items="tableRows"
               :expanded="tecnicosExpandidos"
+              :sub-tab="activeSubTab"
               :empty-state="currentEmptyState"
               @toggle="toggleTecnico"
               @validar="openValidationModal"
