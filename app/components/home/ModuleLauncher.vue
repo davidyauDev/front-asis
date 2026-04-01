@@ -39,7 +39,7 @@ const modules = [
   }, {
     title: 'Mesa de ayuda',
     description: 'Tickets, llamadas, WhatsApp y configuracion de soporte.',
-    icon: 'i-lucide-lifebuoy',
+    icon: 'i-lucide-headset',
     status: 'Disponible',
     to: '/mesa-de-ayuda',
 
