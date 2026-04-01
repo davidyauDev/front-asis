@@ -104,6 +104,10 @@ const resetDateRange = async () => {
   await loadDashboard(filters)
 }
 
+const onCalendarRangeUpdate = (value: CalendarRangeValue | undefined) => {
+  calendarRange.value = value ?? {}
+}
+
 watch(calendarRange, async () => {
   if (syncingCalendar.value) {
     return
@@ -160,11 +164,12 @@ onMounted(async () => {
             <template #content>
               <div class="p-2">
                 <UCalendar
-                  v-model="calendarRange as any"
+                  :model-value="calendarRange"
                   range
                   locale="es"
                   class="rounded-md border shadow-sm"
                   :disable-days-outside-current-view="true"
+                  @update:model-value="onCalendarRangeUpdate"
                 />
               </div>
             </template>
