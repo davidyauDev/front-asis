@@ -1,4 +1,4 @@
-import type { TecnicoData } from '~/types/seguimiento'
+import type { SeguimientoWhatsAppMode, TecnicoData } from '~/types/seguimiento'
 
 const CONCEPTO_MAP: Record<string, number> = {
   asistencia: 1,
@@ -47,10 +47,21 @@ export const normalizeWhatsAppPhone = (raw: string) => {
 export const buildSeguimientoWhatsAppMessage = (
   tecnicoData: TecnicoData,
   fechaSeleccionada: string,
+  mode: SeguimientoWhatsAppMode = 'seguimiento',
 ) => {
   const usuario = tecnicoData.usuario
   const nombre = usuario?.nombre_completo || 'Tecnico'
   const departamento = usuario?.departamento ? ` (${usuario.departamento})` : ''
+
+  if (mode === 'saludo') {
+    return [
+      `Hola ${nombre}${departamento},`,
+      '',
+      'Te escribo para saludarte y confirmar que todo vaya bien con tu asistencia de hoy.',
+      '',
+      'Cuando puedas, me confirmas por favor.',
+    ].join('\n')
+  }
 
   return [
     `Hola ${nombre}${departamento},`,

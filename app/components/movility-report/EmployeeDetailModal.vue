@@ -83,9 +83,9 @@ const calendarDays = computed(() => {
     <div v-if="employee && stats" class="bg-card rounded-xl overflow-hidden">
 
       <!-- HEADER -->
-      <div class="px-6 py-4 border-b bg-secondary/30 flex gap-4 items-center">
-        <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-          <User class="w-7 h-7 text-primary" />
+      <div class="px-6 py-4 border-b bg-[#eef4ff]/60 flex gap-4 items-center">
+        <div class="w-14 h-14 rounded-full bg-[#eef4ff] flex items-center justify-center">
+          <User class="w-7 h-7 text-[#2d5fc0]" />
         </div>
 
         <div class="flex-1">
@@ -103,8 +103,8 @@ const calendarDays = computed(() => {
         </div>
 
         <div class="hidden md:flex gap-3">
-          <div class="flex items-center gap-2 bg-primary/10 px-3 py-1 rounded">
-            <Calendar class="w-4 h-4 text-primary" />
+          <div class="flex items-center gap-2 bg-[#eef4ff] px-3 py-1 rounded">
+            <Calendar class="w-4 h-4 text-[#2d5fc0]" />
             {{ employee.fechaIngreso }}
           </div>
           <div class="flex items-center gap-2 bg-vacation/10 px-3 py-1 rounded">
@@ -178,7 +178,7 @@ const calendarDays = computed(() => {
         <!-- RESUMEN -->
         <div class="w-72 flex flex-col gap-3">
 
-          <div class="p-4 rounded-xl bg-primary/5 border">
+          <div class="p-4 rounded-xl bg-[#eef4ff]/55 border border-[#c9d9ff]">
             <div class="flex justify-between mb-2">
               <span>Asistencia</span>
               <strong>{{ stats.total }}/{{ daysInMonth }}</strong>

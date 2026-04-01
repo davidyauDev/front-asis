@@ -12,7 +12,7 @@
           size="lg"
           :alt="fullName || 'Usuario'"
           :ui="{
-            root: 'bg-emerald-600 text-white',
+            root: 'bg-[#2d5fc0] text-white',
             fallback: 'text-white font-semibold'
           }"
         />
@@ -24,7 +24,7 @@
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
               DNI: {{ employeeData?.employee.dni }}
             </span>
-            <span v-if="employeeData?.employee.department_name" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100/60 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+            <span v-if="employeeData?.employee.department_name" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#eef4ff] dark:bg-[#13203a] text-[#2d5fc0] dark:text-[#9cb7f5]">
               {{ employeeData?.employee.department_name }}
             </span>
             <span v-if="employeeData?.employee.position_name" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100/60 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
@@ -132,7 +132,7 @@
                   {{ currentYear }}
                 </div>
               </div>
-              <div class="grid grid-cols-7 gap-2 pb-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+              <div class="grid grid-cols-7 gap-2 pb-2 text-[11px] font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
                 <div v-for="day in weekDays" :key="day" class="text-center">
                   {{ day }}
                 </div>
@@ -447,9 +447,9 @@ const summaryCards = computed(() => {
       label: "Total días",
       value: s?.total_days ?? 0,
       icon: "i-lucide-calendar-days",
-      barClass: "before:bg-slate-900/10 dark:before:bg-white/10",
+      barClass: "before:bg-[#2d5fc0]/12 dark:before:bg-[#9cb7f5]/16",
       valueClass: "text-gray-900 dark:text-gray-100",
-      iconWrapClass: "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-200",
+      iconWrapClass: "bg-[#eef4ff] text-[#2d5fc0] dark:bg-[#13203a] dark:text-[#9cb7f5]",
     },
     {
       key: "vacation_days",
@@ -465,9 +465,9 @@ const summaryCards = computed(() => {
       label: "Desc. médico",
       value: s?.medical_leave_days ?? 0,
       icon: "i-lucide-activity",
-      barClass: "before:bg-sky-500/60 dark:before:bg-sky-400/50",
-      valueClass: "text-sky-800 dark:text-sky-200",
-      iconWrapClass: "bg-sky-50 text-sky-700 dark:bg-sky-950/25 dark:text-sky-200",
+      barClass: "before:bg-[#2d5fc0]/55 dark:before:bg-[#9cb7f5]/45",
+      valueClass: "text-[#2d5fc0] dark:text-[#9cb7f5]",
+      iconWrapClass: "bg-[#eef4ff] text-[#2d5fc0] dark:bg-[#13203a] dark:text-[#9cb7f5]",
     },
     {
       key: "no_mark_days",
@@ -527,13 +527,13 @@ const getCodeBadgeClass = (raw: unknown) => {
   if (code === "V" || code === "VE")
     return "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-900";
   if (code === "DM")
-    return "bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-900";
+    return "bg-[#eef4ff] dark:bg-[#13203a] text-[#2d5fc0] dark:text-[#9cb7f5] border-[#c9d9ff] dark:border-[#29406f]";
   if (code === "SR")
-    return "bg-slate-50 dark:bg-slate-950/20 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-900";
+    return "bg-[#f4f7ff] dark:bg-[#10192c] text-[#39569a] dark:text-[#b8c7f7] border-[#dde6ff] dark:border-[#29406f]";
   if (code === "NM")
     return "bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-900";
   if (code === "DE")
-    return "bg-purple-50 dark:bg-purple-950/20 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-900";
+    return "bg-[#eaf0ff] dark:bg-[#182641] text-[#244fa4] dark:text-[#b8c7f7] border-[#cedaff] dark:border-[#30466f]";
   return "bg-gray-50 dark:bg-gray-950/20 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-800";
 };
 
@@ -542,9 +542,9 @@ const getCalendarColors = (raw: unknown) => {
   if (code === "1") return { bg: "bg-emerald-600", text: "text-white" };
   if (code === "V") return { bg: "bg-amber-500", text: "text-white" };
   if (code === "VE") return { bg: "bg-amber-700", text: "text-white" };
-  if (code === "DE") return { bg: "bg-purple-600", text: "text-white" };
-  if (code === "DM") return { bg: "bg-sky-600", text: "text-white" };
-  if (code === "SR") return { bg: "bg-blue-600", text: "text-white" };
+  if (code === "DE") return { bg: "bg-[#244fa4]", text: "text-white" };
+  if (code === "DM") return { bg: "bg-[#2d5fc0]", text: "text-white" };
+  if (code === "SR") return { bg: "bg-[#4a7dff]", text: "text-white" };
   if (code === "NM") return { bg: "bg-rose-600", text: "text-white" };
   if (code === "LSGH") return { bg: "bg-slate-600", text: "text-white" };
   if (code === "LCGH") return { bg: "bg-teal-600", text: "text-white" };
@@ -679,7 +679,7 @@ const getCategoriaColor = (categoria: string) => {
     celebracion: "bg-green-500",
     cumpleanos: "bg-yellow-500",
     aniversario: "bg-pink-500",
-    especial: "bg-blue-500",
+    especial: "bg-[#2d5fc0]",
   };
   return colores[categoria] || "bg-gray-500";
 };

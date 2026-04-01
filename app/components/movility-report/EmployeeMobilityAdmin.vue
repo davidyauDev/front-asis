@@ -287,8 +287,8 @@ const tableUi = {
   base: 'table-fixed border-separate border-spacing-0',
   thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
   tbody: '[&>tr]:last:[&>td]:border-b-0',
-  tr: 'transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/40',
-  th: 'py-2 px-3 text-xs font-semibold text-gray-600 dark:text-gray-300 border-y border-default first:border-l last:border-r first:rounded-l-lg last:rounded-r-lg',
+  tr: 'transition-colors hover:bg-[#eef4ff]/60 dark:hover:bg-[#13203a]',
+  th: 'py-2 px-3 text-xs font-semibold text-[#39569a] dark:text-[#b8c7f7] border-y border-default first:border-l last:border-r first:rounded-l-lg last:rounded-r-lg',
   td: 'px-3 py-2 text-sm border-b border-default',
   separator: 'h-0',
 } as const
@@ -372,7 +372,7 @@ const columns: TableColumn<EmployeeMobilityRow>[] = [
     cell: ({ row }) => {
       const r = row.original
       return h('div', { class: 'text-xs' }, [
-        h('div', { class: 'truncate text-gray-900 dark:text-gray-100' }, r.department_name || '—'),
+        h('div', { class: 'truncate text-[#2d5fc0] dark:text-[#9cb7f5]' }, r.department_name || '—'),
         h('div', { class: 'truncate text-[11px] text-gray-500 dark:text-gray-400' }, r.position_name || '—'),
       ])
     },

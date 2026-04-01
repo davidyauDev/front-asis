@@ -70,34 +70,6 @@ const onFechaChange = (value: string | number) => {
 <template>
   <div class="border-b border-gray-200/70 px-4 py-4 dark:border-gray-800/70">
     <div class="flex flex-col gap-3">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex flex-wrap items-center gap-2">
-          <UBadge color="neutral" variant="soft" class="rounded-full px-3 py-1">
-            {{ props.currentListCount }} registros
-          </UBadge>
-          <UBadge
-            :color="activeFiltersCount > 0 ? 'primary' : 'neutral'"
-            variant="subtle"
-            class="rounded-full px-3 py-1"
-          >
-            {{ activeFiltersCount }} filtros
-          </UBadge>
-        </div>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-refresh-cw"
-          :loading="props.isLoading"
-          :disabled="props.isLoading"
-          class="rounded-xl"
-          @click="emit('reload')"
-        >
-          Actualizar
-        </UButton>
-      </div>
-
       <div class="grid gap-3 xl:grid-cols-[minmax(0,1.9fr)_repeat(3,minmax(0,1fr))]">
         <UInput
           :model-value="props.search"

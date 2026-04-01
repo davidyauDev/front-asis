@@ -10,7 +10,6 @@ definePageMeta({
 })
 
 const route = useRoute()
-const toast = useToast()
 
 const open = ref(false)
 

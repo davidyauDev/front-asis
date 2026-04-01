@@ -44,24 +44,26 @@ function nextMonth() {
     class="flex items-center gap-3
            px-4 py-2
            border border-gray-200
+           shadow-sm
            rounded-lg
-           bg-white"
+           bg-white dark:bg-gray-950"
   >
     <!-- PREV -->
     <UButton
       icon="i-heroicons-chevron-left"
       variant="ghost"
       size="sm"
+      class="text-[#2d5fc0] hover:bg-[#eef4ff] dark:text-[#9cb7f5] dark:hover:bg-[#13203a]"
       @click="prevMonth"
     />
 
     <!-- LABEL -->
-    <div class="flex items-center gap-2 text-sm font-medium text-gray-800">
-      <UIcon name="i-lucide-calendar" class="text-gray-500" />
+    <div class="flex items-center gap-2 text-sm font-medium text-[#2d5fc0] dark:text-[#9cb7f5]">
+      <UIcon name="i-lucide-calendar" class="text-[#2d5fc0] dark:text-[#9cb7f5]" />
       <span class="capitalize">
         {{ monthLabel }}
       </span>
-      <span class="text-gray-400">
+      <span class="text-gray-400 dark:text-gray-500">
         ({{ daysInMonth }} días)
       </span>
     </div>
@@ -71,6 +73,7 @@ function nextMonth() {
       icon="i-heroicons-chevron-right"
       variant="ghost"
       size="sm"
+      class="text-[#2d5fc0] hover:bg-[#eef4ff] dark:text-[#9cb7f5] dark:hover:bg-[#13203a]"
       @click="nextMonth"
     />
   </div>

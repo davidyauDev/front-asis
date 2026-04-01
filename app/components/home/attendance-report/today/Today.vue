@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6 text-gray-900 dark:text-gray-100">
     <!-- FILTROS -->
-    <section class="grid grid-cols-1 gap-6 items-start">
+    <section v-show="filtersVisible" class="grid grid-cols-1 gap-6 items-start">
       <div
         class="
           rounded-lg
@@ -214,7 +214,11 @@
         border border-gray-200 dark:border-gray-800
       "
     >
-      <ReportTable :params-override="effectiveDailyParams" />
+      <ReportTable
+        :params-override="effectiveDailyParams"
+        :filters-visible="filtersVisible"
+        @toggle-filters="filtersVisible = !filtersVisible"
+      />
     </section>
 
   </div>
@@ -232,6 +236,7 @@
  const { getDailyTakenAttendances } = store;
  
  const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
+ const filtersVisible = shallowRef(true)
  
  const excludedDepartmentIds = [2, 4, 5, 7, 9, 10] as const
  const excludedDepartmentIdSet = new Set<number>(excludedDepartmentIds)

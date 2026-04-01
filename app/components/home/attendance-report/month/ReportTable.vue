@@ -18,27 +18,40 @@
           />
         </div>
 
-        <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
+        <div class="flex flex-wrap items-center gap-2">
           <UButton
-            color="success"
-            variant="solid"
+            color="neutral"
+            variant="outline"
             size="md"
-            @click="exportarExcel"
-            :loading="exportando"
-            :disabled="exportando || !canExport"
-            class="min-w-[160px] justify-center shadow-sm hover:shadow-md disabled:shadow-none"
+            :icon="filtersVisible ? 'i-lucide-panel-top-close' : 'i-lucide-panel-top-open'"
+            class="min-w-[170px] justify-center whitespace-nowrap border-[#cfdcf7] bg-white text-[#30508f] font-semibold shadow-sm transition-all hover:bg-[#eef4ff] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900"
+            @click="emit('toggle-filters')"
           >
-            <template #leading>
-              <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
-            </template>
-            <span class="hidden sm:inline">
-              {{ exportando ? 'Exportando...' : 'Exportar Excel' }}
-            </span>
-            <span class="sm:hidden">
-              {{ exportando ? 'Exportando...' : 'Excel' }}
-            </span>
+            {{ filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros' }}
           </UButton>
-        </UTooltip>
+
+          <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
+            <UButton
+              color="success"
+              variant="solid"
+              size="md"
+              @click="exportarExcel"
+              :loading="exportando"
+              :disabled="exportando || !canExport"
+              class="min-w-[160px] justify-center shadow-sm hover:shadow-md disabled:shadow-none"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
+              </template>
+              <span class="hidden sm:inline">
+                {{ exportando ? 'Exportando...' : 'Exportar Excel' }}
+              </span>
+              <span class="sm:hidden">
+                {{ exportando ? 'Exportando...' : 'Excel' }}
+              </span>
+            </UButton>
+          </UTooltip>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
@@ -94,6 +107,11 @@ type MonthlyTakenAttendaceRow = TakenAttendace & {
 
 const props = defineProps<{
   employeeType: EmployeeType
+  filtersVisible?: boolean
+}>()
+
+const emit = defineEmits<{
+  (event: 'toggle-filters'): void
 }>()
 
 const store = useAttendanceReportStore()

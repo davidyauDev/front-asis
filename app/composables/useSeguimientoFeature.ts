@@ -3,6 +3,7 @@ import type {
   SeguimientoEstadoFiltro,
   SeguimientoOrden,
   SeguimientoSubTab,
+  SeguimientoWhatsAppMode,
   SeguimientoTableRow,
   SeguimientoTableSource,
   SeguimientoTab,
@@ -143,7 +144,7 @@ export function useSeguimientoFeature() {
     }
   }
 
-  const enviarWhatsApp = (tecnicoData: TecnicoData) => {
+  const enviarWhatsApp = (tecnicoData: TecnicoData, mode: SeguimientoWhatsAppMode = 'seguimiento') => {
     const usuario = tecnicoData.usuario || ({} as Usuario)
     const nombre = usuario.nombre_completo || 'Tecnico'
     const phone = normalizeWhatsAppPhone(usuario.mobile || '')
@@ -157,7 +158,7 @@ export function useSeguimientoFeature() {
       return
     }
 
-    const mensaje = buildSeguimientoWhatsAppMessage(tecnicoData, fechaSeleccionada.value)
+    const mensaje = buildSeguimientoWhatsAppMessage(tecnicoData, fechaSeleccionada.value, mode)
     const url = buildSeguimientoWhatsAppUrl(phone, mensaje)
     const openedWindow = window.open('', '_blank')
 

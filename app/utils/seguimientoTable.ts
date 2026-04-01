@@ -74,6 +74,10 @@ export const buildSeguimientoRowsFromSinRutas = (
     rutasCount: (usuario.rutas || []).length,
     marcaciones: usuario.marcaciones,
     validationTarget: usuario,
-    whatsappTarget: null,
+    whatsappTarget: {
+      usuario,
+      rutas: usuario.rutas || [],
+      iclock_transactions: usuario.marcaciones,
+    },
     dailyRecord: getDailyRecord(usuario),
   }))

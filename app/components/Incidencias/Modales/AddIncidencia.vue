@@ -9,6 +9,7 @@ type FormIncidencia = {
   duracionSegundos?: number | undefined;
   tipo: string | undefined;
   motivo: string;
+  imagenFile?: File | null;
 };
 
 const toast = useToast();
@@ -27,6 +28,7 @@ const form = ref<FormIncidencia>({
   duracionSegundos: undefined,
   tipo: undefined,
   motivo: "",
+  imagenFile: null,
 });
 
 const motivoTouched = shallowRef(false);
@@ -34,6 +36,19 @@ const motivoError = computed(() => {
   if (!motivoTouched.value) return null;
   return form.value.motivo.trim() ? null : "El motivo es obligatorio";
 });
+
+const imagenInput = ref<HTMLInputElement | null>(null);
+const imagenError = shallowRef<string | null>(null);
+const imagenPreviewUrl = shallowRef<string>("");
+const allowedImageTypes = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+]);
+const maxImageSizeBytes = 5 * 1024 * 1024;
+
+const selectedImageUrl = computed(() => imagenPreviewUrl.value);
 
 const duracionHoras = shallowRef<string>("");
 const duracionMinutos = shallowRef<string>("");
@@ -84,6 +99,17 @@ const calendarDate = computed<CalendarDate | undefined>({
 watch(open, (isOpen) => {
   if (!isOpen) resetForm();
 });
+
+onBeforeUnmount(() => {
+  revokeImagePreview();
+});
+
+function revokeImagePreview() {
+  if (imagenPreviewUrl.value) {
+    window.URL.revokeObjectURL(imagenPreviewUrl.value);
+    imagenPreviewUrl.value = "";
+  }
+}
 
 function parseNonNegativeInt(raw: string): number | undefined {
   const trimmed = raw.trim();
@@ -262,6 +288,53 @@ async function cargarTardanza() {
   }
 }
 
+function onImagenChange(event: Event) {
+  imagenError.value = null;
+
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0] || null;
+
+  if (!file) {
+    return;
+  }
+
+  if (!allowedImageTypes.has(file.type)) {
+    imagenError.value = "La imagen debe ser JPG, PNG o WEBP.";
+    toast.add({
+      title: "Formato inválido",
+      description: imagenError.value,
+      color: "error",
+    });
+    input.value = "";
+    return;
+  }
+
+  if (file.size > maxImageSizeBytes) {
+    imagenError.value = "La imagen no puede superar los 5 MB.";
+    toast.add({
+      title: "Archivo muy grande",
+      description: imagenError.value,
+      color: "error",
+    });
+    input.value = "";
+    return;
+  }
+
+  revokeImagePreview();
+  form.value.imagenFile = file;
+  imagenPreviewUrl.value = window.URL.createObjectURL(file);
+}
+
+function clearImagenSeleccionada() {
+  revokeImagePreview();
+  form.value.imagenFile = null;
+  imagenError.value = null;
+
+  if (imagenInput.value) {
+    imagenInput.value.value = "";
+  }
+}
+
 function usarTardanza() {
   if (!tardanza.value || tardanza.value < 1) return;
   form.value.duracionSegundos = tardanza.value;
@@ -287,12 +360,22 @@ function guardarIncidencia() {
     return;
   }
 
+  if (imagenError.value) {
+    toast.add({
+      title: "Corrige la imagen",
+      description: imagenError.value,
+      color: "error",
+    });
+    return;
+  }
+
   form.value.motivo = motivo;
   emit("submit", { ...form.value });
   open.value = false;
 }
 
 function resetForm() {
+  revokeImagePreview();
   form.value = {
     fecha: "",
     descripcion: "",
@@ -300,6 +383,7 @@ function resetForm() {
     duracionSegundos: undefined,
     tipo: undefined,
     motivo: "",
+    imagenFile: null,
   };
   motivoTouched.value = false;
   duracionHoras.value = "";
@@ -308,6 +392,11 @@ function resetForm() {
   tardanza.value = null;
   tardanzaLoading.value = false;
   tardanzaError.value = null;
+  imagenError.value = null;
+
+  if (imagenInput.value) {
+    imagenInput.value.value = "";
+  }
 }
 </script>
 
@@ -484,6 +573,65 @@ function resetForm() {
             <p v-if="motivoError" class="mt-1 text-xs text-red-600">
               {{ motivoError }}
             </p>
+          </div>
+
+          <div class="col-span-2 space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm font-semibold text-gray-900">Imagen opcional</p>
+                <p class="text-xs text-gray-500">
+                  JPG, PNG o WEBP. Máximo 5 MB.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <UButton
+                  type="button"
+                  size="sm"
+                  color="gray"
+                  variant="outline"
+                  icon="i-lucide-upload"
+                  @click="imagenInput?.click()"
+                >
+                  {{ form.imagenFile ? 'Cambiar imagen' : 'Subir imagen' }}
+                </UButton>
+
+                <UButton
+                  v-if="form.imagenFile"
+                  type="button"
+                  size="sm"
+                  color="gray"
+                  variant="ghost"
+                  icon="i-lucide-x"
+                  @click="clearImagenSeleccionada"
+                >
+                  Quitar
+                </UButton>
+              </div>
+            </div>
+
+            <input
+              ref="imagenInput"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              class="hidden"
+              @change="onImagenChange"
+            />
+
+            <p v-if="imagenError" class="text-xs font-medium text-red-600">
+              {{ imagenError }}
+            </p>
+
+            <div
+              v-if="selectedImageUrl"
+              class="overflow-hidden rounded-lg border border-gray-200 bg-white"
+            >
+              <img
+                :src="selectedImageUrl"
+                alt="Vista previa de la imagen"
+                class="h-48 w-full object-cover"
+              />
+            </div>
           </div>
         </div>
       </div>
