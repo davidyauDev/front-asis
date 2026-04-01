@@ -219,6 +219,13 @@ const paginatedTickets = computed(() => {
   return filteredTickets.value.slice(start, start + selectedPerPage.value)
 })
 
+const statusBadgeClass: Record<TicketStatus, string> = {
+  solucionado: 'bg-rose-50 text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20',
+  en_proceso: 'bg-blue-50 text-blue-600 ring-1 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20',
+  pausado: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
+  anulado: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300',
+}
+
 const showingFrom = computed(() => {
   if (!filteredTickets.value.length) {
     return 0
@@ -309,22 +316,30 @@ watch(pageCount, (count) => {
   <UDashboardPanel id="support-ticket">
     <template #header>
       <AppDashboardHeader
-        title="Gestion de Registros de Llamadas de Ticket"
+        title="Tickets de soporte"
         mobile-title="Support Ticket"
-        subtitle="Seguimiento y control ficticio de tickets por llamada."
+        subtitle="Seguimiento y control de tickets por llamada."
         subtitle-icon="i-lucide-ticket"
         icon="i-lucide-ticket"
-      >
-        
-      </AppDashboardHeader>
+      />
     </template>
 
     <template #body>
-      <div class="space-y-6 p-4 sm:p-6 lg:p-8">
-        <section class="overflow-hidden rounded-[1.8rem] border border-gray-200/80 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] dark:border-gray-800 dark:bg-gray-950">
+      <div class="space-y-1  lg:p-1">
+        <section class="flex justify-center">
+          <AppTabs
+            v-model="ticketTab"
+            ariaLabel="Filtros de tickets"
+            :items="tabItems"
+            class="w-fit shrink-0"
+            list-class="w-fit"
+          />
+        </section>
+
+        <section class="overflow-hidden rounded-[1.9rem] border border-gray-200/80 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.24)] dark:border-gray-800 dark:bg-gray-950">
           <div class="border-b border-gray-200/80 px-5 py-5 dark:border-gray-800">
-            <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+            <div class="grid gap-4 xl:grid-cols-[1fr_auto_auto] xl:items-center">
+              <div class="flex flex-wrap items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                 <span class="font-medium text-gray-600 dark:text-gray-400">Mostrar</span>
                 <USelectMenu
                   v-model="selectedPerPage"
@@ -336,30 +351,55 @@ watch(pageCount, (count) => {
                   size="sm"
                 />
                 <span class="font-medium text-gray-600 dark:text-gray-400">registros</span>
+                <UBadge color="primary" variant="soft" class="rounded-full px-3 py-1">
+                  {{ filteredTickets.length }} resultados
+                </UBadge>
+                <UBadge color="neutral" variant="soft" class="rounded-full px-3 py-1">
+                  Pagina {{ currentPage }} de {{ pageCount }}
+                </UBadge>
               </div>
 
-              <div class="flex flex-1 flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
-                <AppTabs
-                  v-model="ticketTab"
-                  ariaLabel="Filtros de tickets"
-                  :items="tabItems"
-                  class="w-fit shrink-0"
-                  list-class="w-fit"
-                />
+              <div class="flex flex-wrap justify-center gap-3 xl:justify-end">
+                <UButton
+                  color="success"
+                  variant="solid"
+                  icon="i-lucide-file-down"
+                  class="h-11 rounded-full border border-emerald-400/20 px-5 font-semibold shadow-[0_10px_22px_-16px_rgba(16,185,129,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-18px_rgba(16,185,129,0.55)]"
+                >
+                  Exportar Excel
+                </UButton>
 
-                <UInput
-                  v-model="search"
-                  icon="i-lucide-search"
-                  placeholder="Search..."
-                  class="w-full xl:w-72"
-                />
+                <UButton
+                  color="primary"
+                  variant="solid"
+                  icon="i-lucide-plus"
+                  :trailing="true"
+                  class="h-11 rounded-full bg-gradient-to-r from-[#5662ff] to-[#4f6dff] px-5 font-semibold shadow-[0_10px_22px_-16px_rgba(79,109,255,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-18px_rgba(79,109,255,0.55)]"
+                >
+                  Nuevo ticket por llamada
+                </UButton>
+              </div>
+
+              <div class="flex justify-end">
+                <div class="relative w-full xl:w-80">
+                  <UIcon
+                    name="i-lucide-search"
+                    class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400"
+                  />
+                  <UInput
+                    v-model="search"
+                    placeholder="Buscar ticket, codigo, equipo o tecnico..."
+                    class="w-full"
+                    :ui="{ base: 'rounded-full pl-9 border-gray-200/80 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-gray-950/80' }"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           <div class="overflow-x-auto">
             <table class="min-w-[1360px] w-full border-separate border-spacing-0">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-white/95 backdrop-blur dark:bg-gray-950/95">
                 <tr class="bg-gray-50/90 dark:bg-gray-900/70">
                   <th class="border-b border-gray-200/80 px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:border-gray-800 dark:text-gray-400">
                     ID
@@ -391,41 +431,47 @@ watch(pageCount, (count) => {
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                 <tr
                   v-for="ticket in paginatedTickets"
                   :key="ticket.id"
-                  class="transition-colors odd:bg-white even:bg-gray-50/50 hover:bg-blue-50/50 dark:odd:bg-gray-950 dark:even:bg-gray-900/40 dark:hover:bg-blue-950/20"
+                  class="group bg-white transition hover:bg-[#f8fbff] dark:bg-gray-950 dark:hover:bg-gray-900/70"
                 >
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm font-medium text-[#2d5fc0] dark:border-gray-800">
-                    {{ ticket.id }}
+                  <td class="px-5 py-4 align-top text-sm font-semibold text-[#2d5fc0] dark:text-[#8fb0ff]">
+                    <NuxtLink
+                      :to="`/mesa-de-ayuda/ticket-detalle?id=${ticket.id}`"
+                      class="inline-flex items-center gap-1 rounded-full transition hover:text-[#1f49b5] hover:underline"
+                    >
+                      {{ ticket.id }}
+                      <UIcon name="i-lucide-arrow-up-right" class="size-3.5" />
+                    </NuxtLink>
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm font-medium text-[#2d5fc0] dark:border-gray-800">
+                  <td class="px-5 py-4 align-top text-sm font-semibold text-[#2d5fc0] dark:text-[#8fb0ff]">
                     {{ ticket.code }}
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm text-gray-800 dark:border-gray-800 dark:text-gray-200">
-                    <div class="max-w-[220px] truncate font-medium">
+                  <td class="px-5 py-4 align-top text-sm text-gray-800 dark:text-gray-200">
+                    <div class="max-w-[220px] truncate font-medium leading-6">
                       {{ ticket.technician }}
                     </div>
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm text-[#2d5fc0] dark:border-gray-800">
-                    <div class="max-w-[190px] truncate font-medium">
+                  <td class="px-5 py-4 align-top text-sm text-[#2d5fc0] dark:text-[#8fb0ff]">
+                    <div class="max-w-[190px] truncate font-medium leading-6">
                       {{ ticket.equipment }}
                     </div>
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-300">
-                    <div class="max-w-[270px] truncate font-medium">
+                  <td class="px-5 py-4 align-top text-sm text-gray-700 dark:text-gray-300">
+                    <div class="max-w-[270px] truncate font-medium leading-6">
                       {{ ticket.agency }}
                     </div>
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm text-gray-800 dark:border-gray-800 dark:text-gray-200">
-                    <div class="max-w-[150px] truncate font-medium">
+                  <td class="px-5 py-4 align-top text-sm text-gray-800 dark:text-gray-200">
+                    <div class="max-w-[150px] truncate font-medium leading-6">
                       {{ ticket.assignedTo }}
                     </div>
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm text-gray-800 dark:border-gray-800 dark:text-gray-200">
+                  <td class="px-5 py-4 align-top text-sm text-gray-800 dark:text-gray-200">
                     <div class="space-y-0.5">
-                      <p class="font-medium">
+                      <p class="font-medium leading-6">
                         {{ ticket.createdBy }}
                       </p>
                       <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -433,21 +479,21 @@ watch(pageCount, (count) => {
                       </p>
                     </div>
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-sm dark:border-gray-800">
-                    <UBadge
-                      :color="statusConfig[ticket.status].color"
-                      variant="soft"
-                      class="rounded-full px-3 py-1 font-semibold"
+                  <td class="px-5 py-4 align-top text-sm">
+                    <span
+                      class="inline-flex rounded-full px-3 py-1 text-sm font-semibold"
+                      :class="statusBadgeClass[ticket.status]"
                     >
                       {{ statusConfig[ticket.status].label }}
-                    </UBadge>
+                    </span>
                   </td>
-                  <td class="border-b border-gray-100 px-5 py-4 text-center dark:border-gray-800">
+                  <td class="px-5 py-4 align-top text-center">
                     <UButton
                       color="error"
                       variant="ghost"
                       icon="i-lucide-trash-2"
-                      class="rounded-full"
+                      size="sm"
+                      class="rounded-full opacity-75 transition hover:opacity-100"
                       aria-label="Eliminar ticket"
                     />
                   </td>
@@ -479,7 +525,7 @@ watch(pageCount, (count) => {
               <UButton
                 color="neutral"
                 variant="outline"
-                label="Previous"
+                label="Anterior"
                 icon="i-lucide-chevron-left"
                 :disabled="currentPage === 1"
                 class="h-10 rounded-lg px-4"
@@ -507,7 +553,7 @@ watch(pageCount, (count) => {
               <UButton
                 color="neutral"
                 variant="outline"
-                label="Next"
+                label="Siguiente"
                 :trailing="true"
                 icon="i-lucide-chevron-right"
                 :disabled="currentPage === pageCount"

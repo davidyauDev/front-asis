@@ -101,7 +101,7 @@ const momentum = computed(() => {
 </script>
 
 <template>
-  <UCard class="rounded-[1.75rem] border border-gray-200/80 bg-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.35)] dark:border-gray-800 dark:bg-gray-950" :ui="{ body: 'p-6' }">
+  <UCard class="rounded-[1.75rem] border border-gray-200/80 bg-white shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] dark:border-gray-800 dark:bg-gray-950" :ui="{ body: 'p-6' }">
     <div class="mb-6 flex items-center justify-between gap-4">
       <div>
         <h2 class="text-xl font-black tracking-[-0.04em] text-gray-950 dark:text-white">

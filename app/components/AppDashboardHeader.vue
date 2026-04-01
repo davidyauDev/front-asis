@@ -13,6 +13,10 @@ interface Props {
   showLiveBadge?: boolean
   liveTooltip?: string
   liveLabel?: string
+  showModulesButton?: boolean
+  modulesButtonLabel?: string
+  modulesButtonTo?: string
+  modulesButtonTooltip?: string
   showNotifications?: boolean
   notificationTooltip?: string
   notificationCount?: number | string | null
@@ -34,6 +38,10 @@ const props = withDefaults(defineProps<Props>(), {
   showLiveBadge: true,
   liveTooltip: 'Datos actualizados',
   liveLabel: 'En vivo',
+  showModulesButton: true,
+  modulesButtonLabel: 'Ver modulos',
+  modulesButtonTo: '/',
+  modulesButtonTooltip: 'Ver todos los modulos',
   showNotifications: true,
   notificationTooltip: 'Notificaciones',
   notificationCount: undefined,
@@ -217,6 +225,21 @@ const toneStyles = computed(() => {
         <slot name="right-prefix" />
 
         <slot name="right" />
+
+        <UTooltip
+          v-if="showModulesButton"
+          :text="modulesButtonTooltip"
+        >
+          <UButton
+            :to="modulesButtonTo"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-layout-grid"
+            class="rounded-full shadow-sm"
+          >
+            {{ modulesButtonLabel }}
+          </UButton>
+        </UTooltip>
 
         <UTooltip
           v-if="showNotifications"

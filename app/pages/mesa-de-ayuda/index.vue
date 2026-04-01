@@ -141,8 +141,9 @@ const pendingPercent = '1.8%'
           <UButton
             color="success"
             variant="solid"
-            icon="i-lucide-file-down"
-            class="self-start rounded-full px-5 shadow-sm shadow-emerald-500/20 sm:self-auto"
+            size="sm"
+            icon="i-lucide-file-spreadsheet"
+            class="shrink-0 self-start whitespace-nowrap rounded-full border border-emerald-400/20 px-4 py-2.5 font-semibold shadow-[0_10px_22px_-16px_rgba(16,185,129,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-18px_rgba(16,185,129,0.55)] sm:self-auto"
           >
             Generar Excel
           </UButton>
@@ -165,7 +166,7 @@ const pendingPercent = '1.8%'
             <UCard
               v-for="item in summaryMetrics"
               :key="item.title"
-              class="overflow-hidden border-0 shadow-[0_20px_40px_-22px_rgba(15,23,42,0.45)]"
+              class="overflow-hidden border border-gray-200/80 shadow-[0_10px_26px_-20px_rgba(15,23,42,0.18)] dark:border-gray-800"
               :ui="{ body: 'p-0' }"
             >
               <div
@@ -269,7 +270,7 @@ const pendingPercent = '1.8%'
           </section>
 
           <section class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-            <UCard class="rounded-[1.75rem] border border-gray-200/80 bg-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.35)] dark:border-gray-800 dark:bg-gray-950" :ui="{ body: 'p-6' }">
+            <UCard class="rounded-[1.75rem] border border-gray-200/80 bg-white shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] dark:border-gray-800 dark:bg-gray-950" :ui="{ body: 'p-6' }">
               <div class="mb-6 flex items-center justify-between">
                 <div>
                   <h2 class="text-xl font-black tracking-[-0.04em] text-gray-950 dark:text-white">
@@ -288,7 +289,7 @@ const pendingPercent = '1.8%'
                   class="flex flex-1 flex-col items-center justify-end gap-3"
                 >
                   <div class="flex h-full w-full items-end">
-                    <div class="flex w-full items-end justify-center rounded-2xl bg-gradient-to-t from-[#2d5fc0] to-[#5f84ff] shadow-[0_10px_20px_-12px_rgba(45,95,192,0.75)]" :style="{ height: point.height }" />
+                    <div class="flex w-full items-end justify-center rounded-2xl bg-gradient-to-t from-[#2d5fc0] to-[#5f84ff] shadow-[0_6px_14px_-10px_rgba(45,95,192,0.45)]" :style="{ height: point.height }" />
                   </div>
                   <div class="space-y-1 text-center">
                     <p class="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
