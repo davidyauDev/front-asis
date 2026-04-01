@@ -4,9 +4,9 @@
       <AppDashboardHeader
         title="Reporte de Asistencia"
         mobile-title="Reportes"
-        :notification-count="5"
+        :notification-count="8"
         :notification-shortcuts="['N']"
-        @notification-click="isNotificationsSlideoverOpen = true"
+        @notification-click="showRrhhNotificationsModal = true"
       />
       <UDashboardToolbar>
         <div class="mt-2 w-full">
@@ -40,7 +40,15 @@
     </template>
   </UDashboardPanel>
 
-  <NotificationsSlideover />
+  <RrhhNotificationsModal
+    v-model:open="showRrhhNotificationsModal"
+    :user-name="user?.name"
+  />
+  <RrhhWelcomeModal
+    v-model:open="showRrhhWelcomeModal"
+    :user-name="user?.name"
+    @closed="markRrhhWelcomeSeen"
+  />
 </template>
 
 <script setup lang="ts">
@@ -54,16 +62,55 @@ import { formatToDayMonthYear } from '~/utils/date'
 definePageMeta({ middleware: 'auth' })
 
 const { width } = useWindowSize()
-const { isNotificationsSlideoverOpen } = useDashboard()
+const { user } = useAuth()
 
 const currentTabType = ref<ItemType>(ItemType.TODAY)
 const currentEmployeeType = ref<EmployeeType>(EmployeeType.TECHNICIANS)
+const showRrhhNotificationsModal = ref(false)
+const showRrhhWelcomeModal = ref(false)
+let welcomeModalTimer: number | null = null
 
 const fechaFormateada = formatToDayMonthYear()
 
 const store = useAttendanceReportStore()
 const { getCompanies, getDepartments, getTakenAttendances, getEmployees } = store
 const { company, department } = storeToRefs(store)
+
+const getWelcomeStorageKey = () => `rrhh-welcome-seen:v1:${user.value?.id ?? 'guest'}`
+
+const hasSeenRrhhWelcome = () => {
+  if (!import.meta.client) return true
+
+  try {
+    return window.localStorage.getItem(getWelcomeStorageKey()) === '1'
+  } catch {
+    return true
+  }
+}
+
+const markRrhhWelcomeSeen = () => {
+  if (!import.meta.client) return
+
+  try {
+    window.localStorage.setItem(getWelcomeStorageKey(), '1')
+  } catch {
+    // noop
+  }
+}
+
+const scheduleRrhhWelcome = () => {
+  if (!import.meta.client || showRrhhWelcomeModal.value || hasSeenRrhhWelcome()) {
+    return
+  }
+
+  if (welcomeModalTimer) {
+    clearTimeout(welcomeModalTimer)
+  }
+
+  welcomeModalTimer = window.setTimeout(() => {
+    showRrhhWelcomeModal.value = true
+  }, 450)
+}
 
 onMounted(async () => {
   try {
@@ -81,9 +128,26 @@ onMounted(async () => {
       getTakenAttendances()
     )
     await Promise.all(promises)
+    scheduleRrhhWelcome()
 
   } catch (error) {
     console.error('Error al inicializar el módulo', error)
+  } finally {
+    scheduleRrhhWelcome()
+  }
+})
+
+watch(
+  () => user.value?.id,
+  () => {
+    scheduleRrhhWelcome()
+  }
+)
+
+onBeforeUnmount(() => {
+  if (welcomeModalTimer) {
+    clearTimeout(welcomeModalTimer)
+    welcomeModalTimer = null
   }
 })
 
