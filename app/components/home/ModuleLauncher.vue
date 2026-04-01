@@ -35,7 +35,8 @@ const modules = [
     icon: 'i-lucide-computer',
     status: 'Disponible',
     to: '/sistemas-ti',
-
+    accent: 'from-green-500/20 to-emerald-500/10',
+  }, {
     title: 'Mesa de ayuda',
     description: 'Tickets, llamadas, WhatsApp y configuracion de soporte.',
     icon: 'i-lucide-lifebuoy',
