@@ -31,31 +31,44 @@
         />
       </div>
 
-      <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
+      <div class="flex flex-wrap items-center gap-2">
         <UButton
           color="neutral"
-          variant="solid"
+          variant="outline"
           size="md"
-          @click="exportarExcel"
-          :loading="exportando"
-          :disabled="exportando || !canExport"
-          class="min-w-[190px] justify-center whitespace-nowrap border-transparent !bg-[#2d5fc0] !text-white font-semibold shadow-sm transition-all hover:!bg-[#244ea4] active:!bg-[#1d428d] disabled:shadow-none"
+          :icon="filtersVisible ? 'i-lucide-panel-top-close' : 'i-lucide-panel-top-open'"
+          class="min-w-[170px] justify-center whitespace-nowrap border-[#cfdcf7] bg-white text-[#30508f] font-semibold shadow-sm transition-all hover:bg-[#eef4ff] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900"
+          @click="emit('toggle-filters')"
         >
-          <template #leading>
-            <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
-          </template>
-          <span class="hidden sm:inline">
-            {{ exportando ? 'Descargando...' : 'Descargar reporte' }}
-          </span>
-          <span class="sm:hidden">
-            {{ exportando ? 'Descargando...' : 'Excel' }}
-          </span>
+          {{ filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros' }}
         </UButton>
-      </UTooltip>
+
+        <UTooltip :text="canExport ? 'Descargar reporte en Excel' : 'No hay datos para exportar'">
+          <UButton
+            color="neutral"
+            variant="solid"
+            size="md"
+            @click="exportarExcel"
+            :loading="exportando"
+            :disabled="exportando || !canExport"
+            class="min-w-[190px] justify-center whitespace-nowrap border-transparent !bg-[#2d5fc0] !text-white font-semibold shadow-sm transition-all hover:!bg-[#244ea4] active:!bg-[#1d428d] disabled:shadow-none"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
+            </template>
+            <span class="hidden sm:inline">
+              {{ exportando ? 'Descargando...' : 'Descargar reporte' }}
+            </span>
+            <span class="sm:hidden">
+              {{ exportando ? 'Descargando...' : 'Excel' }}
+            </span>
+          </UButton>
+        </UTooltip>
+      </div>
 
     </div>
 
-    <div class="overflow-x-auto overflow-y-auto h-96">
+    <div class="overflow-x-auto overflow-y-auto h-170">
       <UTable
         ref="table"
         :data="dailyListAttendaces"
@@ -262,6 +275,11 @@ import type { TakenAttendaceParams } from "~/composables/useAttendanceReport";
 
 const props = defineProps<{
   paramsOverride?: TakenAttendaceParams | null
+  filtersVisible?: boolean
+}>()
+
+const emit = defineEmits<{
+  (event: 'toggle-filters'): void
 }>()
 
 const config = useRuntimeConfig()
