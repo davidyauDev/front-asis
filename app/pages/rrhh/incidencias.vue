@@ -26,6 +26,8 @@ const fechaFin = useCookie<string>('incidencias-fecha-fin', {
   sameSite: 'lax'
 });
 
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel();
+
 const filaSeleccionada = ref<number | null>(null);
 const filaRef = ref<HTMLElement | null>(null);
 const filtroUsuario = useCookie<string>('incidencias-filtro-usuario', {
@@ -123,7 +125,8 @@ async function descargarExcel() {
         mobile-title="Incidencias"
         subtitle-icon="i-heroicons-clock"
         notification-tooltip="Incidencias pendientes"
-        :notification-count="7"
+        notification-attention
+        @notification-click="openRrhhNotifications"
       />
     </template>
     <template #body>

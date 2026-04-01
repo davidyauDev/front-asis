@@ -3,15 +3,26 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 // Verificar autenticación
 const { isLoggedIn } = useAuth()
+const { user } = useAuth()
+const route = useRoute()
+const { isOpen: rrhhNotificationsOpen } = useRrhhNotificationsPanel()
 
 // Proteger el layout - redirigir a login si no está autenticado
 definePageMeta({
   middleware: 'auth'
 })
 
-const route = useRoute()
-
 const open = ref(false)
+
+watch(
+  () => route.path,
+  (path) => {
+    if (!path.startsWith('/rrhh')) {
+      rrhhNotificationsOpen.value = false
+    }
+  },
+  { immediate: true }
+)
 
 // Dashboard
 const dashboardLinks = [{
@@ -191,7 +202,11 @@ onMounted(async () => {
 
     <slot />
 
-    <!-- <NotificationsSlideover /> -->
+    <RrhhNotificationsModal
+      v-if="route.path.startsWith('/rrhh')"
+      v-model:open="rrhhNotificationsOpen"
+      :user-name="user?.name"
+    />
   </UDashboardGroup>
 </template>
 

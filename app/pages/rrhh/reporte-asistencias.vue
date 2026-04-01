@@ -4,7 +4,9 @@
       <AppDashboardHeader
         title="Reporte de Asistencias"
         :show-live-badge="false"
-        :show-notifications="false"
+        notification-attention
+        notification-tooltip="Alertas RRHH"
+        @notification-click="openRrhhNotifications"
       />
     </template>
 
@@ -34,6 +36,7 @@ import TablaReportes from '~/components/reporte-asistencias/TablaReportes.vue'
 import { useAttendanceReportStore } from '~/store/useAttendanceReportStore'
 
 const { getCompanies, getDepartments } = useAttendanceReportStore()
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
 
 onMounted(() => {
   getCompanies()

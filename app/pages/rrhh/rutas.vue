@@ -5,6 +5,9 @@
         title="Rutas GPS"
         mobile-title="Rutas"
         subtitle-icon="i-lucide-map-pinned"
+        notification-tooltip="Alertas RRHH"
+        notification-attention
+        @notification-click="openRrhhNotifications"
       />
     </template>
 
@@ -67,6 +70,8 @@ definePageMeta({
   layout: "default",
   middleware: "auth",
 });
+
+const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
 
 const {
   users,
