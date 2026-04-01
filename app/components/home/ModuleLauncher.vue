@@ -10,7 +10,6 @@ type ModuleCard = {
   accent: string
 }
 
-const { user } = useAuth()
 const search = shallowRef('')
 
 const modules = [
@@ -30,11 +29,20 @@ const modules = [
     accent: 'from-blue-500/20 to-indigo-500/10',
   },
   {
+
+    title: 'Sistemas TI',
+    description: 'Mesa de ayuda, tickets, activos y control administrativo.',
+    icon: 'i-lucide-computer',
+    status: 'Disponible',
+    to: '/sistemas-ti',
+    accent: 'from-green-500/20 to-emerald-500/10',
+  }, {
     title: 'Mesa de ayuda',
     description: 'Tickets, llamadas, WhatsApp y configuracion de soporte.',
     icon: 'i-lucide-lifebuoy',
     status: 'Disponible',
     to: '/mesa-de-ayuda',
+
     accent: 'from-cyan-500/20 to-sky-500/10',
   },
   {
@@ -68,7 +76,6 @@ const lockedModules = computed(() =>
   filteredModules.value.filter(module => module.status !== 'Disponible'),
 )
 
-const userLabel = computed(() => user.value?.name || 'Administrador')
 const hasResults = computed(() => filteredModules.value.length > 0)
 </script>
 
@@ -119,11 +126,7 @@ const hasResults = computed(() => filteredModules.value.length > 0)
         </div>
       </header>
 
-      <section class="mb-8 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-       
-
-      
-      </section>
+      <section class="mb-8 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]" />
 
       <section v-if="hasResults" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         <template v-for="module in availableModules" :key="module.title">
