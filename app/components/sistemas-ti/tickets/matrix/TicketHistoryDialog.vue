@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { format } from 'date-fns'
-import { getLocalTimeZone } from '@internationalized/date'
+import { getLocalTimeZone, type CalendarDate } from '@internationalized/date'
 import type { SystemTicket, TicketHistoryType } from '~/services/sistemas-ti/tickets'
 
 const props = defineProps<{
@@ -11,7 +11,12 @@ const open = defineModel<boolean>('open', { default: false })
 const ticket = computed(() => props.ticket)
 
 const actions = ref<TicketHistoryType[]>([])
-const dateRange = ref<{ start?: any, end?: any } | undefined>()
+type DateRangeValue = {
+  start?: CalendarDate
+  end?: CalendarDate
+}
+
+const dateRange = ref<DateRangeValue | undefined>()
 const perPage = ref(10)
 const currentPage = ref(1)
 
@@ -85,6 +90,10 @@ const resetFilters = () => {
   currentPage.value = 1
 }
 
+const onDateRangeUpdate = (value: DateRangeValue | undefined) => {
+  dateRange.value = value ?? undefined
+}
+
 watch(
   () => [actions.value.join('|'), JSON.stringify(dateRange.value || {})],
   () => {
@@ -147,11 +156,23 @@ watch(
                   <UBadge color="neutral" variant="outline">
                     Filtros
                   </UBadge>
-                  <UBadge v-if="actions.length" color="neutral" variant="soft" class="cursor-pointer" @click="actions = []">
+                  <UBadge
+                    v-if="actions.length"
+                    color="neutral"
+                    variant="soft"
+                    class="cursor-pointer"
+                    @click="actions = []"
+                  >
                     {{ actions.length }} accion(es)
                     <UIcon name="i-lucide-x-circle" class="ml-1 h-3.5 w-3.5" />
                   </UBadge>
-                  <UBadge v-if="dateRange" color="neutral" variant="soft" class="cursor-pointer" @click="dateRange = undefined">
+                  <UBadge
+                    v-if="dateRange"
+                    color="neutral"
+                    variant="soft"
+                    class="cursor-pointer"
+                    @click="dateRange = undefined"
+                  >
                     Rango aplicado
                     <UIcon name="i-lucide-x-circle" class="ml-1 h-3.5 w-3.5" />
                   </UBadge>
@@ -180,11 +201,12 @@ watch(
                     <template #content>
                       <div class="w-auto overflow-hidden p-0">
                         <UCalendar
-                          v-model="dateRange as any"
+                          :model-value="dateRange"
                           range
                           locale="es"
                           :number-of-months="2"
                           :disable-days-outside-current-view="true"
+                          @update:model-value="onDateRangeUpdate"
                         />
                       </div>
                     </template>
