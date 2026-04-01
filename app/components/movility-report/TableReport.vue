@@ -15,7 +15,7 @@
               v-model="filtroUsuario" 
               type="text" 
               placeholder="Buscar por DNI, código, apellido o nombre..." 
-              class="w-full h-10 pl-10 pr-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-950 focus:border-primary-300 dark:focus:border-primary-700 focus:ring-2 focus:ring-primary-500/25 transition-colors text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500" 
+              class="w-full h-10 pl-10 pr-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-950 focus:border-[#2d5fc0] dark:focus:border-[#5d7fdb] focus:ring-2 focus:ring-[#2d5fc0]/20 transition-colors text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
 
@@ -26,10 +26,10 @@
             <UPopover>
               <button
                 type="button"
-                class="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors inline-flex items-center gap-2"
+                class="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-[#eef4ff] dark:hover:bg-[#13203a] transition-colors inline-flex items-center gap-2"
                 title="Seleccionar mes (máximo 30 días)"
               >
-                <UIcon name="i-lucide-calendar-range" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <UIcon name="i-lucide-calendar-range" class="h-4 w-4 text-[#2d5fc0] dark:text-[#9cb7f5]" />
                 <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono tabular-nums">
                   {{ periodDisplay }}
                 </span>
@@ -70,7 +70,7 @@
           <div class="flex items-center gap-2 ms-auto">
             <button 
               @click="aplicarFiltros" 
-              class="h-10 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white px-4 rounded-lg transition-colors flex items-center gap-2 font-semibold text-sm shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950"
+              class="h-10 bg-[#2d5fc0] hover:bg-[#244fa4] active:bg-[#1f448f] text-white px-4 rounded-lg transition-colors flex items-center gap-2 font-semibold text-sm shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d5fc0]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950"
             >
               <span>Aplicar</span>
             </button>
@@ -78,34 +78,77 @@
             <button 
               @click="descargarExcel" 
               :disabled="isExporting"
-              class="h-10 px-4 rounded-lg transition-colors inline-flex items-center gap-2 font-semibold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950 border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white disabled:opacity-60 disabled:pointer-events-none"
-              :title="isExporting ? 'Exportando…' : 'Exportar Excel'"
+              class="h-10 min-w-[176px] px-4 rounded-lg transition-colors inline-flex items-center justify-center gap-2 font-semibold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d5fc0]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950 border border-[#2d5fc0]/20 bg-white text-[#2d5fc0] shadow-sm hover:bg-[#eef4ff] active:bg-[#dfe9ff] disabled:opacity-60 disabled:pointer-events-none dark:bg-gray-950 dark:text-[#9cb7f5] dark:border-[#2d5fc0]/30 dark:hover:bg-[#13203a]"
+              :title="isExporting ? 'Descargando reporte...' : 'Descargar reporte'"
+              :aria-busy="isExporting"
             >
-              <UIcon
-                :name="isExporting ? 'i-lucide-loader-2' : 'i-lucide-file-spreadsheet'"
-                class="h-4 w-4"
-                :class="isExporting ? 'animate-spin' : ''"
-              />
-              <span class="hidden sm:inline">{{ isExporting ? 'Exportando…' : 'Excel' }}</span>
+              <template v-if="isExporting">
+                <USkeleton class="h-4 w-16 rounded-md bg-current/15 dark:bg-white/15" />
+                <span>Descargando...</span>
+              </template>
+              <template v-else>
+                <UIcon name="i-lucide-download" class="h-4 w-4 shrink-0" />
+                <span>Descargar reporte</span>
+              </template>
             </button>
           </div>
         </div>
       </div>
 
       <!-- ESTADO DE CARGA -->
-      <div v-if="isLoading" class="flex flex-col items-center justify-center h-[750px]">
-        <svg class="animate-spin h-10 w-10 text-gray-900 dark:text-gray-100 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p class="text-gray-600 dark:text-gray-400 font-medium text-sm">Cargando reporte...</p>
+      <div v-if="isLoading" class="h-[750px] overflow-hidden">
+        <div class="h-full overflow-hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+          <div class="sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 px-4 py-3 backdrop-blur">
+            <div class="flex flex-wrap items-center gap-3">
+              <USkeleton class="h-4 w-56 rounded-md" />
+              <USkeleton class="h-4 w-28 rounded-full" />
+              <USkeleton class="h-4 w-28 rounded-full" />
+              <div class="ml-auto flex items-center gap-2">
+                <USkeleton class="h-9 w-28 rounded-lg" />
+                <USkeleton class="h-9 w-28 rounded-lg" />
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+                    <th v-for="i in 14" :key="i" class="px-3 py-3">
+                      <USkeleton class="h-3 w-full rounded-md" />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in 7" :key="row" class="border-b border-gray-100 dark:border-gray-800/80">
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-8 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-28 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-24 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-20 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-24 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-20 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-10 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-10 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-10 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-10 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-10 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-10 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-24 rounded-md" /></td>
+                    <td class="px-3 py-3"><USkeleton class="h-4 w-20 rounded-md" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- TABLA -->
       <div v-else class="overflow-x-auto overflow-y-auto h-[750px]">
         <table class="w-full text-sm">
           <thead>
-            <tr class="sticky top-0 z-10 bg-primary-600 text-white border-b border-primary-700/40">
+            <tr class="sticky top-0 z-10 bg-[#2d5fc0] text-white border-b border-[#244fa4]/40">
               <th class="px-3 py-3 text-center text-xs font-semibold w-12">
                 <button type="button" class="inline-flex items-center gap-1 w-full justify-center" @click="toggleSort('numero')">
                   N° <UIcon :name="sortIcon('numero')" class="w-3 h-3 opacity-90" />
@@ -177,14 +220,14 @@
             <tr 
               v-for="(emp, idx) in datosOrdenados" 
               :key="emp.employee.id"
-              class="transition-colors odd:bg-white even:bg-gray-50/40 hover:bg-primary-50/40 dark:odd:bg-gray-950 dark:even:bg-gray-900/25 dark:hover:bg-primary-900/10"
+              class="transition-colors odd:bg-white even:bg-gray-50/40 hover:bg-[#eef4ff]/70 dark:odd:bg-gray-950 dark:even:bg-gray-900/25 dark:hover:bg-[#13203a]"
             >
               <td class="px-3 py-3 text-center text-gray-900 dark:text-gray-100 text-xs font-semibold font-mono tabular-nums w-12">
                 {{ sortKey && sortDir === 'desc' ? (datosOrdenados.length - idx) : (idx + 1) }}
               </td>
               <td class="px-3 py-3 min-w-[220px]">
                 <div class="min-w-0 flex flex-col gap-0.5">
-                  <div class="min-w-0 truncate font-semibold text-primary-700 dark:text-primary-300 leading-tight">
+                  <div class="min-w-0 truncate font-semibold text-[#2d5fc0] dark:text-[#9cb7f5] leading-tight">
                     {{ emp.employee.last_name }}
                   </div>
                   <div class="min-w-0 truncate text-gray-900 dark:text-gray-100 leading-tight">
@@ -199,7 +242,7 @@
                 {{ formatDateLatam(emp.employee.create_time) }}
               </td>
               <td class="px-3 py-3 text-right">
-                <span class="inline-flex items-center justify-end bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 px-2.5 py-1 rounded-lg text-xs font-semibold border border-sky-200/70 dark:border-sky-800/60 font-mono tabular-nums">
+                <span class="inline-flex items-center justify-end bg-[#eef4ff] dark:bg-[#13203a] text-[#2d5fc0] dark:text-[#9cb7f5] px-2.5 py-1 rounded-lg text-xs font-semibold border border-[#c9d9ff] dark:border-[#29406f] font-mono tabular-nums">
                   S/ {{ emp.summary.mobility_amount ? Number(emp.summary.mobility_amount).toFixed(2) : '0.00' }}
                 </span>
               </td>
@@ -223,7 +266,7 @@
                 </span>
               </td>
               <td class="px-3 py-3 text-center">
-                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-blue-200/70 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-semibold font-mono tabular-nums">
+                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-[#c9d9ff] dark:border-[#29406f] bg-[#eef4ff] dark:bg-[#13203a] text-[#2d5fc0] dark:text-[#9cb7f5] text-xs font-semibold font-mono tabular-nums">
                   {{ emp.summary.medical_leave_days ?? 0 }}
                 </span>
               </td>
@@ -254,7 +297,7 @@
                 <div class="flex items-center justify-center gap-1.5">
                   <button
                     @click="abrirRegistroConcepto(emp)"
-                    class="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                    class="p-2 text-[#2d5fc0] dark:text-[#9cb7f5] hover:bg-[#eef4ff] dark:hover:bg-[#13203a] rounded-lg transition-colors"
                     title="Registrar concepto"
                   >
                     <UIcon name="i-lucide-clipboard-plus" class="h-4 w-4" />

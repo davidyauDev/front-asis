@@ -103,7 +103,7 @@ const submit = () => {
     <template #title>
       <div class="flex items-center gap-3">
         <div
-          class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-100 text-primary-700"
+          class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#eef4ff] text-[#2d5fc0]"
         >
           <span class="i-lucide-plus"></span>
         </div>
@@ -123,7 +123,7 @@ const submit = () => {
           v-if="isLoading"
           class="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm"
         >
-          <div class="h-8 w-8 rounded-full border-2 border-primary-500 border-t-transparent animate-spin"></div>
+          <div class="h-8 w-8 rounded-full border-2 border-[#2d5fc0] border-t-transparent animate-spin"></div>
           <p class="mt-3 text-xs font-medium text-gray-600 dark:text-gray-400">
             Registrando concepto...
           </p>
@@ -192,7 +192,7 @@ const submit = () => {
             <label
               v-for="opt in employeeConceptOptions"
               :key="opt.id"
-              class="flex items-start gap-3 rounded-md border border-gray-200 dark:border-gray-800 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
+              class="flex items-start gap-3 rounded-md border border-gray-200 dark:border-gray-800 px-3 py-2 hover:bg-[#eef4ff] dark:hover:bg-[#13203a] cursor-pointer"
               :class="{ 'opacity-60 pointer-events-none': isLoading }"
             >
               <input
@@ -245,7 +245,7 @@ const submit = () => {
           <button
             type="submit"
             :disabled="!canSubmit || isLoading"
-            class="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            class="rounded-md bg-[#2d5fc0] px-4 py-2 text-sm font-semibold text-white hover:bg-[#244fa4] disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Registrar
           </button>

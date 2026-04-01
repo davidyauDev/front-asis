@@ -7,9 +7,9 @@
     <template #content>
       <div class="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <!-- Header -->
-        <div class="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/40">
+        <div class="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-[#eef4ff]/70 dark:bg-[#13203a]/60">
           <div class="min-w-0 flex-1">
-            <div class="text-xs text-gray-600 dark:text-gray-300">
+            <div class="text-xs text-[#39569a] dark:text-[#b8c7f7]">
               <span class="font-mono font-semibold">{{ employee.emp_code }}</span>
               <span class="mx-1">·</span>
               <span class="font-semibold">{{ fullName }}</span>
@@ -17,7 +17,7 @@
               <span class="font-mono">{{ year }}</span>
             </div>
 
-            <div class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <div class="mt-2 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
               Comentario mensual
             </div>
           </div>
@@ -27,7 +27,7 @@
               v-model="month"
               :items="monthItems"
               size="xs"
-              :ui="{ base: 'min-w-28 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800' }"
+              :ui="{ base: 'min-w-28 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus-visible:border-[#2d5fc0]' }"
             />
 
             <UButton
@@ -80,8 +80,8 @@
         </div>
 
         <!-- Footer (formato rápido) -->
-        <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/40">
-          <div class="flex items-center gap-3 text-gray-800 dark:text-gray-200">
+        <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-800 bg-[#eef4ff]/70 dark:bg-[#13203a]/60">
+          <div class="flex items-center gap-3 text-[#39569a] dark:text-[#b8c7f7]">
             <button type="button" class="text-sm font-bold underline-offset-2 hover:underline" title="Negrita" @click="toggleBold()">
               B
             </button>
