@@ -46,7 +46,7 @@ const trackingModalOpen = shallowRef(false)
 const selectedTrackingId = shallowRef<string | null>(null)
 const requestSearch = shallowRef('')
 const requestDate = shallowRef('')
-const requestPerPage = shallowRef(5)
+const requestPerPage = shallowRef(20)
 const requestPage = shallowRef(1)
 const catalogSearch = shallowRef('')
 const requestJustification = shallowRef('')
@@ -211,6 +211,86 @@ const requests = ref<ReabastecimientoRequest[]>([
     status: 'pending',
     justification: 'Solicitud adicional por cambio de turno',
     createdAt: '2025-11-24 13:08:09',
+  },
+  {
+    id: 'CECH_REA_0000029',
+    requester: 'Rosa Elena Huamani Paredes',
+    area: 'RR.HH.',
+    status: 'processing',
+    justification: 'Reposicion de implementos por cierre mensual',
+    createdAt: '2025-11-24 13:12:31',
+  },
+  {
+    id: 'CECH_REA_0000030',
+    requester: 'Daniel Alberto Velez Rojas',
+    area: 'RR.HH.',
+    status: 'closed',
+    justification: 'Aprobado para entrega de almacén',
+    createdAt: '2025-11-24 13:19:05',
+  },
+  {
+    id: 'CECH_REA_0000031',
+    requester: 'Fiorella Milagros Torres Prado',
+    area: 'RR.HH.',
+    status: 'pending',
+    justification: 'Pedido de EPP para nuevo ingreso',
+    createdAt: '2025-11-24 13:24:48',
+  },
+  {
+    id: 'CECH_REA_0000032',
+    requester: 'Kevin Joel Salazar Luna',
+    area: 'RR.HH.',
+    status: 'processing',
+    justification: 'Pedido en revisión por compras',
+    createdAt: '2025-11-24 13:29:12',
+  },
+  {
+    id: 'CECH_REA_0000033',
+    requester: 'Milagros Andrea Cueva Torres',
+    area: 'RR.HH.',
+    status: 'closed',
+    justification: 'Solicitud cerrada y entregada',
+    createdAt: '2025-11-24 13:35:40',
+  },
+  {
+    id: 'CECH_REA_0000034',
+    requester: 'Renzo Martin Diaz Salas',
+    area: 'RR.HH.',
+    status: 'pending',
+    justification: 'Reposicion por stock minimo',
+    createdAt: '2025-11-24 13:41:07',
+  },
+  {
+    id: 'CECH_REA_0000035',
+    requester: 'Jazmin Alejandra Romero Leon',
+    area: 'RR.HH.',
+    status: 'processing',
+    justification: 'Validación de inventario en curso',
+    createdAt: '2025-11-24 13:46:22',
+  },
+  {
+    id: 'CECH_REA_0000036',
+    requester: 'Luis Fernando Montes Velarde',
+    area: 'RR.HH.',
+    status: 'closed',
+    justification: 'Aprobado y enviado a despacho',
+    createdAt: '2025-11-24 13:52:58',
+  },
+  {
+    id: 'CECH_REA_0000037',
+    requester: 'Camila Sofia Pinedo Vargas',
+    area: 'RR.HH.',
+    status: 'pending',
+    justification: 'Pedido programado para mañana',
+    createdAt: '2025-11-24 13:58:14',
+  },
+  {
+    id: 'CECH_REA_0000038',
+    requester: 'Oscar Jesus Medina Castillo',
+    area: 'RR.HH.',
+    status: 'processing',
+    justification: 'Pendiente de autorización final',
+    createdAt: '2025-11-24 14:03:41',
   },
 ])
 
@@ -491,9 +571,19 @@ watch([requestSearch, requestDate, requestPerPage, activeTab], () => {
 </script>
 
 <template>
-  <div class="p-2">
+  <div class="">
     <UCard class="overflow-hidden border-gray-200/70 bg-white/85 shadow-sm dark:border-gray-800/70 dark:bg-gray-950/85" :ui="{ body: 'p-0' }">
       <div class="space-y-5 p-5">
+        <div class="">
+          
+          <h1 class="text-xl font-bold text-gray-950 dark:text-white">
+            Solicitar Reabastecimiento
+          </h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Seguimiento de solicitudes, aprobaciones y trazabilidad del pedido.
+          </p>
+        </div>
+
         <div class="flex flex-col gap-3 md:flex-row md:items-end">
           <AppTabs
             v-model="activeTab"
