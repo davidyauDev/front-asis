@@ -55,6 +55,26 @@ const managementLinks = [{
   onSelect: () => { open.value = false }
 }]
 
+// Inventario
+const inventoryLinks = [{
+  label: 'Inventario',
+  icon: 'i-lucide-boxes',
+  defaultOpen: true,
+  children: [{
+    label: 'Gestion de Inventario',
+    icon: 'i-lucide-clipboard-list',
+    to: '/rrhh/inventario/gestion',
+    exact: true,
+    onSelect: () => { open.value = false }
+  }, {
+    label: 'Solicitar Reabastecimiento',
+    icon: 'i-lucide-package-plus',
+    to: '/rrhh/inventario/solicitar-reabastecimiento',
+    exact: true,
+    onSelect: () => { open.value = false }
+  }]
+}]
+
 // Reportes
 const reportLinks = [{
   label: 'Incidencias',
@@ -92,7 +112,7 @@ const systemLinks = [{
   onSelect: () => { open.value = false }
 }]
 
-const links = [dashboardLinks, managementLinks, reportLinks, systemLinks] satisfies NavigationMenuItem[][]
+const links = [dashboardLinks, managementLinks, inventoryLinks, reportLinks, systemLinks] satisfies NavigationMenuItem[][]
 
 const groups = computed(() => [{
   id: 'links',
@@ -162,13 +182,27 @@ onMounted(async () => {
 
         <UDivider class="my-2" />
 
+        <!-- Inventario -->
+        <div v-if="!collapsed" class="px-3 mb-1">
+          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Inventario</p>
+        </div>
+        <UNavigationMenu
+          :collapsed="collapsed"
+          :items="links[2]"
+          orientation="vertical"
+          tooltip
+          popover
+        />
+
+        <UDivider class="my-2" />
+
         <!-- Reportes -->
         <div v-if="!collapsed" class="px-3 mb-1">
           <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Reportes</p>
         </div>
         <UNavigationMenu
           :collapsed="collapsed"
-          :items="links[2]"
+          :items="links[3]"
           orientation="vertical"
           tooltip
           popover
@@ -182,7 +216,7 @@ onMounted(async () => {
         <!-- Sistema -->
         <UNavigationMenu
           :collapsed="collapsed"
-          :items="links[3]"
+          :items="links[4]"
           orientation="vertical"
           tooltip
           popover
