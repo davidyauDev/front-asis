@@ -6,15 +6,31 @@ useHead({
 })
 
 type InventoryItem = {
-  id: number
-  code: string
-  description: string
-  brand: string
-  models: string
-  category: string
-  type: 'PAR' | 'UNIDAD'
+  idProducto: number | string
+  codigo: string
+  descripcion: string
+  categoria: string
+  tipo: string
   stock: number
+  estado: string
   area: string
+}
+
+type InventoryApiItem = {
+  id_producto: number | string
+  codigo: string
+  descripcion: string
+  categoria: string
+  tipo: string
+  stock: number
+  estado: string
+  area: string
+}
+
+type InventoryApiResponse = {
+  success: boolean
+  data: InventoryApiItem[] | null
+  message: string
 }
 
 type ProductOption = {
@@ -22,21 +38,18 @@ type ProductOption = {
   value: string
   code: string
   category: string
-  type: InventoryItem['type']
+  type: InventoryItem['tipo']
   area: string
 }
 
 const toast = useToast()
-const search = ref('')
-const createModalOpen = ref(false)
-const currentTab = ref('inventario')
-
-const tabItems = [
-  {
-    label: 'Inventario RRHH',
-    value: 'inventario',
-  },
-]
+const config = useRuntimeConfig()
+const authToken = useCookie<string | null>('auth_token', { sameSite: 'lax' })
+const search = shallowRef('')
+const createModalOpen = shallowRef(false)
+const inventoryItems = ref<InventoryItem[]>([])
+const inventoryLoading = shallowRef(false)
+const inventoryError = shallowRef<string | null>(null)
 
 const productOptions: ProductOption[] = [
   { label: 'Guante de Seguridad', value: 'e01', code: 'E01', category: 'EPP', type: 'PAR', area: 'RR.HH.' },
@@ -63,21 +76,45 @@ const productSelectItems = computed(() =>
   productOptions.map(({ label, value }) => ({ label, value }))
 )
 
-const inventoryItems = ref<InventoryItem[]>([
-  { id: 1, code: 'E01', description: 'Guante de Seguridad', brand: '', models: '', category: 'EPP', type: 'PAR', stock: 4, area: 'RR.HH.' },
-  { id: 2, code: 'E02', description: 'Tapon de seguridad', brand: '', models: '', category: 'EPP', type: 'PAR', stock: 3, area: 'RR.HH.' },
-  { id: 3, code: 'E03', description: 'Lente de Seguridad', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 1, area: 'RR.HH.' },
-  { id: 4, code: 'E04', description: 'Respirador de Media Cara 3M', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 3, area: 'RR.HH.' },
-  { id: 5, code: 'E05', description: 'Filtro para Particulas 2091', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 0, area: 'RR.HH.' },
-  { id: 6, code: 'E06', description: 'Botas de seguridad TALLA 39', brand: '', models: '', category: 'EPP', type: 'PAR', stock: 1, area: 'RR.HH.' },
-  { id: 7, code: 'E07', description: 'Bloqueador solar', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 9, area: 'RR.HH.' },
-  { id: 8, code: 'E08', description: 'Mascarilla KN95', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 10, area: 'RR.HH.' },
-  { id: 9, code: 'E09', description: 'Casco de Seguridad', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 1, area: 'RR.HH.' },
-  { id: 10, code: 'E10', description: 'Chaleco reflectivo TALLA XL', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 1, area: 'RR.HH.' },
-  { id: 11, code: 'E11', description: 'Cubrepies Quirurgicos', brand: '', models: '', category: 'EPP', type: 'PAR', stock: 11, area: 'RR.HH.' },
-  { id: 12, code: 'E12', description: 'Gorro quirurgico', brand: '', models: '', category: 'EPP', type: 'UNIDAD', stock: 50, area: 'RR.HH.' },
-  { id: 13, code: 'E13', description: 'Mochila sobre ruedas Stanley FMST514196', brand: '', models: '', category: 'ARTICULOS DE LIMPIEZA', type: 'UNIDAD', stock: 0, area: 'RR.HH.' },
-])
+const loadInventory = async () => {
+  inventoryLoading.value = true
+  inventoryError.value = null
+
+  try {
+    const response = await $fetch<InventoryApiResponse>(`${config.public.apiBaseUrl}/api/inventario`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+      },
+    })
+
+    if (!response.success || !Array.isArray(response.data)) {
+      throw new Error(response.message || 'No se pudo consultar el inventario.')
+    }
+
+    inventoryItems.value = response.data.map(item => ({
+      idProducto: item.id_producto,
+      codigo: item.codigo,
+      descripcion: item.descripcion,
+      categoria: item.categoria,
+      tipo: item.tipo,
+      stock: Number(item.stock) || 0,
+      estado: item.estado,
+      area: item.area,
+    }))
+  } catch (error: any) {
+    console.error('Error cargando inventario:', error)
+    inventoryItems.value = []
+    inventoryError.value = error?.data?.message || error?.message || 'No se pudo consultar el inventario.'
+  } finally {
+    inventoryLoading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadInventory()
+})
 
 const filteredItems = computed(() => {
   const query = search.value.trim().toLowerCase()
@@ -88,12 +125,11 @@ const filteredItems = computed(() => {
 
   return inventoryItems.value.filter((item) => {
     const haystack = [
-      item.code,
-      item.description,
-      item.brand,
-      item.models,
-      item.category,
-      item.type,
+      item.codigo,
+      item.descripcion,
+      item.categoria,
+      item.tipo,
+      item.estado,
       item.area,
       String(item.stock),
     ].join(' ').toLowerCase()
@@ -147,22 +183,10 @@ const submitCreate = () => {
     return
   }
 
-  inventoryItems.value.unshift({
-    id: Math.max(...inventoryItems.value.map(item => item.id), 0) + 1,
-    code: product.code,
-    description: product.label,
-    brand: '',
-    models: '',
-    category: product.category,
-    type: product.type,
-    stock,
-    area: locationDetail,
-  })
-
   toast.add({
-    title: 'Inventario agregado',
-    description: 'El nuevo registro se guardo correctamente.',
-    color: 'success',
+    title: 'Endpoint pendiente',
+    description: 'La lista ya consume /api/inventario. El alta sigue pendiente de conexion.',
+    color: 'warning',
   })
 
   createModalOpen.value = false
@@ -175,146 +199,235 @@ watch(createModalOpen, (isOpen) => {
   }
 })
 
-const rowClass = (item: InventoryItem) => {
-  if (item.stock <= 3) {
-    return 'bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-50/80 dark:hover:bg-rose-950/30'
+const stockTone = (estado: string) => {
+  const normalizedState = estado.trim().toUpperCase()
+
+  if (normalizedState === 'SIN STOCK') {
+    return 'bg-[#e53946] text-white ring-1 ring-[#f6b7bc]'
   }
 
-  if (item.stock <= 10) {
-    return 'bg-amber-50/50 dark:bg-amber-950/15 hover:bg-amber-50/80 dark:hover:bg-amber-950/25'
+  if (normalizedState === 'BAJO') {
+    return 'bg-[#f2cb21] text-[#6a4b00] ring-1 ring-[#f7e08a]'
   }
 
-  return 'bg-white dark:bg-gray-950 hover:bg-slate-50/80 dark:hover:bg-gray-900/60'
+  return 'bg-[#2d5fc0] text-white ring-1 ring-[#b8c9ef]'
 }
 
-const stockTone = (stock: number) => {
-  if (stock <= 3) {
-    return 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/25 dark:text-red-200 dark:ring-red-900/40'
-  }
+const stockLabel = (estado: string) => {
+  const normalizedState = estado.trim().toUpperCase()
 
-  if (stock <= 10) {
-    return 'bg-yellow-100 text-yellow-800 ring-yellow-200 dark:bg-yellow-950/25 dark:text-yellow-200 dark:ring-yellow-900/40'
-  }
-
-  return 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950/25 dark:text-violet-200 dark:ring-violet-900/40'
+  if (normalizedState === 'SIN STOCK') return 'Critico'
+  if (normalizedState === 'BAJO') return 'Bajo'
+  return 'Suficiente'
 }
 
-const stockIcon = (stock: number) => {
-  if (stock <= 3) return 'i-lucide-circle-alert'
-  if (stock <= 10) return 'i-lucide-triangle-alert'
-  return 'i-lucide-arrow-up'
+const stockMeaning = (estado: string) => {
+  const normalizedState = estado.trim().toUpperCase()
+
+  if (normalizedState === 'SIN STOCK') return 'Stock critico: requiere reposicion urgente.'
+  if (normalizedState === 'BAJO') return 'Stock bajo: revisar reposicion pronto.'
+  return 'Stock suficiente: sin alerta inmediata.'
+}
+
+const inventoryActionItems = (item: InventoryItem) => [
+  {
+    label: 'Ver detalle',
+    icon: 'i-lucide-eye',
+    onSelect: () => toast.add({
+      title: 'Detalle disponible',
+      description: `Se abriria el detalle de ${item.codigo}.`,
+    }),
+  },
+  {
+    label: 'Historial',
+    icon: 'i-lucide-history',
+    onSelect: () => toast.add({
+      title: 'Historial disponible',
+      description: `Se abriria el historial de ${item.codigo}.`,
+    }),
+  },
+  {
+    label: 'Ajustar stock',
+    icon: 'i-lucide-rotate-ccw',
+    onSelect: () => toast.add({
+      title: 'Ajuste disponible',
+      description: `Se preparo el ajuste de stock para ${item.codigo}.`,
+    }),
+  },
+  {
+    label: 'Editar',
+    icon: 'i-lucide-edit',
+    onSelect: () => onEdit(item.codigo),
+  },
+]
+
+const onTracking = (codigo: string) => {
+  toast.add({
+    title: 'Historial',
+    description: `Se preparo el historial para ${codigo}.`,
+  })
+}
+
+const onEdit = (codigo: string) => {
+  toast.add({
+    title: 'Edicion',
+    description: `Se preparo la edicion para ${codigo}.`,
+  })
 }
 </script>
 
 <template>
   <div class="space-y-0">
-    <div class="-mb-px ">
-      <div class="inventory-tabs">
-        <AppTabs
-          v-model="currentTab"
-          ariaLabel="Inventario"
-          size="sm"
-          :items="tabItems"
-          list-class="w-fit"
-        />
-      </div>
-    </div>
-
     <UCard class="overflow-hidden border-gray-200/70 bg-white/85 shadow-sm dark:border-gray-800/70 dark:bg-gray-950/85" :ui="{ body: 'p-0' }">
-      <div class="grid gap-3 border-b border-gray-200 pl-0 pr-4 py-3 dark:border-gray-800 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-        <div class="flex min-w-0 items-center">
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            class="w-full"
-            size="md"
-            placeholder="Buscar por codigo, descripcion o categoria..."
-          />
+      <div class="space-y-5">
+        <div class="space-y-1">
+          <h1 class="text-xl font-bold text-gray-950 dark:text-white">
+            Gestion de inventario
+          </h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Control de stock, registro de items y seguimiento de activos.
+          </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-          <UButton
-            variant="solid"
-            size="md"
-            class="min-w-[200px] justify-center whitespace-nowrap border border-[#2d5fc0] bg-gradient-to-r from-[#2d5fc0] to-[#4f76d9] px-5 font-semibold text-white shadow-[0_10px_24px_rgba(45,95,192,0.18)] transition-all hover:from-[#244ea4] hover:to-[#4068d0] active:from-[#1d428d] active:to-[#355bc0] disabled:shadow-none"
-            @click="exportExcel"
-          >
-            <template #leading>
-              <UIcon name="i-lucide-file-spreadsheet" class="h-4 w-4" />
-            </template>
-            <span class="tracking-wide">Descargar Excel</span>
-          </UButton>
+        <div class="grid gap-3 border-b border-gray-200 pb-4 dark:border-gray-800 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+          <div class="flex min-w-0 items-center">
+            <UInput
+              v-model="search"
+              icon="i-lucide-search"
+              class="w-full"
+              size="md"
+              placeholder="Buscar por codigo, descripcion o categoria..."
+            />
+          </div>
 
-          <UButton
-            color="primary"
-            icon="i-lucide-plus"
-            class="min-w-[220px] justify-center whitespace-nowrap rounded-lg bg-gradient-to-r from-[#4f76d9] to-[#2d5fc0] px-5 font-semibold shadow-[0_10px_24px_rgba(45,95,192,0.18)] transition-all hover:from-[#4068d0] hover:to-[#244ea4] active:from-[#355bc0] active:to-[#1d428d]"
-            @click="createModalOpen = true"
-          >
-            Nuevo registro de inventario
-          </UButton>
+          <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+            <UButton
+              variant="solid"
+              size="md"
+              class="min-w-[200px] justify-center whitespace-nowrap border border-[#2d5fc0] bg-[#2d5fc0] px-5 font-semibold text-white shadow-[0_10px_24px_rgba(45,95,192,0.18)] transition-all hover:bg-[#244ea4] active:bg-[#1d428d] disabled:shadow-none"
+              @click="exportExcel"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-file-spreadsheet" class="h-4 w-4" />
+              </template>
+              <span class="tracking-wide">Descargar Excel</span>
+            </UButton>
+
+            <UButton
+              color="primary"
+              icon="i-lucide-plus"
+              class="min-w-[220px] justify-center whitespace-nowrap rounded-lg bg-[#2d5fc0] px-5 font-semibold text-white shadow-[0_10px_24px_rgba(45,95,192,0.18)] transition-all hover:bg-[#244ea4] active:bg-[#1d428d]"
+              @click="createModalOpen = true"
+            >
+              Agregar
+            </UButton>
+          </div>
         </div>
       </div>
 
-      <div class="overflow-x-auto overflow-y-auto max-h-[68vh]">
-        <table class="min-w-full table-fixed border-separate border-spacing-0">
-          <thead class="sticky top-0 z-10 border-b border-gray-200 bg-gradient-to-r from-[#2d5fc0] to-[#4f76d9] text-white dark:border-gray-800">
-            <tr>
-              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/95">Codigo</th>
-              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/95">Descripcion</th>
-              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/95">Marca</th>
-              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/95">Modelos</th>
-              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/95">Categoria</th>
-              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/95">Tipo</th>
-              <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-white/95">Stock</th>
-              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/95">Area</th>
-              <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-white/95">Acciones</th>
-            </tr>
-          </thead>
+      <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+        <div class="overflow-x-auto overflow-y-auto max-h-[68vh]">
+          <table class="min-w-full border-separate border-spacing-0">
+            <thead class="sticky top-0 z-10 bg-[#2d5fc0] text-white">
+              <tr>
+                <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Codigo</th>
+                <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
+                <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Categoria</th>
+                <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Tipo</th>
+                <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Stock</th>
+                <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Area</th>
+                <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
 
-          <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-            <tr
-              v-for="item in filteredItems"
-              :key="item.id"
-              :class="['transition-colors', rowClass(item)]"
-            >
-              <td class="px-4 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ item.code }}</td>
-              <td class="px-4 py-4 text-sm text-gray-700 dark:text-gray-200">{{ item.description }}</td>
-              <td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ item.brand || '-' }}</td>
-              <td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ item.models || '-' }}</td>
-              <td class="px-4 py-4 text-sm text-gray-700 dark:text-gray-200">{{ item.category }}</td>
-              <td class="px-4 py-4 text-sm text-gray-700 dark:text-gray-200">{{ item.type }}</td>
-              <td class="px-4 py-4 text-center">
-                <span :class="['inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold ring-1', stockTone(item.stock)]">
-                  <UIcon :name="stockIcon(item.stock)" class="h-4 w-4" />
-                  {{ item.stock }}
-                </span>
-              </td>
-              <td class="px-4 py-4 text-sm text-gray-700 dark:text-gray-200">{{ item.area }}</td>
-              <td class="px-4 py-4 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <UButton
-                    color="primary"
-                    variant="soft"
-                    icon="i-lucide-map-pinned"
-                    class="rounded-full"
-                    size="sm"
-                    aria-label="Tracking"
-                    title="Tracking"
-                  />
+            <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+              <tr v-if="inventoryLoading">
+                <td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Cargando inventario...
+                </td>
+              </tr>
 
-                  <UButton color="warning" variant="soft" icon="i-lucide-pencil" class="rounded-full" size="sm" aria-label="Editar" title="Editar" />
-                </div>
-              </td>
-            </tr>
+              <tr v-else-if="inventoryError">
+                <td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <div class="space-y-2">
+                    <p>{{ inventoryError }}</p>
+                    <UButton color="primary" variant="soft" size="xs" @click="loadInventory">
+                      Reintentar
+                    </UButton>
+                  </div>
+                </td>
+              </tr>
 
-            <tr v-if="!filteredItems.length">
-              <td colspan="9" class="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-                No hay resultados para el filtro actual
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <template v-else>
+                <tr
+                  v-for="item in filteredItems"
+                  :key="item.idProducto"
+                  class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
+                >
+                  <td class="px-5 py-3 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
+                    {{ item.codigo }}
+                  </td>
+                  <td class="px-5 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    {{ item.descripcion }}
+                  </td>
+                  <td class="px-5 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    {{ item.categoria }}
+                  </td>
+                  <td class="px-5 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    {{ item.tipo }}
+                  </td>
+                  <td class="px-5 py-3 text-center">
+                    <UTooltip :text="stockMeaning(item.estado)">
+                      <span :class="['inline-flex min-w-24 items-center justify-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold', stockTone(item.estado)]">
+                        <span class="h-1.5 w-1.5 rounded-full bg-white/80"></span>
+                        {{ stockLabel(item.estado) }} | {{ item.stock }}
+                      </span>
+                    </UTooltip>
+                  </td>
+                  <td class="px-5 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    {{ item.area }}
+                  </td>
+                  <td class="px-5 py-3 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      <UTooltip text="Ver historial">
+                        <UButton
+                          color="primary"
+                          variant="soft"
+                          icon="i-lucide-history"
+                          class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                          size="xs"
+                          aria-label="Historial"
+                          title="Historial"
+                          @click="onTracking(item.codigo)"
+                        />
+                      </UTooltip>
+
+                      <UTooltip text="Mas acciones">
+                        <UDropdownMenu :items="inventoryActionItems(item)" :content="{ align: 'end' }">
+                          <UButton
+                            color="warning"
+                            variant="soft"
+                            icon="i-lucide-ellipsis-vertical"
+                            class="rounded-full bg-[#fff4d6] text-[#a16207] ring-1 ring-[#f7d27a] hover:bg-[#ffecb2]"
+                            size="xs"
+                            aria-label="Acciones"
+                            title="Acciones"
+                          />
+                        </UDropdownMenu>
+                      </UTooltip>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr v-if="!filteredItems.length">
+                  <td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No hay resultados para el filtro actual
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="border-t border-gray-200 px-4 py-3 dark:border-gray-800">
@@ -403,35 +516,3 @@ const stockIcon = (stock: number) => {
     </template>
   </UModal>
 </template>
-
-<style scoped>
-.inventory-tabs :deep([role='tablist']) {
-  border-bottom-color: #2d5fc0;
-}
-
-.inventory-tabs :deep([role='tab']) {
-  min-width: 170px;
-}
-
-.inventory-tabs :deep([role='tab'][aria-selected='true']) {
-  background: linear-gradient(90deg, #2d5fc0 0%, #4f76d9 100%);
-  border-color: #2d5fc0;
-  color: #ffffff;
-  box-shadow: 0 8px 18px rgba(45, 95, 192, 0.18);
-}
-
-.inventory-tabs :deep([role='tab'][aria-selected='false']) {
-  background: #eff5ff;
-  border-color: #cddcf8;
-  color: #4b6ca8;
-}
-
-.inventory-tabs :deep([role='tab'][aria-selected='false']:hover) {
-  background: #e3edff;
-  color: #32589e;
-}
-
-.inventory-tabs :deep([role='tab'] + [role='tab']) {
-  margin-left: -1px;
-}
-</style>
