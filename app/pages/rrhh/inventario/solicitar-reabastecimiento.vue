@@ -74,6 +74,43 @@ type ReabastecimientoRequestDetailResponse = {
   message: string
 }
 
+type UpdateReabastecimientoDetailResponse = {
+  success: boolean
+  data: {
+    id_detalle_reb: number
+    id_solicitud_reb: number
+    id_producto: number
+    cantidad_solicitada: number
+  } | null
+  message: string
+}
+
+type DeleteReabastecimientoDetailResponse = {
+  success: boolean
+  data: {
+    id_detalle_reb: number
+    id_solicitud_reb: number
+  } | null
+  message: string
+}
+
+type CreateReabastecimientoDetailResponse = {
+  success: boolean
+  data: {
+    id_detalle_reb: number
+    id_solicitud_reb: number
+    id_producto: number
+    cantidad_solicitada: number
+  } | null
+  message: string
+}
+
+type CreateReabastecimientoDetailPayload = {
+  id_solicitud_reb: number
+  id_producto: number
+  cantidad_solicitada: number
+}
+
 type CatalogItem = {
   idProducto: number | string
   code: string
@@ -113,6 +150,76 @@ type AttachmentRow = {
   previewUrl: string | null
 }
 
+type DetailTrackingHistoryItem = {
+  id_flujo: number
+  responsable: string
+  comentarios: string
+  adjuntos: string
+  fecha: string
+}
+
+type ReabastecimientoFileLogStaff = {
+  staff_id: number
+  dept_id: number
+  role_id: number
+  username: string
+  firstname: string
+  lastname: string
+  full_name: string
+}
+
+type ReabastecimientoFileLogItem = {
+  id_log_reb: number
+  id_solicitud_reb: number
+  id_usuario_comenta: number
+  comentario: string
+  archivo_ruta: string
+  archivo_url: string
+  archivo_nombre_original: string
+  staff: ReabastecimientoFileLogStaff
+  fecha_creacion: string
+}
+
+type ReabastecimientoFileListResponse = {
+  success: boolean
+  data: {
+    data: ReabastecimientoFileLogItem[]
+    meta: {
+      pagination: {
+        current_page: number
+        per_page: number
+        total: number
+        last_page: number
+      }
+    }
+  } | null
+  message: string
+}
+
+type ReabastecimientoFileUploadResponse = {
+  success: boolean
+  data: ReabastecimientoFileLogItem | null
+  message: string
+}
+
+type ReabastecimientoFileDeleteResponse = {
+  success: boolean
+  data: {
+    id_log_reb: number
+    id_solicitud_reb: number
+  } | null
+  message: string
+}
+
+type DetailProductRow = {
+  id_detalle_reb: number | string
+  id_producto?: number | string
+  codigo?: string
+  descripcion: string
+  cantidad_solicitada: number
+  stock?: number
+}
+
 const activeTab = shallowRef<ReabastecimientoTab>('pendientes')
 const createModalOpen = shallowRef(false)
 const requestSearch = shallowRef('')
@@ -142,9 +249,75 @@ const requestDetailError = shallowRef<string | null>(null)
 const requestDetailData = ref<ReabastecimientoRequestDetailResponse['data']>(null)
 const detailModalOpen = shallowRef(false)
 const selectedRequestSummary = shallowRef<ReabastecimientoRequest | null>(null)
+const currentDetailRequestId = shallowRef<number | null>(null)
+const detailPanelTab = shallowRef<'seguimiento' | 'historial'>('seguimiento')
 const requestJustification = shallowRef('')
 const showJustification = shallowRef(false)
 const attachmentRowSeed = shallowRef(1)
+const detailTrackingComment = shallowRef('')
+const detailTrackingFile = shallowRef<File | null>(null)
+const detailTrackingFileInput = ref<HTMLInputElement | null>(null)
+const detailTrackingHistory = ref<DetailTrackingHistoryItem[]>([])
+const detailTrackingHistoryByRequest = ref<Record<number, DetailTrackingHistoryItem[]>>({})
+const detailTrackingFlowSeed = shallowRef(1)
+const detailTrackingPreviewRows: DetailTrackingHistoryItem[] = [
+  {
+    id_flujo: 34,
+    responsable: 'Emma Soledad Julian Iturbe (RR.HH.)',
+    comentarios: 'Solicitud creada y pendiente de aprobacion por Compras.',
+    adjuntos: '-',
+    fecha: '2025-11-24 11:17:51',
+  },
+  {
+    id_flujo: 83,
+    responsable: 'Emma Soledad Julian Iturbe (RR.HH.)',
+    comentarios: 'test',
+    adjuntos: '-',
+    fecha: '2026-04-08 15:27:08',
+  },
+  {
+    id_flujo: 84,
+    responsable: 'Emma Soledad Julian Iturbe (RR.HH.)',
+    comentarios: 'test',
+    adjuntos: '-',
+    fecha: '2026-04-08 15:33:49',
+  },
+]
+const detailTrackingRows = computed(() => detailTrackingHistory.value.length ? detailTrackingHistory.value : detailTrackingPreviewRows)
+const detailFilesItems = ref<ReabastecimientoFileLogItem[]>([])
+const detailFilesLoading = shallowRef(false)
+const detailFilesError = shallowRef<string | null>(null)
+const detailFilesSearch = shallowRef('')
+const detailFilesPage = shallowRef(1)
+const detailFilesPerPage = shallowRef(5)
+const detailFilesPagination = ref({
+  currentPage: 1,
+  perPage: 5,
+  total: 0,
+  lastPage: 1,
+})
+const detailFilesUploadOpen = shallowRef(false)
+const detailFilesUploadFile = shallowRef<File | null>(null)
+const detailFilesUploadComment = shallowRef('')
+const detailFilesUploadFileInput = ref<HTMLInputElement | null>(null)
+const detailFilesUploadSubmitting = shallowRef(false)
+const detailFilesDeleteConfirmOpen = shallowRef(false)
+const detailFilesDeleteTarget = shallowRef<ReabastecimientoFileLogItem | null>(null)
+const detailFilesDeleteSubmitting = shallowRef(false)
+const detailProductRows = ref<DetailProductRow[]>([])
+const detailProductSelected = shallowRef<number | string | undefined>(undefined)
+const detailProductQuantity = shallowRef(1)
+const detailProductConfirmOpen = shallowRef(false)
+const detailProductPending = shallowRef<CatalogItem | null>(null)
+const detailProductEditingRows = shallowRef<Record<string, boolean>>({})
+const detailProductQuantityBackup = shallowRef<Record<string, number>>({})
+const detailProductEditConfirmOpen = shallowRef(false)
+const detailProductEditTarget = shallowRef<DetailProductRow | null>(null)
+const detailProductDeleteConfirmOpen = shallowRef(false)
+const detailProductDeleteTarget = shallowRef<DetailProductRow | null>(null)
+const detailProductEditSubmitting = shallowRef(false)
+const detailProductDeleteSubmitting = shallowRef(false)
+const detailProductCreateSubmitting = shallowRef(false)
 const requestSubmitting = shallowRef(false)
 
 /* const requests = ref<any[]>([
@@ -448,6 +621,24 @@ const requestShowingEnd = computed(() => {
   return Math.min(requestPagination.value.currentPage * requestPagination.value.perPage, requestPagination.value.total)
 })
 
+const detailFilesPageCount = computed(() => Math.max(1, detailFilesPagination.value.lastPage || 1))
+
+const detailFilesShowingStart = computed(() => {
+  if (!detailFilesPagination.value.total) {
+    return 0
+  }
+
+  return ((detailFilesPagination.value.currentPage - 1) * detailFilesPagination.value.perPage) + 1
+})
+
+const detailFilesShowingEnd = computed(() => {
+  if (!detailFilesPagination.value.total) {
+    return 0
+  }
+
+  return Math.min(detailFilesPagination.value.currentPage * detailFilesPagination.value.perPage, detailFilesPagination.value.total)
+})
+
 const filteredCatalog = computed(() => {
   const query = catalogSearch.value.trim().toLowerCase()
 
@@ -464,6 +655,10 @@ const filteredCatalog = computed(() => {
 })
 
 const visibleCatalog = computed(() => filteredCatalog.value)
+const detailProductOptions = computed(() => modalCatalogItems.value.map(item => ({
+  label: `${item.code} - ${item.name}`,
+  value: item.idProducto,
+})))
 
 type CreateReabastecimientoDetail = {
   id_producto: number
@@ -592,6 +787,413 @@ const stockTone = (stock: number) => {
   if (stock <= 10) return 'bg-[#f2cb21] text-[#6a4b00] ring-1 ring-[#f7e08a]'
   return 'bg-[#2d5fc0] text-white ring-1 ring-[#b8c9ef]'
 }
+
+const syncDetailProductRows = (detalles: ReabastecimientoRequestDetailItem[] = []) => {
+  detailProductRows.value = detalles.map((detalle) => ({
+    id_detalle_reb: detalle.id_detalle_reb,
+    id_producto: detalle.id_producto,
+    codigo: detalle.codigo,
+    descripcion: detalle.descripcion,
+    cantidad_solicitada: detalle.cantidad_solicitada,
+    stock: detalle.stock,
+  }))
+}
+
+const addDetailProductRow = () => {
+  if (detailProductSelected.value == null || detailProductSelected.value === '') {
+    toast.add({
+      title: 'Busca un producto',
+      description: 'Selecciona un producto antes de agregar.',
+      color: 'warning',
+    })
+    return
+  }
+
+  const match = modalCatalogItems.value.find((item) => String(item.idProducto) === String(detailProductSelected.value))
+
+  if (!match) {
+    toast.add({
+      title: 'Sin resultados',
+      description: 'No se encontro el producto seleccionado.',
+      color: 'warning',
+    })
+    return
+  }
+
+  const exists = detailProductRows.value.some((row) => row.codigo === match.code || row.descripcion === match.name)
+
+  if (exists) {
+    toast.add({
+      title: 'Producto duplicado',
+      description: 'Ese producto ya esta agregado en el detalle.',
+      color: 'warning',
+    })
+    return
+  }
+
+  detailProductPending.value = match
+  detailProductConfirmOpen.value = true
+}
+
+const confirmAddDetailProductRow = () => {
+  if (!selectedRequestSummary.value) {
+    toast.add({
+      title: 'Solicitud requerida',
+      description: 'Primero selecciona una solicitud para agregar detalles.',
+      color: 'warning',
+    })
+    return
+  }
+
+  if (!detailProductPending.value) {
+    toast.add({
+      title: 'Producto requerido',
+      description: 'Selecciona un producto antes de confirmar.',
+      color: 'warning',
+    })
+    return
+  }
+
+  const solicitudId = selectedRequestSummary.value.id_solicitud_reb || currentDetailRequestId.value
+
+  if (!solicitudId) {
+    toast.add({
+      title: 'Solicitud requerida',
+      description: 'No se pudo identificar la solicitud seleccionada.',
+      color: 'warning',
+    })
+    return
+  }
+
+  const quantity = Math.max(1, Math.trunc(Number(detailProductQuantity.value) || 1))
+
+  detailProductCreateSubmitting.value = true
+
+  void $fetch<CreateReabastecimientoDetailResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/detalles`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+    },
+    body: {
+      id_solicitud_reb: solicitudId,
+      id_producto: Number(detailProductPending.value.idProducto),
+      cantidad_solicitada: quantity,
+    } satisfies CreateReabastecimientoDetailPayload,
+  }).then(async (response) => {
+    if (!response.success || !response.data) {
+      throw new Error(response.message || 'No se pudo registrar el detalle de reabastecimiento.')
+    }
+
+    toast.add({
+      title: 'Detalle agregado',
+      description: 'El producto fue agregado correctamente a la solicitud.',
+      color: 'success',
+    })
+
+    detailProductConfirmOpen.value = false
+    detailProductPending.value = null
+    detailProductSelected.value = undefined
+    detailProductQuantity.value = 1
+
+    if (selectedRequestSummary.value) {
+      await openRequestDetail(selectedRequestSummary.value)
+    }
+
+    void loadRequests()
+  }).catch((error: any) => {
+    console.error('Error registrando detalle de reabastecimiento:', error)
+    const validationMessages = error?.data?.errors
+      ? Object.values(error.data.errors).flat().filter(Boolean).join(' ')
+      : ''
+
+    toast.add({
+      title: 'No se pudo agregar',
+      description: validationMessages || error?.data?.message || error?.message || 'No se pudo registrar el detalle de reabastecimiento.',
+      color: 'error',
+    })
+  }).finally(() => {
+    detailProductCreateSubmitting.value = false
+  })
+}
+
+const cancelAddDetailProductRow = () => {
+  detailProductConfirmOpen.value = false
+  detailProductPending.value = null
+  detailProductCreateSubmitting.value = false
+}
+
+const removeDetailProductRowLocal = (rowId: number | string) => {
+  detailProductRows.value = detailProductRows.value.filter((row) => row.id_detalle_reb !== rowId)
+}
+
+const isTemporaryDetailProductRow = (rowId: number | string) => String(rowId).startsWith('tmp-')
+
+const syncDetailProductRowQuantity = (rowId: number | string, quantity: number) => {
+  const row = detailProductRows.value.find(item => item.id_detalle_reb === rowId)
+
+  if (!row) {
+    return
+  }
+
+  row.cantidad_solicitada = quantity
+}
+
+const isDetailProductRowEditing = (rowId: number | string) => Boolean(detailProductEditingRows.value[String(rowId)])
+
+const startEditDetailProductRow = (row: DetailProductRow) => {
+  const key = String(row.id_detalle_reb)
+
+  detailProductQuantityBackup.value = {
+    ...detailProductQuantityBackup.value,
+    [key]: Number(row.cantidad_solicitada) || 1,
+  }
+
+  detailProductEditingRows.value = {
+    ...detailProductEditingRows.value,
+    [key]: true,
+  }
+}
+
+const cancelEditDetailProductRow = (row: DetailProductRow) => {
+  const key = String(row.id_detalle_reb)
+  const backup = detailProductQuantityBackup.value[key]
+
+  if (typeof backup === 'number') {
+    row.cantidad_solicitada = backup
+  }
+
+  const nextEditing = { ...detailProductEditingRows.value }
+  const nextBackup = { ...detailProductQuantityBackup.value }
+  delete nextEditing[key]
+  delete nextBackup[key]
+  detailProductEditingRows.value = nextEditing
+  detailProductQuantityBackup.value = nextBackup
+  detailProductEditTarget.value = null
+  detailProductEditConfirmOpen.value = false
+  detailProductEditSubmitting.value = false
+}
+
+const promptConfirmEditDetailProductRow = (row: DetailProductRow) => {
+  const nextQuantity = Math.max(1, Math.trunc(Number(row.cantidad_solicitada) || 1))
+  row.cantidad_solicitada = nextQuantity
+  detailProductEditTarget.value = row
+  detailProductEditConfirmOpen.value = true
+}
+
+const confirmEditDetailProductRow = () => {
+  if (!detailProductEditTarget.value) {
+    detailProductEditConfirmOpen.value = false
+    return
+  }
+
+  const row = detailProductEditTarget.value
+  const key = String(row.id_detalle_reb)
+  const nextQuantity = Math.max(1, Math.trunc(Number(row.cantidad_solicitada) || 1))
+
+  detailProductEditSubmitting.value = true
+
+  const finalizeEdit = (message: string) => {
+    const nextEditing = { ...detailProductEditingRows.value }
+    const nextBackup = { ...detailProductQuantityBackup.value }
+    delete nextEditing[key]
+    delete nextBackup[key]
+    detailProductEditingRows.value = nextEditing
+    detailProductQuantityBackup.value = nextBackup
+    detailProductEditTarget.value = null
+    detailProductEditConfirmOpen.value = false
+    detailProductEditSubmitting.value = false
+
+    toast.add({
+      title: 'Cantidad actualizada',
+      description: message,
+      color: 'success',
+    })
+  }
+
+  if (isTemporaryDetailProductRow(row.id_detalle_reb)) {
+    syncDetailProductRowQuantity(row.id_detalle_reb, nextQuantity)
+    detailProductEditSubmitting.value = false
+    finalizeEdit('El cambio se confirmo correctamente.')
+    return
+  }
+
+  void $fetch<UpdateReabastecimientoDetailResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/detalles/${row.id_detalle_reb}`, {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+    },
+    body: {
+      id_producto: Number(row.id_producto ?? 0),
+      cantidad_solicitada: nextQuantity,
+    },
+  }).then((response) => {
+    if (!response.success || !response.data) {
+      throw new Error(response.message || 'No se pudo actualizar el detalle de reabastecimiento.')
+    }
+
+    syncDetailProductRowQuantity(row.id_detalle_reb, nextQuantity)
+    finalizeEdit('El detalle fue actualizado correctamente.')
+  }).catch((error: any) => {
+    console.error('Error actualizando detalle de reabastecimiento:', error)
+    if (detailProductEditTarget.value) {
+      cancelEditDetailProductRow(detailProductEditTarget.value)
+    } else {
+      detailProductEditSubmitting.value = false
+    }
+    toast.add({
+      title: 'No se pudo actualizar',
+      description: error?.data?.message || error?.message || 'No se pudo actualizar el detalle de reabastecimiento.',
+      color: 'error',
+    })
+  })
+}
+
+const cancelConfirmEditDetailProductRow = () => {
+  if (detailProductEditTarget.value) {
+    cancelEditDetailProductRow(detailProductEditTarget.value)
+    return
+  }
+
+  detailProductEditConfirmOpen.value = false
+}
+
+const promptRemoveDetailProductRow = (row: DetailProductRow) => {
+  detailProductDeleteTarget.value = row
+  detailProductDeleteConfirmOpen.value = true
+}
+
+const cancelRemoveDetailProductRow = () => {
+  detailProductDeleteConfirmOpen.value = false
+  detailProductDeleteTarget.value = null
+}
+
+const confirmRemoveDetailProductRow = () => {
+  if (!detailProductDeleteTarget.value) {
+    detailProductDeleteConfirmOpen.value = false
+    return
+  }
+
+  const row = detailProductDeleteTarget.value
+
+  detailProductDeleteSubmitting.value = true
+
+  const finishDelete = () => {
+    removeDetailProductRowLocal(row.id_detalle_reb)
+    detailProductDeleteConfirmOpen.value = false
+    detailProductDeleteTarget.value = null
+    toast.add({
+      title: 'Detalle eliminado',
+      description: 'El detalle de reabastecimiento fue eliminado correctamente.',
+      color: 'success',
+    })
+  }
+
+  if (isTemporaryDetailProductRow(row.id_detalle_reb)) {
+    finishDelete()
+    detailProductDeleteSubmitting.value = false
+    return
+  }
+
+  void $fetch<DeleteReabastecimientoDetailResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/detalles/${row.id_detalle_reb}`, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+    },
+  }).then((response) => {
+    if (!response.success || !response.data) {
+      throw new Error(response.message || 'No se pudo eliminar el detalle de reabastecimiento.')
+    }
+
+    finishDelete()
+  }).catch((error: any) => {
+    console.error('Error eliminando detalle de reabastecimiento:', error)
+    toast.add({
+      title: 'No se pudo eliminar',
+      description: error?.data?.message || error?.message || 'No se pudo eliminar el detalle de reabastecimiento.',
+      color: 'error',
+    })
+  }).finally(() => {
+    detailProductDeleteSubmitting.value = false
+  })
+}
+
+const resetDetailProductState = () => {
+  detailProductRows.value = []
+  detailProductQuantity.value = 1
+  detailProductConfirmOpen.value = false
+  detailProductPending.value = null
+  detailProductEditingRows.value = {}
+  detailProductQuantityBackup.value = {}
+  detailProductEditConfirmOpen.value = false
+  detailProductEditTarget.value = null
+  detailProductDeleteConfirmOpen.value = false
+  detailProductDeleteTarget.value = null
+  detailProductCreateSubmitting.value = false
+}
+
+const resetDetailTrackingState = () => {
+  detailTrackingHistory.value = []
+  detailTrackingComment.value = ''
+  detailTrackingFile.value = null
+
+  if (detailTrackingFileInput.value) {
+    detailTrackingFileInput.value.value = ''
+  }
+}
+
+const resetDetailFilesState = () => {
+  detailFilesItems.value = []
+  detailFilesSearch.value = ''
+  detailFilesPage.value = 1
+  detailFilesPerPage.value = 5
+  detailFilesPagination.value = {
+    currentPage: 1,
+    perPage: 5,
+    total: 0,
+    lastPage: 1,
+  }
+  detailFilesUploadOpen.value = false
+  detailFilesUploadFile.value = null
+  detailFilesUploadComment.value = ''
+  detailFilesUploadSubmitting.value = false
+  detailFilesError.value = null
+  detailFilesDeleteConfirmOpen.value = false
+  detailFilesDeleteTarget.value = null
+  detailFilesDeleteSubmitting.value = false
+
+  if (detailFilesUploadFileInput.value) {
+    detailFilesUploadFileInput.value.value = ''
+  }
+}
+
+const resetDetailModalState = () => {
+  selectedRequestSummary.value = null
+  currentDetailRequestId.value = null
+  requestDetailData.value = null
+  requestDetailError.value = null
+  requestDetailLoading.value = false
+  resetDetailTrackingState()
+  resetDetailFilesState()
+  resetDetailProductState()
+}
+
+const removeDetailHistoryRow = (rowId: number) => {
+  detailTrackingHistory.value = detailTrackingHistory.value.filter((row) => row.id_flujo !== rowId)
+  if (currentDetailRequestId.value) {
+    detailTrackingHistoryByRequest.value[currentDetailRequestId.value] = detailTrackingHistory.value
+  }
+}
+
+const detailStateOptions = [
+  'Aceptacion de Recepcion',
+  'Pendiente de Revision',
+  'Cerrado',
+]
 
 const addToRequest = (item: CatalogItem) => {
   const exists = requestLines.value.some(row => row.idProducto === item.idProducto || row.description === item.name)
@@ -761,10 +1363,26 @@ const processRequest = async () => {
 
 const openRequestDetail = async (item: ReabastecimientoRequest) => {
   selectedRequestSummary.value = item
+  currentDetailRequestId.value = item.id_solicitud_reb
+  detailTrackingHistory.value = detailTrackingHistoryByRequest.value[item.id_solicitud_reb] || []
+  detailFilesSearch.value = ''
+  detailFilesPage.value = 1
+  detailFilesPagination.value = {
+    currentPage: 1,
+    perPage: detailFilesPerPage.value,
+    total: 0,
+    lastPage: 1,
+  }
+  detailFilesItems.value = []
+  detailFilesError.value = null
   requestDetailData.value = null
   requestDetailError.value = null
   requestDetailLoading.value = true
   detailModalOpen.value = true
+
+  if (!modalCatalogItems.value.length && !catalogLoading.value) {
+    void loadCatalog()
+  }
 
   try {
     const response = await $fetch<ReabastecimientoRequestDetailResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/solicitudes/${item.id_solicitud_reb}`, {
@@ -780,11 +1398,228 @@ const openRequestDetail = async (item: ReabastecimientoRequest) => {
     }
 
     requestDetailData.value = response.data
+    syncDetailProductRows(response.data.detalles || [])
+    await loadRequestFiles(item.id_solicitud_reb)
   } catch (error: any) {
     console.error('Error cargando detalle de solicitud:', error)
     requestDetailError.value = error?.data?.message || error?.message || 'No se pudo consultar el detalle de la solicitud.'
   } finally {
     requestDetailLoading.value = false
+  }
+}
+
+const loadRequestFiles = async (requestId = currentDetailRequestId.value) => {
+  if (!requestId) {
+    detailFilesItems.value = []
+    detailFilesError.value = null
+    detailFilesPagination.value = {
+      currentPage: 1,
+      perPage: detailFilesPerPage.value,
+      total: 0,
+      lastPage: 1,
+    }
+    return
+  }
+
+  detailFilesLoading.value = true
+  detailFilesError.value = null
+
+  try {
+    const params = new URLSearchParams()
+    const search = detailFilesSearch.value.trim()
+
+    if (search) {
+      params.set('search', search)
+    }
+
+    params.set('page', String(detailFilesPage.value))
+    params.set('per_page', String(detailFilesPerPage.value))
+
+    const query = params.toString()
+    const endpoint = `${config.public.apiBaseUrl}/api/reabastecimiento/solicitudes/${requestId}/archivos${query ? `?${query}` : ''}`
+
+    const response = await $fetch<ReabastecimientoFileListResponse>(endpoint, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+      },
+    })
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || 'No se pudo consultar el historial de archivos.')
+    }
+
+    detailFilesItems.value = response.data.data || []
+    detailFilesPagination.value = {
+      currentPage: response.data.meta.pagination.current_page,
+      perPage: response.data.meta.pagination.per_page,
+      total: response.data.meta.pagination.total,
+      lastPage: response.data.meta.pagination.last_page,
+    }
+  } catch (error: any) {
+    console.error('Error cargando historial de archivos:', error)
+    detailFilesItems.value = []
+    detailFilesError.value = error?.data?.message || error?.message || 'No se pudo consultar el historial de archivos.'
+  } finally {
+    detailFilesLoading.value = false
+  }
+}
+
+const openDetailFilesUpload = () => {
+  if (!selectedRequestSummary.value || !currentDetailRequestId.value) {
+    toast.add({
+      title: 'Solicitud requerida',
+      description: 'Selecciona una solicitud antes de adjuntar archivos.',
+      color: 'warning',
+    })
+    return
+  }
+
+  detailFilesUploadOpen.value = true
+}
+
+const resetDetailFilesUploadState = () => {
+  detailFilesUploadOpen.value = false
+  detailFilesUploadFile.value = null
+  detailFilesUploadComment.value = ''
+  detailFilesUploadSubmitting.value = false
+
+  if (detailFilesUploadFileInput.value) {
+    detailFilesUploadFileInput.value.value = ''
+  }
+}
+
+const onDetailFilesUploadFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  detailFilesUploadFile.value = input.files?.[0] ?? null
+}
+
+const applyDetailFilesSearch = () => {
+  detailFilesPage.value = 1
+  void loadRequestFiles()
+}
+
+const confirmDetailFilesUpload = async () => {
+  if (!selectedRequestSummary.value || !currentDetailRequestId.value) {
+    toast.add({
+      title: 'Solicitud requerida',
+      description: 'Selecciona una solicitud antes de adjuntar archivos.',
+      color: 'warning',
+    })
+    return
+  }
+
+  if (!detailFilesUploadFile.value) {
+    toast.add({
+      title: 'Archivo requerido',
+      description: 'Selecciona un archivo antes de guardar.',
+      color: 'warning',
+    })
+    return
+  }
+
+  const requestId = currentDetailRequestId.value
+  const formData = new FormData()
+
+  formData.append('archivo', detailFilesUploadFile.value)
+
+  const comentario = detailFilesUploadComment.value.trim()
+  if (comentario) {
+    formData.append('comentario', comentario)
+  }
+
+  detailFilesUploadSubmitting.value = true
+
+  try {
+    const response = await $fetch<ReabastecimientoFileUploadResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/solicitudes/${requestId}/archivos`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || 'No se pudo adjuntar el archivo.')
+    }
+
+    toast.add({
+      title: 'Archivo adjuntado',
+      description: 'El archivo se guardo correctamente.',
+      color: 'success',
+    })
+
+    resetDetailFilesUploadState()
+    await loadRequestFiles(requestId)
+  } catch (error: any) {
+    console.error('Error adjuntando archivo:', error)
+    const validationMessages = error?.data?.errors
+      ? Object.values(error.data.errors).flat().filter(Boolean).join(' ')
+      : ''
+
+    toast.add({
+      title: 'No se pudo adjuntar',
+      description: validationMessages || error?.data?.message || error?.message || 'No se pudo adjuntar el archivo.',
+      color: 'error',
+    })
+  } finally {
+    detailFilesUploadSubmitting.value = false
+  }
+}
+
+const promptRemoveDetailFile = (item: ReabastecimientoFileLogItem) => {
+  detailFilesDeleteTarget.value = item
+  detailFilesDeleteConfirmOpen.value = true
+}
+
+const cancelRemoveDetailFile = () => {
+  detailFilesDeleteConfirmOpen.value = false
+  detailFilesDeleteTarget.value = null
+  detailFilesDeleteSubmitting.value = false
+}
+
+const confirmRemoveDetailFile = async () => {
+  if (!detailFilesDeleteTarget.value) {
+    detailFilesDeleteConfirmOpen.value = false
+    return
+  }
+
+  const target = detailFilesDeleteTarget.value
+  detailFilesDeleteSubmitting.value = true
+
+  try {
+    const response = await $fetch<ReabastecimientoFileDeleteResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/archivos/${target.id_log_reb}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+      },
+    })
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || 'No se pudo eliminar el archivo.')
+    }
+
+    toast.add({
+      title: 'Archivo eliminado',
+      description: 'El archivo fue eliminado correctamente.',
+      color: 'success',
+    })
+
+    detailFilesDeleteConfirmOpen.value = false
+    detailFilesDeleteTarget.value = null
+    await loadRequestFiles()
+  } catch (error: any) {
+    console.error('Error eliminando archivo:', error)
+    toast.add({
+      title: 'No se pudo eliminar',
+      description: error?.data?.message || error?.message || 'No se pudo eliminar el archivo.',
+      color: 'error',
+    })
+  } finally {
+    detailFilesDeleteSubmitting.value = false
   }
 }
 
@@ -802,10 +1637,46 @@ const retryRequestDetail = () => {
 
 const closeRequestDetail = () => {
   detailModalOpen.value = false
-  selectedRequestSummary.value = null
-  requestDetailData.value = null
-  requestDetailError.value = null
-  requestDetailLoading.value = false
+  resetDetailModalState()
+}
+
+const onDetailTrackingFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  detailTrackingFile.value = input.files?.[0] ?? null
+}
+
+const registerDetailTracking = () => {
+  if (!selectedRequestSummary.value || !currentDetailRequestId.value) {
+    return
+  }
+
+  const nextHistoryItem: DetailTrackingHistoryItem = {
+    id_flujo: detailTrackingFlowSeed.value,
+    responsable: 'Usuario actual',
+    comentarios: detailTrackingComment.value.trim() || 'Sin comentario',
+    adjuntos: detailTrackingFile.value?.name || '-',
+    fecha: new Date().toISOString().replace('T', ' ').slice(0, 19),
+  }
+
+  detailTrackingFlowSeed.value += 1
+  detailTrackingHistory.value = [...detailTrackingHistory.value, nextHistoryItem]
+  detailTrackingHistoryByRequest.value[currentDetailRequestId.value] = detailTrackingHistory.value
+
+  toast.add({
+    title: 'Seguimiento registrado',
+    description: [
+      detailTrackingComment.value.trim() ? 'Comentario agregado.' : 'Sin comentario.',
+      detailTrackingFile.value ? `Archivo: ${detailTrackingFile.value.name}.` : 'Sin archivo.',
+    ].join(' '),
+    color: 'success',
+  })
+
+  detailTrackingComment.value = ''
+  detailTrackingFile.value = null
+
+  if (detailTrackingFileInput.value) {
+    detailTrackingFileInput.value.value = ''
+  }
 }
 
 watch([requestSearch, requestDateFrom, requestDateTo, requestPerPage, activeTab], () => {
@@ -821,6 +1692,14 @@ watch(requestPage, () => {
   void loadRequests()
 })
 
+watch([detailFilesPage, detailFilesPerPage], () => {
+  if (!detailModalOpen.value || !selectedRequestSummary.value) {
+    return
+  }
+
+  void loadRequestFiles()
+})
+
 watch(createModalOpen, (isOpen) => {
   if (!isOpen) {
     resetRequestForm()
@@ -832,10 +1711,7 @@ watch(createModalOpen, (isOpen) => {
 
 watch(detailModalOpen, (isOpen) => {
   if (!isOpen) {
-    selectedRequestSummary.value = null
-    requestDetailData.value = null
-    requestDetailError.value = null
-    requestDetailLoading.value = false
+    resetDetailModalState()
   }
 })
 
@@ -1343,11 +2219,12 @@ onMounted(() => {
 
     <UModal
       v-model:open="detailModalOpen"
-      class="max-w-6xl"
+      class="w-[calc(100vw-1rem)] max-w-[1680px]"
+      @close="closeRequestDetail"
       :ui="{
-        content: 'overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        content: 'h-[96vh] overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
         header: 'p-0',
-        body: 'p-0',
+        body: 'h-[calc(96vh-72px)] overflow-y-auto overflow-x-hidden p-0',
         wrapper: 'items-center justify-center',
       }"
       :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
@@ -1373,112 +2250,985 @@ onMounted(() => {
       </template>
 
       <template #body>
-        <div v-if="selectedRequestSummary" class="grid gap-5 bg-white p-5 dark:bg-gray-950 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div class="space-y-5">
-            <div class="grid gap-3 md:grid-cols-4">
-              <div class="rounded-2xl border border-gray-200 bg-[#eef4ff] p-4 dark:border-gray-800 dark:bg-[#13203a]">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#6b7aa3] dark:text-[#9cb7f5]">Solicitante</p>
-                <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">{{ selectedRequestSummary.solicitante }}</p>
+        <div v-if="selectedRequestSummary" class="space-y-5 bg-white p-5 dark:bg-gray-950">
+          
+
+
+          <template v-if="requestDetailLoading">
+            <div class="grid gap-5 lg:grid-cols-2 animate-pulse">
+              <div class="space-y-5">
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                  <div class="mx-auto h-5 w-40 rounded bg-gray-100 dark:bg-gray-800" />
+                  <div class="mt-5 space-y-3">
+                    <div class="h-10 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-10 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-10 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-10 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                  <div class="mx-auto h-5 w-44 rounded bg-gray-100 dark:bg-gray-800" />
+                  <div class="mt-5 space-y-3">
+                    <div class="h-6 rounded bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-6 rounded bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-6 rounded bg-gray-100 dark:bg-gray-800" />
+                  </div>
+                  <div class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px]">
+                    <div class="h-11 rounded-md bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-11 rounded-md bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-11 rounded-md bg-gray-100 dark:bg-gray-800" />
+                  </div>
+                </div>
               </div>
-              <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-900">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#6b7aa3] dark:text-[#9cb7f5]">Area</p>
-                <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">{{ selectedRequestSummary.area }}</p>
-              </div>
-              <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-900">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#6b7aa3] dark:text-[#9cb7f5]">Creacion</p>
-                <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">{{ selectedRequestSummary.fecha_creacion }}</p>
-              </div>
-              <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-900">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#6b7aa3] dark:text-[#9cb7f5]">Detalles</p>
-                <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">{{ selectedRequestSummary.detalles_count }}</p>
+
+              <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                <div class="mx-auto h-5 w-56 rounded bg-gray-100 dark:bg-gray-800" />
+                <div class="mt-5 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <div class="h-10 bg-gray-100 dark:bg-gray-800" />
+                  <div class="space-y-2 p-4">
+                    <div class="h-8 rounded bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-8 rounded bg-gray-100 dark:bg-gray-800" />
+                    <div class="h-8 rounded bg-gray-100 dark:bg-gray-800" />
+                  </div>
+                </div>
+                <div class="mt-4 space-y-3">
+                  <div class="h-4 w-24 rounded bg-gray-100 dark:bg-gray-800" />
+                  <div class="h-24 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+                  <div class="h-11 rounded-md bg-gray-100 dark:bg-gray-800" />
+                </div>
               </div>
             </div>
+          </template>
 
-            <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
-                  Justificacion registrada
-                </p>
-                <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
-                  Motivo de la solicitud
+          <template v-else>
+          <div class="grid gap-5 lg:grid-cols-2">
+            <div class="space-y-5">
+              <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <div class="border-b border-gray-200 px-5 py-4 text-center dark:border-gray-800">
+                <h3 class="text-base font-bold text-gray-950 dark:text-white">
+                  Lista de Pedido
                 </h3>
               </div>
 
-              <div class="space-y-3 p-5">
-                <div class="rounded-2xl border border-gray-200 bg-[#f9fbff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300">
-                  {{ selectedRequestSummary.justificacion || 'Sin justificacion registrada.' }}
+              <div class="p-5">
+                <div v-if="requestDetailLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+                  Cargando detalle de la solicitud...
+                </div>
+
+                <div v-else-if="requestDetailError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <p>{{ requestDetailError }}</p>
+                  <UButton color="primary" variant="soft" size="xs" @click="retryRequestDetail">
+                    Reintentar
+                  </UButton>
+                </div>
+
+                <div v-else class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <table class="min-w-full border-separate border-spacing-0">
+                    <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
+                      <tr>
+                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Id Detalle</th>
+                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
+                        <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
+                        <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Opciones</th>
+                      </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                      <tr
+                        v-for="detalle in detailProductRows"
+                        :key="detalle.id_detalle_reb"
+                        class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
+                      >
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          {{ detalle.id_detalle_reb }}
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          {{ detalle.descripcion }}
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <UInput
+                            v-model="detalle.cantidad_solicitada"
+                            type="number"
+                            min="1"
+                            class="mx-auto w-24"
+                            :disabled="!isDetailProductRowEditing(detalle.id_detalle_reb)"
+                          />
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <div class="flex items-center justify-center gap-2">
+                            <UButton
+                              v-if="!isDetailProductRowEditing(detalle.id_detalle_reb)"
+                              color="primary"
+                              variant="soft"
+                              icon="i-lucide-pencil"
+                              class="rounded-md bg-[#eef4ff] text-[#2d5fc0] hover:bg-[#dfe9ff]"
+                              aria-label="Editar producto"
+                              title="Editar producto"
+                              @click="startEditDetailProductRow(detalle)"
+                            />
+                            <template v-else>
+                              <UButton
+                                color="primary"
+                                variant="soft"
+                                icon="i-lucide-check"
+                                class="rounded-md bg-[#e6f8dd] text-[#2f8f1f] hover:bg-[#d6f2ca]"
+                                aria-label="Confirmar cambio"
+                                title="Confirmar cambio"
+                                @click="promptConfirmEditDetailProductRow(detalle)"
+                              />
+                              <UButton
+                                color="neutral"
+                                variant="soft"
+                                icon="i-lucide-x"
+                                class="rounded-md"
+                                aria-label="Cancelar edición"
+                                title="Cancelar edición"
+                                @click="cancelEditDetailProductRow(detalle)"
+                              />
+                            </template>
+                            <UButton
+                              color="error"
+                              variant="soft"
+                              icon="i-lucide-trash-2"
+                              class="rounded-md"
+                              aria-label="Eliminar producto"
+                              title="Eliminar producto"
+                              @click="promptRemoveDetailProductRow(detalle)"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr v-if="!detailProductRows.length">
+                        <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                          No hay detalles para esta solicitud.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div v-if="!requestDetailLoading && !requestDetailError" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_100px_180px]">
+                  <USelectMenu
+                    v-model="detailProductSelected"
+                    :items="detailProductOptions"
+                    value-key="value"
+                    label-key="label"
+                    :loading="catalogLoading"
+                    :disabled="catalogLoading || catalogError !== null"
+                    placeholder="Selecciona un producto"
+                    class="w-full"
+                  />
+                  <UInput v-model="detailProductQuantity" type="number" min="1" class="w-full" />
+                  <UButton
+                    color="primary"
+                    class="justify-center bg-[#57bf24] font-semibold text-white shadow-none hover:bg-[#49a61d]"
+                    icon="i-lucide-plus"
+                    @click="addDetailProductRow"
+                  >
+                    Agregar Producto
+                  </UButton>
+                </div>
+              </div>
+            </div>
+              <div
+                v-if="!requestDetailLoading && !requestDetailError"
+                class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950"
+              >
+                <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                  <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="flex items-center gap-2">
+                      <UIcon name="i-lucide-paperclip" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                          Archivos adjuntos
+                        </p>
+                        <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">
+                          Historial y Archivos
+                        </p>
+                      </div>
+                    </div>
+
+                    <UButton
+                      color="primary"
+                      icon="i-lucide-paperclip"
+                      class="w-fit bg-[#2d5fc0] font-semibold text-white shadow-[0_10px_24px_rgba(45,95,192,0.18)] hover:bg-[#244ea4]"
+                      @click="openDetailFilesUpload"
+                    >
+                      Adjuntar archivo
+                    </UButton>
+                  </div>
+                </div>
+
+                <div class="space-y-4 p-4">
+                  <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <UInput
+                      v-model="detailFilesSearch"
+                      icon="i-lucide-search"
+                      placeholder="Buscar por archivo, comentario o usuario..."
+                      class="w-full lg:flex-1"
+                      @keyup.enter="applyDetailFilesSearch"
+                    />
+
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <USelectMenu
+                        v-model="detailFilesPerPage"
+                        :items="perPageOptions"
+                        value-key="value"
+                        label-key="label"
+                        class="w-24"
+                      />
+                      <UButton color="primary" variant="soft" @click="applyDetailFilesSearch">
+                        Buscar
+                      </UButton>
+                    </div>
+                  </div>
+
+                  <div v-if="detailFilesLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+                    Cargando archivos adjuntos...
+                  </div>
+
+                  <div v-else-if="detailFilesError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <p>{{ detailFilesError }}</p>
+                    <UButton color="primary" variant="soft" size="xs" @click="() => loadRequestFiles()">
+                      Reintentar
+                    </UButton>
+                  </div>
+
+                  <div v-else class="space-y-4">
+                    <div v-if="detailFilesItems.length" class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                      <table class="min-w-full border-separate border-spacing-0">
+                        <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
+                          <tr>
+                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Archivo</th>
+                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Comentario</th>
+                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Usuario</th>
+                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha</th>
+                            <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Acciones</th>
+                          </tr>
+                        </thead>
+
+                        <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                          <tr
+                            v-for="item in detailFilesItems"
+                            :key="item.id_log_reb"
+                            class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
+                          >
+                            <td class="px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100">
+                              <a
+                                :href="item.archivo_url"
+                                target="_blank"
+                                rel="noreferrer"
+                                class="font-semibold text-[#2d5fc0] hover:underline"
+                              >
+                                {{ item.archivo_nombre_original }}
+                              </a>
+                            </td>
+                            <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                              {{ item.comentario || '-' }}
+                            </td>
+                            <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                              {{ item.staff?.full_name || item.staff?.username || '-' }}
+                            </td>
+                            <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                              {{ item.fecha_creacion }}
+                            </td>
+                            <td class="px-4 py-2.5 text-center">
+                              <div class="flex items-center justify-center gap-2">
+                                <a
+                                  :href="item.archivo_url"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eef4ff] text-[#2d5fc0] transition hover:bg-[#dfe9ff]"
+                                  aria-label="Abrir archivo"
+                                  title="Abrir archivo"
+                                >
+                                  <UIcon name="i-lucide-external-link" class="h-4 w-4" />
+                                </a>
+                                <UButton
+                                  color="error"
+                                  variant="soft"
+                                  icon="i-lucide-trash-2"
+                                  class="rounded-md"
+                                  aria-label="Eliminar archivo"
+                                  title="Eliminar archivo"
+                                  @click="promptRemoveDetailFile(item)"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div
+                      v-else
+                      class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
+                    >
+                      Aun no hay archivos adjuntos para esta solicitud.
+                    </div>
+
+                    <div class="flex flex-col gap-3 border-t border-gray-200 pt-3 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                      <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span>Mostrando</span>
+                        <span class="font-semibold text-gray-950 dark:text-white">{{ detailFilesShowingStart }}</span>
+                        <span>a</span>
+                        <span class="font-semibold text-gray-950 dark:text-white">{{ detailFilesShowingEnd }}</span>
+                        <span>de</span>
+                        <span class="font-semibold text-gray-950 dark:text-white">{{ detailFilesPagination.total }}</span>
+                      </div>
+
+                      <UPagination
+                        v-model:page="detailFilesPage"
+                        :page-count="detailFilesPerPage"
+                        :total="detailFilesPagination.total"
+                        :sibling-count="1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="!requestDetailLoading && !requestDetailError"
+              class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950"
+            >
+              <div class="border-b border-gray-200 px-5 py-4 text-center dark:border-gray-800">
+                <h3 class="text-base font-bold text-gray-950 dark:text-white">
+                  Seguimiento y Comentarios
+                </h3>
+              </div>
+
+              <div class="p-4">
+                <div class="mb-4 flex items-center gap-2">
+                  <UIcon name="i-lucide-history" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <p class="text-base font-bold text-gray-950 dark:text-white">
+                    Seguimiento y Comentarios
+                  </p>
+                </div>
+
+                <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <table class="min-w-full border-separate border-spacing-0">
+                    <thead class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+                      <tr>
+                        <th class="px-4 py-2.5 text-left text-sm font-medium">Id Flujo</th>
+                        <th class="px-4 py-2.5 text-left text-sm font-medium">Responsable</th>
+                        <th class="px-4 py-2.5 text-left text-sm font-medium">Comentarios</th>
+                        <th class="px-4 py-2.5 text-left text-sm font-medium">Adjuntos</th>
+                        <th class="px-4 py-2.5 text-left text-sm font-medium">Fecha</th>
+                      </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                      <tr
+                        v-for="item in detailTrackingRows"
+                        :key="item.id_flujo"
+                        class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
+                      >
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          {{ item.id_flujo }}
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          {{ item.responsable }}
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          {{ item.comentarios }}
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          <UBadge color="primary" variant="soft" class="rounded-md px-3 py-1 text-xs font-semibold">
+                            {{ item.adjuntos }}
+                          </UBadge>
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          {{ item.fecha }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mt-4 space-y-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Comentario
+                    </label>
+                    <UTextarea
+                      v-model="detailTrackingComment"
+                      :rows="3"
+                      placeholder="Escribe un comentario..."
+                      class="w-full"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Archivo
+                    </label>
+                    <input
+                      ref="detailTrackingFileInput"
+                      type="file"
+                      class="block w-full rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-transparent file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#2d5fc0] hover:file:cursor-pointer hover:file:underline dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                      @change="onDetailTrackingFileChange"
+                    >
+                  </div>
+
+                  <UButton
+                    color="primary"
+                    class="w-full justify-center bg-[#6f5ce8] py-3 font-semibold text-white shadow-[0_10px_24px_rgba(111,92,232,0.16)] hover:bg-[#5c48df]"
+                    @click="registerDetailTracking"
+                  >
+                    Registrar Seguimiento
+                  </UButton>
                 </div>
               </div>
             </div>
           </div>
+          </template>
 
-          <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
-                Detalle de productos
-              </p>
-              <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
-                Articulos solicitados
-              </h3>
+          <div v-if="false" class="grid gap-5 lg:grid-cols-2">
+            <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                  Detalle de productos
+                </p>
+                <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
+                  Articulos solicitados
+                </h3>
+              </div>
+
+              <div class="p-5">
+                <div v-if="requestDetailLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+                  Cargando detalle de la solicitud...
+                </div>
+
+                <div v-else-if="requestDetailError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <p>{{ requestDetailError }}</p>
+                  <UButton color="primary" variant="soft" size="xs" @click="retryRequestDetail">
+                    Reintentar
+                  </UButton>
+                </div>
+
+                <div v-else class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <table class="min-w-full border-separate border-spacing-0">
+                    <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
+                      <tr>
+                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Codigo</th>
+                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
+                        <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Cant.</th>
+                        <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Stock</th>
+                      </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                      <tr
+                        v-for="detalle in requestDetailData?.detalles || []"
+                        :key="detalle.id_detalle_reb"
+                        class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
+                      >
+                        <td class="px-4 py-2.5 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
+                          {{ detalle.codigo }}
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                          {{ detalle.descripcion }}
+                        </td>
+                        <td class="px-4 py-2.5 text-center text-sm text-gray-700 dark:text-gray-200">
+                          {{ detalle.cantidad_solicitada }}
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <span :class="['inline-flex min-w-14 justify-center rounded-md px-3 py-1 text-xs font-bold', stockTone(detalle.stock)]">
+                            {{ detalle.stock }}
+                          </span>
+                        </td>
+                      </tr>
+
+                      <tr v-if="!(requestDetailData?.detalles?.length)">
+                        <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                          No hay detalles para esta solicitud.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
-            <div class="p-5">
-              <div v-if="requestDetailLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
-                Cargando detalle de la solicitud...
-              </div>
+            <div
+              v-if="!requestDetailLoading && !requestDetailError"
+              class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950"
+            >
+              <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                      Seguimiento
+                    </p>
+                    <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
+                      Cambiar Estado
+                    </h3>
+                  </div>
 
-              <div v-else-if="requestDetailError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                <p>{{ requestDetailError }}</p>
-                <UButton color="primary" variant="soft" size="xs" @click="retryRequestDetail">
-                  Reintentar
-                </UButton>
-              </div>
-
-              <div v-else class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
-                <table class="min-w-full border-separate border-spacing-0">
-                  <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
-                    <tr>
-                      <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Codigo</th>
-                      <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
-                      <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Cant.</th>
-                      <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Stock</th>
-                    </tr>
-                  </thead>
-
-                  <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-                    <tr
-                      v-for="detalle in requestDetailData?.detalles || []"
-                      :key="detalle.id_detalle_reb"
-                      class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
+                  <div class="inline-flex rounded-full bg-gray-100 p-1 dark:bg-gray-900">
+                    <button
+                      type="button"
+                      class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
+                      :class="detailPanelTab === 'seguimiento'
+                        ? 'bg-white text-[#2d5fc0] shadow-sm dark:bg-gray-950 dark:text-[#9cb7f5]'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                      @click="detailPanelTab = 'seguimiento'"
                     >
-                      <td class="px-4 py-2.5 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
-                        {{ detalle.codigo }}
-                      </td>
-                      <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                        {{ detalle.descripcion }}
-                      </td>
-                      <td class="px-4 py-2.5 text-center text-sm text-gray-700 dark:text-gray-200">
-                        {{ detalle.cantidad_solicitada }}
-                      </td>
-                      <td class="px-4 py-2.5 text-center">
-                        <span :class="['inline-flex min-w-14 justify-center rounded-md px-3 py-1 text-xs font-bold', stockTone(detalle.stock)]">
-                          {{ detalle.stock }}
-                        </span>
-                      </td>
-                    </tr>
+                      Seguimiento
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
+                      :class="detailPanelTab === 'historial'
+                        ? 'bg-white text-[#2d5fc0] shadow-sm dark:bg-gray-950 dark:text-[#9cb7f5]'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                      @click="detailPanelTab = 'historial'"
+                    >
+                      Historial
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-                    <tr v-if="!(requestDetailData?.detalles?.length)">
-                      <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                        No hay detalles para esta solicitud.
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="p-4">
+                <div v-if="detailPanelTab === 'seguimiento'" class="space-y-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Comentario
+                    </label>
+                    <UTextarea
+                      v-model="detailTrackingComment"
+                      :rows="3"
+                      placeholder="Escribe un comentario..."
+                      class="w-full"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Archivo
+                    </label>
+                    <input
+                      ref="detailTrackingFileInput"
+                      type="file"
+                      class="block w-full rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-transparent file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#2d5fc0] hover:file:cursor-pointer hover:file:underline dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                      @change="onDetailTrackingFileChange"
+                    >
+                  </div>
+
+                  <UButton
+                    color="primary"
+                    class="w-full justify-center bg-[#6f5ce8] py-3 font-semibold text-white shadow-[0_10px_24px_rgba(111,92,232,0.16)] hover:bg-[#5c48df]"
+                    @click="registerDetailTracking"
+                  >
+                    Registrar Seguimiento
+                  </UButton>
+                </div>
+
+                <div v-else class="space-y-3">
+                  <div v-if="detailTrackingHistory.length" class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                    <table class="min-w-full border-separate border-spacing-0">
+                      <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
+                        <tr>
+                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Id Flujo</th>
+                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Responsable</th>
+                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Comentarios</th>
+                          <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Adjuntos</th>
+                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha</th>
+                        </tr>
+                      </thead>
+
+                      <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                        <tr
+                          v-for="item in detailTrackingHistory"
+                          :key="item.id_flujo"
+                          class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
+                        >
+                          <td class="px-4 py-2.5 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
+                            {{ item.id_flujo }}
+                          </td>
+                          <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                            {{ item.responsable }}
+                          </td>
+                          <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                            {{ item.comentarios }}
+                          </td>
+                          <td class="px-4 py-2.5 text-center text-sm text-gray-700 dark:text-gray-200">
+                            {{ item.adjuntos }}
+                          </td>
+                          <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                            {{ item.fecha }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div
+                    v-else
+                    class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
+                  >
+                    Aun no hay historial registrado para esta solicitud.
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </template>
     </UModal>
+
+    <UModal
+      v-model:open="detailProductConfirmOpen"
+      class="w-[calc(100vw-1rem)] max-w-md"
+      @close="cancelAddDetailProductRow"
+      :ui="{
+        content: 'overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        header: 'p-0',
+        body: 'p-0',
+        wrapper: 'items-center justify-center',
+      }"
+      :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+    >
+      <template #title>
+        <div class="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+            Confirmacion
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-gray-950 dark:text-white">
+            Agregar producto al pedido
+          </h2>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4 bg-white p-6 dark:bg-gray-950">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Confirma el producto y la cantidad antes de registrarlo en la solicitud.
+          </p>
+
+          <div class="space-y-3 rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Codigo</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductPending?.code || '-' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Producto</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductPending?.name || '-' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Cantidad</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductQuantity }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Stock disponible</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductPending?.stock ?? 0 }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <UButton color="neutral" variant="soft" @click="cancelAddDetailProductRow">
+              Cancelar
+            </UButton>
+            <UButton
+              color="primary"
+              class="bg-[#57bf24] font-semibold text-white shadow-none hover:bg-[#49a61d]"
+              :loading="detailProductCreateSubmitting"
+              :disabled="!detailProductPending || detailProductCreateSubmitting"
+              @click="confirmAddDetailProductRow"
+            >
+              Si, agregar
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="detailProductEditConfirmOpen"
+      class="w-[calc(100vw-1rem)] max-w-md"
+      @close="cancelConfirmEditDetailProductRow"
+      :ui="{
+        content: 'overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        header: 'p-0',
+        body: 'p-0',
+        wrapper: 'items-center justify-center',
+      }"
+      :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+    >
+      <template #title>
+        <div class="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+            Confirmacion
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-gray-950 dark:text-white">
+            Confirmar cambio de cantidad
+          </h2>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4 bg-white p-6 dark:bg-gray-950">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Revisa la cantidad actualizada antes de guardarla.
+          </p>
+
+          <div class="space-y-3 rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Codigo</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductEditTarget?.codigo || '-' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Descripcion</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductEditTarget?.descripcion || '-' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Cantidad nueva</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductEditTarget?.cantidad_solicitada ?? '-' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <UButton color="neutral" variant="soft" @click="cancelConfirmEditDetailProductRow">
+              Cancelar
+            </UButton>
+            <UButton
+              color="primary"
+              class="bg-[#2d5fc0] font-semibold text-white shadow-none hover:bg-[#244ea4]"
+              :loading="detailProductEditSubmitting"
+              :disabled="!detailProductEditTarget || detailProductEditSubmitting"
+              @click="confirmEditDetailProductRow"
+            >
+              Si, confirmar
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="detailProductDeleteConfirmOpen"
+      class="w-[calc(100vw-1rem)] max-w-md"
+      @close="cancelRemoveDetailProductRow"
+      :ui="{
+        content: 'overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        header: 'p-0',
+        body: 'p-0',
+        wrapper: 'items-center justify-center',
+      }"
+      :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+    >
+      <template #title>
+        <div class="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+            Confirmacion
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-gray-950 dark:text-white">
+            Eliminar detalle de reabastecimiento
+          </h2>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4 bg-white p-6 dark:bg-gray-950">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Esta accion eliminara el detalle seleccionado de la solicitud.
+          </p>
+
+          <div class="space-y-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm dark:border-red-900/40 dark:bg-red-950/20">
+            <div class="flex items-center justify-between gap-4">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Codigo</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductDeleteTarget?.codigo || '-' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Descripcion</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductDeleteTarget?.descripcion || '-' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Cantidad</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailProductDeleteTarget?.cantidad_solicitada ?? '-' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <UButton color="neutral" variant="soft" @click="cancelRemoveDetailProductRow">
+              Cancelar
+            </UButton>
+            <UButton
+              color="error"
+              class="bg-[#e53946] font-semibold text-white shadow-none hover:bg-[#cb2d3a]"
+              :loading="detailProductDeleteSubmitting"
+              :disabled="!detailProductDeleteTarget || detailProductDeleteSubmitting"
+              @click="confirmRemoveDetailProductRow"
+            >
+              Si, eliminar
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="detailFilesUploadOpen"
+      class="w-[calc(100vw-1rem)] max-w-lg"
+      @close="resetDetailFilesUploadState"
+      :ui="{
+        content: 'overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        header: 'p-0',
+        body: 'p-0',
+        wrapper: 'items-center justify-center',
+      }"
+      :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+    >
+      <template #title>
+        <div class="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+            Historial y Archivos
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-gray-950 dark:text-white">
+            Adjuntar archivo
+          </h2>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4 bg-white p-6 dark:bg-gray-950">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Sube un archivo para esta solicitud y agrega un comentario opcional.
+          </p>
+
+          <div class="space-y-3 rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Archivo
+              </label>
+              <input
+                ref="detailFilesUploadFileInput"
+                type="file"
+                class="block w-full rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-transparent file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#2d5fc0] hover:file:cursor-pointer hover:file:underline dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                @change="onDetailFilesUploadFileChange"
+              >
+              <p v-if="detailFilesUploadFile" class="text-xs text-gray-500 dark:text-gray-400">
+                Seleccionado: {{ detailFilesUploadFile.name }}
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Comentario
+              </label>
+              <UTextarea
+                v-model="detailFilesUploadComment"
+                :rows="3"
+                placeholder="Escribe un comentario..."
+                class="w-full"
+              />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <UButton color="neutral" variant="soft" @click="resetDetailFilesUploadState">
+              Cancelar
+            </UButton>
+            <UButton
+              color="primary"
+              class="bg-[#57bf24] font-semibold text-white shadow-none hover:bg-[#49a61d]"
+              :loading="detailFilesUploadSubmitting"
+              :disabled="!detailFilesUploadFile || detailFilesUploadSubmitting"
+              @click="confirmDetailFilesUpload"
+            >
+              Guardar archivo
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="detailFilesDeleteConfirmOpen"
+      class="w-[calc(100vw-1rem)] max-w-md"
+      @close="cancelRemoveDetailFile"
+      :ui="{
+        content: 'overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        header: 'p-0',
+        body: 'p-0',
+        wrapper: 'items-center justify-center',
+      }"
+      :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+    >
+      <template #title>
+        <div class="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+            Confirmacion
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-gray-950 dark:text-white">
+            Eliminar archivo adjunto
+          </h2>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4 bg-white p-6 dark:bg-gray-950">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Esta accion eliminara el archivo seleccionado de la solicitud.
+          </p>
+
+          <div class="space-y-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm dark:border-red-900/40 dark:bg-red-950/20">
+            <div class="flex items-center justify-between gap-4">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Archivo</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailFilesDeleteTarget?.archivo_nombre_original || '-' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Comentario</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ detailFilesDeleteTarget?.comentario || '-' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <UButton color="neutral" variant="soft" @click="cancelRemoveDetailFile">
+              Cancelar
+            </UButton>
+            <UButton
+              color="error"
+              class="bg-[#e53946] font-semibold text-white shadow-none hover:bg-[#cb2d3a]"
+              :loading="detailFilesDeleteSubmitting"
+              :disabled="!detailFilesDeleteTarget || detailFilesDeleteSubmitting"
+              @click="confirmRemoveDetailFile"
+            >
+              Si, eliminar
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
+

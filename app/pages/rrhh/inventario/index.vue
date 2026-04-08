@@ -11,10 +11,17 @@ const inventorySections = [
     tone: 'from-blue-500/20 to-indigo-500/10',
   },
   {
-    title: 'Inventario actual',
-    description: 'Vista general del inventario con acceso rapido a las operaciones.',
-    icon: 'i-lucide-boxes',
-    to: '/rrhh/inventario/gestion',
+    title: 'Solicitudes',
+    description: 'Seguimiento de pedidos internos y estados de tramite.',
+    icon: 'i-lucide-list-checks',
+    to: '/rrhh/inventario/solicitudes',
+    tone: 'from-emerald-500/20 to-teal-500/10',
+  },
+  {
+    title: 'Reabastecimiento',
+    description: 'Pedidos, aprobaciones y trazabilidad de reposicion.',
+    icon: 'i-lucide-refresh-cw',
+    to: '/rrhh/inventario/solicitar-reabastecimiento',
     tone: 'from-violet-500/20 to-fuchsia-500/10',
   },
 ] as const

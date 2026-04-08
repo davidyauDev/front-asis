@@ -67,6 +67,12 @@ const inventoryLinks = [{
     exact: true,
     onSelect: () => { open.value = false }
   }, {
+    label: 'Solicitudes',
+    icon: 'i-lucide-list-checks',
+    to: '/rrhh/inventario/solicitudes',
+    exact: true,
+    onSelect: () => { open.value = false }
+  }, {
     label: 'Solicitar Reabastecimiento',
     icon: 'i-lucide-package-plus',
     to: '/rrhh/inventario/solicitar-reabastecimiento',
