@@ -1356,6 +1356,8 @@ const processRequest = async () => {
 
     createModalOpen.value = false
     resetRequestForm()
+    requestPage.value = 1
+    await loadRequests()
   } catch (error: any) {
     console.error('Error registrando solicitud de reabastecimiento:', error)
     const validationMessages = error?.data?.errors
@@ -1495,6 +1497,20 @@ const loadDetailTrackingHistory = async (requestId = currentDetailRequestId.valu
   }
 }
 
+const upsertDetailFileItem = (item: ReabastecimientoFileLogItem) => {
+  detailFilesItems.value = [
+    item,
+    ...detailFilesItems.value.filter(existing => existing.id_log_reb !== item.id_log_reb),
+  ]
+}
+
+const upsertDetailTrackingItem = (item: ReabastecimientoTrackingItem) => {
+  detailTrackingHistory.value = [
+    item,
+    ...detailTrackingHistory.value.filter(existing => existing.id_flujo_reb !== item.id_flujo_reb),
+  ]
+}
+
 const openDetailFilesUpload = () => {
   if (detailActionsLocked.value) {
     return
@@ -1583,6 +1599,8 @@ const confirmDetailFilesUpload = async () => {
     if (!response.success || !response.data) {
       throw new Error(response.message || 'No se pudo adjuntar el archivo.')
     }
+
+    upsertDetailFileItem(response.data)
 
     toast.add({
       title: 'Archivo adjuntado',
@@ -1738,6 +1756,8 @@ const registerDetailTracking = async () => {
     if (!response.success || !response.data) {
       throw new Error(response.message || 'No se pudo registrar el seguimiento.')
     }
+
+    upsertDetailTrackingItem(response.data)
 
     toast.add({
       title: 'Seguimiento registrado',
@@ -2403,7 +2423,7 @@ onMounted(() => {
       </template>
 
       <template #body>
-        <div v-if="selectedRequestSummary" class="space-y-5 bg-white p-5 dark:bg-gray-950">
+        <div v-if="selectedRequestSummary" class="space-y-5 bg-white  dark:bg-gray-950">
           
 
 
@@ -2694,27 +2714,16 @@ onMounted(() => {
                               {{ item.fecha_creacion }}
                             </td>
                             <td v-if="!detailActionsLocked" class="px-4 py-2.5 text-center">
-                              <div class="flex items-center justify-center gap-2">
-                                <a
-                                  :href="item.archivo_url"
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eef4ff] text-[#2d5fc0] transition hover:bg-[#dfe9ff]"
-                                  aria-label="Abrir archivo"
-                                  title="Abrir archivo"
-                                >
-                                  <UIcon name="i-lucide-external-link" class="h-4 w-4" />
-                                </a>
-                                <UButton
-                                  color="error"
-                                  variant="soft"
-                                  icon="i-lucide-trash-2"
-                                  class="rounded-md"
-                                  aria-label="Eliminar archivo"
-                                  title="Eliminar archivo"
-                                  @click="promptRemoveDetailFile(item)"
-                                />
-                              </div>
+                              <a
+                                :href="item.archivo_url"
+                                target="_blank"
+                                rel="noreferrer"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eef4ff] text-[#2d5fc0] transition hover:bg-[#dfe9ff]"
+                                aria-label="Abrir archivo"
+                                title="Abrir archivo"
+                              >
+                                <UIcon name="i-lucide-external-link" class="h-4 w-4" />
+                              </a>
                             </td>
                           </tr>
                         </tbody>
@@ -2826,19 +2835,7 @@ onMounted(() => {
                               </span>
                               <span v-else class="text-gray-500 dark:text-gray-400">-</span>
 
-                              <UButton
-                                v-if="!detailActionsLocked"
-                                color="error"
-                                variant="ghost"
-                                size="xs"
-                                icon="i-lucide-trash-2"
-                                class="rounded-md"
-                                :loading="detailTrackingDeletingId === item.id_log_reb"
-                                :disabled="detailTrackingDeletingId === item.id_log_reb"
-                                aria-label="Eliminar seguimiento"
-                                title="Eliminar seguimiento"
-                                @click="removeDetailTracking(item)"
-                              />
+                              
                             </div>
                           </td>
                           <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
