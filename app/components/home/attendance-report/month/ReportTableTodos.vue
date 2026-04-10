@@ -54,30 +54,28 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
         <UTable
           :data="filteredList"
           :columns="columns"
           :loading="attendance.details.loading"
           empty="Sin registros"
           :ui="{
-            root: 'relative max-h-[calc(100vh-350px)] overflow-y-auto overflow-x-hidden',
-            base: 'min-w-full',
-            thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
+            root: 'relative max-h-[calc(100vh-300px)] overflow-y-auto overflow-x-hidden',
+            base: 'min-w-full table-fixed border-separate border-spacing-0',
+            thead: 'sticky top-0 z-10 bg-[#2d5fc0] text-white border-b border-[#244ea4]',
             th: `
-              px-4 py-3 text-left text-xs font-medium
-              text-gray-500 dark:text-gray-400
-              tracking-tight
+              px-4 py-3 text-left text-[11px] font-semibold
+              uppercase tracking-wider text-white
             `,
             td: `
               px-4 py-3 text-sm
               text-gray-900 dark:text-gray-100
-              border-b border-gray-100 dark:border-gray-900
             `,
             tbody: `
               [&>tr]:transition-colors
-              [&>tr:hover]:bg-gray-50
-              dark:[&>tr:hover]:bg-gray-900/50
+              [&>tr:hover]:bg-[#f7f9ff]
+              dark:[&>tr:hover]:bg-gray-900/60
             `
           }"
         />
@@ -161,7 +159,7 @@ const sortColumButton = (column: any, label: string) =>
         ? 'i-lucide-arrow-up-narrow-wide'
         : 'i-lucide-arrow-down-wide-narrow'
       : 'i-lucide-arrow-up-down',
-    class: 'text-slate-400 hover:text-slate-700 -mx-2.5',
+    class: '-mx-2.5 text-[11px] font-semibold uppercase tracking-wider text-white hover:text-white',
     onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
   })
 

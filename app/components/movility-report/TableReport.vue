@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col h-full">
-    <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+  <div class="flex h-full flex-col">
+    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
       <!-- TOOLBAR -->
       <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70">
         <div class="flex flex-wrap items-center gap-3">
@@ -96,32 +96,30 @@
       </div>
 
       <!-- ESTADO DE CARGA -->
-      <div v-if="isLoading" class="h-[750px] overflow-hidden">
-        <div class="h-full overflow-hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-          <div class="sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 px-4 py-3 backdrop-blur">
+      <div v-if="isLoading" class="h-[750px] overflow-hidden border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+        <div class="sticky top-0 z-10 border-b border-gray-200 bg-[#2d5fc0] px-4 py-3 text-white shadow-sm dark:border-[#244fa4]">
             <div class="flex flex-wrap items-center gap-3">
-              <USkeleton class="h-4 w-56 rounded-md" />
-              <USkeleton class="h-4 w-28 rounded-full" />
-              <USkeleton class="h-4 w-28 rounded-full" />
+              <USkeleton class="h-4 w-56 rounded-md bg-white/25" />
+              <USkeleton class="h-4 w-28 rounded-full bg-white/25" />
+              <USkeleton class="h-4 w-28 rounded-full bg-white/25" />
               <div class="ml-auto flex items-center gap-2">
-                <USkeleton class="h-9 w-28 rounded-lg" />
-                <USkeleton class="h-9 w-28 rounded-lg" />
+                <USkeleton class="h-9 w-28 rounded-lg bg-white/25" />
+                <USkeleton class="h-9 w-28 rounded-lg bg-white/25" />
               </div>
             </div>
           </div>
 
-          <div class="overflow-hidden">
-            <div class="overflow-x-auto">
+          <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+                  <tr class="bg-[#2d5fc0] text-white">
                     <th v-for="i in 14" :key="i" class="px-3 py-3">
-                      <USkeleton class="h-3 w-full rounded-md" />
+                      <USkeleton class="h-3 w-full rounded-md bg-white/25" />
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in 7" :key="row" class="border-b border-gray-100 dark:border-gray-800/80">
+                  <tr v-for="row in 7" :key="row" class="border-b border-gray-100 odd:bg-white even:bg-gray-50/40 dark:border-gray-800/80 dark:odd:bg-gray-950 dark:even:bg-gray-900/25">
                     <td class="px-3 py-3"><USkeleton class="h-4 w-8 rounded-md" /></td>
                     <td class="px-3 py-3"><USkeleton class="h-4 w-28 rounded-md" /></td>
                     <td class="px-3 py-3"><USkeleton class="h-4 w-24 rounded-md" /></td>
@@ -141,14 +139,12 @@
               </table>
             </div>
           </div>
-        </div>
-      </div>
 
       <!-- TABLA -->
-      <div v-else class="overflow-x-auto overflow-y-auto h-[750px]">
+      <div v-else class="h-[750px] overflow-x-auto overflow-y-auto border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
         <table class="w-full text-sm">
           <thead>
-            <tr class="sticky top-0 z-10 bg-[#2d5fc0] text-white border-b border-[#244fa4]/40">
+            <tr class="sticky top-0 z-10 bg-[#2d5fc0] text-white shadow-sm border-b border-[#244fa4]/40">
               <th class="px-3 py-3 text-center text-xs font-semibold w-12">
                 <button type="button" class="inline-flex items-center gap-1 w-full justify-center" @click="toggleSort('numero')">
                   N° <UIcon :name="sortIcon('numero')" class="w-3 h-3 opacity-90" />
@@ -227,7 +223,7 @@
               </td>
               <td class="px-3 py-3 min-w-[220px]">
                 <div class="min-w-0 flex flex-col gap-0.5">
-                  <div class="min-w-0 truncate font-semibold text-[#2d5fc0] dark:text-[#9cb7f5] leading-tight">
+                  <div class="min-w-0 truncate font-semibold text-[#2d5fc0] leading-tight dark:text-[#9cb7f5]">
                     {{ emp.employee.last_name }}
                   </div>
                   <div class="min-w-0 truncate text-gray-900 dark:text-gray-100 leading-tight">
@@ -242,7 +238,7 @@
                 {{ formatDateLatam(emp.employee.create_time) }}
               </td>
               <td class="px-3 py-3 text-right">
-                <span class="inline-flex items-center justify-end bg-[#eef4ff] dark:bg-[#13203a] text-[#2d5fc0] dark:text-[#9cb7f5] px-2.5 py-1 rounded-lg text-xs font-semibold border border-[#c9d9ff] dark:border-[#29406f] font-mono tabular-nums">
+                <span class="inline-flex items-center justify-end rounded-full bg-[#eef4ff] px-2.5 py-1 text-xs font-semibold font-mono tabular-nums text-[#2d5fc0] dark:bg-[#13203a] dark:text-[#9cb7f5]">
                   S/ {{ emp.summary.mobility_amount ? Number(emp.summary.mobility_amount).toFixed(2) : '0.00' }}
                 </span>
               </td>
@@ -251,42 +247,42 @@
 
               <!-- <td class="px-3 py-3 text-gray-600 dark:text-gray-400">CECHRIZA</td> -->
               <td class="px-3 py-3 text-center">
-                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 text-xs font-semibold font-mono tabular-nums">
+                <span class="inline-flex min-w-[34px] items-center justify-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold font-mono tabular-nums text-gray-800 dark:bg-gray-900/70 dark:text-gray-200">
                   {{ emp.summary.total_days ?? 0 }}
                 </span>
               </td>
               <td class="px-3 py-3 text-center">
-                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-amber-200/70 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs font-semibold font-mono tabular-nums">
+                <span class="inline-flex min-w-[34px] items-center justify-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold font-mono tabular-nums text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
                   {{ emp.summary.vacation_days ?? 0 }}
                 </span>
               </td>
               <td class="px-3 py-3 text-center">
-                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-gray-200/70 dark:border-gray-800/70 bg-gray-50 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300 text-xs font-semibold font-mono tabular-nums">
+                <span class="inline-flex min-w-[34px] items-center justify-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold font-mono tabular-nums text-gray-700 dark:bg-gray-900/60 dark:text-gray-300">
                   {{ emp.summary.no_mark_days ?? 0 }}
                 </span>
               </td>
               <td class="px-3 py-3 text-center">
-                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-[#c9d9ff] dark:border-[#29406f] bg-[#eef4ff] dark:bg-[#13203a] text-[#2d5fc0] dark:text-[#9cb7f5] text-xs font-semibold font-mono tabular-nums">
+                <span class="inline-flex min-w-[34px] items-center justify-center rounded-full bg-[#eef4ff] px-2.5 py-1 text-xs font-semibold font-mono tabular-nums text-[#2d5fc0] dark:bg-[#13203a] dark:text-[#9cb7f5]">
                   {{ emp.summary.medical_leave_days ?? 0 }}
                 </span>
               </td>
               <td class="px-3 py-3 text-center">
-                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-900/30 text-slate-700 dark:text-slate-200 text-xs font-semibold font-mono tabular-nums">
+                <span class="inline-flex min-w-[34px] items-center justify-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold font-mono tabular-nums text-slate-700 dark:bg-slate-900/40 dark:text-slate-200">
                   {{ countCode(emp, MovilityReportCode.LCGH) || 0 }}
                 </span>
               </td>
               <td class="px-3 py-3 text-center">
-                <span class="inline-flex items-center justify-center min-w-[38px] h-7 rounded-lg border border-gray-200/70 dark:border-gray-800/70 bg-gray-50 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300 text-xs font-semibold font-mono tabular-nums">
+                <span class="inline-flex min-w-[34px] items-center justify-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold font-mono tabular-nums text-gray-700 dark:bg-gray-900/60 dark:text-gray-300">
                   {{ countCode(emp, MovilityReportCode.LSGH) || 0 }}
                 </span>
               </td>
               <td class="px-3 py-3 text-right">
                 <span 
                   :class="[
-                    'inline-flex justify-end px-2.5 py-1 rounded-lg text-xs font-semibold border font-mono tabular-nums',
+                    'inline-flex justify-end rounded-full px-2.5 py-1 text-xs font-semibold font-mono tabular-nums',
                     emp.summary.total_mobility_to_pay < 0 
-                      ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 border-rose-200/70 dark:border-rose-800/60'
-                      : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-800/60'
+                      ? 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300'
+                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
                   ]"
                 >
                   S/ {{ emp.summary.total_mobility_to_pay ? Number(emp.summary.total_mobility_to_pay).toFixed(2) : '0.00' }}
@@ -297,7 +293,7 @@
                 <div class="flex items-center justify-center gap-1.5">
                   <button
                     @click="abrirRegistroConcepto(emp)"
-                    class="p-2 text-[#2d5fc0] dark:text-[#9cb7f5] hover:bg-[#eef4ff] dark:hover:bg-[#13203a] rounded-lg transition-colors"
+                    class="rounded-full p-2 text-[#2d5fc0] transition-colors hover:bg-[#eef4ff] dark:text-[#9cb7f5] dark:hover:bg-[#13203a]"
                     title="Registrar concepto"
                   >
                     <UIcon name="i-lucide-clipboard-plus" class="h-4 w-4" />
@@ -305,7 +301,7 @@
 
                   <button
                     @click="abrirRecordatorio(emp)"
-                    class="relative p-2 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                    class="relative rounded-full p-2 text-amber-700 transition-colors hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-900/20"
                     title="Recordatorio mensual"
                   >
                     <UIcon name="i-lucide-sticky-note" class="h-4 w-4" />
@@ -319,7 +315,7 @@
 
                   <button 
                     @click="verDetalle(emp)"
-                    class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    class="rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     title="Ver detalle"
                   >
                     <UIcon name="i-lucide-eye" class="h-4 w-4" />

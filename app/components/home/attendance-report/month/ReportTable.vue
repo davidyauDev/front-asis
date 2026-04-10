@@ -54,17 +54,17 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
         <UTable
           :data="tableData"
           :columns="dinamicColumns"
           :ui="{
-            root: 'relative max-h-[calc(100vh-350px)] overflow-y-auto overflow-x-hidden',
-            base: 'min-w-full table-fixed',
-            thead: 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800',
+            root: 'relative max-h-[calc(100vh-300px)] overflow-y-auto overflow-x-hidden',
+            base: 'min-w-full table-fixed border-separate border-spacing-0',
+            thead: 'sticky top-0 z-10 bg-[#2d5fc0] text-white border-b border-[#244ea4]',
             tbody: 'divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900',
-            tr: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
-            th: 'px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider',
+            tr: 'hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60 transition-colors',
+            th: 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white',
             td: 'px-4 py-3 text-sm text-gray-900 dark:text-gray-100'
           }"
         />
@@ -277,7 +277,7 @@ const sortColumButton = (column: any, label: string) => {
         : 'i-heroicons-arrow-down'
       : 'i-heroicons-arrows-up-down',
     size: 'xs',
-    class: 'font-semibold',
+    class: 'font-semibold text-white hover:text-white',
     onClick: () => column.toggleSorting(isSorted === 'asc')
   })
 }

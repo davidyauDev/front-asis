@@ -285,11 +285,11 @@ const inactiveCount = computed(() => rowsFiltered.value.filter((r) => r.is_activ
 
 const tableUi = {
   base: 'table-fixed border-separate border-spacing-0',
-  thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+  thead: '[&>tr]:bg-[#2d5fc0] [&>tr]:text-white [&>tr]:after:content-none',
   tbody: '[&>tr]:last:[&>td]:border-b-0',
-  tr: 'transition-colors hover:bg-[#eef4ff]/60 dark:hover:bg-[#13203a]',
-  th: 'py-2 px-3 text-xs font-semibold text-[#39569a] dark:text-[#b8c7f7] border-y border-default first:border-l last:border-r first:rounded-l-lg last:rounded-r-lg',
-  td: 'px-3 py-2 text-sm border-b border-default',
+  tr: 'transition-colors odd:bg-white even:bg-gray-50/40 hover:bg-[#eef4ff]/70 dark:odd:bg-gray-950 dark:even:bg-gray-900/25 dark:hover:bg-[#13203a]',
+  th: 'py-3 px-3 text-xs font-semibold text-white bg-[#2d5fc0] border-b border-[#244fa4]/40 first:rounded-l-lg last:rounded-r-lg',
+  td: 'px-3 py-2.5 text-sm border-b border-gray-100 dark:border-gray-800',
   separator: 'h-0',
 } as const
 

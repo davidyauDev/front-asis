@@ -4,7 +4,7 @@
         error-message="No se pudó cagar el reporte semanal" @retry="getAttendanceSummary">
 
         <!-- Tabla -->
-        <div class="overflow-x-auto">
+        <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
             <UTable
                 sticky
                 :data="weeklyReportList"
@@ -13,15 +13,15 @@
                 :loading="attendance.summary.loading"
                 empty="Sin registro semanal"
                 :ui="{
-                    base: 'w-full',
-                    wrapper: 'max-h-[calc(100vh-350px)] overflow-y-auto relative',
-                    thead: 'sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800',
-                    th: 'p-0 w-1',
+                    base: 'min-w-full table-fixed border-separate border-spacing-0',
+                    root: 'relative max-h-[calc(100vh-300px)] overflow-y-auto overflow-x-hidden',
+                    thead: 'sticky top-0 z-10 bg-[#2d5fc0] text-white border-b border-[#244ea4]',
+                    th: 'p-0 w-1 text-white',
                     td: 'p-0',
                     tbody: `
                         [&>tr]:transition-colors
-                        [&>tr:hover]:bg-gray-50
-                        dark:[&>tr:hover]:bg-gray-900/50
+                        [&>tr:hover]:bg-[#f7f9ff]
+                        dark:[&>tr:hover]:bg-gray-900/60
                     `,
                 }"
             />

@@ -69,7 +69,7 @@
     </div>
 
     <DataState :loading="loading" :error="isError" :error-message="errorMessage" @retry="refresh()">
-      <div class="border-t border-gray-200 dark:border-gray-800">
+      <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
         <div class="h-[650px] overflow-auto">
           <UTable
             sticky
@@ -301,8 +301,8 @@ const getSortIcon = (key: SortKey) => {
 
 const getSortButtonClass = (key: SortKey) => {
   const base =
-    'group inline-flex w-full items-center gap-1 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors'
-  return sortKey.value === key ? `${base} !text-gray-900 dark:!text-gray-100` : base
+    'group inline-flex w-full items-center gap-1 text-left text-[11px] font-semibold uppercase tracking-wider text-white/90 transition-colors hover:text-white'
+  return sortKey.value === key ? `${base} text-white` : base
 }
 
 const normalizeForSort = (value: unknown) =>
@@ -363,7 +363,7 @@ const sortableHeader = (label: string, key: SortKey) => {
       },
       [
         h('span', { class: 'truncate' }, label),
-        h(UIcon, { name: getSortIcon(key), class: 'w-3 h-3 opacity-60 group-hover:opacity-100' }),
+        h(UIcon, { name: getSortIcon(key), class: 'w-3 h-3 opacity-75 group-hover:opacity-100' }),
       ]
     )
 }
@@ -501,12 +501,12 @@ const columns: TableColumn<BioTimePersonnelEmployee>[] = [
 ]
 
 const tableUi = {
-  base: 'table-fixed border-separate border-spacing-0',
-  thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+  base: 'table-fixed min-w-full border-separate border-spacing-0',
+  thead: 'bg-[#2d5fc0] text-white',
   tbody: '[&>tr]:last:[&>td]:border-b-0',
-  tr: 'transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/40',
-  th: 'py-2 px-3 text-xs font-semibold text-gray-600 dark:text-gray-300 border-y border-default first:border-l last:border-r first:rounded-l-lg last:rounded-r-lg',
-  td: 'px-3 py-2 text-sm border-b border-default align-top',
+  tr: 'transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60',
+  th: 'px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white',
+  td: 'px-5 py-3 text-sm text-gray-700 dark:text-gray-200 align-top',
   separator: 'h-0',
 } as const
 
