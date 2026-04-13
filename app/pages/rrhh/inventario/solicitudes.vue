@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppTabs, { type AppTabItem } from '~/components/AppTabs.vue'
 import SolicitudDetalleModal from '~/components/rrhh/inventario/SolicitudDetalleModal.vue'
 import {
   getSolicitudById,
@@ -19,6 +20,7 @@ const requests = ref<SolicitudListItem[]>([])
 const search = ref('')
 const fromDate = ref('')
 const toDate = ref('')
+const activeTab = ref<'mixta' | 'interna_rrhh' | 'compra'>('mixta')
 
 const detailOpen = ref(false)
 const detailLoading = ref(false)
@@ -83,6 +85,24 @@ const stateTone = (value?: string | null) => {
   if (state.includes('cerr')) return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200'
   return 'bg-sky-100 text-sky-800 ring-1 ring-sky-200'
 }
+
+const tabItems = computed<AppTabItem[]>(() => [
+  {
+    label: 'MIXTA',
+    value: 'mixta',
+    badge: requests.value.length || undefined,
+  },
+  {
+    label: 'INTERNA_RRHH',
+    value: 'interna_rrhh',
+  },
+  {
+    label: 'COMPRA',
+    value: 'compra',
+  },
+])
+
+const isMixtaTab = computed(() => activeTab.value === 'mixta')
 
 const loadRequests = async () => {
   loading.value = true
@@ -173,113 +193,132 @@ onMounted(() => {
           </UButton>
         </div>
 
-        <div class="flex flex-col gap-3 px-5 md:flex-row md:items-center">
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Buscar por solicitante o justificacion..."
-            class="w-full md:flex-1"
-          />
+        <div class="px-5">
+          <AppTabs v-model="activeTab" :ariaLabel="'Solicitudes de inventario'" :items="tabItems" />
+        </div>
 
-          <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row">
-            <UInput v-model="fromDate" type="date" icon="i-lucide-calendar-range" class="w-full md:w-56" />
-            <UInput v-model="toDate" type="date" icon="i-lucide-calendar-range" class="w-full md:w-56" />
+        <div v-if="isMixtaTab" class="space-y-5">
+          <div class="flex flex-col gap-3 px-5 md:flex-row md:items-center">
+            <UInput
+              v-model="search"
+              icon="i-lucide-search"
+              placeholder="Buscar por solicitante o justificacion..."
+              class="w-full md:flex-1"
+            />
+
+            <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row">
+              <UInput v-model="fromDate" type="date" icon="i-lucide-calendar-range" class="w-full md:w-56" />
+              <UInput v-model="toDate" type="date" icon="i-lucide-calendar-range" class="w-full md:w-56" />
+            </div>
+
+            <div class="flex gap-2">
+              <UButton color="primary" class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]" :loading="loading" @click="refreshRequests">
+                Filtrar
+              </UButton>
+              <UButton color="neutral" variant="soft" @click="clearFilters">
+                Limpiar
+              </UButton>
+            </div>
           </div>
 
-          <div class="flex gap-2">
-            <UButton color="primary" class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]" :loading="loading" @click="refreshRequests">
-              Filtrar
-            </UButton>
-            <UButton color="neutral" variant="soft" @click="clearFilters">
-              Limpiar
-            </UButton>
+          <div class="overflow-hidden rounded-2xl border border-gray-200 mx-5 dark:border-gray-800">
+            <div class="overflow-x-auto overflow-y-auto max-h-[68vh]">
+              <table class="min-w-full border-separate border-spacing-0">
+                <thead class="bg-[#2d5fc0] text-white">
+                  <tr>
+                    <th class="rounded-tl-2xl px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Solicitud</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Solicitante</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Estado</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha de registro</th>
+                    <th class="rounded-tr-2xl px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                  <tr v-if="loading">
+                    <td colspan="5" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <div class="flex items-center justify-center gap-3">
+                        <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-[#2d5fc0]" />
+                        <span>Cargando solicitudes...</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr v-else-if="error">
+                    <td colspan="5" class="px-5 py-10 text-center text-sm text-red-600 dark:text-red-400">
+                      <div class="space-y-3">
+                        <p class="font-semibold">{{ error }}</p>
+                        <UButton color="primary" variant="soft" class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]" :loading="loading" @click="refreshRequests">
+                          Reintentar
+                        </UButton>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr
+                    v-for="item in requests"
+                    v-else
+                    :key="String(item.id_solicitud ?? item.id_usuario_solicitante ?? 'request')"
+                    class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
+                  >
+                    <td class="px-5 py-4 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
+                      #{{ item.id_solicitud ?? '--' }}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      <div class="space-y-1">
+                        <p class="max-w-[280px] font-semibold leading-5">{{ getRequesterName(item) }}</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-500">
+                          Usuario #{{ item.id_usuario_solicitante ?? '--' }}
+                        </p>
+                      </div>
+                    </td>
+                    <td class="px-5 py-4">
+                      <span :class="['inline-flex rounded-md px-3 py-1 text-[11px] font-bold', stateTone(item.estado?.descripcion)]">
+                        {{ item.estado?.descripcion || '--' }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      <div class="space-y-1">
+                        <p class="font-medium">{{ formatDate(item.fecha_registro) }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatTime(item.fecha_registro) }}</p>
+                      </div>
+                    </td>
+                    <td class="px-5 py-4 text-center">
+                      <UButton
+                        color="primary"
+                        variant="soft"
+                        icon="i-lucide-eye"
+                        class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                        size="xs"
+                        @click.stop="openDetail(item)"
+                      >
+                        Ver items
+                      </UButton>
+                    </td>
+                  </tr>
+
+                  <tr v-if="!loading && !error && !requests.length">
+                    <td colspan="5" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No hay solicitudes pendientes para mostrar.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <div class="overflow-hidden rounded-2xl border border-gray-200 mx-5 dark:border-gray-800">
-          <div class="overflow-x-auto overflow-y-auto max-h-[68vh]">
-            <table class="min-w-full border-separate border-spacing-0">
-              <thead class="bg-[#2d5fc0] text-white">
-                <tr>
-                  <th class="rounded-tl-2xl px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Solicitud</th>
-                  <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Solicitante</th>
-                  <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Estado</th>
-                  <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha de registro</th>
-                  <th class="rounded-tr-2xl px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Acciones</th>
-                </tr>
-              </thead>
-
-              <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-                <tr v-if="loading">
-                  <td colspan="5" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
-                    <div class="flex items-center justify-center gap-3">
-                      <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-[#2d5fc0]" />
-                      <span>Cargando solicitudes...</span>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr v-else-if="error">
-                  <td colspan="5" class="px-5 py-10 text-center text-sm text-red-600 dark:text-red-400">
-                    <div class="space-y-3">
-                      <p class="font-semibold">{{ error }}</p>
-                      <UButton color="primary" variant="soft" class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]" :loading="loading" @click="refreshRequests">
-                        Reintentar
-                      </UButton>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr
-                  v-for="item in requests"
-                  v-else
-                  :key="String(item.id_solicitud ?? item.id_usuario_solicitante ?? 'request')"
-                  class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
-                >
-                  <td class="px-5 py-4 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
-                    #{{ item.id_solicitud ?? '--' }}
-                  </td>
-                  <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                    <div class="space-y-1">
-                      <p class="max-w-[280px] font-semibold leading-5">{{ getRequesterName(item) }}</p>
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-500">
-                        Usuario #{{ item.id_usuario_solicitante ?? '--' }}
-                      </p>
-                    </div>
-                  </td>
-                  <td class="px-5 py-4">
-                    <span :class="['inline-flex rounded-md px-3 py-1 text-[11px] font-bold', stateTone(item.estado?.descripcion)]">
-                      {{ item.estado?.descripcion || '--' }}
-                    </span>
-                  </td>
-                  <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    <div class="space-y-1">
-                      <p class="font-medium">{{ formatDate(item.fecha_registro) }}</p>
-                      <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatTime(item.fecha_registro) }}</p>
-                    </div>
-                  </td>
-                  <td class="px-5 py-4 text-center">
-                    <UButton
-                      color="primary"
-                      variant="soft"
-                      icon="i-lucide-eye"
-                      class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                      size="xs"
-                      @click.stop="openDetail(item)"
-                    >
-                      Ver items
-                    </UButton>
-                  </td>
-                </tr>
-
-                <tr v-if="!loading && !error && !requests.length">
-                  <td colspan="5" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No hay solicitudes pendientes para mostrar.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div v-else class="px-5 pb-5">
+          <UCard class="border-dashed border-gray-200 bg-gray-50/80 shadow-none dark:border-gray-800 dark:bg-gray-900/50" :ui="{ body: 'p-6' }">
+            <div class="space-y-2">
+              <h2 class="text-lg font-bold text-gray-950 dark:text-white">
+                {{ activeTab === 'interna_rrhh' ? 'INTERNA_RRHH' : 'COMPRA' }}
+              </h2>
+              <p class="text-sm leading-6 text-gray-600 dark:text-gray-300">
+                Esta pestaña queda preparada por ahora y no muestra registros todavía.
+              </p>
+            </div>
+          </UCard>
         </div>
       </div>
     </UCard>
