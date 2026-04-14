@@ -3,9 +3,11 @@ import AppTabs, { type AppTabItem } from '~/components/AppTabs.vue'
 import SolicitudDetalleModal from '~/components/rrhh/inventario/SolicitudDetalleModal.vue'
 import {
   getSolicitudById,
+  getSolicitudProductosRrhh,
   getSolicitudes,
   type SolicitudDetalleData,
   type SolicitudListItem,
+  type SolicitudProductoRrhhItem,
 } from '~/services/rrhh/solicitudes'
 
 definePageMeta({ middleware: 'auth' })
@@ -21,6 +23,11 @@ const search = ref('')
 const fromDate = ref('')
 const toDate = ref('')
 const activeTab = ref<'mixta' | 'interna_rrhh' | 'compra'>('mixta')
+const purchaseLoading = ref(false)
+const purchaseError = ref<string | null>(null)
+const purchaseRequests = ref<SolicitudProductoRrhhItem[]>([])
+const purchaseStaffId = ref('')
+const purchaseProductId = ref('')
 
 const detailOpen = ref(false)
 const detailLoading = ref(false)
@@ -70,6 +77,11 @@ const formatTime = (value?: string | null) => {
   }).format(date)
 }
 
+const displayValue = (value?: string | number | null) => {
+  if (value === null || value === undefined || value === '') return '--'
+  return value
+}
+
 const getRequesterName = (item: SolicitudListItem) => {
   return item.solicitante
     || [item.firstname, item.lastname].filter(Boolean).join(' ')
@@ -99,10 +111,13 @@ const tabItems = computed<AppTabItem[]>(() => [
   {
     label: 'COMPRA',
     value: 'compra',
+    badge: purchaseRequests.value.length || undefined,
   },
 ])
 
 const isMixtaTab = computed(() => activeTab.value === 'mixta')
+const isCompraTab = computed(() => activeTab.value === 'compra')
+const currentLoading = computed(() => (isMixtaTab.value ? loading.value : purchaseLoading.value))
 
 const loadRequests = async () => {
   loading.value = true
@@ -135,6 +150,49 @@ const clearFilters = () => {
   void loadRequests()
 }
 
+const parseNumberFilter = (value: string) => {
+  const trimmed = value.trim()
+  return trimmed ? trimmed : undefined
+}
+
+const loadPurchaseRequests = async () => {
+  purchaseLoading.value = true
+  purchaseError.value = null
+
+  try {
+    const response = await getSolicitudProductosRrhh({
+      staff_id: parseNumberFilter(purchaseStaffId.value),
+      id_producto: parseNumberFilter(purchaseProductId.value),
+    })
+
+    purchaseRequests.value = response.data ?? []
+  } catch (cause) {
+    purchaseRequests.value = []
+    purchaseError.value = extractErrorMessage(cause)
+  } finally {
+    purchaseLoading.value = false
+  }
+}
+
+const refreshPurchaseRequests = () => {
+  void loadPurchaseRequests()
+}
+
+const clearPurchaseFilters = () => {
+  purchaseStaffId.value = ''
+  purchaseProductId.value = ''
+  void loadPurchaseRequests()
+}
+
+const refreshActiveTab = () => {
+  if (isCompraTab.value) {
+    void loadPurchaseRequests()
+    return
+  }
+
+  void loadRequests()
+}
+
 const openDetail = async (item: SolicitudListItem) => {
   selectedRequest.value = item
   selectedDetail.value = null
@@ -164,6 +222,12 @@ const handleDetailSubmitted = async () => {
   await openDetail(selectedRequest.value)
 }
 
+watch(activeTab, (tab) => {
+  if (tab !== 'compra') return
+  if (purchaseRequests.value.length || purchaseLoading.value) return
+  void loadPurchaseRequests()
+})
+
 onMounted(() => {
   void loadRequests()
 })
@@ -186,8 +250,8 @@ onMounted(() => {
             variant="soft"
             icon="i-lucide-rotate-cw"
             class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-            :loading="loading"
-            @click="refreshRequests"
+            :loading="currentLoading"
+            @click="refreshActiveTab"
           >
             Actualizar
           </UButton>
@@ -308,11 +372,120 @@ onMounted(() => {
           </div>
         </div>
 
+        <div v-else-if="isCompraTab" class="space-y-5 pb-5">
+          <div class="flex flex-col gap-3 px-5 md:flex-row md:items-center">
+            <UInput
+              v-model="purchaseStaffId"
+              type="number"
+              placeholder="Filtrar por staff_id"
+              class="w-full md:w-64"
+            />
+            <UInput
+              v-model="purchaseProductId"
+              type="number"
+              placeholder="Filtrar por id_producto"
+              class="w-full md:w-64"
+            />
+
+            <div class="flex gap-2">
+              <UButton color="primary" class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]" :loading="purchaseLoading" @click="refreshPurchaseRequests">
+                Filtrar
+              </UButton>
+              <UButton color="neutral" variant="soft" @click="clearPurchaseFilters">
+                Limpiar
+              </UButton>
+            </div>
+          </div>
+
+          <div class="mx-5 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+            <div class="max-h-[68vh] overflow-x-auto overflow-y-auto">
+              <table class="min-w-[2200px] border-separate border-spacing-0">
+                <thead class="bg-[#2d5fc0] text-white">
+                  <tr>
+                    <th class="rounded-tl-2xl px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">ID</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">CODIGO PRODUCTO</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">DESCRIPCION</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">FIRSTNAME</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">LASTNAME</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">CANTIDAD SOLICITADA</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">OBSERVACION ATENCION</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">FECHA REGISTRO</th>
+                    <th class="rounded-tr-2xl px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">FECHA NECESARIA</th>
+                  </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                  <tr v-if="purchaseLoading">
+                    <td colspan="9" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <div class="flex items-center justify-center gap-3">
+                        <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-[#2d5fc0]" />
+                        <span>Cargando productos de RRHH...</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr v-else-if="purchaseError">
+                    <td colspan="9" class="px-5 py-10 text-center text-sm text-red-600 dark:text-red-400">
+                      <div class="space-y-3">
+                        <p class="font-semibold">{{ purchaseError }}</p>
+                        <UButton color="primary" variant="soft" class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]" :loading="purchaseLoading" @click="refreshPurchaseRequests">
+                          Reintentar
+                        </UButton>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr
+                    v-for="item in purchaseRequests"
+                    v-else
+                    :key="`purchase-${item.id}`"
+                    class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
+                  >
+                    <td class="px-5 py-4 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
+                      {{ item.id }}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      {{ displayValue(item.producto?.codigo_producto) }}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(item.producto?.descripcion) }}</p>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      {{ displayValue(item.staff?.firstname) }}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      {{ displayValue(item.staff?.lastname) }}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      {{ displayValue(item.detalle?.cantidad_solicitada) }}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(item.detalle?.observacion_atencion) }}</p>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      {{ formatDate(item.solicitud?.fecha_registro) }}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      {{ formatDate(item.solicitud?.fecha_necesaria) }}
+                    </td>
+                  </tr>
+
+                  <tr v-if="!purchaseLoading && !purchaseError && !purchaseRequests.length">
+                    <td colspan="9" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No hay registros para mostrar.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div v-else class="px-5 pb-5">
           <UCard class="border-dashed border-gray-200 bg-gray-50/80 shadow-none dark:border-gray-800 dark:bg-gray-900/50" :ui="{ body: 'p-6' }">
             <div class="space-y-2">
               <h2 class="text-lg font-bold text-gray-950 dark:text-white">
-                {{ activeTab === 'interna_rrhh' ? 'INTERNA_RRHH' : 'COMPRA' }}
+                INTERNA_RRHH
               </h2>
               <p class="text-sm leading-6 text-gray-600 dark:text-gray-300">
                 Esta pestaña queda preparada por ahora y no muestra registros todavía.

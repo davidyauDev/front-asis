@@ -95,6 +95,43 @@ export interface SolicitudDetalleResponse {
   data: SolicitudDetalleData
 }
 
+export interface SolicitudProductoRrhhItem {
+  id: number
+  id_producto: number
+  staff_id: number
+  id_detalle_solicitud: number
+  producto?: {
+    codigo_producto?: string | null
+    descripcion?: string | null
+    id_categoria?: number | null
+  } | null
+  staff?: {
+    username?: string | null
+    firstname?: string | null
+    lastname?: string | null
+    dept_id?: number | null
+  } | null
+  detalle?: {
+    id_solicitud?: number | null
+    id_inventario?: number | null
+    cantidad_solicitada?: number | string | null
+    area_id?: number | null
+    id_estado_detalle?: number | null
+    observacion_atencion?: string | null
+  } | null
+  solicitud?: {
+    fecha_registro?: string | null
+    fecha_necesaria?: string | null
+    prioridad?: string | null
+  } | null
+}
+
+export interface SolicitudProductosRrhhResponse {
+  success: boolean
+  message?: string
+  data: SolicitudProductoRrhhItem[]
+}
+
 export interface AprobarDetalleSolicitudPayload {
   cantidad_aprobada: number
   motivo?: string | null
@@ -126,6 +163,11 @@ export interface SolicitudListParams {
   per_page?: number
 }
 
+export interface SolicitudProductosRrhhParams {
+  staff_id?: number | string
+  id_producto?: number | string
+}
+
 const buildQuery = (params: SolicitudListParams) => {
   const query = new URLSearchParams()
 
@@ -134,6 +176,16 @@ const buildQuery = (params: SolicitudListParams) => {
   if (params.to) query.set('to', params.to)
   if (params.page) query.set('page', String(params.page))
   if (params.per_page) query.set('per_page', String(params.per_page))
+
+  const queryString = query.toString()
+  return queryString ? `?${queryString}` : ''
+}
+
+const buildProductosRrhhQuery = (params: SolicitudProductosRrhhParams) => {
+  const query = new URLSearchParams()
+
+  if (params.staff_id !== undefined && params.staff_id !== '') query.set('staff_id', String(params.staff_id))
+  if (params.id_producto !== undefined && params.id_producto !== '') query.set('id_producto', String(params.id_producto))
 
   const queryString = query.toString()
   return queryString ? `?${queryString}` : ''
@@ -149,6 +201,12 @@ export const getSolicitudById = async (
   id: number | string,
 ): Promise<SolicitudDetalleResponse> => {
   return apiFetch(`/api/solicitudes/${id}`)
+}
+
+export const getSolicitudProductosRrhh = async (
+  params: SolicitudProductosRrhhParams = {},
+): Promise<SolicitudProductosRrhhResponse> => {
+  return apiFetch(`/api/solicitudes/productos-rrhh${buildProductosRrhhQuery(params)}`)
 }
 
 export const aprobarDetalleSolicitud = async (
