@@ -100,12 +100,15 @@ export interface SolicitudProductoRrhhItem {
   id_producto: number
   staff_id: number
   id_detalle_solicitud: number
+  url_imagen?: string | null
   producto?: {
     codigo_producto?: string | null
     descripcion?: string | null
     id_categoria?: number | null
+    url_imagen?: string | null
   } | null
   staff?: {
+    full_name?: string | null
     username?: string | null
     firstname?: string | null
     lastname?: string | null
@@ -118,6 +121,7 @@ export interface SolicitudProductoRrhhItem {
     area_id?: number | null
     id_estado_detalle?: number | null
     observacion_atencion?: string | null
+    url_imagen?: string | null
   } | null
   solicitud?: {
     fecha_registro?: string | null

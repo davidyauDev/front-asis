@@ -22,12 +22,24 @@ const requests = ref<SolicitudListItem[]>([])
 const search = ref('')
 const fromDate = ref('')
 const toDate = ref('')
-const activeTab = ref<'mixta' | 'interna_rrhh' | 'compra'>('mixta')
+const activeTab = ref<'mixta' | 'compra'>('mixta')
 const purchaseLoading = ref(false)
 const purchaseError = ref<string | null>(null)
 const purchaseRequests = ref<SolicitudProductoRrhhItem[]>([])
 const purchaseStaffId = ref('')
 const purchaseProductId = ref('')
+type PurchaseActionType = 'aprobar' | 'desaprobar'
+const purchaseActionOpen = ref(false)
+const purchaseActionType = ref<PurchaseActionType>('aprobar')
+const purchaseActionItem = ref<SolicitudProductoRrhhItem | null>(null)
+const purchaseActionComment = ref('')
+const purchaseSendEmail = ref(true)
+const purchaseEmailToRequester = ref(true)
+const purchaseEmailCopyRrhh = ref(false)
+const purchaseEmailCopyCompras = ref(false)
+const purchaseImagePreviewOpen = ref(false)
+const purchaseImagePreviewSrc = ref<string | null>(null)
+const purchaseImagePreviewAlt = ref('Imagen del producto')
 
 const detailOpen = ref(false)
 const detailLoading = ref(false)
@@ -82,6 +94,31 @@ const displayValue = (value?: string | number | null) => {
   return value
 }
 
+const getProductImageUrl = (item: SolicitudProductoRrhhItem) => {
+  const imageUrl = item.detalle?.url_imagen || item.url_imagen || item.producto?.url_imagen
+  if (!imageUrl) return null
+  const normalized = imageUrl.trim()
+  return normalized || null
+}
+
+const getPurchaseFullName = (item: SolicitudProductoRrhhItem) => {
+  const fullName = item.staff?.full_name?.trim()
+  if (fullName) return fullName
+  const fallback = [item.staff?.firstname, item.staff?.lastname].filter(Boolean).join(' ').trim()
+  return fallback || '--'
+}
+
+const getPurchaseNameLines = (item: SolicitudProductoRrhhItem) => {
+  const fullName = getPurchaseFullName(item)
+  if (fullName === '--') return ['--', '']
+
+  const parts = fullName.split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return [parts[0] ?? '--', '']
+
+  const pivot = Math.ceil(parts.length / 2)
+  return [parts.slice(0, pivot).join(' '), parts.slice(pivot).join(' ')]
+}
+
 const getRequesterName = (item: SolicitudListItem) => {
   return item.solicitante
     || [item.firstname, item.lastname].filter(Boolean).join(' ')
@@ -105,10 +142,6 @@ const tabItems = computed<AppTabItem[]>(() => [
     badge: requests.value.length || undefined,
   },
   {
-    label: 'INTERNA_RRHH',
-    value: 'interna_rrhh',
-  },
-  {
     label: 'COMPRA',
     value: 'compra',
     badge: purchaseRequests.value.length || undefined,
@@ -118,6 +151,51 @@ const tabItems = computed<AppTabItem[]>(() => [
 const isMixtaTab = computed(() => activeTab.value === 'mixta')
 const isCompraTab = computed(() => activeTab.value === 'compra')
 const currentLoading = computed(() => (isMixtaTab.value ? loading.value : purchaseLoading.value))
+const purchaseActionTitle = computed(() => (
+  purchaseActionType.value === 'aprobar'
+    ? 'Aprobar solicitud de compra'
+    : 'Desaprobar solicitud de compra'
+))
+const purchaseActionConfirmLabel = computed(() => (
+  purchaseActionType.value === 'aprobar'
+    ? 'Confirmar aprobacion'
+    : 'Confirmar desaprobacion'
+))
+
+const openPurchaseActionModal = (item: SolicitudProductoRrhhItem, action: PurchaseActionType) => {
+  purchaseActionItem.value = item
+  purchaseActionType.value = action
+  purchaseActionComment.value = ''
+  purchaseSendEmail.value = true
+  purchaseEmailToRequester.value = true
+  purchaseEmailCopyRrhh.value = false
+  purchaseEmailCopyCompras.value = false
+  purchaseActionOpen.value = true
+}
+
+const closePurchaseActionModal = () => {
+  purchaseActionOpen.value = false
+  purchaseActionItem.value = null
+}
+
+const submitPurchaseActionMock = () => {
+  closePurchaseActionModal()
+}
+
+const openPurchaseImagePreview = (item: SolicitudProductoRrhhItem) => {
+  const imageUrl = getProductImageUrl(item)
+  if (!imageUrl) return
+
+  purchaseImagePreviewSrc.value = imageUrl
+  purchaseImagePreviewAlt.value = `Imagen de ${item.producto?.descripcion?.trim() || 'producto'}`
+  purchaseImagePreviewOpen.value = true
+}
+
+const closePurchaseImagePreview = () => {
+  purchaseImagePreviewOpen.value = false
+  purchaseImagePreviewSrc.value = null
+  purchaseImagePreviewAlt.value = 'Imagen del producto'
+}
 
 const loadRequests = async () => {
   loading.value = true
@@ -399,24 +477,24 @@ onMounted(() => {
 
           <div class="mx-5 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
             <div class="max-h-[68vh] overflow-x-auto overflow-y-auto">
-              <table class="min-w-[2200px] border-separate border-spacing-0">
+              <table class="min-w-[1540px] border-separate border-spacing-0">
                 <thead class="bg-[#2d5fc0] text-white">
                   <tr>
-                    <th class="rounded-tl-2xl px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">ID</th>
-                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">CODIGO PRODUCTO</th>
-                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">DESCRIPCION</th>
-                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">FIRSTNAME</th>
-                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">LASTNAME</th>
-                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">CANTIDAD SOLICITADA</th>
-                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">OBSERVACION ATENCION</th>
-                    <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">FECHA REGISTRO</th>
-                    <th class="rounded-tr-2xl px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">FECHA NECESARIA</th>
+                    <th class="w-[70px] rounded-tl-2xl px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ID</th>
+                    <th class="w-[130px] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">CODIGO PRODUCTO</th>
+                    <th class="w-[170px] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">PRODUCTO</th>
+                    <th class="w-[90px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">IMAGEN</th>
+                    <th class="w-[160px] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">SOLICITANTE</th>
+                    <th class="w-[90px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">CANTIDAD</th>
+                    <th class="w-[150px] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">OBSERVACION ATENCION</th>
+                    <th class="w-[110px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">FECHA REGISTRO</th>
+                    <th class="w-[90px] rounded-tr-2xl px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ACCIONES</th>
                   </tr>
                 </thead>
 
                 <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
                   <tr v-if="purchaseLoading">
-                    <td colspan="9" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td colspan="9" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       <div class="flex items-center justify-center gap-3">
                         <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-[#2d5fc0]" />
                         <span>Cargando productos de RRHH...</span>
@@ -425,7 +503,7 @@ onMounted(() => {
                   </tr>
 
                   <tr v-else-if="purchaseError">
-                    <td colspan="9" class="px-5 py-10 text-center text-sm text-red-600 dark:text-red-400">
+                    <td colspan="9" class="px-3 py-8 text-center text-sm text-red-600 dark:text-red-400">
                       <div class="space-y-3">
                         <p class="font-semibold">{{ purchaseError }}</p>
                         <UButton color="primary" variant="soft" class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]" :loading="purchaseLoading" @click="refreshPurchaseRequests">
@@ -441,37 +519,79 @@ onMounted(() => {
                     :key="`purchase-${item.id}`"
                     class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
                   >
-                    <td class="px-5 py-4 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
-                      {{ item.id }}
+                    <td class="px-3 py-3 text-center text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
+                      <p class="mx-auto max-w-[56px] truncate">{{ item.id }}</p>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      {{ displayValue(item.producto?.codigo_producto) }}
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                      <p class="max-w-[118px] truncate">{{ displayValue(item.producto?.codigo_producto) }}</p>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(item.producto?.descripcion) }}</p>
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                      <p class="max-w-[150px] whitespace-normal break-words">{{ displayValue(item.producto?.descripcion) }}</p>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      {{ displayValue(item.staff?.firstname) }}
+                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
+                      <div v-if="getProductImageUrl(item)">
+                        <button
+                          type="button"
+                          class="group relative block h-11 w-11 cursor-zoom-in overflow-hidden rounded-lg border border-gray-200 bg-gray-50 transition-all hover:scale-[1.02] dark:border-gray-700 dark:bg-gray-900"
+                          :aria-label="`Ver imagen de ${displayValue(item.producto?.descripcion)}`"
+                          @click="openPurchaseImagePreview(item)"
+                        >
+                          <img
+                            :src="getProductImageUrl(item) || ''"
+                            :alt="`Imagen de ${displayValue(item.producto?.descripcion)}`"
+                            class="h-full w-full object-cover"
+                            loading="lazy"
+                          >
+                          <span class="absolute inset-0 hidden items-center justify-center bg-black/35 text-white group-hover:flex">
+                            <UIcon name="i-lucide-zoom-in" class="h-4 w-4" />
+                          </span>
+                        </button>
+                      </div>
+                      <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin imagen</span>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      {{ displayValue(item.staff?.lastname) }}
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                      <div class="max-w-[150px] leading-5">
+                        <p class="truncate">{{ getPurchaseNameLines(item)[0] }}</p>
+                        <p v-if="getPurchaseNameLines(item)[1]" class="truncate text-gray-600 dark:text-gray-300">
+                          {{ getPurchaseNameLines(item)[1] }}
+                        </p>
+                      </div>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      {{ displayValue(item.detalle?.cantidad_solicitada) }}
+                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
+                      <p class="mx-auto max-w-[70px] truncate">{{ displayValue(item.detalle?.cantidad_solicitada) }}</p>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(item.detalle?.observacion_atencion) }}</p>
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                      <p class="max-w-[140px] whitespace-normal break-words">{{ displayValue(item.detalle?.observacion_atencion) }}</p>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      {{ formatDate(item.solicitud?.fecha_registro) }}
+                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
+                      <p class="mx-auto max-w-[96px] truncate">{{ formatDate(item.solicitud?.fecha_registro) }}</p>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      {{ formatDate(item.solicitud?.fecha_necesaria) }}
+                    <td class="px-3 py-3 text-center">
+                      <div class="flex items-center justify-center gap-1">
+                        <UButton
+                          size="xs"
+                          color="primary"
+                          variant="soft"
+                          icon="i-lucide-check"
+                          class="h-6 w-6 rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-200"
+                          :aria-label="`Aprobar item ${item.id}`"
+                          @click="openPurchaseActionModal(item, 'aprobar')"
+                        />
+                        <UButton
+                          size="xs"
+                          color="error"
+                          variant="soft"
+                          icon="i-lucide-x"
+                          class="h-6 w-6 rounded-full"
+                          :aria-label="`Desaprobar item ${item.id}`"
+                          @click="openPurchaseActionModal(item, 'desaprobar')"
+                        />
+                      </div>
                     </td>
                   </tr>
 
                   <tr v-if="!purchaseLoading && !purchaseError && !purchaseRequests.length">
-                    <td colspan="9" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td colspan="9" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       No hay registros para mostrar.
                     </td>
                   </tr>
@@ -481,20 +601,100 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-else class="px-5 pb-5">
-          <UCard class="border-dashed border-gray-200 bg-gray-50/80 shadow-none dark:border-gray-800 dark:bg-gray-900/50" :ui="{ body: 'p-6' }">
-            <div class="space-y-2">
-              <h2 class="text-lg font-bold text-gray-950 dark:text-white">
-                INTERNA_RRHH
-              </h2>
-              <p class="text-sm leading-6 text-gray-600 dark:text-gray-300">
-                Esta pestaña queda preparada por ahora y no muestra registros todavía.
-              </p>
-            </div>
-          </UCard>
-        </div>
       </div>
     </UCard>
+
+    <UModal v-model:open="purchaseImagePreviewOpen" title="Vista previa de imagen">
+      <template #content>
+        <div class="space-y-3 p-4 sm:p-5">
+          <div class="flex min-h-[260px] max-h-[78vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60">
+            <img
+              v-if="purchaseImagePreviewSrc"
+              :src="purchaseImagePreviewSrc"
+              :alt="purchaseImagePreviewAlt"
+              class="max-h-[74vh] w-auto max-w-full object-contain"
+            >
+            <p v-else class="text-sm text-gray-500 dark:text-gray-400">
+              No hay imagen para mostrar.
+            </p>
+          </div>
+
+          <div class="flex justify-end">
+            <UButton color="neutral" variant="outline" @click="closePurchaseImagePreview">
+              Cerrar
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="purchaseActionOpen" :title="purchaseActionTitle">
+      <template #content>
+        <div class="space-y-4 p-5">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/70">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+              Resumen del item
+            </p>
+            <div class="mt-3 grid gap-2 text-sm text-gray-700 dark:text-gray-200">
+              <p><span class="font-semibold text-gray-900 dark:text-white">ID:</span> {{ purchaseActionItem?.id ?? '--' }}</p>
+              <p><span class="font-semibold text-gray-900 dark:text-white">Codigo:</span> {{ displayValue(purchaseActionItem?.producto?.codigo_producto) }}</p>
+              <p><span class="font-semibold text-gray-900 dark:text-white">Producto:</span> {{ displayValue(purchaseActionItem?.producto?.descripcion) }}</p>
+              <p><span class="font-semibold text-gray-900 dark:text-white">Cantidad:</span> {{ displayValue(purchaseActionItem?.detalle?.cantidad_solicitada) }}</p>
+            </div>
+          </div>
+
+          <UFormGroup label="Comentario">
+            <UTextarea
+              v-model="purchaseActionComment"
+              :rows="4"
+              :placeholder="purchaseActionType === 'aprobar' ? 'Comentario interno de aprobacion (opcional)' : 'Motivo de desaprobacion'"
+            />
+          </UFormGroup>
+
+          <div class="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">Enviar correo</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Opciones de notificacion (solo maqueta).</p>
+              </div>
+              <USwitch v-model="purchaseSendEmail" />
+            </div>
+
+            <div v-if="purchaseSendEmail" class="space-y-2 border-t border-gray-200 pt-3 dark:border-gray-800">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700 dark:text-gray-200">Enviar al solicitante</span>
+                <USwitch v-model="purchaseEmailToRequester" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700 dark:text-gray-200">Enviar copia a RRHH</span>
+                <USwitch v-model="purchaseEmailCopyRrhh" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700 dark:text-gray-200">Enviar copia a Compras</span>
+                <USwitch v-model="purchaseEmailCopyCompras" />
+              </div>
+            </div>
+          </div>
+
+          <p class="text-xs text-amber-700 dark:text-amber-300">
+            Maqueta UI: aun no esta conectado al endpoint de aprobacion/desaprobacion ni al envio real de correos.
+          </p>
+
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" variant="outline" @click="closePurchaseActionModal">
+              Cancelar
+            </UButton>
+            <UButton
+              :color="purchaseActionType === 'aprobar' ? 'primary' : 'error'"
+              :disabled="purchaseActionType === 'desaprobar' && !purchaseActionComment.trim()"
+              @click="submitPurchaseActionMock"
+            >
+              {{ purchaseActionConfirmLabel }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
 
     <SolicitudDetalleModal
       v-model:open="detailOpen"

@@ -29,6 +29,7 @@ const modalOpen = computed({
 })
 
 type ManageDecision = 'aprobar' | 'rechazar'
+type DeliveryDecision = 'derivar_logistica' | 'recojo_oficina'
 
 const normalize = (value?: string | null) => (value ?? '').trim().toLowerCase()
 
@@ -97,6 +98,16 @@ const manageQuantity = ref(0)
 const manageComment = ref('')
 const manageSubmitting = ref(false)
 const manageError = ref<string | null>(null)
+const actaOpen = ref(false)
+const actaItem = ref<SolicitudDetalleItem | null>(null)
+const actaFileName = ref('')
+const actaComment = ref('')
+const deliveryOpen = ref(false)
+const deliveryItem = ref<SolicitudDetalleItem | null>(null)
+const deliveryDecision = ref<DeliveryDecision>('derivar_logistica')
+const deliveryComment = ref('')
+const deliveryNotifyRequester = ref(true)
+const deliveryNotifyLogistics = ref(true)
 
 const selectedSolicitante = computed(() => {
   const request = selectedRequest.value
@@ -150,6 +161,10 @@ const getManageButtonTitle = (item: SolicitudDetalleItem) => {
 }
 
 const isManageButtonDisabled = (item: SolicitudDetalleItem) => !canManageItem(item) || isFinalDetailState(item)
+const canDeliveryActions = (item: SolicitudDetalleItem) => canManageItem(item)
+const getDeliveryButtonTitle = (item: SolicitudDetalleItem) => (
+  canDeliveryActions(item) ? 'Derivar o recojo en oficina' : 'Solo habilitado para RR.HH.'
+)
 
 const manageMaxQuantity = computed(() => Math.max(0, toNumber(managedItem.value?.stock_actual)))
 const manageProduct = computed(() => (managedItem.value ? getItemProduct(managedItem.value) : '--'))
@@ -175,6 +190,13 @@ const manageCommentHint = computed(() => (
     ? 'Comentario opcional para aprobar.'
     : 'Este comentario es obligatorio para rechazar.'
 ))
+const actaProduct = computed(() => (actaItem.value ? getItemProduct(actaItem.value) : '--'))
+const deliveryProduct = computed(() => (deliveryItem.value ? getItemProduct(deliveryItem.value) : '--'))
+const deliveryConfirmLabel = computed(() => (
+  deliveryDecision.value === 'derivar_logistica'
+    ? 'Derivar al area de logistica'
+    : 'Registrar recojo en oficina'
+))
 const canSubmitManage = computed(() => {
   if (manageSubmitting.value || !managedItem.value) return false
   if (manageDecision.value === 'rechazar') return manageComment.value.trim().length > 0
@@ -195,6 +217,48 @@ const openManageModal = (item: SolicitudDetalleItem) => {
 const closeManageModal = () => {
   manageError.value = null
   manageOpen.value = false
+}
+
+const openActaModal = (item: SolicitudDetalleItem) => {
+  if (!canManageItem(item)) return
+  actaItem.value = item
+  actaFileName.value = ''
+  actaComment.value = ''
+  actaOpen.value = true
+}
+
+const closeActaModal = () => {
+  actaOpen.value = false
+  actaItem.value = null
+}
+
+const onActaFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement | null
+  const file = input?.files?.[0]
+  actaFileName.value = file?.name ?? ''
+}
+
+const submitActaMock = () => {
+  closeActaModal()
+}
+
+const openDeliveryModal = (item: SolicitudDetalleItem) => {
+  if (!canDeliveryActions(item)) return
+  deliveryItem.value = item
+  deliveryDecision.value = 'derivar_logistica'
+  deliveryComment.value = ''
+  deliveryNotifyRequester.value = true
+  deliveryNotifyLogistics.value = true
+  deliveryOpen.value = true
+}
+
+const closeDeliveryModal = () => {
+  deliveryOpen.value = false
+  deliveryItem.value = null
+}
+
+const submitDeliveryMock = () => {
+  closeDeliveryModal()
 }
 
 const confirmManage = async () => {
@@ -386,19 +450,42 @@ const confirmManage = async () => {
                     </td>
                     <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">{{ formatNumber(item.stock_actual) }}</td>
                     <td class="px-3 py-3 text-center">
-                      <UButton
-                        v-if="canManageItem(item)"
-                        color="primary"
-                        variant="soft"
-                        icon="i-lucide-sliders-horizontal"
-                        class="rounded-full bg-[#eef4ff] px-2 text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                        size="2xs"
-                        :ui="{ label: 'hidden' }"
-                        :title="getManageButtonTitle(item)"
-                        :aria-label="getManageButtonTitle(item)"
-                        :disabled="isManageButtonDisabled(item)"
-                        @click="openManageModal(item)"
-                      />
+                      <div v-if="canManageItem(item)" class="flex items-center justify-center gap-1.5">
+                        <UButton
+                          color="primary"
+                          variant="soft"
+                          icon="i-lucide-sliders-horizontal"
+                          class="rounded-full bg-[#eef4ff] px-2 text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                          size="2xs"
+                          :ui="{ label: 'hidden' }"
+                          :title="getManageButtonTitle(item)"
+                          :aria-label="getManageButtonTitle(item)"
+                          :disabled="isManageButtonDisabled(item)"
+                          @click="openManageModal(item)"
+                        />
+                        <UButton
+                          color="neutral"
+                          variant="soft"
+                          icon="i-lucide-truck"
+                          class="rounded-full px-2"
+                          size="2xs"
+                          :ui="{ label: 'hidden' }"
+                          :title="getDeliveryButtonTitle(item)"
+                          :aria-label="getDeliveryButtonTitle(item)"
+                          @click="openDeliveryModal(item)"
+                        />
+                        <UButton
+                          color="neutral"
+                          variant="soft"
+                          icon="i-lucide-upload"
+                          class="rounded-full px-2"
+                          size="2xs"
+                          :ui="{ label: 'hidden' }"
+                          title="Subir acta"
+                          aria-label="Subir acta"
+                          @click="openActaModal(item)"
+                        />
+                      </div>
                       <span
                         v-else
                         class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-500"
@@ -424,6 +511,186 @@ const confirmManage = async () => {
           <UButton color="neutral" variant="soft" class="px-5" @click="emit('update:open', false)">
             Cerrar
           </UButton>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="actaOpen"
+    class="w-full max-w-lg"
+    :ui="{
+      header: 'relative flex items-stretch p-0 min-h-0',
+      wrapper: 'flex-1 min-w-0 w-full',
+      title: 'w-full p-0',
+      body: 'p-0',
+    }"
+    :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+  >
+    <template #title>
+      <div class="flex w-full items-start gap-3 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-200 dark:ring-indigo-900/60">
+          <UIcon name="i-lucide-file-up" class="h-5 w-5" />
+        </span>
+        <div class="min-w-0 leading-tight">
+          <p class="text-sm font-semibold tracking-wide text-gray-950 dark:text-white">Subir acta</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Maqueta para adjuntar acta al item seleccionado.</p>
+        </div>
+      </div>
+    </template>
+
+    <template #body>
+      <div class="bg-white px-5 py-5 dark:bg-gray-950">
+        <div class="space-y-5">
+          <div class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto</p>
+            <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">{{ actaProduct }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Solo maqueta (sin API)</p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Archivo del acta</label>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              class="block w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#2d5fc0] hover:file:bg-[#dfe9ff] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+              @change="onActaFileChange"
+            >
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ actaFileName || 'Aun no se selecciona archivo.' }}
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario</label>
+            <UTextarea
+              v-model="actaComment"
+              :rows="3"
+              placeholder="Comentario interno del acta (opcional)"
+            />
+          </div>
+
+          <p class="text-xs text-amber-700 dark:text-amber-300">
+            Maqueta UI: el archivo no se guarda todavia y no se envia al backend.
+          </p>
+
+          <div class="flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
+            <UButton color="neutral" variant="soft" class="px-5" @click="closeActaModal">
+              Cancelar
+            </UButton>
+            <UButton
+              color="primary"
+              class="px-5 font-semibold"
+              icon="i-lucide-upload"
+              :disabled="!actaFileName"
+              @click="submitActaMock"
+            >
+              Subir acta (maqueta)
+            </UButton>
+          </div>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="deliveryOpen"
+    class="w-full max-w-lg"
+    :ui="{
+      header: 'relative flex items-stretch p-0 min-h-0',
+      wrapper: 'flex-1 min-w-0 w-full',
+      title: 'w-full p-0',
+      body: 'p-0',
+    }"
+    :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+  >
+    <template #title>
+      <div class="flex w-full items-start gap-3 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-200 dark:ring-sky-900/60">
+          <UIcon name="i-lucide-truck" class="h-5 w-5" />
+        </span>
+        <div class="min-w-0 leading-tight">
+          <p class="text-sm font-semibold tracking-wide text-gray-950 dark:text-white">Derivar / recojo en oficina</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Maqueta para items del area RR.HH.
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <template #body>
+      <div class="bg-white px-5 py-5 dark:bg-gray-950">
+        <div class="space-y-5">
+          <div class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto</p>
+            <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">{{ deliveryProduct }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Area RR.HH.</p>
+          </div>
+
+          <div>
+            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-gray-900 dark:text-gray-100">Tipo de accion</p>
+            <div class="flex rounded-2xl bg-gray-100 p-1 dark:bg-gray-900">
+              <button
+                type="button"
+                class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
+                :class="deliveryDecision === 'derivar_logistica'
+                  ? 'bg-white text-gray-950 shadow-sm ring-1 ring-gray-200 dark:bg-gray-950 dark:text-white dark:ring-gray-800'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="deliveryDecision = 'derivar_logistica'"
+              >
+                Derivar
+              </button>
+
+              <button
+                type="button"
+                class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
+                :class="deliveryDecision === 'recojo_oficina'
+                  ? 'bg-white text-gray-950 shadow-sm ring-1 ring-gray-200 dark:bg-gray-950 dark:text-white dark:ring-gray-800'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="deliveryDecision = 'recojo_oficina'"
+              >
+                Recojo en oficina
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario</label>
+            <UTextarea
+              v-model="deliveryComment"
+              :rows="3"
+              placeholder="Comentario interno (solo maqueta)"
+            />
+          </div>
+
+          <div class="space-y-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900/40">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-700 dark:text-gray-200">Notificar solicitante</span>
+              <USwitch v-model="deliveryNotifyRequester" />
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-700 dark:text-gray-200">Notificar logistica</span>
+              <USwitch v-model="deliveryNotifyLogistics" :disabled="deliveryDecision !== 'derivar_logistica'" />
+            </div>
+          </div>
+
+          <p class="text-xs text-amber-700 dark:text-amber-300">
+            Maqueta UI: no realiza derivacion real ni envio de notificaciones.
+          </p>
+
+          <div class="flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
+            <UButton color="neutral" variant="soft" class="px-5" @click="closeDeliveryModal">
+              Cancelar
+            </UButton>
+            <UButton
+              color="primary"
+              class="px-5 font-semibold"
+              :icon="deliveryDecision === 'derivar_logistica' ? 'i-lucide-send' : 'i-lucide-briefcase'"
+              @click="submitDeliveryMock"
+            >
+              {{ deliveryConfirmLabel }}
+            </UButton>
+          </div>
         </div>
       </div>
     </template>

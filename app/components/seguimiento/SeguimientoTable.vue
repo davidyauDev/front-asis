@@ -53,6 +53,17 @@ const getMarkBadge = (row: SeguimientoTableRow) => {
   }
 }
 
+const getConceptForRow = (row: SeguimientoTableRow) => {
+  if (!row.dailyRecord) {
+    return {
+      text: 'Sin registro',
+      color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200',
+    }
+  }
+
+  return getConceptBadge(row.dailyRecord)
+}
+
 const canSendWhatsApp = (row: SeguimientoTableRow) =>
   Boolean(row.whatsappTarget) && (props.subTab === 'marcaron' || !hasMarcaciones(row.marcaciones))
 
@@ -213,8 +224,8 @@ const selectedConcept = computed(() =>
                     {{ getMarkBadge(row).label }}
                   </UBadge>
 
-                  <span :class="`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${selectedConcept.color}`">
-                    {{ row.dailyRecord ? selectedConcept.text : 'Sin registro' }}
+                  <span :class="`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getConceptForRow(row).color}`">
+                    {{ getConceptForRow(row).text }}
                   </span>
                 </div>
               </td>
@@ -245,6 +256,13 @@ const selectedConcept = computed(() =>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="border-t border-gray-200 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:text-gray-300">
+        Total de registros:
+        <span class="ml-1 font-semibold text-gray-900 dark:text-gray-100">
+          {{ props.items.length }}
+        </span>
       </div>
     </div>
 
