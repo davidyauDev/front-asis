@@ -43,7 +43,7 @@ const managementLinks = [{
   exact: true,
   onSelect: () => { open.value = false }
 }, {
-  label: 'Empleados BioTime',
+  label: 'BioTime',
   icon: 'i-lucide-fingerprint',
   to: '/rrhh/empleados-biotime',
   exact: true,

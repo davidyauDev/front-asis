@@ -15,6 +15,11 @@ const props = defineProps<{
 const filaSeleccionada = ref<number | null>(null);
 
 const filaRef = ref<HTMLElement | null>(null);
+const dayColumnStyle = Object.freeze({
+  width: '60px',
+  minWidth: '60px',
+  maxWidth: '60px',
+});
 
 function setFilaRef(el: Element | any, emp: Empleado) {
   if (filaSeleccionada.value === emp.id && el instanceof HTMLElement) {
@@ -651,14 +656,14 @@ defineExpose({
           class="overflow-x-auto rounded-b-lg border border-gray-200 shadow dark:border-gray-700 dark:bg-gray-900"
           @scroll="syncTableToTop"
         >
-          <table class="w-full text-xs dark:text-gray-200">
+          <table class="w-max min-w-full table-auto border-separate border-spacing-0 text-xs text-slate-700 dark:text-gray-200 [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300 dark:[&_th]:border-gray-700 dark:[&_td]:border-gray-700">
     <!-- HEADER -->
     <thead>
   <!-- FILA 1: CONTEXTO -->
   <tr>
     <th
-      colspan="5"
-      class="bg-gradient-to-r from-[#2d5fc0] to-[#4a7dff] text-white text-center py-3 font-bold border dark:from-[#244a95] dark:to-[#355fba] dark:text-gray-100 dark:border-gray-700"
+      colspan="4"
+      class="sticky left-0 z-30 bg-gradient-to-r from-[#2d5fc0] to-[#4a7dff] text-white text-center py-3 font-bold border dark:from-[#244a95] dark:to-[#355fba] dark:text-gray-100 dark:border-gray-700"
     >
       INCIDENCIAS JUSTIFICADAS 
     </th>
@@ -667,6 +672,7 @@ defineExpose({
       v-for="f in columnasFechas"
       :key="f"
       class="border text-center text-xs font-semibold dark:border-gray-700"
+      :style="dayColumnStyle"
       :class="esDomingo(f)
         ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100'
         : esFinDeSemana(f)
@@ -689,28 +695,18 @@ defineExpose({
 
   <!-- FILA 2: ESTRUCTURA -->
   <tr class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600 dark:bg-gray-800 dark:text-gray-300">
-    <th class="border px-2 py-2 text-center dark:border-gray-700">DNI</th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">
+    <th class="sticky left-0 z-20 w-[110px] min-w-[110px] border px-2 py-2 text-center bg-slate-50 dark:bg-gray-800 dark:border-gray-700">DNI</th>
+    <th class="sticky left-[110px] z-20 w-[300px] min-w-[300px] border px-4 py-2 text-center bg-slate-50 dark:bg-gray-800 dark:border-gray-700">
       <button
         type="button"
         class="inline-flex items-center justify-center gap-1 w-full"
         @click="toggleSort('apellidos')"
       >
-        Apellidos
+        Empleado
         <UIcon :name="sortIcon('apellidos')" class="w-3 h-3" />
       </button>
     </th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">
-      <button
-        type="button"
-        class="inline-flex items-center justify-center gap-1 w-full"
-        @click="toggleSort('nombre')"
-      >
-        Nombre
-        <UIcon :name="sortIcon('nombre')" class="w-3 h-3" />
-      </button>
-    </th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">
+    <th class="w-[150px] min-w-[150px] border px-4 py-2 text-center dark:border-gray-700">
       <button
         type="button"
         class="inline-flex items-center justify-center gap-1 w-full"
@@ -720,7 +716,7 @@ defineExpose({
         <UIcon :name="sortIcon('departamento')" class="w-3 h-3" />
       </button>
     </th>
-    <th class="border px-4 py-2 text-center dark:border-gray-700">
+    <th class="w-[140px] min-w-[140px] border px-4 py-2 text-center dark:border-gray-700">
       <button
         type="button"
         class="inline-flex items-center justify-center gap-1 w-full"
@@ -735,6 +731,7 @@ defineExpose({
       v-for="f in columnasFechas"
       :key="f"
       class="border px-2 py-2 text-center dark:border-gray-700"
+      :style="dayColumnStyle"
       :class="esDomingo(f)
         ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100'
         : esFinDeSemana(f)
@@ -744,33 +741,46 @@ defineExpose({
       <span class="text-xs">{{ Number(f.split('-')[0]) }}</span>
     </th>
 
-    <th class="border px-3 py-2 text-center font-semibold text-emerald-700 dark:border-gray-700 dark:text-emerald-300">
+    <th class="w-[110px] min-w-[110px] border px-3 py-2 text-center font-semibold text-emerald-700 dark:border-gray-700 dark:text-emerald-300">
       HH:MM
     </th>
 
-    <th class="border px-3 py-2 text-center dark:border-gray-700"></th>
+    <th class="w-[110px] min-w-[110px] border px-3 py-2 text-center dark:border-gray-700"></th>
   </tr>
 
 </thead>
-
-
     <!-- BODY -->
     <tbody>
       <tr v-for="emp in empleadosFiltrados" :key="emp.id" :ref="el => setFilaRef(el, emp)"
         class="cursor-pointer transition-colors dark:hover:bg-gray-800"
         :class="filaSeleccionada === emp.id ? 'bg-[#eef4ff] ring-2 ring-[#2d5fc0]/35 ring-inset dark:bg-[#13203a] dark:ring-[#8fb0ff]/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800'">
-        <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
-        <td class="border px-3 dark:border-gray-700">{{ emp.apellidos }}</td>
-        <td class="border px-3 dark:border-gray-700">{{ emp.nombre }}</td>
-        <td class="border px-3 dark:border-gray-700">{{ emp.departamento || '' }}</td>
-        <td class="border px-3 dark:border-gray-700">{{ emp.empresa || '' }}</td>
+        <td
+          class="sticky left-0 z-20 w-[110px] min-w-[110px] border px-2 text-center whitespace-nowrap dark:border-gray-700"
+          :class="filaSeleccionada === emp.id ? 'bg-[#eef4ff] dark:bg-[#13203a]' : 'bg-white dark:bg-gray-900'"
+        >
+          {{ emp.dni }}
+        </td>
+        <td
+          class="sticky left-[110px] z-20 w-[300px] min-w-[300px] border px-3 whitespace-nowrap dark:border-gray-700"
+          :class="filaSeleccionada === emp.id ? 'bg-[#eef4ff] dark:bg-[#13203a]' : 'bg-white dark:bg-gray-900'"
+        >
+          {{ `${emp.apellidos} ${emp.nombre}`.trim() }}
+        </td>
+        <td class="w-[150px] min-w-[150px] border px-3 whitespace-nowrap dark:border-gray-700">{{ emp.departamento || '' }}</td>
+        <td class="w-[140px] min-w-[140px] border px-3 whitespace-nowrap dark:border-gray-700">{{ emp.empresa || '' }}</td>
 
-        <td v-for="f in columnasFechas" :key="f" class="border px-1 py-1 text-center relative group dark:border-gray-700" :class="[
+        <td
+          v-for="f in columnasFechas"
+          :key="f"
+          class="border px-1 py-1 text-center relative group dark:border-gray-700"
+          :style="dayColumnStyle"
+          :class="[
           esFinDeSemana(f) && (!emp.dias[f]?.valor ? 'bg-yellow-50 dark:bg-yellow-900 dark:text-yellow-200' : ''),
           emp.dias[f]?.valor ? obtenerColorCelda(emp.dias[f].valor) : '',
           filaSeleccionada === emp.id ? 'ring-1 ring-blue-300 dark:ring-blue-300' : '',
           esDomingo(f) ? 'bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100' : '',
-        ]">
+        ]"
+        >
           <UPopover
             v-if="emp.dias[f]?.motivo || resolveDiaImageUrl(emp.dias[f])"
             mode="hover"
@@ -854,10 +864,10 @@ defineExpose({
           </template>
         </td>
 
-        <td class="border px-2 text-center font-bold bg-emerald-50 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200 dark:border-gray-700">
+        <td class="w-[110px] min-w-[110px] border px-2 text-center font-bold bg-emerald-50 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200 dark:border-gray-700">
           <span class="dark:text-emerald-200 text-emerald-900">{{ emp.incidencias_hhmm }}</span>
         </td>
-        <td class="border px-2 text-center dark:border-gray-700">
+        <td class="w-[110px] min-w-[110px] border px-2 text-center dark:border-gray-700">
           <div class="inline-flex items-center gap-1">
             <UTooltip text="Ver tracking">
               <UButton size="xs" color="primary" variant="ghost" icon="i-heroicons-eye"

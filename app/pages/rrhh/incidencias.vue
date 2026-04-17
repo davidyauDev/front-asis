@@ -55,24 +55,6 @@ const tabItems = [
 const tablaIncidenciasRef = ref<InstanceType<typeof TablaIncidencias> | null>(null);
 const tablaCalculoRef = ref<InstanceType<typeof TablaCalculo> | null>(null);
 
-// Estados temporales para los inputs de fecha
-const fechaInicioTemp = ref(fechaInicio.value || defaultFechaInicio);
-const fechaFinTemp = ref(fechaFin.value || defaultFechaFin);
-
-function aplicarRangoFechas() {
-  if (fechaInicioTemp.value && fechaFinTemp.value) {
-    fechaInicio.value = fechaInicioTemp.value;
-    fechaFin.value = fechaFinTemp.value;
-    // Siempre recargar ambas tablas si existen
-    if (tablaIncidenciasRef.value && typeof tablaIncidenciasRef.value.cargarIncidencias === 'function') {
-      tablaIncidenciasRef.value.cargarIncidencias();
-    }
-    if (tablaCalculoRef.value && typeof tablaCalculoRef.value.cargarIncidencias === 'function') {
-      tablaCalculoRef.value.cargarIncidencias();
-    }
-  }
-}
-
 // Si el usuario cambia de tab, recargar la tabla activa con los filtros actuales
 watch(tabActivo, (nuevo) => {
   if (nuevo === 'incidencias' && tablaIncidenciasRef.value && typeof tablaIncidenciasRef.value.cargarIncidencias === 'function') {
@@ -120,121 +102,81 @@ async function descargarExcel() {
 <template>
   <UDashboardPanel id="incidencias">
     <template #header>
-      <AppDashboardHeader
-        title="Gestion de Incidencias"
-        mobile-title="Incidencias"
-        subtitle-icon="i-heroicons-clock"
-        notification-tooltip="Incidencias pendientes"
-        notification-attention
-        @notification-click="openRrhhNotifications"
-      />
+      <AppDashboardHeader title="Gestion de Incidencias" mobile-title="Incidencias" subtitle-icon="i-heroicons-clock"
+        notification-tooltip="Incidencias pendientes" notification-attention
+        @notification-click="openRrhhNotifications" />
+      <UDashboardToolbar>
+        <div class="mt-2 w-full">
+          <AppTabs v-model="tabActivo" aria-label="Tabs de incidencias" :items="tabItems" />
+        </div>
+      </UDashboardToolbar>
+
     </template>
     <template #body>
-      <div class="space-y-4 bg-gradient-to-b from-[#f7fbff] via-white to-[#f4fbf8] px-2 pb-2 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900">
-        <div class="rounded-2xl border border-[#d7e1f5] bg-white/95 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
-          <AppTabs
-            v-model="tabActivo"
-            aria-label="Tabs de incidencias"
-            :items="tabItems"
-          />
-        </div>
-        <div
-          v-if="false"
-          class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2"
-        >
+      <div >
+        <div v-if="false"
+          class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2">
           <div class="flex">
-            <button
-              @click="tabActivo = 'incidencias'"
-              class="px-6 py-4 text-sm font-semibold transition-colors"
-              :class="
-                tabActivo === 'incidencias'
-                  ? 'text-[#2d5fc0] border-b-2 border-[#2d5fc0] bg-[#eef4ff] dark:text-[#9cb7f5] dark:bg-[#13203a] dark:border-[#8fb0ff]'
-                  : 'text-slate-500 hover:text-[#2d5fc0] hover:bg-slate-50 dark:text-gray-400 dark:hover:text-[#9cb7f5] dark:hover:bg-gray-800'
-              "
-            >
+            <button @click="tabActivo = 'incidencias'" class="px-6 py-4 text-sm font-semibold transition-colors" :class="tabActivo === 'incidencias'
+                ? 'text-[#2d5fc0] border-b-2 border-[#2d5fc0] bg-[#eef4ff] dark:text-[#9cb7f5] dark:bg-[#13203a] dark:border-[#8fb0ff]'
+                : 'text-slate-500 hover:text-[#2d5fc0] hover:bg-slate-50 dark:text-gray-400 dark:hover:text-[#9cb7f5] dark:hover:bg-gray-800'
+              ">
               Incidencias Justificadas
             </button>
 
-            <button
-              @click="tabActivo = 'calculo'"
-              class="px-6 py-4 text-sm font-semibold transition-colors"
-              :class="
-                tabActivo === 'calculo'
-                  ? 'text-[#2d5fc0] border-b-2 border-[#2d5fc0] bg-[#eef4ff] dark:text-[#9cb7f5] dark:bg-[#13203a] dark:border-[#8fb0ff]'
-                  : 'text-slate-500 hover:text-[#2d5fc0] hover:bg-slate-50 dark:text-gray-400 dark:hover:text-[#9cb7f5] dark:hover:bg-gray-800'
-              "
-            >
+            <button @click="tabActivo = 'calculo'" class="px-6 py-4 text-sm font-semibold transition-colors" :class="tabActivo === 'calculo'
+                ? 'text-[#2d5fc0] border-b-2 border-[#2d5fc0] bg-[#eef4ff] dark:text-[#9cb7f5] dark:bg-[#13203a] dark:border-[#8fb0ff]'
+                : 'text-slate-500 hover:text-[#2d5fc0] hover:bg-slate-50 dark:text-gray-400 dark:hover:text-[#9cb7f5] dark:hover:bg-gray-800'
+              ">
               Cálculo de Tardanzas
             </button>
           </div>
         </div>
-        <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d7e1f5] bg-white/95 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
+        <div class="mb-4 flex items-end justify-between gap-4">
           <!-- IZQUIERDA: filtros -->
-          <div class="flex items-end gap-4 flex-wrap">
-            <!-- RANGO DE FECHAS -->
-            <div class="flex flex-col gap-0.5">
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Desde</label>
-              <input
-                v-model="fechaInicioTemp"
-                type="date"
-                class="w-36 rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
-              />
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Hasta</label>
-              <input
-                v-model="fechaFinTemp"
-                type="date"
-                class="w-36 rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
-              />
-            </div>
-            <div class="flex flex-col justify-end">
-              <button
-                @click="aplicarRangoFechas"
-                class="mt-2 rounded bg-[#2d5fc0] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#244ea4] dark:bg-[#4a7dff] dark:hover:bg-[#3566d8]"
-              >
-                Aplicar
-              </button>
-            </div>
-
-
-            <!-- BUSCADOR (protagonista) -->
-            <div class="flex flex-col gap-0.5">
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
-              >
+          <div class="min-w-0 flex-1 overflow-x-auto pb-1">
+            <div class="flex min-w-max items-end gap-4 flex-nowrap pr-2">
+            <div class="w-[420px] shrink-0 flex flex-col gap-0.5">
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Usuario
               </label>
-              <input
+              <UInput
                 v-model="filtroUsuario"
-                type="text"
-                placeholder="DNI, apellido o nombre"
-                class="w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
+                icon="i-lucide-search"
+                size="md"
+                placeholder="Buscar por nombre, apellido o DNI..."
+                class="w-[420px]"
+                :ui="{ base: 'rounded-xl border-slate-300 bg-white dark:border-gray-700 dark:bg-gray-800' }"
               />
             </div>
-
-            <div class="flex flex-col gap-0.5">
+            <!-- RANGO DE FECHAS -->
+            <div class="flex flex-col gap-0.5 shrink-0">
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Desde</label>
+              <input v-model="fechaInicio" type="date"
+                class="w-36 rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20" />
+            </div>
+            <div class="flex flex-col gap-0.5 shrink-0">
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Hasta</label>
+              <input v-model="fechaFin" type="date"
+                class="w-36 rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20" />
+            </div>
+            <div class="flex flex-col gap-0.5 shrink-0">
               <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Empresa
               </label>
-              <select
-                v-model="filtroEmpresa"
-                class="w-48 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
-              >
+              <select v-model="filtroEmpresa"
+                class="w-48 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20">
                 <option value="">Todas</option>
                 <option value="Ydieza SAC">Ydieza SAC</option>
                 <option value="Cechriza SAC">Cechriza SAC</option>
               </select>
             </div>
-
-            <div class="flex flex-col gap-0.5">
+            <div class="flex flex-col gap-0.5 shrink-0">
               <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Departamento
               </label>
-              <select
-                v-model="filtroDepartamento"
-                class="w-56 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20"
-              >
+              <select v-model="filtroDepartamento"
+                class="w-56 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#2d5fc0] focus:ring-2 focus:ring-[#2d5fc0]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-[#8fb0ff] dark:focus:ring-[#8fb0ff]/20">
                 <option value="">Todos</option>
                 <option value="Sistemas_C">Sistemas_C</option>
                 <option value="Operaciones_C">Operaciones_C</option>
@@ -246,57 +188,28 @@ async function descargarExcel() {
                 <option value="Operaciones_Y">Operaciones_Y</option>
               </select>
             </div>
-
+            </div>
           </div>
-
-          <!-- DERECHA: acciones -->
-          <div class="flex items-center gap-2 pl-4">
-            <!-- DESCARGAR EXCEL (acción secundaria) -->
-
-            <UButton
-              variant="solid"
-              color="primary"
-              size="md"
-              @click="descargarExcel"
-              :loading="exportando"
+          <div class="shrink-0">
+            <UButton variant="solid" color="primary" size="md" @click="descargarExcel" :loading="exportando"
               :disabled="exportando"
-              class="min-w-[176px] h-11 justify-center whitespace-nowrap rounded-xl border border-[#2d5fc0] !bg-[#2d5fc0] !text-white px-4 font-semibold shadow-sm transition-all hover:!bg-[#244ea4] hover:shadow-md active:scale-[0.99] disabled:border-[#9cb7f5] disabled:!bg-[#9cb7f5] disabled:shadow-none dark:border-[#4a7dff] dark:!bg-[#4a7dff] dark:hover:!bg-[#3f6fe0] dark:disabled:!bg-[#2b4f9f]"
-            >
+              class="min-w-[176px] h-11 justify-center whitespace-nowrap rounded-xl border border-[#2d5fc0] !bg-[#2d5fc0] !text-white px-4 font-semibold shadow-sm transition-all hover:!bg-[#244ea4] hover:shadow-md active:scale-[0.99] disabled:border-[#9cb7f5] disabled:!bg-[#9cb7f5] disabled:shadow-none dark:border-[#4a7dff] dark:!bg-[#4a7dff] dark:hover:!bg-[#3f6fe0] dark:disabled:!bg-[#2b4f9f]">
               <template #leading>
                 <UIcon name="i-lucide-file-spreadsheet" class="h-4 w-4" />
               </template>
               {{ exportando ? 'Descargando...' : 'Descargar Excel' }}
             </UButton>
-           
-          
           </div>
         </div>
-
-        <!-- INCIDENCIAS -->
-        <div
-          v-if="tabActivo === 'incidencias'"
-          class="overflow-x-auto rounded-lg shadow dark:bg-gray-900"
-        >
-          <TablaIncidencias
-            ref="tablaIncidenciasRef"
-            :filtro-usuario="filtroUsuario"
-            :filtro-empresa="filtroEmpresa"
-            :filtro-departamento="filtroDepartamento"
-            :fecha-inicio="fechaInicio"
-            :fecha-fin="fechaFin"
-          />
+        <div v-if="tabActivo === 'incidencias'" class="overflow-x-auto rounded-lg shadow dark:bg-gray-900">
+          <TablaIncidencias ref="tablaIncidenciasRef" :filtro-usuario="filtroUsuario" :filtro-empresa="filtroEmpresa"
+            :filtro-departamento="filtroDepartamento" :fecha-inicio="fechaInicio" :fecha-fin="fechaFin" />
         </div>
 
         <!-- CALCULO -->
         <div v-if="tabActivo === 'calculo'" class="space-y-4 dark:bg-gray-900">
-          <TablaCalculo
-            ref="tablaCalculoRef"
-            :filtro-usuario="filtroUsuario"
-            :filtro-empresa="filtroEmpresa"
-            :filtro-departamento="filtroDepartamento"
-            :fecha-inicio="fechaInicio"
-            :fecha-fin="fechaFin"
-          />
+          <TablaCalculo ref="tablaCalculoRef" :filtro-usuario="filtroUsuario" :filtro-empresa="filtroEmpresa"
+            :filtro-departamento="filtroDepartamento" :fecha-inicio="fechaInicio" :fecha-fin="fechaFin" />
         </div>
       </div>
     </template>

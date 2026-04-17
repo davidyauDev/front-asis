@@ -1,70 +1,25 @@
 <template>
   <div>
     <div>
-      <div class="mb-4 rounded-t-lg border border-gray-200 dark:border-gray-800 border-b-0 bg-white dark:bg-gray-950 overflow-hidden">
+      <div>
         <AppTabs
           v-model="statusTabModel"
           aria-label="Tabs de estado BioTime"
+          size="sm"
           :items="statusTabItems"
         />
       </div>
 
-      <div class="flex flex-wrap items-end gap-3">
-        <UFormGroup label="Buscar" size="sm" class="w-full sm:w-[320px]">
-          <UInput
-            v-model="filters.q"
-            placeholder="Código, nombre, email, móvil…"
-            size="sm"
-            icon="i-lucide-search"
-            @keydown.enter.prevent="refresh()"
-          />
-        </UFormGroup>
-
-        <UFormGroup label="Departamento ID" size="sm" class="w-[160px]">
-          <UInput
-            v-model="filters.departmentId"
-            type="text"
-            inputmode="numeric"
-            placeholder="Ej: 12"
-            size="sm"
-            @keydown.enter.prevent="refresh()"
-          />
-        </UFormGroup>
-
-        <UFormGroup label="Cargo ID" size="sm" class="w-[160px]">
-          <UInput
-            v-model="filters.positionId"
-            type="text"
-            inputmode="numeric"
-            placeholder="Ej: 3"
-            size="sm"
-            @keydown.enter.prevent="refresh()"
-          />
-        </UFormGroup>
-
-        <UFormGroup label="Registros" size="sm" class="w-[140px]">
-          <USelect v-model="filters.perPage" :items="perPageOptions" size="sm" />
-        </UFormGroup>
-
-        <div class="flex items-center gap-2 pb-1">
-          <UButton
-            size="sm"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-refresh-cw"
-            :loading="loading"
-            @click="refresh()"
-          >
-            Actualizar
-          </UButton>
-        </div>
-      </div>
-
-      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-        <span>
-          Mostrando <span class="font-semibold text-gray-700 dark:text-gray-200">{{ employees.length }}</span>
-          registros
-        </span>
+      <div class="mt-4 mb-4">
+        <UInput
+          v-model="filters.q"
+          placeholder="Buscar por tecnico, DNI, agencia o cliente..."
+          size="md"
+          icon="i-lucide-search"
+          class="w-full"
+          :ui="{ base: 'rounded-xl' }"
+          @keydown.enter.prevent="refresh()"
+        />
       </div>
     </div>
 
@@ -82,6 +37,14 @@
           />
         </div>
       </div>
+
+      <div class="mt-3 flex items-center text-xs text-gray-500 dark:text-gray-400">
+        <span>
+          Mostrando <span class="font-semibold text-gray-700 dark:text-gray-200">{{ sortedEmployees.length }}</span>
+          registros
+        </span>
+      </div>
+
     </DataState>
 
     <UModal v-model:open="isModalOpen" :title="modalTitle">
@@ -197,10 +160,15 @@ import {
 const toast = useToast()
 
 const statusTab = ref<'active' | 'inactive'>('active')
-const statusTabItems = [
-  { label: 'Activos', value: 'active' },
-  { label: 'Inactivos', value: 'inactive' },
-] as const
+const statusCounts = reactive({
+  active: 0,
+  inactive: 0,
+})
+
+const statusTabItems = computed(() => [
+  { label: 'Activos', value: 'active', badge: statusCounts.active },
+  { label: 'Inactivos', value: 'inactive', badge: statusCounts.inactive },
+])
 
 const statusTabModel = computed<'active' | 'inactive'>({
   get: () => statusTab.value,
@@ -212,21 +180,11 @@ const statusTabModel = computed<'active' | 'inactive'>({
 
 const filters = reactive({
   q: '',
-  departmentId: '' as string | number,
-  positionId: '' as string | number,
-  perPage: 25 as number,
 })
 
 const statusEditOptions = [
   { label: 'Activo (0)', value: 0 },
   { label: 'Inactivo (100)', value: 100 },
-]
-
-const perPageOptions = [
-  { label: '10', value: 10 },
-  { label: '25', value: 25 },
-  { label: '50', value: 50 },
-  { label: '100', value: 100 },
 ]
 
 const loading = ref(false)
@@ -235,36 +193,55 @@ const errorMessage = ref('No se pudieron cargar los empleados BioTime.')
 
 const employees = ref<BioTimePersonnelEmployee[]>([])
 
-const toNumberOrUndefined = (value: unknown) => {
-  if (value === '' || value === null || value === undefined) return undefined
-  const n = Number(String(value).trim())
-  return Number.isFinite(n) ? n : undefined
-}
-
 const refresh = async () => {
   loading.value = true
   isError.value = false
   errorMessage.value = 'No se pudieron cargar los empleados BioTime.'
 
   try {
-    const department_id = toNumberOrUndefined(filters.departmentId)
-    const position_id = toNumberOrUndefined(filters.positionId)
-    const per_page = toNumberOrUndefined(filters.perPage) ?? 25
+    const department_id = undefined
+    const position_id = undefined
+    const per_page = 25
+    const q = String(filters.q || '').trim() || undefined
     const status = statusTab.value === 'active' ? 0 : 100
 
-    const res = await listBioTimePersonnelEmployees({
-      q: String(filters.q || '').trim() || undefined,
-      department_id,
-      position_id,
-      status,
-      paginate: false,
-      per_page,
-    })
+    const [res, activeCountRes, inactiveCountRes] = await Promise.all([
+      listBioTimePersonnelEmployees({
+        q,
+        department_id,
+        position_id,
+        status,
+        paginate: false,
+        per_page,
+      }),
+      listBioTimePersonnelEmployees({
+        q,
+        department_id,
+        position_id,
+        status: 0,
+        paginate: true,
+        per_page: 1,
+        page: 1,
+      }),
+      listBioTimePersonnelEmployees({
+        q,
+        department_id,
+        position_id,
+        status: 100,
+        paginate: true,
+        per_page: 1,
+        page: 1,
+      }),
+    ])
 
     employees.value = (res as any).data ?? []
+    statusCounts.active = Number((activeCountRes as any)?.data?.total ?? 0)
+    statusCounts.inactive = Number((inactiveCountRes as any)?.data?.total ?? 0)
   } catch (error: unknown) {
     isError.value = true
     errorMessage.value = getApiErrorMessage(error)
+    statusCounts.active = 0
+    statusCounts.inactive = 0
   } finally {
     loading.value = false
   }
@@ -399,6 +376,42 @@ const toggleStatus = async (row: BioTimePersonnelEmployee) => {
   }
 }
 
+const normalizePhone = (value: string | null | undefined) =>
+  String(value ?? '').replace(/\D/g, '')
+
+const resolveWhatsAppPhone = (row: BioTimePersonnelEmployee) => {
+  const digits = normalizePhone(row.mobile)
+  if (!digits) return ''
+  if (digits.startsWith('51')) return digits
+  if (digits.length === 9) return `51${digits}`
+  return digits
+}
+
+const hasValidMobile = (row: BioTimePersonnelEmployee) => Boolean(resolveWhatsAppPhone(row))
+
+const sendWhatsApp = (row: BioTimePersonnelEmployee) => {
+  const phone = resolveWhatsAppPhone(row)
+
+  if (!phone) {
+    toast.add({
+      title: 'Sin numero',
+      description: 'Este empleado no tiene un numero movil valido.',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+      timeout: 3500,
+    })
+    return
+  }
+
+  const fullName = `${row.first_name ?? ''} ${row.last_name ?? ''}`.trim() || row.emp_code
+  const message = encodeURIComponent(`Hola ${fullName}, te escribimos desde RRHH.`)
+  const url = `https://wa.me/${phone}?text=${message}`
+
+  if (import.meta.client) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
+
 const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   {
     accessorKey: 'emp_code',
@@ -449,13 +462,26 @@ const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   {
     id: 'mobility',
     header: sortableHeader('Movilidad', 'has_mobility'),
-    meta: { class: { th: 'w-[140px]', td: 'w-[140px]' } },
+    meta: { class: { th: 'w-[190px]', td: 'w-[190px]' } },
     cell: ({ row }) => {
       const enabled = Boolean(row.original.has_mobility)
       return h(
         UBadge,
-        { color: (enabled ? 'success' : 'neutral') as any, variant: 'soft', size: 'xs' },
-        () => (enabled ? 'Paga' : 'No paga')
+        {
+          color: 'neutral',
+          variant: 'soft',
+          size: 'sm',
+          class: enabled
+            ? 'rounded-full px-3 py-1 text-[11px] font-semibold ring-1 ring-emerald-200/70 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800/60'
+            : 'rounded-full px-3 py-1 text-[11px] font-semibold ring-1 ring-slate-200/80 bg-slate-50 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:ring-slate-700/70',
+        },
+        () => [
+          h(UIcon, {
+            name: enabled ? 'i-lucide-wallet' : 'i-lucide-ban',
+            class: 'mr-1 h-3.5 w-3.5',
+          }),
+          enabled ? 'Recibe movilidad' : 'No recibe movilidad',
+        ]
       )
     },
   },
@@ -485,18 +511,31 @@ const columns: TableColumn<BioTimePersonnelEmployee>[] = [
   {
     id: 'actions',
     header: 'Acciones',
-    meta: { class: { th: 'w-[120px]', td: 'w-[120px]' } },
-    cell: ({ row }) =>
-      h(
-        UButton,
-        {
+    meta: { class: { th: 'w-[140px]', td: 'w-[140px]' } },
+    cell: ({ row }) => {
+      const hasMobile = hasValidMobile(row.original)
+
+      return h('div', { class: 'flex items-center justify-center gap-2' }, [
+        h(UButton, {
           size: 'xs',
+          square: true,
           color: 'neutral',
           variant: 'outline',
+          icon: 'i-lucide-square-pen',
+          'aria-label': 'Editar empleado',
           onClick: () => openEdit(row.original),
-        },
-        () => [h(UIcon, { name: 'i-lucide-pencil', class: 'w-3.5 h-3.5 mr-1.5' }), 'Editar']
-      ),
+        }),
+        h(UButton, {
+          size: 'xs',
+          square: true,
+          color: (hasMobile ? 'success' : 'error') as any,
+          variant: 'outline',
+          icon: 'i-simple-icons-whatsapp',
+          'aria-label': 'Enviar WhatsApp',
+          onClick: () => sendWhatsApp(row.original),
+        }),
+      ])
+    },
   },
 ]
 
@@ -512,10 +551,17 @@ const tableUi = {
 
 const tableMeta = {
   class: {
-    tr: (row: any) =>
-      Number(row?.original?.status) === 100 || row?.original?.is_active === false
+    tr: (row: any) => {
+      const original = row?.original as BioTimePersonnelEmployee | undefined
+      if (!original) return ''
+
+      const inactive = Number(original.status) === 100 || original.is_active === false
+      const missingMobile = !hasValidMobile(original)
+
+      return inactive || missingMobile
         ? 'bg-red-50 dark:bg-red-950/25 hover:bg-red-100 dark:hover:bg-red-950/35'
-        : '',
+        : ''
+    },
   },
 } as const
 
