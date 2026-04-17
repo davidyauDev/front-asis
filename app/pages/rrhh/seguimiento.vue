@@ -52,23 +52,27 @@ const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
         notification-attention
         @notification-click="openRrhhNotifications"
       />
-    </template>
-
-    <template #body>
-      <div class="space-y-4">
-        <SeguimientoMainTabs
+       <UDashboardToolbar>
+        <div class="mt-2 w-full">
+          <SeguimientoMainTabs
           v-model="tabActivo"
           :tecnicos-con-rutas="tecnicosConRutas"
           :tecnicos-sin-rutas="tecnicosSinRutas"
         />
+        </div>
+       </UDashboardToolbar>
+    </template>
 
-        <SeguimientoSubTabs
+    
+    <template #body>
+      <div >
+            <SeguimientoSubTabs
           v-model="activeSubTab"
           :source="tableSource"
           :marcados="tableSource === 'con-rutas' ? conRutasMarcados.length : sinRutasMarcados.length"
           :no-marcados="tableSource === 'con-rutas' ? conRutasNoMarcados.length : sinRutasNoMarcados.length"
         />
-
+      
         <section>
           <UCard v-if="isLoading" class="border-gray-200/70 dark:border-gray-800/70">
             <div class="space-y-6 p-2">

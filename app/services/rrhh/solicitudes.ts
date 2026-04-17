@@ -25,11 +25,17 @@ export interface SolicitudDetalleItem {
   id_detalle_solicitud?: number | null
   id_solicitud?: number | null
   id_inventario?: number | null
+  url_imagen?: string | null
   area_id?: number | null
   area?: string | null
   id_area_inventario?: number | null
   stock_actual?: number | string | null
-  producto?: string | { descripcion?: string | null; nombre?: string | null; codigo?: string | null } | null
+  producto?: string | {
+    descripcion?: string | null
+    nombre?: string | null
+    codigo?: string | null
+    url_imagen?: string | null
+  } | null
   solicitado?: number | string | null
   aprobado?: number | string | null
   cantidad_atendida?: number | string | null

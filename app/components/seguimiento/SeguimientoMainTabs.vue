@@ -7,6 +7,7 @@ const props = defineProps<{
   tecnicosSinRutas: number
 }>()
 
+const { width } = useWindowSize()
 const emit = defineEmits<{
   'update:modelValue': [value: SeguimientoTab]
 }>()
@@ -23,11 +24,10 @@ const items = computed(() => [
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-t-lg border border-gray-200 border-b-0 bg-white dark:border-gray-800 dark:bg-gray-950">
-    <AppTabs
+  <AppTabs
       v-model="model"
       ariaLabel="Tabs principales de seguimiento"
       :items="items"
+       :list-class="width < 500 ? 'flex-col items-stretch' : 'items-end flex-wrap'"
     />
-  </div>
 </template>

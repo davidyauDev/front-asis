@@ -129,7 +129,7 @@ const getRequesterName = (item: SolicitudListItem) => {
 const stateTone = (value?: string | null) => {
   const state = normalize(value)
   if (state.includes('rech')) return 'bg-red-100 text-red-800 ring-1 ring-red-200'
-  if (state.includes('apro')) return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200'
+  if (state.includes('apro')) return 'bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff]'
   if (state.includes('atenc') || state.includes('pend')) return 'bg-amber-100 text-amber-800 ring-1 ring-amber-200'
   if (state.includes('cerr')) return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200'
   return 'bg-sky-100 text-sky-800 ring-1 ring-sky-200'
@@ -573,7 +573,7 @@ onMounted(() => {
                           color="primary"
                           variant="soft"
                           icon="i-lucide-check"
-                          class="h-6 w-6 rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-200"
+                          class="h-6 w-6 rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
                           :aria-label="`Aprobar item ${item.id}`"
                           @click="openPurchaseActionModal(item, 'aprobar')"
                         />

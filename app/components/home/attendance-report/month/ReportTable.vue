@@ -277,7 +277,7 @@ const sortColumButton = (column: any, label: string) => {
         : 'i-heroicons-arrow-down'
       : 'i-heroicons-arrows-up-down',
     size: 'xs',
-    class: 'font-semibold text-white hover:text-white',
+    class: 'rounded-md px-2 py-1 font-semibold !text-white !bg-transparent hover:!text-white hover:!bg-white/10 focus-visible:!ring-2 focus-visible:!ring-white/35',
     onClick: () => column.toggleSorting(isSorted === 'asc')
   })
 }

@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="px-3 py-3">
+  <div :class="collapsed ? 'px-2 py-1.5' : 'px-3 py-3'">
     <div v-if="!collapsed" class="flex items-center gap-2">
       <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg ring-1 ring-primary-100 dark:ring-primary-900/40">
         <img :src="logoIcon" alt="Cechriza" class="h-full w-full object-cover">

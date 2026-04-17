@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-6 text-gray-900 dark:text-gray-100">
-    <!-- FILTROS -->
     <section v-show="filtersVisible" class="grid grid-cols-1 gap-6 items-start">
       <div
         class="
@@ -205,14 +204,7 @@
         </div>
       </div>
     </section>
-
-    <!-- TABLA -->
     <section
-      class="
-        rounded-lg
-        bg-white dark:bg-gray-900
-        border border-gray-200 dark:border-gray-800
-      "
     >
       <ReportTable
         :params-override="effectiveDailyParams"
@@ -236,7 +228,7 @@
  const { getDailyTakenAttendances } = store;
  
  const dailyTakenAttendace = computed(() => attendance.value.taken.daily);
- const filtersVisible = shallowRef(true)
+ const filtersVisible = shallowRef(false)
  
  const excludedDepartmentIds = [2, 4, 5, 7, 9, 10] as const
  const excludedDepartmentIdSet = new Set<number>(excludedDepartmentIds)

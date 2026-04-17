@@ -159,7 +159,7 @@ const sortColumButton = (column: any, label: string) =>
         ? 'i-lucide-arrow-up-narrow-wide'
         : 'i-lucide-arrow-down-wide-narrow'
       : 'i-lucide-arrow-up-down',
-    class: '-mx-2.5 text-[11px] font-semibold uppercase tracking-wider text-white hover:text-white',
+    class: '-mx-2.5 rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wider !text-white !bg-transparent hover:!text-white hover:!bg-white/10 focus-visible:!ring-2 focus-visible:!ring-white/35',
     onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
   })
 

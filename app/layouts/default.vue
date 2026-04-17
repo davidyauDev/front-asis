@@ -160,9 +160,11 @@ onMounted(async () => {
       </template>
 
       <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+        <div :class="collapsed ? 'sidebar-search sidebar-search--collapsed' : 'sidebar-search'">
+          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+        </div>
 
-        <div class="sidebar-nav mt-3 space-y-3">
+        <div :class="['sidebar-nav', collapsed ? 'mt-1 sidebar-nav--collapsed space-y-1.5' : 'mt-3 space-y-3']">
         <!-- Dashboard -->
         <UNavigationMenu
           :collapsed="collapsed"
@@ -172,7 +174,7 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider class="my-2" />
+        <UDivider v-if="!collapsed" class="my-2" />
 
         <!-- Gestión -->
         <div v-if="!collapsed" class="px-3 mb-1">
@@ -186,7 +188,7 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider class="my-2" />
+        <UDivider v-if="!collapsed" class="my-2" />
 
         <!-- Inventario -->
         <div v-if="!collapsed" class="px-3 mb-1">
@@ -200,7 +202,7 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider class="my-2" />
+        <UDivider v-if="!collapsed" class="my-2" />
 
         <!-- Reportes -->
         <div v-if="!collapsed" class="px-3 mb-1">
@@ -214,7 +216,7 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider class="my-2" />
+        <UDivider v-if="!collapsed" class="my-2" />
 
         <div v-if="!collapsed" class="px-3 mb-1">
           <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Sistema</p>
@@ -301,6 +303,27 @@ onMounted(async () => {
 .sidebar-nav :deep(svg) {
   width: 1.1rem;
   height: 1.1rem;
+}
+
+.sidebar-search--collapsed :deep(button) {
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  margin-inline: auto;
+}
+
+.sidebar-nav--collapsed :deep(a),
+.sidebar-nav--collapsed :deep(button[role='menuitem']),
+.sidebar-nav--collapsed :deep(button[role='menuitemcheckbox']),
+.sidebar-nav--collapsed :deep(button[role='menuitemradio']) {
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  margin-inline: auto;
+  justify-content: center;
+  border-radius: 0.8rem;
 }
 </style>
 

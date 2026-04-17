@@ -108,6 +108,9 @@ const deliveryDecision = ref<DeliveryDecision>('derivar_logistica')
 const deliveryComment = ref('')
 const deliveryNotifyRequester = ref(true)
 const deliveryNotifyLogistics = ref(true)
+const imagePreviewOpen = ref(false)
+const imagePreviewSrc = ref<string | null>(null)
+const imagePreviewAlt = ref('Imagen del producto')
 
 const selectedSolicitante = computed(() => {
   const request = selectedRequest.value
@@ -133,6 +136,13 @@ const getItemState = (item: SolicitudDetalleItem) => {
 }
 
 const getItemReason = (item: SolicitudDetalleItem) => item.motivo || item.observacion_atencion || '--'
+const getItemImageUrl = (item: SolicitudDetalleItem) => {
+  const productImage = typeof item.producto === 'object' ? item.producto?.url_imagen : null
+  const imageUrl = item.url_imagen || productImage
+  if (!imageUrl) return null
+  const normalized = imageUrl.trim()
+  return normalized || null
+}
 
 const toNumber = (value?: number | string | null) => {
   const numeric = Number(value ?? 0)
@@ -259,6 +269,20 @@ const closeDeliveryModal = () => {
 
 const submitDeliveryMock = () => {
   closeDeliveryModal()
+}
+
+const openImagePreview = (item: SolicitudDetalleItem) => {
+  const imageUrl = getItemImageUrl(item)
+  if (!imageUrl) return
+  imagePreviewSrc.value = imageUrl
+  imagePreviewAlt.value = `Imagen de ${getItemProduct(item)}`
+  imagePreviewOpen.value = true
+}
+
+const closeImagePreview = () => {
+  imagePreviewOpen.value = false
+  imagePreviewSrc.value = null
+  imagePreviewAlt.value = 'Imagen del producto'
 }
 
 const confirmManage = async () => {
@@ -397,7 +421,6 @@ const confirmManage = async () => {
               </p>
             </div>
           </div>
-
           <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
             <div class="overflow-x-auto">
               <table class="w-full table-fixed border-separate border-spacing-0">
@@ -408,7 +431,7 @@ const confirmManage = async () => {
                     <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[92px]">Area</th>
                     <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[74px]">Solicitado</th>
                     <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[74px]">Aprobado</th>
-                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[74px]">Atendido</th>
+                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[92px]">Imagen</th>
                     <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[124px]">Estado</th>
                     <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[220px]">Motivo / Fecha atencion</th>
                     <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[84px] whitespace-nowrap">Stock actual</th>
@@ -434,7 +457,26 @@ const confirmManage = async () => {
                     </td>
                     <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{{ formatNumber(item.solicitado) }}</td>
                     <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{{ formatNumber(item.aprobado) }}</td>
-                    <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{{ formatNumber(item.cantidad_atendida) }}</td>
+                    <td class="px-3 py-3 text-center">
+                      <button
+                        v-if="getItemImageUrl(item)"
+                        type="button"
+                        class="mx-auto block rounded-lg transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d5fc0] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+                        :title="`Ver imagen de ${getItemProduct(item)}`"
+                        :aria-label="`Ver imagen de ${getItemProduct(item)}`"
+                        @click="openImagePreview(item)"
+                      >
+                        <img
+                          :src="getItemImageUrl(item) || ''"
+                          :alt="`Imagen de ${getItemProduct(item)}`"
+                          class="h-12 w-12 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-gray-700"
+                          loading="lazy"
+                        >
+                      </button>
+                      <span v-else class="text-xs font-semibold text-gray-400 dark:text-gray-500">
+                        Producto no requiere imagen
+                      </span>
+                    </td>
                     <td class="px-3 py-3">
                       <span :class="['inline-flex rounded-md px-3 py-1 text-[11px] font-bold', stateTone(getItemState(item))]">
                         {{ getItemState(item) }}
@@ -509,6 +551,30 @@ const confirmManage = async () => {
 
         <div class="flex justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
           <UButton color="neutral" variant="soft" class="px-5" @click="emit('update:open', false)">
+            Cerrar
+          </UButton>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="imagePreviewOpen" title="Vista previa de imagen">
+    <template #content>
+      <div class="space-y-3 p-4 sm:p-5">
+        <div class="flex min-h-[260px] max-h-[78vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60">
+          <img
+            v-if="imagePreviewSrc"
+            :src="imagePreviewSrc"
+            :alt="imagePreviewAlt"
+            class="max-h-[74vh] w-auto max-w-full object-contain"
+          >
+          <p v-else class="text-sm text-gray-500 dark:text-gray-400">
+            No hay imagen para mostrar.
+          </p>
+        </div>
+
+        <div class="flex justify-end">
+          <UButton color="neutral" variant="outline" @click="closeImagePreview">
             Cerrar
           </UButton>
         </div>
@@ -837,3 +903,5 @@ const confirmManage = async () => {
     </template>
   </UModal>
 </template>
+
+

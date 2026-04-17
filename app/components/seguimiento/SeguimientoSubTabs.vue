@@ -30,7 +30,7 @@ const ariaLabel = computed(() =>
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-t-lg border border-gray-200 border-b-0 bg-white dark:border-gray-800 dark:bg-gray-950">
+  <div class="w-full">
     <AppTabs
       v-model="model"
       :ariaLabel="ariaLabel"

@@ -6,9 +6,9 @@
     @retry="retryFetch"
   >
     <div
-      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800"
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 bg-white dark:bg-gray-950  border-gray-200 dark:border-gray-800"
     >
-      <div class="flex flex-1 items-center gap-2">
+      <div class="flex flex-1 flex-wrap items-center gap-2">
         <UInput
           icon="i-lucide-search"
           v-model="dailyTakenAttendaces.globalFilter"
@@ -28,6 +28,15 @@
           square
           class="shrink-0"
           @click="dailyTakenAttendaces.globalFilter = ''"
+        />
+
+        <USelect
+          v-model="attendanceStatusFilter"
+          :items="attendanceStatusFilterItems"
+          placeholder="Estado de asistencia"
+          class="w-full sm:w-[190px]"
+          size="md"
+          :disabled="overrideBlocked"
         />
       </div>
 
@@ -64,11 +73,15 @@
             </span>
           </UButton>
         </UTooltip>
+
+        <span class="inline-flex items-center rounded-full border border-[#cfdcf7] bg-[#eef4ff] px-3 py-2 text-sm font-semibold text-[#30508f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+          {{ dailyListAttendaces.length }} registros
+        </span>
       </div>
 
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+    <div class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-gray-950">
       <UTable
         ref="table"
         :data="dailyListAttendaces"
@@ -76,25 +89,18 @@
         :meta="{ class: { tr: rowClass } }"
         :loading="dataLoading"
         :ui="{
-          base: 'min-w-full table-fixed border-separate border-spacing-0',
-          root: 'relative max-h-[calc(100vh-300px)] overflow-y-auto overflow-x-hidden',
-          thead: 'sticky top-0 z-10 bg-[#2d5fc0] text-white border-b border-[#244ea4]',
+          base: 'min-w-[1460px] w-full table-fixed border-separate border-spacing-0 [&_th]:border-0 [&_td]:border-0',
+          root: 'relative max-h-[calc(105vh-300px)] overflow-y-auto overflow-x-auto',
+          thead: 'sticky top-0 z-10 bg-[#2d5fc0] text-white',
           th: 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white',
           td: 'px-4 py-4 text-sm text-gray-900 dark:text-gray-100 align-top',
-          tr: 'transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60',
-          tbody: 'divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-950',
+          tr: 'transition-colors  dark:hover:bg-gray-900/60',
+          tbody: 'divide-y divide-gray-100/70 dark:divide-gray-800/60 bg-white dark:bg-gray-950',
         }"
         :empty="emptyText"
       />
     </div>
 
-    <div
-      class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
-    >
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        <span class="font-medium text-gray-900 dark:text-gray-100">{{ dailyListAttendaces.length }}</span> registros
-      </p>
-    </div>
   </DataState>
   <UModal
     v-model:open="isIncidenciaOpen"
@@ -308,6 +314,26 @@ const retryFetch = () => {
   return getDailyTakenAttendances(requestParams.value)
 }
 
+type AttendanceStatusFilter = 'all' | 'late' | 'on_time' | 'no_entry'
+const attendanceStatusFilter = shallowRef<AttendanceStatusFilter>('all')
+const attendanceStatusFilterItems = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Tardanza', value: 'late' },
+  { label: 'Puntual', value: 'on_time' },
+  { label: 'Sin ingreso', value: 'no_entry' },
+] as const
+
+const isLateRecord = (record: Pick<TakenAttendace, 'Ingreso' | 'Horario' | 'Tardanza'>) => {
+  const tardanzaMinutes = Number(record.Tardanza ?? 0)
+  if (tardanzaMinutes > 0) return true
+
+  const ingreso = record.Ingreso
+  const horario = record.Horario
+  if (!ingreso || !horario) return false
+
+  return parse(ingreso, "HH:mm:ss", new Date()) > parse(horario, "HH:mm:ss", new Date())
+}
+
 const dailyListAttendaces = computed<TakenAttendace[]>(() => {
   if (overrideBlocked.value) return []
   let list = dailyTakenAttendaces.value.list;
@@ -326,6 +352,18 @@ const dailyListAttendaces = computed<TakenAttendace[]>(() => {
         dni.includes(search)
       );
     });
+  }
+
+  if (attendanceStatusFilter.value !== 'all') {
+    list = list.filter((item) => {
+      const hasIngreso = Boolean(item.Ingreso)
+      const isLate = isLateRecord(item)
+
+      if (attendanceStatusFilter.value === 'late') return isLate
+      if (attendanceStatusFilter.value === 'on_time') return hasIngreso && !isLate
+      if (attendanceStatusFilter.value === 'no_entry') return !hasIngreso
+      return true
+    })
   }
 
   return list;
@@ -353,14 +391,7 @@ const getEsRecordatorio = (row: any) => {
 const isPreIncidenciaRow = (row: any) => getEsRecordatorio(row);
 
 const isLateAttendance = (original: TakenAttendaceRow) => {
-  const tardanzaMinutes = Number(original.Tardanza ?? 0)
-  if (tardanzaMinutes > 0) return true
-
-  const ingreso = original.Ingreso
-  const horario = original.Horario
-  if (!ingreso || !horario) return false
-
-  return parse(ingreso, "HH:mm:ss", new Date()) > parse(horario, "HH:mm:ss", new Date())
+  return isLateRecord(original)
 }
 
 const rowClass = (row: any) => {
@@ -796,7 +827,7 @@ const sortColumButton = (column: any, label: string) => {
         : "i-lucide-arrow-down-wide-narrow"
       : "i-lucide-arrow-up-down",
     class:
-      "-mx-2.5 text-[11px] font-semibold uppercase tracking-wider text-white hover:text-white",
+      "-mx-2.5 rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wider !text-white !bg-transparent hover:!text-white hover:!bg-white/10 focus-visible:!ring-2 focus-visible:!ring-white/35",
     onClick: () => column.toggleSorting(isSorted === "asc"),
   });
 };

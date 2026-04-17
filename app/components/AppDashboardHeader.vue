@@ -153,11 +153,11 @@ const toneStyles = computed(() => {
       userName: 'truncate text-sm font-semibold text-gray-800 dark:text-gray-100',
       userChevron: 'h-4 w-4 text-gray-400 dark:text-gray-500',
       notificationButton:
-        'relative group rounded-full border border-gray-200/80 bg-white/80 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900/75 dark:hover:bg-gray-900',
+        'relative group rounded-full border border-[#d7e1f5] bg-white/90 transition-colors hover:bg-[#eef4ff] dark:border-[#29426d] dark:bg-gray-900/75 dark:hover:bg-[#13203a]',
       notificationIcon:
-        'h-5 w-5 text-gray-500 transition-colors group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300',
+        'h-5 w-5 text-[#47679f] transition-colors group-hover:text-[#2d5fc0] dark:text-[#9cb7f5] dark:group-hover:text-[#c9d9ff]',
       notificationBadge:
-        'absolute -top-1.5 -right-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full border border-white bg-gray-800 px-1 text-[9px] font-medium text-white dark:border-gray-900 dark:bg-gray-200 dark:text-gray-900',
+        'absolute -top-1.5 -right-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full border border-white bg-[#2d5fc0] px-1 text-[9px] font-semibold text-white dark:border-gray-900',
     }
   }
 
@@ -241,7 +241,7 @@ const toneStyles = computed(() => {
         >
           <UButton
             :to="modulesButtonTo"
-            color="primary"
+            color="info"
             variant="soft"
             icon="i-lucide-layout-grid"
             class="rounded-full shadow-sm"
