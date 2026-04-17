@@ -37,22 +37,6 @@ const closeDetail = () => {
   selectedRow.value = null
 }
 
-const getMarkBadge = (row: SeguimientoTableRow) => {
-  if (hasMarcaciones(row.marcaciones)) {
-    return {
-      label: `${getMarcacionesCount(row.marcaciones)} marcaciones`,
-      color: 'success' as const,
-      variant: 'soft' as const,
-    }
-  }
-
-  return {
-    label: 'Sin marcaciones',
-    color: 'neutral' as const,
-    variant: 'soft' as const,
-  }
-}
-
 const getConceptForRow = (row: SeguimientoTableRow) => {
   if (!row.dailyRecord) {
     return {
@@ -89,6 +73,40 @@ const formatRouteTime = (value?: string | null) => {
   }
 
   return String(value).split(' ')[1] || value
+}
+
+const getEmployeeLines = (row: SeguimientoTableRow) => {
+  const lastName = String(row.usuario.apellido || '').trim()
+  const firstName = String(row.usuario.nombre || '').trim()
+
+  if (lastName || firstName) {
+    return {
+      primary: lastName || row.nombre,
+      secondary: firstName,
+    }
+  }
+
+  const fallback = String(row.nombre || '').trim()
+  if (!fallback) {
+    return {
+      primary: 'Sin informacion',
+      secondary: '',
+    }
+  }
+
+  const parts = fallback.split(/\s+/).filter(Boolean)
+  if (parts.length < 2) {
+    return {
+      primary: fallback,
+      secondary: '',
+    }
+  }
+
+  const pivot = Math.ceil(parts.length / 2)
+  return {
+    primary: parts.slice(0, pivot).join(' '),
+    secondary: parts.slice(pivot).join(' '),
+  }
 }
 
 const getMarkLocation = (marcacion: Marcacion) =>
@@ -144,60 +162,48 @@ const selectedConcept = computed(() =>
       </div>
     </div>
 
-    <div v-else class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+    <div v-else class="overflow-hidden rounded-2xl bg-white dark:bg-gray-950">
       <div class="overflow-x-auto">
-        <table class="min-w-[1460px] table-fixed border-separate border-spacing-0">
+        <table class="min-w-[1480px] w-full table-auto border-separate border-spacing-0">
           <thead class="bg-[#2d5fc0] text-white">
             <tr class="text-left text-[11px] font-semibold uppercase tracking-wider text-white">
-              <th class="w-[5%] px-4 py-3.5">Ver</th>
-              <th class="w-[340px] min-w-[340px] max-w-[340px] px-4 py-3.5">Tecnico</th>
+              <th class="w-[300px] min-w-[300px] max-w-[300px] px-4 py-3.5">
+                <span class="inline-flex items-center gap-1.5">
+                  <UIcon name="i-lucide-arrow-up-down" class="h-3.5 w-3.5" />
+                  Empleado
+                </span>
+              </th>
+              <th class="w-[140px] min-w-[140px] max-w-[140px] px-4 py-3.5">
+                <span class="inline-flex items-center gap-1.5">
+                  <UIcon name="i-lucide-arrow-up-down" class="h-3.5 w-3.5" />
+                  DNI
+                </span>
+              </th>
               <th class="w-[17%] px-4 py-3.5">Cargo</th>
               <th class="w-[19%] px-4 py-3.5">Departamento</th>
               <th class="w-[12%] px-4 py-3.5">Cobertura</th>
               <th class="w-[10%] px-4 py-3.5">Estado</th>
-              <th class="w-[8%] px-4 py-3.5 text-right">Acciones</th>
+              <th class="w-[8%] px-4 py-3.5 text-center">Acciones</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-            <tr
-              v-for="row in props.items"
-              :key="row.key"
-              class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/50"
-            >
-              <td class="px-4 py-4 align-top">
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  size="xs"
-                  icon="i-lucide-eye"
-                  class="rounded-full border-[#c9d8ff] bg-white text-[#2d5fc0] hover:bg-[#eef4ff]"
-                  aria-label="Ver detalle"
-                  @click.stop="openDetail(row)"
-                >
-                  Ver
-                </UButton>
-              </td>
-
-              <td class="w-[340px] min-w-[340px] max-w-[340px] px-4 py-4 align-top">
-                <div class="flex w-[340px] max-w-[340px] items-start gap-3">
-                  <UAvatar
-                    :alt="row.nombre"
-                    size="md"
-                    class="bg-gray-200 text-gray-700 ring-0 shadow-none"
-                  >
-                    {{ row.initials }}
-                  </UAvatar>
-
-                  <div class="min-w-0 flex-1">
-                    <div class="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {{ row.nombre }}
-                    </div>
-                    <div class="truncate text-sm text-gray-500 dark:text-gray-400">
-                      {{ row.subtitle }}
-                    </div>
+            <tr v-for="row in props.items" :key="row.key" class="bg-white dark:bg-gray-950">
+              <td class="w-[300px] min-w-[300px] max-w-[300px] px-4 py-4 align-top">
+                <div class="min-w-0 max-w-[280px]">
+                  <div class="truncate text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                    {{ getEmployeeLines(row).primary }}
+                  </div>
+                  <div class="truncate text-sm text-gray-900 dark:text-gray-100">
+                    {{ getEmployeeLines(row).secondary || '-' }}
                   </div>
                 </div>
+              </td>
+
+              <td class="w-[140px] min-w-[140px] max-w-[140px] px-4 py-4 align-top">
+                <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {{ row.dni || '-' }}
+                </span>
               </td>
 
               <td class="px-4 py-4 align-top">
@@ -220,10 +226,6 @@ const selectedConcept = computed(() =>
 
               <td class="px-4 py-4 align-top">
                 <div class="flex flex-wrap items-center gap-2">
-                  <UBadge :color="getMarkBadge(row).color" :variant="getMarkBadge(row).variant" class="rounded-full px-3 py-1">
-                    {{ getMarkBadge(row).label }}
-                  </UBadge>
-
                   <span :class="`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getConceptForRow(row).color}`">
                     {{ getConceptForRow(row).text }}
                   </span>
@@ -231,7 +233,19 @@ const selectedConcept = computed(() =>
               </td>
 
               <td class="px-4 py-4 align-top">
-                <div class="flex items-center justify-end gap-2">
+                <div class="flex items-center justify-center gap-2">
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-eye"
+                    class="rounded-full border-[#c9d8ff] bg-white text-[#2d5fc0] hover:bg-[#eef4ff]"
+                    aria-label="Ver detalle"
+                    @click.stop="openDetail(row)"
+                  >
+                    Ver
+                  </UButton>
+
                   <UButton
                     v-if="shouldShowValidar(row.validationTarget)"
                     color="primary"
@@ -247,7 +261,7 @@ const selectedConcept = computed(() =>
                     color="success"
                     variant="outline"
                     size="xs"
-                    icon="i-lucide-message-circle"
+                    icon="i-simple-icons-whatsapp"
                     class="rounded-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-900/40 dark:text-emerald-300"
                     @click.stop="emit('sendWhatsApp', row.whatsappTarget, props.subTab === 'marcaron' ? 'saludo' : 'seguimiento')"
                   />

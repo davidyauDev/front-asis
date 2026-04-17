@@ -33,7 +33,7 @@ const dashboardLinks = [{
 // Gestión
 const managementLinks = [{
   label: 'Seguimiento',
-  icon: 'i-lucide-map-pin',
+  icon: 'i-lucide-hard-hat',
   to: '/rrhh/seguimiento',
   onSelect: () => { open.value = false }
 }, {

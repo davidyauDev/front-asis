@@ -47,7 +47,7 @@ const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
       <AppDashboardHeader
         title="Seguimiento de Tecnicos"
         mobile-title="Seguimiento"
-        subtitle-icon="i-heroicons-signal"
+        subtitle-icon="i-lucide-hard-hat"
         notification-tooltip="Tecnicos sin marcacion"
         notification-attention
         @notification-click="openRrhhNotifications"
@@ -74,7 +74,7 @@ const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
         />
       
         <section>
-          <UCard v-if="isLoading" class="border-gray-200/70 dark:border-gray-800/70">
+          <section v-if="isLoading" class="border-gray-200/70 dark:border-gray-800/70">
             <div class="space-y-6 p-2">
               <div class="flex items-start gap-4">
                 <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-300">
@@ -103,7 +103,7 @@ const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
                 <USkeleton class="h-12 w-full rounded-xl" />
               </div>
             </div>
-          </UCard>
+          </section>
 
           <UAlert
             v-else-if="error"
@@ -132,9 +132,9 @@ const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
             </template>
           </UAlert>
 
-          <UCard
+          <section
             v-else
-            class="overflow-hidden border-gray-200/70 bg-white/95 shadow-sm backdrop-blur-sm dark:border-gray-800/70 dark:bg-gray-950/90"
+           
             :ui="{ body: 'p-0' }"
           >
             <SeguimientoFilters
@@ -161,7 +161,7 @@ const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
               @validar="openValidationModal"
               @send-whats-app="enviarWhatsApp"
             />
-          </UCard>
+          </section>
         </section>
       </div>
 
