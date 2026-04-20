@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  EstadoRrhhValue,
   SolicitudDetalleData,
   SolicitudDetalleItem,
   SolicitudListItem,
@@ -7,8 +8,8 @@ import type {
 import {
   aprobarDetalleSolicitud,
   rechazarDetalleSolicitud,
-  entregaDetalleSolicitud,
   subirActaDetalle,
+  updateEstadoRrhh,
 } from '~/services/rrhh/solicitudes'
 
 const props = defineProps<{
@@ -31,7 +32,10 @@ const modalOpen = computed({
 })
 
 type ManageDecision = 'aprobar' | 'rechazar'
-type DeliveryDecision = 'derivar_logistica' | 'recojo_oficina'
+type InternalStatusOption = {
+  value: EstadoRrhhValue
+  label: string
+}
 
 const normalize = (value?: string | null) => (value ?? '').trim().toLowerCase()
 
@@ -93,6 +97,25 @@ const stateTone = (value?: string | null) => {
 
 const selectedRequest = computed(() => props.detail?.solicitud ?? props.request)
 const selectedItems = computed(() => props.detail?.detalles ?? [])
+const toast = useToast()
+
+const requestType = computed(() => {
+  const detailType = (props.detail?.solicitud as { tipo_solicitud?: string | null } | undefined)?.tipo_solicitud
+  const parentType = (props.request as { tipo_solicitud?: string | null } | null)?.tipo_solicitud
+  const selectedType = (selectedRequest.value as { tipo_solicitud?: string | null } | null)?.tipo_solicitud
+  return normalize(detailType || parentType || selectedType)
+})
+
+const isInternalRequest = computed(() => {
+  const type = requestType.value
+  return type === 'interno' || type.includes('inter')
+})
+const isMixtoRequest = computed(() => {
+  const type = requestType.value
+  return type === 'mixto' || type.includes('mixt')
+})
+const hasGlobalActions = computed(() => isInternalRequest.value || isMixtoRequest.value)
+
 const manageOpen = ref(false)
 const managedItem = ref<SolicitudDetalleItem | null>(null)
 const manageDecision = ref<ManageDecision>('aprobar')
@@ -100,24 +123,47 @@ const manageQuantity = ref(0)
 const manageComment = ref('')
 const manageSubmitting = ref(false)
 const manageError = ref<string | null>(null)
-const actaOpen = ref(false)
-const actaItem = ref<SolicitudDetalleItem | null>(null)
-const actaFileName = ref('')
-const actaComment = ref('')
-const actaFile = ref<File | null>(null)
-const actaSubmitting = ref(false)
-const actaError = ref<string | null>(null)
-const deliveryOpen = ref(false)
-const deliveryItem = ref<SolicitudDetalleItem | null>(null)
-const deliveryDecision = ref<DeliveryDecision>('derivar_logistica')
-const deliveryComment = ref('')
-const deliveryNotifyRequester = ref(true)
-const deliveryNotifyLogistics = ref(true)
-const deliverySubmitting = ref(false)
-const deliveryError = ref<string | null>(null)
+
+const globalDeliveryComment = ref('')
+const internalStatusOptions: InternalStatusOption[] = [
+  { value: 'pendiente', label: 'Pendiente' },
+  { value: 'derivar_logistica', label: 'Derivar a logistica' },
+  { value: 'recojo_oficina', label: 'Recojo en oficina' },
+]
+const globalInternalStatus = ref('')
+const globalActaFileName = ref('')
+const globalActaComment = ref('')
+const globalActaFile = ref<File | null>(null)
+const globalSubmitting = ref(false)
+const globalError = ref<string | null>(null)
+const globalProgress = ref(0)
+const isActaRequiredForFinalize = computed(() => {
+  if (!isInternalRequest.value) return false
+  return globalInternalStatus.value === 'recojo_oficina'
+})
+const shouldUploadActa = computed(() => {
+  if (!globalActaFile.value) return false
+  if (isInternalRequest.value) return globalInternalStatus.value === 'recojo_oficina'
+  if (isMixtoRequest.value) return false
+  return false
+})
+const selectedInternalStatusLabel = computed(() => (
+  internalStatusOptions.find(option => option.value === globalInternalStatus.value)?.label || ''
+))
 const imagePreviewOpen = ref(false)
 const imagePreviewSrc = ref<string | null>(null)
 const imagePreviewAlt = ref('Imagen del producto')
+
+watch(requestType, (type) => {
+  if (type.includes('mixt')) {
+    globalInternalStatus.value = 'derivar_logistica'
+    return
+  }
+
+  if (type.includes('inter')) {
+    globalInternalStatus.value = internalStatusOptions[0]?.value || ''
+  }
+}, { immediate: true })
 
 const selectedSolicitante = computed(() => {
   const request = selectedRequest.value
@@ -178,10 +224,6 @@ const getManageButtonTitle = (item: SolicitudDetalleItem) => {
 }
 
 const isManageButtonDisabled = (item: SolicitudDetalleItem) => !canManageItem(item) || isFinalDetailState(item)
-const canDeliveryActions = (item: SolicitudDetalleItem) => canManageItem(item)
-const getDeliveryButtonTitle = (item: SolicitudDetalleItem) => (
-  canDeliveryActions(item) ? 'Derivar o recojo en oficina' : 'Solo habilitado para RR.HH.'
-)
 
 const manageMaxQuantity = computed(() => Math.max(0, toNumber(managedItem.value?.stock_actual)))
 const manageProduct = computed(() => (managedItem.value ? getItemProduct(managedItem.value) : '--'))
@@ -207,13 +249,6 @@ const manageCommentHint = computed(() => (
     ? 'Comentario opcional para aprobar.'
     : 'Este comentario es obligatorio para rechazar.'
 ))
-const actaProduct = computed(() => (actaItem.value ? getItemProduct(actaItem.value) : '--'))
-const deliveryProduct = computed(() => (deliveryItem.value ? getItemProduct(deliveryItem.value) : '--'))
-const deliveryConfirmLabel = computed(() => (
-  deliveryDecision.value === 'derivar_logistica'
-    ? 'Derivar al area de logistica'
-    : 'Registrar recojo en oficina'
-))
 const canSubmitManage = computed(() => {
   if (manageSubmitting.value || !managedItem.value) return false
   if (manageDecision.value === 'rechazar') return manageComment.value.trim().length > 0
@@ -236,115 +271,70 @@ const closeManageModal = () => {
   manageOpen.value = false
 }
 
-const openActaModal = (item: SolicitudDetalleItem) => {
-  if (!canManageItem(item)) return
-  actaItem.value = item
-  actaFileName.value = ''
-  actaComment.value = ''
-  actaOpen.value = true
-}
-
-const closeActaModal = () => {
-  actaOpen.value = false
-  actaItem.value = null
-}
-
-const onActaFileChange = (event: Event) => {
+const onGlobalActaFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement | null
   const file = input?.files?.[0] ?? null
-  actaFile.value = file
-  actaFileName.value = file?.name ?? ''
+  globalActaFile.value = file
+  globalActaFileName.value = file?.name ?? ''
 }
 
-const submitActa = async () => {
-  if (!actaItem.value) return
-  if (!actaFile.value) {
-    actaError.value = 'Selecciona un archivo para subir el acta.'
-    return
-  }
+const canSubmitGlobalFinalize = computed(() => {
+  if (!hasGlobalActions.value) return false
+  if (globalSubmitting.value) return false
+  if (!selectedItems.value.length) return false
+  if (isInternalRequest.value && !globalInternalStatus.value) return false
+  return true
+})
 
-  actaError.value = null
-  actaSubmitting.value = true
+const submitGlobalFinalize = async () => {
+  globalError.value = null
+  globalProgress.value = 0
+  globalSubmitting.value = true
 
   try {
-    const id = actaItem.value.id_detalle_solicitud
-    if (id === null || id === undefined) throw new Error('No se pudo identificar el detalle.')
+    const requestId = selectedRequest.value?.id_solicitud
+    if (!requestId) throw new Error('No se pudo identificar la solicitud.')
+    if (!globalInternalStatus.value) throw new Error('Selecciona un estado para registrar seguimiento.')
 
-    const fd = new FormData()
-    fd.append('file', actaFile.value)
-    fd.append('comentario', actaComment.value || '')
-
-    await subirActaDetalle(id, fd)
-
-    actaItem.value.observacion_atencion = actaComment.value || actaItem.value.observacion_atencion
-    actaItem.value.fecha_atencion = new Date().toISOString()
-    actaItem.value.estado = { descripcion: 'Acta subida - Recojo en oficina' }
-
-    closeActaModal()
-    emit('submitted')
-  } catch (cause) {
-    actaError.value = cause && typeof cause === 'object' && 'message' in cause
-      ? String((cause as { message?: unknown }).message ?? 'No se pudo subir el acta')
-      : 'No se pudo subir el acta'
-  } finally {
-    actaSubmitting.value = false
-  }
-}
-
-const openDeliveryModal = (item: SolicitudDetalleItem) => {
-  if (!canDeliveryActions(item)) return
-  deliveryItem.value = item
-  deliveryDecision.value = 'derivar_logistica'
-  deliveryComment.value = ''
-  deliveryNotifyRequester.value = true
-  deliveryNotifyLogistics.value = true
-  deliveryOpen.value = true
-}
-
-const closeDeliveryModal = () => {
-  deliveryOpen.value = false
-  deliveryItem.value = null
-}
-
-const submitDelivery = async () => {
-  const item = deliveryItem.value
-  const decision = deliveryDecision.value
-
-  deliveryError.value = null
-  deliverySubmitting.value = true
-
-  try {
-    if (!item) throw new Error('No se seleccionó item')
-    const id = item.id_detalle_solicitud
-    if (id === null || id === undefined) throw new Error('No se pudo identificar el detalle')
-
-    await entregaDetalleSolicitud(id, {
-      accion: decision,
-      comentario: deliveryComment.value || null,
-      notificar_solicitante: Boolean(deliveryNotifyRequester.value),
-      notificar_logistica: Boolean(deliveryNotifyLogistics.value),
+    await updateEstadoRrhh(requestId, {
+      estado_rrhh: globalInternalStatus.value,
+      estado_rrhh_comentario: globalDeliveryComment.value.trim() || null,
     })
 
-    closeDeliveryModal()
+    globalProgress.value = 40
 
-    if (decision === 'recojo_oficina') {
-      actaItem.value = item
-      actaFileName.value = ''
-      actaFile.value = null
-      actaComment.value = ''
-      actaOpen.value = true
+    if (shouldUploadActa.value && globalActaFile.value) {
+      const detailsWithId = selectedItems.value.filter(item => item.id_detalle_solicitud !== null && item.id_detalle_solicitud !== undefined)
+      const total = Math.max(1, detailsWithId.length)
+
+      for (let idx = 0; idx < detailsWithId.length; idx += 1) {
+        const detail = detailsWithId[idx]
+        const detailId = detail.id_detalle_solicitud as number
+        const fd = new FormData()
+        fd.append('file', globalActaFile.value)
+        fd.append('comentario', globalActaComment.value || '')
+        await subirActaDetalle(detailId, fd)
+        globalProgress.value = 40 + Math.round(((idx + 1) / total) * 60)
+      }
     } else {
-      item.estado = { descripcion: 'Derivado a logística' }
-      item.observacion_atencion = deliveryComment.value || item.observacion_atencion
-      item.fecha_atencion = new Date().toISOString()
-      emit('submitted')
+      globalProgress.value = 100
     }
+
+    const internalStatusLabel = selectedInternalStatusLabel.value || 'Seguimiento actualizado'
+    selectedItems.value.forEach((item) => {
+      item.estado = { descripcion: internalStatusLabel }
+      item.observacion_atencion = globalDeliveryComment.value.trim() || item.observacion_atencion
+      item.fecha_atencion = new Date().toISOString()
+    })
+
+    toast.add({ title: 'Seguimiento registrado', description: 'El estado RR.HH. se actualizó correctamente.', color: 'success' })
+    emit('submitted')
   } catch (cause) {
-    deliveryError.value = cause && typeof cause === 'object' && 'message' in cause
-      ? String((cause as { message?: unknown }).message ?? 'No se pudo procesar la entrega')
-      : 'No se pudo procesar la entrega'
+    globalError.value = cause && typeof cause === 'object' && 'message' in cause
+      ? String((cause as { message?: unknown }).message ?? 'No se pudo registrar el seguimiento')
+      : 'No se pudo registrar el seguimiento'
   } finally {
-    deliverySubmitting.value = false
+    globalSubmitting.value = false
   }
 }
 
@@ -430,10 +420,29 @@ const confirmManage = async () => {
           </div>
         </div>
 
-        <span
-          class="hidden shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-gray-900 dark:text-[#9cb7f5] dark:ring-gray-800 sm:inline-flex">
-          #{{ selectedRequest?.id_solicitud ?? '--' }}
-        </span>
+        <div class="flex shrink-0 items-center gap-2">
+          <UButton
+            v-if="isInternalRequest"
+            color="primary"
+            size="xs"
+            icon="i-lucide-check-circle-2"
+            class="rounded-full bg-[#2d5fc0] text-white hover:bg-[#244ea4]"
+            :loading="globalSubmitting"
+            :disabled="!canSubmitGlobalFinalize"
+            :title="isInternalRequest && !globalInternalStatus
+              ? 'Selecciona un estado interno'
+              : 'Finalizar solicitud'"
+            @click="submitGlobalFinalize"
+          >
+            Finalizar solicitud
+          </UButton>
+
+          <span
+            class="hidden rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-gray-900 dark:text-[#9cb7f5] dark:ring-gray-800 sm:inline-flex"
+          >
+            #{{ selectedRequest?.id_solicitud ?? '--' }}
+          </span>
+        </div>
       </div>
     </template>
 
@@ -498,6 +507,127 @@ const confirmManage = async () => {
               </p>
             </div>
           </div>
+
+          <div
+            v-if="hasGlobalActions"
+            class="rounded-2xl border border-[#2d5fc0]/15 bg-[#f7f9ff] p-4 shadow-sm dark:border-[#29406f]/40 dark:bg-[#0b1220] sm:p-5"
+          >
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-sm font-semibold text-gray-950 dark:text-white">
+                  Acciones globales ({{ isMixtoRequest ? 'MIXTO' : 'INTERNO' }})
+                </p>
+                <p class="text-xs text-gray-600 dark:text-gray-300">
+                  <span v-if="isMixtoRequest">
+                    Define la entrega global y opcionalmente adjunta acta.
+                  </span>
+                  <span v-else>
+                    Solicitud interna: solo requiere subir acta para finalizar.
+                  </span>
+                </p>
+              </div>
+              <span
+                class="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-gray-700 ring-1 ring-gray-200 dark:bg-gray-950 dark:text-gray-200 dark:ring-gray-800"
+              >
+                <UIcon name="i-lucide-layers-3" class="h-4 w-4 text-[#2d5fc0] dark:text-[#9cb7f5]" />
+                {{ selectedItems.length }} items
+              </span>
+            </div>
+
+            <div
+              v-if="globalError"
+              class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+            >
+              {{ globalError }}
+            </div>
+
+            <div class="mt-4 grid gap-4 lg:grid-cols-2">
+              <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+                  Subir acta (global)
+                </p>
+                <input
+                  type="file"
+                  accept=".pdf,image/*"
+                  class="mt-3 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#2d5fc0] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                  :disabled="globalSubmitting"
+                  @change="onGlobalActaFileChange"
+                >
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {{ globalActaFileName || 'Sin archivo seleccionado' }}
+                </p>
+
+                <div class="mt-4 space-y-2">
+                  <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario del acta</label>
+                  <UTextarea
+                    v-model="globalActaComment"
+                    placeholder="Ej: Acta firmada por el solicitante..."
+                    :rows="3"
+                    class="w-full"
+                    :disabled="globalSubmitting"
+                  />
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+                  Seguimiento
+                </p>
+
+                <div v-if="isMixtoRequest" class="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
+                  Acción global: derivar a logística.
+                </div>
+                <p v-else class="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
+                  Selecciona el estado de seguimiento RR.HH. y agrega comentario opcional.
+                </p>
+
+                <div v-if="hasGlobalActions" class="mt-4 space-y-2">
+                  <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Estado RR.HH.</label>
+                  <select
+                    v-model="globalInternalStatus"
+                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                    :disabled="globalSubmitting || isMixtoRequest"
+                  >
+                    <option value="" disabled>Selecciona un estado</option>
+                    <option
+                      v-for="option in internalStatusOptions"
+                      :key="option.value"
+                      :value="option.value"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="mt-4 space-y-2">
+                  <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {{ isMixtoRequest ? 'Comentario de derivación' : 'Comentario interno' }}
+                  </label>
+                  <UTextarea
+                    v-model="globalDeliveryComment"
+                    :placeholder="isMixtoRequest ? 'Ej: Entrega urgente. Coordinar con almacén...' : 'Ej: Derivado hoy a logística.'"
+                    :rows="3"
+                    class="w-full"
+                    :disabled="globalSubmitting"
+                  />
+                </div>
+
+                <div class="mt-4 flex items-center justify-end gap-3">
+                  <UButton
+                    v-if="hasGlobalActions"
+                    color="primary"
+                    class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]"
+                    :loading="globalSubmitting"
+                    :disabled="!canSubmitGlobalFinalize"
+                    @click="submitGlobalFinalize"
+                  >
+                    Registrar
+                  </UButton>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
             <div class="overflow-x-auto">
               <table class="w-full table-fixed border-separate border-spacing-0">
@@ -590,12 +720,6 @@ const confirmManage = async () => {
                           size="2xs" :ui="{ label: 'hidden' }" :title="getManageButtonTitle(item)"
                           :aria-label="getManageButtonTitle(item)" :disabled="isManageButtonDisabled(item)"
                           @click="openManageModal(item)" />
-                        <UButton color="neutral" variant="soft" icon="i-lucide-truck" class="rounded-full px-2"
-                          size="2xs" :ui="{ label: 'hidden' }" :title="getDeliveryButtonTitle(item)"
-                          :aria-label="getDeliveryButtonTitle(item)" @click="openDeliveryModal(item)" />
-                        <UButton color="neutral" variant="soft" icon="i-lucide-upload" class="rounded-full px-2"
-                          size="2xs" :ui="{ label: 'hidden' }" title="Subir acta" aria-label="Subir acta"
-                          @click="openActaModal(item)" />
                       </div>
                       <span v-else
                         class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-500"
@@ -645,233 +769,6 @@ const confirmManage = async () => {
       </div>
     </template>
   </UModal>
-
-  <UModal v-model:open="actaOpen" class="w-full max-w-lg" :ui="{
-    header: 'relative flex items-stretch p-0 min-h-0',
-    wrapper: 'flex-1 min-w-0 w-full',
-    title: 'w-full p-0',
-    body: 'p-0',
-  }" :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }">
-    <template #title>
-      <div
-        class="flex w-full items-start gap-3 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
-        <span
-          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-200 dark:ring-indigo-900/60">
-          <UIcon name="i-lucide-file-up" class="h-5 w-5" />
-        </span>
-        <div class="min-w-0 leading-tight">
-          <p class="text-sm font-semibold tracking-wide text-gray-950 dark:text-white">Subir acta</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Maqueta para adjuntar acta al item seleccionado.</p>
-        </div>
-      </div>
-    </template>
-
-    <template #body>
-      <div class="bg-white px-5 py-5 dark:bg-gray-950">
-        <div class="space-y-5">
-          <div
-            class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto
-            </p>
-            <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">{{ actaProduct }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Adjunta el acta; se enviará al backend.</p>
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Archivo del acta</label>
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              class="block w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#2d5fc0] hover:file:bg-[#dfe9ff] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-              @change="onActaFileChange">
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ actaFileName || 'Aun no se selecciona archivo.' }}
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario</label>
-            <UTextarea v-model="actaComment" :rows="3" placeholder="Comentario interno del acta (opcional)" />
-          </div>
-
-          <p v-if="actaError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">{{ actaError }}</p>
-
-          <p class="text-xs text-amber-700 dark:text-amber-300">
-            El archivo se subirá al backend cuando confirme.
-          </p>
-
-          <div class="flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
-            <UButton color="neutral" variant="soft" class="px-5" @click="closeActaModal">
-              Cancelar
-            </UButton>
-            <UButton color="primary" class="px-5 font-semibold" icon="i-lucide-upload" :loading="actaSubmitting" :disabled="actaSubmitting || !actaFileName"
-              @click="submitActa">
-              Subir acta
-            </UButton>
-          </div>
-        </div>
-      </div>
-    </template>
-  </UModal>
-
-  <UModal
-  v-model:open="deliveryOpen"
-  class="w-full max-w-2xl"
-  :ui="{
-    content: 'overflow-hidden rounded-3xl',
-    header: 'relative flex items-stretch p-0 min-h-0',
-    wrapper: 'flex-1 min-w-0 w-full',
-    title: 'w-full p-0',
-    body: 'p-0'
-  }"
-  :close="{
-    color: 'neutral',
-    variant: 'ghost',
-    class: 'rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white'
-  }"
->
-  <template #title>
-    <div class="w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
-      <div class="flex items-start gap-4 px-6 py-5">
-        <div
-          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-900/60"
-        >
-          <UIcon name="i-lucide-truck" class="h-6 w-6" />
-        </div>
-
-        <div class="min-w-0 flex-1">
-          <h3 class="text-base font-semibold text-gray-950 dark:text-white">
-            Derivar / recojo en oficina
-          </h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Gestiona la entrega del item para el área RR.HH.
-          </p>
-        </div>
-      </div>
-    </div>
-  </template>
-
-  <template #body>
-    <div class="bg-gray-50 dark:bg-gray-950">
-      <div class="space-y-6 px-6 py-6">
-        <!-- Resumen -->
-        <div
-          class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
-        >
-          <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
-            Producto
-          </p>
-
-          <div class="mt-3 space-y-1">
-            <p class="text-xl font-bold text-gray-950 dark:text-white">
-              {{ deliveryProduct }}
-            </p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              Área RR.HH.
-            </p>
-          </div>
-        </div>
-
-        <!-- Tipo de acción -->
-        <section class="space-y-3">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-900 dark:text-gray-100">
-              Tipo de acción
-            </p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Selecciona cómo se entregará este item.
-            </p>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <button
-              type="button"
-              class="rounded-xl px-4 py-3 text-sm font-medium transition-all"
-              :class="
-                deliveryDecision === 'derivar_logistica'
-                  ? 'bg-sky-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
-              "
-              @click="deliveryDecision = 'derivar_logistica'"
-            >
-              <div class="flex items-center justify-center gap-2">
-                <UIcon name="i-lucide-send" class="h-4 w-4" />
-                <span>Derivar a logística</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              class="rounded-xl px-4 py-3 text-sm font-medium transition-all"
-              :class="
-                deliveryDecision === 'recojo_oficina'
-                  ? 'bg-sky-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
-              "
-              @click="deliveryDecision = 'recojo_oficina'"
-            >
-              <div class="flex items-center justify-center gap-2">
-                <UIcon name="i-lucide-briefcase" class="h-4 w-4" />
-                <span>Recojo en oficina</span>
-              </div>
-            </button>
-          </div>
-        </section>
-
-        <!-- Comentario -->
-        <section class="space-y-3">
-          <div>
-            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Comentario
-            </label>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Agrega una observación interna para dejar trazabilidad.
-            </p>
-          </div>
-
-          <div class="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <UTextarea
-              v-model="deliveryComment"
-              :rows="4"
-              placeholder="Escribe un comentario interno..."
-              class="w-full"
-            />
-          </div>
-        </section>
-        <div v-if="deliveryError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
-          {{ deliveryError }}
-        </div>
-
-        
-      </div>
-
-      <!-- Footer -->
-      <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
-        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <UButton
-            color="neutral"
-            variant="soft"
-            class="justify-center px-5"
-            @click="closeDeliveryModal"
-          >
-            Cancelar
-          </UButton>
-
-          <UButton
-            color="primary"
-            class="justify-center px-5 font-semibold"
-            :icon="deliveryDecision === 'derivar_logistica' ? 'i-lucide-send' : 'i-lucide-briefcase'"
-            :loading="deliverySubmitting"
-            :disabled="deliverySubmitting"
-            @click="submitDelivery"
-          >
-            {{ deliveryDecision === 'derivar_logistica'
-              ? 'Derivar al área de logística'
-              : 'Confirmar recojo en oficina' }}
-          </UButton>
-        </div>
-      </div>
-    </div>
-  </template>
-</UModal>
 
   <UModal v-model:open="manageOpen" class="w-full max-w-xl" :ui="{
     header: 'relative flex items-stretch p-0 min-h-0',

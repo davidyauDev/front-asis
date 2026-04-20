@@ -20,6 +20,32 @@ const detailError = ref<string | null>(null)
 const selectedRequest = ref<SolicitudListItem | null>(null)
 const selectedDetail = ref<SolicitudDetalleData | null>(null)
 
+type ActaFileKind = 'image' | 'pdf'
+interface ActaUploadRecord {
+  fileName: string
+  fileUrl: string
+  fileKind: ActaFileKind
+  uploadedAt: string
+}
+
+const actaModalOpen = ref(false)
+const actaRequest = ref<SolicitudListItem | null>(null)
+const actaDraftFileName = ref<string | null>(null)
+const actaDraftFileUrl = ref<string | null>(null)
+const actaDraftFileKind = ref<ActaFileKind>('image')
+const actaMap = reactive<Record<number, ActaUploadRecord>>({})
+const toast = useToast()
+
+interface DerivacionLogisticaRecord {
+  comment: string
+  derivedAt: string
+}
+
+const derivarModalOpen = ref(false)
+const derivarRequest = ref<SolicitudListItem | null>(null)
+const derivarComment = ref('')
+const derivacionLogisticaMap = reactive<Record<number, DerivacionLogisticaRecord>>({})
+
 const normalize = (value?: string | null) => (value ?? '').trim().toLowerCase()
 
 const extractErrorMessage = (cause: unknown) => {
@@ -34,6 +60,139 @@ const extractErrorMessage = (cause: unknown) => {
 const getUbicacionLabel = (item: SolicitudListItem) => {
   const ubicacion = (item.ubicacion ?? '').trim()
   return ubicacion || '--'
+}
+
+const getEstadoRrhhLabel = (item: SolicitudListItem) => {
+  const estado = normalize(item.estado_rrhh)
+  if (!estado) return '--'
+  if (estado === 'pendiente') return 'Pendiente'
+  if (estado === 'derivar_logistica') return 'Derivar a logística'
+  if (estado === 'recojo_oficina') return 'Recojo en oficina'
+  return estado.replace(/_/g, ' ')
+}
+
+const estadoRrhhTone = (value?: string | null) => {
+  const estado = normalize(value)
+  if (!estado) return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200'
+  if (estado === 'pendiente') return 'bg-amber-100 text-amber-800 ring-1 ring-amber-200'
+  if (estado === 'derivar_logistica') return 'bg-sky-100 text-sky-800 ring-1 ring-sky-200'
+  if (estado === 'recojo_oficina') return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200'
+  return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200'
+}
+
+const isMixtoSolicitud = (item: SolicitudListItem) => {
+  const tipo = normalize(item.tipo_solicitud)
+  return tipo === 'mixto' || tipo === 'mixta' || tipo.includes('mixt')
+}
+
+const hasDerivacionLogistica = (item: SolicitudListItem) => {
+  const key = item.id_solicitud ?? null
+  if (!key) return false
+  return Boolean(derivacionLogisticaMap[key])
+}
+
+const openDerivarModal = (item: SolicitudListItem) => {
+  derivarRequest.value = item
+  derivarComment.value = ''
+  derivarModalOpen.value = true
+}
+
+const closeDerivarModal = () => {
+  derivarModalOpen.value = false
+  derivarRequest.value = null
+  derivarComment.value = ''
+}
+
+const confirmDerivarLogistica = () => {
+  const key = derivarRequest.value?.id_solicitud
+  if (!key) return
+
+  derivacionLogisticaMap[key] = {
+    comment: derivarComment.value.trim(),
+    derivedAt: new Date().toISOString(),
+  }
+
+  toast.add({ title: 'Derivado a logística (solo frontend)', color: 'success' })
+  closeDerivarModal()
+}
+
+const revokeBlobUrl = (url?: string | null) => {
+  if (!url || !url.startsWith('blob:') || !import.meta.client) return
+  URL.revokeObjectURL(url)
+}
+
+const getActaKey = (item: SolicitudListItem) => item.id_solicitud ?? null
+const hasActa = (item: SolicitudListItem) => {
+  const key = getActaKey(item)
+  if (!key) return false
+  return Boolean(actaMap[key])
+}
+
+const openActaModal = (item: SolicitudListItem) => {
+  actaRequest.value = item
+  actaDraftFileName.value = null
+  actaDraftFileUrl.value = null
+  actaDraftFileKind.value = 'image'
+  actaModalOpen.value = true
+}
+
+const closeActaModal = () => {
+  actaModalOpen.value = false
+  actaRequest.value = null
+  actaDraftFileName.value = null
+  actaDraftFileUrl.value = null
+  actaDraftFileKind.value = 'image'
+}
+
+const getActaKind = (fileName: string, mimeType: string): ActaFileKind => {
+  const lowerName = fileName.toLowerCase()
+  const lowerType = mimeType.toLowerCase()
+  if (lowerType.includes('pdf') || lowerName.endsWith('.pdf')) return 'pdf'
+  return 'image'
+}
+
+const onActaFileSelected = (event: Event) => {
+  if (!import.meta.client) return
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // Draft only; saved blob is kept in actaMap until unmount.
+  revokeBlobUrl(actaDraftFileUrl.value)
+  actaDraftFileUrl.value = URL.createObjectURL(file)
+  actaDraftFileName.value = file.name
+  actaDraftFileKind.value = getActaKind(file.name, file.type)
+}
+
+const saveActaDraft = () => {
+  const key = actaRequest.value?.id_solicitud
+  if (!key || !actaDraftFileUrl.value || !actaDraftFileName.value) {
+    toast.add({ title: 'Selecciona un archivo', color: 'warning' })
+    return
+  }
+
+  // Replace existing saved acta (revoke old blob).
+  const existing = actaMap[key]
+  if (existing) revokeBlobUrl(existing.fileUrl)
+
+  actaMap[key] = {
+    fileName: actaDraftFileName.value,
+    fileUrl: actaDraftFileUrl.value,
+    fileKind: actaDraftFileKind.value,
+    uploadedAt: new Date().toISOString(),
+  }
+
+  toast.add({ title: 'Acta subida (solo frontend)', color: 'success' })
+  closeActaModal()
+}
+
+const clearActa = () => {
+  const key = actaRequest.value?.id_solicitud
+  if (!key) return
+  const existing = actaMap[key]
+  if (existing) revokeBlobUrl(existing.fileUrl)
+  delete actaMap[key]
+  toast.add({ title: 'Acta eliminada', color: 'info' })
 }
 
 const parseDate = (value?: string | null) => {
@@ -141,6 +300,13 @@ const handleDetailSubmitted = async () => {
 onMounted(() => {
   void loadRequests()
 })
+
+onBeforeUnmount(() => {
+  for (const record of Object.values(actaMap)) {
+    revokeBlobUrl(record.fileUrl)
+  }
+  revokeBlobUrl(actaDraftFileUrl.value)
+})
 </script>
 
 <template>
@@ -180,17 +346,18 @@ onMounted(() => {
             <tr>
               <th class="rounded-tl-2xl px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Solicitud</th>
               <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Solicitante</th>
-              <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Estado</th>
+              <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Estado General</th>
               <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha de registro</th>
               <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Ubicacion</th>
               <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Tipo</th>
+              <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Seguimiento RRHH</th>
               <th class="rounded-tr-2xl px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
             <tr v-if="loading">
-              <td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+              <td colspan="8" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                 <div class="flex items-center justify-center gap-3">
                   <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-[#2d5fc0]" />
                   <span>Cargando solicitudes...</span>
@@ -199,7 +366,7 @@ onMounted(() => {
             </tr>
 
             <tr v-else-if="error">
-              <td colspan="6" class="px-5 py-10 text-center text-sm text-red-600 dark:text-red-400">
+              <td colspan="8" class="px-5 py-10 text-center text-sm text-red-600 dark:text-red-400">
                 <div class="space-y-3">
                   <p class="font-semibold">{{ error }}</p>
                   <UButton
@@ -257,23 +424,51 @@ onMounted(() => {
               <td>
                 {{item.tipo_solicitud ? item.tipo_solicitud.toUpperCase() : '--' }}
               </td>
+              <td class="px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
+                <div class="space-y-1.5">
+                  <span :class="['inline-flex rounded-md px-3 py-1 text-[11px] font-bold', estadoRrhhTone(item.estado_rrhh)]">
+                    {{ getEstadoRrhhLabel(item) }}
+                  </span>
+                  <p
+                    v-if="item.estado_rrhh_comentario"
+                    class="max-w-[280px] truncate text-xs text-gray-500 dark:text-gray-400"
+                    :title="item.estado_rrhh_comentario"
+                  >
+                    {{ item.estado_rrhh_comentario }}
+                  </p>
+                </div>
+              </td>
 
               <td class="px-5 py-4 text-center">
-                <UButton
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-eye"
-                  class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                  size="xs"
-                  @click.stop="openDetail(item)"
-                >
-                  Ver items
-                </UButton>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                  <UButton
+                    color="primary"
+                    variant="soft"
+                    icon="i-lucide-sliders-horizontal"
+                    class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                    size="xs"
+                    @click.stop="openDetail(item)"
+                  >
+                    Gestionar
+                  </UButton>
+
+                  <UButton
+                    :color="hasActa(item) ? 'success' : 'neutral'"
+                    variant="soft"
+                    icon="i-lucide-upload"
+                    size="xs"
+                    :ui="{ base: 'rounded-full' }"
+                    @click.stop="openActaModal(item)"
+                  >
+                    {{ hasActa(item) ? 'Acta subida' : 'Subir acta' }}
+                  </UButton>
+
+                </div>
               </td>
             </tr>
 
             <tr v-if="!loading && !error && !requests.length">
-              <td colspan="6" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+              <td colspan="8" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                 No hay solicitudes para mostrar.
               </td>
             </tr>
@@ -291,5 +486,93 @@ onMounted(() => {
       @retry="retryDetail"
       @submitted="handleDetailSubmitted"
     />
+
+    <UModal v-model:open="actaModalOpen" :title="`Subir acta - Solicitud #${actaRequest?.id_solicitud ?? '--'}`">
+      <template #content>
+        <div class="space-y-4 p-4 sm:p-5">
+          <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950/60">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+              Archivo (solo frontend)
+            </p>
+            <input
+              type="file"
+              accept=".pdf,image/*"
+              class="mt-3 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#2d5fc0] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+              @change="onActaFileSelected"
+            >
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {{ actaDraftFileName || 'Sin archivo seleccionado' }}
+            </p>
+          </div>
+
+          <div v-if="actaDraftFileUrl" class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+              Vista previa
+            </p>
+            <div class="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950/60">
+              <img
+                v-if="actaDraftFileKind === 'image'"
+                :src="actaDraftFileUrl"
+                alt="Acta"
+                class="max-h-[50vh] w-full object-contain"
+              >
+              <iframe
+                v-else
+                :src="actaDraftFileUrl"
+                class="h-[50vh] w-full"
+                title="Acta PDF"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-wrap justify-end gap-2">
+            <UButton color="neutral" variant="outline" @click="closeActaModal">
+              Cancelar
+            </UButton>
+            <UButton
+              v-if="actaRequest?.id_solicitud && actaMap[actaRequest.id_solicitud]"
+              color="error"
+              variant="soft"
+              @click="clearActa"
+            >
+              Eliminar acta
+            </UButton>
+            <UButton color="primary" :disabled="!actaDraftFileUrl" @click="saveActaDraft">
+              Guardar
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="derivarModalOpen" :title="`Derivar a logística - Solicitud #${derivarRequest?.id_solicitud ?? '--'}`">
+      <template #content>
+        <div class="space-y-4 p-4 sm:p-5">
+          <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+            <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">Confirmación</p>
+            <p class="mt-1 text-xs text-amber-800 dark:text-amber-300">
+              Esta acción es solo maqueta frontend. Sirve para simular que la solicitud pasa a logística.
+            </p>
+          </div>
+
+          <UFormGroup label="Comentario para logística (opcional)">
+            <UTextarea
+              v-model="derivarComment"
+              :rows="4"
+              placeholder="Ej: Prioridad alta. Coordinar entrega con almacén..."
+            />
+          </UFormGroup>
+
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" variant="outline" @click="closeDerivarModal">
+              Cancelar
+            </UButton>
+            <UButton color="warning" @click="confirmDerivarLogistica">
+              Derivar
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

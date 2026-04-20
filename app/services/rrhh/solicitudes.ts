@@ -10,6 +10,8 @@ export interface SolicitudListItem {
   id_usuario_solicitante?: number | null
   justificacion?: string | null
   tipo_solicitud?: string | null
+  estado_rrhh?: 'pendiente' | 'derivar_logistica' | 'recojo_oficina' | string | null
+  estado_rrhh_comentario?: string | null
   id_estado_general?: number | null
   fecha_registro?: string | null
   ubicacion?: string | null
@@ -69,6 +71,8 @@ export interface SolicitudDetalleData {
   solicitud: {
     id_solicitud?: number | null
     id_usuario_solicitante?: number | null
+    tipo_solicitud?: string | null
+    ubicacion?: string | null
     solicitante?: string | null
     firstname?: string | null
     lastname?: string | null
@@ -85,7 +89,6 @@ export interface SolicitudDetalleData {
     fecha_necesaria?: string | null
     fecha_cierre?: string | null
     prioridad?: string | null
-    ubicacion?: string | null
     tipo_entrega_preferida?: string | null
     detalles_count?: number | null
   }
@@ -250,12 +253,35 @@ export interface EntregaDetallePayload {
   notificar_logistica?: boolean
 }
 
+export type EstadoRrhhValue = 'pendiente' | 'derivar_logistica' | 'recojo_oficina'
+
+export interface UpdateEstadoRrhhPayload {
+  estado_rrhh: EstadoRrhhValue
+  estado_rrhh_comentario?: string | null
+}
+
+export interface UpdateEstadoRrhhResponse {
+  success: boolean
+  message?: string
+  data?: Record<string, unknown> | null
+}
+
 export const entregaDetalleSolicitud = async (
   id: number | string,
   payload: EntregaDetallePayload,
 ): Promise<DetalleSolicitudAccionResponse> => {
   return apiFetch(`/api/solicitudes/detalles/${id}/entrega`, {
     method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export const updateEstadoRrhh = async (
+  id: number | string,
+  payload: UpdateEstadoRrhhPayload,
+): Promise<UpdateEstadoRrhhResponse> => {
+  return apiFetch(`/api/solicitudes/${id}/estado-rrhh`, {
+    method: 'PATCH',
     body: JSON.stringify(payload),
   })
 }
