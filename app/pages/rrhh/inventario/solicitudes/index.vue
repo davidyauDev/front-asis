@@ -3,6 +3,7 @@ import SolicitudDetalleModal from '~/components/rrhh/inventario/SolicitudDetalle
 import {
   getSolicitudById,
   getSolicitudes,
+  subirActaRrhh,
   type SolicitudDetalleData,
   type SolicitudListItem,
 } from '~/services/rrhh/solicitudes'
@@ -21,19 +22,16 @@ const selectedRequest = ref<SolicitudListItem | null>(null)
 const selectedDetail = ref<SolicitudDetalleData | null>(null)
 
 type ActaFileKind = 'image' | 'pdf'
-interface ActaUploadRecord {
-  fileName: string
-  fileUrl: string
-  fileKind: ActaFileKind
-  uploadedAt: string
-}
 
 const actaModalOpen = ref(false)
 const actaRequest = ref<SolicitudListItem | null>(null)
 const actaDraftFileName = ref<string | null>(null)
 const actaDraftFileUrl = ref<string | null>(null)
 const actaDraftFileKind = ref<ActaFileKind>('image')
-const actaMap = reactive<Record<number, ActaUploadRecord>>({})
+const actaDraftFile = ref<File | null>(null)
+const actaDraftComment = ref('')
+const actaSubmitting = ref(false)
+const actaModalError = ref<string | null>(null)
 const toast = useToast()
 
 interface DerivacionLogisticaRecord {
@@ -124,24 +122,31 @@ const revokeBlobUrl = (url?: string | null) => {
 const getActaKey = (item: SolicitudListItem) => item.id_solicitud ?? null
 const hasActa = (item: SolicitudListItem) => {
   const key = getActaKey(item)
-  if (!key) return false
-  return Boolean(actaMap[key])
+  return Boolean(key && item.acta_rrhh_url)
 }
 
 const openActaModal = (item: SolicitudListItem) => {
   actaRequest.value = item
   actaDraftFileName.value = null
+  revokeBlobUrl(actaDraftFileUrl.value)
   actaDraftFileUrl.value = null
   actaDraftFileKind.value = 'image'
+  actaDraftFile.value = null
+  actaDraftComment.value = item.acta_rrhh_comentario ?? ''
+  actaModalError.value = null
   actaModalOpen.value = true
 }
 
 const closeActaModal = () => {
+  revokeBlobUrl(actaDraftFileUrl.value)
   actaModalOpen.value = false
   actaRequest.value = null
   actaDraftFileName.value = null
   actaDraftFileUrl.value = null
   actaDraftFileKind.value = 'image'
+  actaDraftFile.value = null
+  actaDraftComment.value = ''
+  actaModalError.value = null
 }
 
 const getActaKind = (fileName: string, mimeType: string): ActaFileKind => {
@@ -157,42 +162,59 @@ const onActaFileSelected = (event: Event) => {
   const file = input.files?.[0]
   if (!file) return
 
-  // Draft only; saved blob is kept in actaMap until unmount.
   revokeBlobUrl(actaDraftFileUrl.value)
   actaDraftFileUrl.value = URL.createObjectURL(file)
   actaDraftFileName.value = file.name
   actaDraftFileKind.value = getActaKind(file.name, file.type)
+  actaDraftFile.value = file
+  actaModalError.value = null
 }
 
-const saveActaDraft = () => {
+const saveActaDraft = async () => {
   const key = actaRequest.value?.id_solicitud
-  if (!key || !actaDraftFileUrl.value || !actaDraftFileName.value) {
+  if (!key || !actaDraftFile.value) {
     toast.add({ title: 'Selecciona un archivo', color: 'warning' })
     return
   }
 
-  // Replace existing saved acta (revoke old blob).
-  const existing = actaMap[key]
-  if (existing) revokeBlobUrl(existing.fileUrl)
+  actaSubmitting.value = true
+  actaModalError.value = null
 
-  actaMap[key] = {
-    fileName: actaDraftFileName.value,
-    fileUrl: actaDraftFileUrl.value,
-    fileKind: actaDraftFileKind.value,
-    uploadedAt: new Date().toISOString(),
+  try {
+    const response = await subirActaRrhh(key, {
+      acta_rrhh: actaDraftFile.value,
+      acta_rrhh_comentario: actaDraftComment.value.trim() || null,
+    })
+
+    const data = response.data ?? {}
+    const uploadedUrl = typeof data.acta_rrhh_url === 'string' ? data.acta_rrhh_url : null
+    const uploadedComment = typeof data.acta_rrhh_comentario === 'string'
+      ? data.acta_rrhh_comentario
+      : (actaDraftComment.value.trim() || null)
+
+    const listItem = requests.value.find(item => item.id_solicitud === key)
+    if (listItem) {
+      listItem.acta_rrhh_url = uploadedUrl
+      listItem.acta_rrhh_comentario = uploadedComment
+    }
+
+    if (selectedRequest.value?.id_solicitud === key) {
+      selectedRequest.value.acta_rrhh_url = uploadedUrl
+      selectedRequest.value.acta_rrhh_comentario = uploadedComment
+    }
+
+    await loadRequests()
+
+    toast.add({
+      title: response.message || 'Acta RR.HH. subida correctamente',
+      color: 'success',
+    })
+    closeActaModal()
+  } catch (cause) {
+    actaModalError.value = extractErrorMessage(cause)
+  } finally {
+    actaSubmitting.value = false
   }
-
-  toast.add({ title: 'Acta subida (solo frontend)', color: 'success' })
-  closeActaModal()
-}
-
-const clearActa = () => {
-  const key = actaRequest.value?.id_solicitud
-  if (!key) return
-  const existing = actaMap[key]
-  if (existing) revokeBlobUrl(existing.fileUrl)
-  delete actaMap[key]
-  toast.add({ title: 'Acta eliminada', color: 'info' })
 }
 
 const parseDate = (value?: string | null) => {
@@ -302,9 +324,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  for (const record of Object.values(actaMap)) {
-    revokeBlobUrl(record.fileUrl)
-  }
   revokeBlobUrl(actaDraftFileUrl.value)
 })
 </script>
@@ -460,7 +479,7 @@ onBeforeUnmount(() => {
                     :ui="{ base: 'rounded-full' }"
                     @click.stop="openActaModal(item)"
                   >
-                    {{ hasActa(item) ? 'Acta subida' : 'Subir acta' }}
+                    {{ hasActa(item) ? 'Acta cargada' : 'Subir acta' }}
                   </UButton>
 
                 </div>
@@ -490,19 +509,37 @@ onBeforeUnmount(() => {
     <UModal v-model:open="actaModalOpen" :title="`Subir acta - Solicitud #${actaRequest?.id_solicitud ?? '--'}`">
       <template #content>
         <div class="space-y-4 p-4 sm:p-5">
+          <div
+            v-if="actaModalError"
+            class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+          >
+            {{ actaModalError }}
+          </div>
+
           <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950/60">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-              Archivo (solo frontend)
+              Archivo
             </p>
             <input
               type="file"
               accept=".pdf,image/*"
               class="mt-3 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#2d5fc0] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+              :disabled="actaSubmitting"
               @change="onActaFileSelected"
             >
             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
               {{ actaDraftFileName || 'Sin archivo seleccionado' }}
             </p>
+
+            <div class="mt-4 space-y-2">
+              <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario (opcional)</label>
+              <UTextarea
+                v-model="actaDraftComment"
+                :rows="3"
+                placeholder="Ej: Acta subida por RR.HH."
+                :disabled="actaSubmitting"
+              />
+            </div>
           </div>
 
           <div v-if="actaDraftFileUrl" class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
@@ -526,18 +563,10 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="flex flex-wrap justify-end gap-2">
-            <UButton color="neutral" variant="outline" @click="closeActaModal">
+            <UButton color="neutral" variant="outline" :disabled="actaSubmitting" @click="closeActaModal">
               Cancelar
             </UButton>
-            <UButton
-              v-if="actaRequest?.id_solicitud && actaMap[actaRequest.id_solicitud]"
-              color="error"
-              variant="soft"
-              @click="clearActa"
-            >
-              Eliminar acta
-            </UButton>
-            <UButton color="primary" :disabled="!actaDraftFileUrl" @click="saveActaDraft">
+            <UButton color="primary" :loading="actaSubmitting" :disabled="!actaDraftFile" @click="saveActaDraft">
               Guardar
             </UButton>
           </div>

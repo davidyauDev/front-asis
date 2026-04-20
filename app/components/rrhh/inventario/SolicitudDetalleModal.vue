@@ -8,7 +8,7 @@ import type {
 import {
   aprobarDetalleSolicitud,
   rechazarDetalleSolicitud,
-  subirActaDetalle,
+  subirActaRrhh,
   updateEstadoRrhh,
 } from '~/services/rrhh/solicitudes'
 
@@ -304,18 +304,11 @@ const submitGlobalFinalize = async () => {
     globalProgress.value = 40
 
     if (shouldUploadActa.value && globalActaFile.value) {
-      const detailsWithId = selectedItems.value.filter(item => item.id_detalle_solicitud !== null && item.id_detalle_solicitud !== undefined)
-      const total = Math.max(1, detailsWithId.length)
-
-      for (let idx = 0; idx < detailsWithId.length; idx += 1) {
-        const detail = detailsWithId[idx]
-        const detailId = detail.id_detalle_solicitud as number
-        const fd = new FormData()
-        fd.append('file', globalActaFile.value)
-        fd.append('comentario', globalActaComment.value || '')
-        await subirActaDetalle(detailId, fd)
-        globalProgress.value = 40 + Math.round(((idx + 1) / total) * 60)
-      }
+      await subirActaRrhh(requestId, {
+        acta_rrhh: globalActaFile.value,
+        acta_rrhh_comentario: globalActaComment.value.trim() || null,
+      })
+      globalProgress.value = 100
     } else {
       globalProgress.value = 100
     }

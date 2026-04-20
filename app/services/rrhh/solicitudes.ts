@@ -10,6 +10,8 @@ export interface SolicitudListItem {
   id_usuario_solicitante?: number | null
   justificacion?: string | null
   tipo_solicitud?: string | null
+  acta_rrhh_url?: string | null
+  acta_rrhh_comentario?: string | null
   estado_rrhh?: 'pendiente' | 'derivar_logistica' | 'recojo_oficina' | string | null
   estado_rrhh_comentario?: string | null
   id_estado_general?: number | null
@@ -73,6 +75,8 @@ export interface SolicitudDetalleData {
     id_usuario_solicitante?: number | null
     tipo_solicitud?: string | null
     ubicacion?: string | null
+    acta_rrhh_url?: string | null
+    acta_rrhh_comentario?: string | null
     solicitante?: string | null
     firstname?: string | null
     lastname?: string | null
@@ -266,6 +270,21 @@ export interface UpdateEstadoRrhhResponse {
   data?: Record<string, unknown> | null
 }
 
+export interface SubirActaRrhhPayload {
+  acta_rrhh: File
+  acta_rrhh_comentario?: string | null
+}
+
+export interface SubirActaRrhhResponse {
+  success: boolean
+  message?: string
+  data?: {
+    id_solicitud?: number | null
+    acta_rrhh_url?: string | null
+    acta_rrhh_comentario?: string | null
+  } | null
+}
+
 export const entregaDetalleSolicitud = async (
   id: number | string,
   payload: EntregaDetallePayload,
@@ -284,6 +303,44 @@ export const updateEstadoRrhh = async (
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+}
+
+export const subirActaRrhh = async (
+  id: number | string,
+  payload: SubirActaRrhhPayload,
+): Promise<SubirActaRrhhResponse> => {
+  const config = useRuntimeConfig()
+  const token = useCookie<string | null>('auth_token')
+  const formData = new FormData()
+  formData.append('acta_rrhh', payload.acta_rrhh)
+  formData.append('acta_rrhh_comentario', payload.acta_rrhh_comentario ?? '')
+
+  const response = await fetch(`${config.public.apiBaseUrl}/api/solicitudes/${id}/acta-rrhh`, {
+    method: 'POST',
+    headers: {
+      ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+      Accept: 'application/json',
+    },
+    body: formData,
+  })
+
+  const raw = await response.text()
+  const data = raw ? (() => {
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return raw
+    }
+  })() : null
+
+  if (!response.ok) {
+    if (data && typeof data === 'object') {
+      throw { ...(data as any), status: response.status }
+    }
+    throw { message: String(data ?? response.statusText ?? 'Error'), status: response.status }
+  }
+
+  return data as SubirActaRrhhResponse
 }
 
 export const subirActaDetalle = async (
