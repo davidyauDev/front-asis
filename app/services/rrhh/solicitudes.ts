@@ -9,8 +9,10 @@ export interface SolicitudListItem {
   id_solicitud?: number | null
   id_usuario_solicitante?: number | null
   justificacion?: string | null
+  tipo_solicitud?: string | null
   id_estado_general?: number | null
   fecha_registro?: string | null
+  ubicacion?: string | null
   estado?: SolicitudEstado | null
   firstname?: string | null
   lastname?: string | null
@@ -83,6 +85,7 @@ export interface SolicitudDetalleData {
     fecha_necesaria?: string | null
     fecha_cierre?: string | null
     prioridad?: string | null
+    ubicacion?: string | null
     tipo_entrega_preferida?: string | null
     detalles_count?: number | null
   }
@@ -133,6 +136,7 @@ export interface SolicitudProductoRrhhItem {
     fecha_registro?: string | null
     fecha_necesaria?: string | null
     prioridad?: string | null
+    ubicacion?: string | null
   } | null
 }
 
@@ -237,4 +241,55 @@ export const rechazarDetalleSolicitud = async (
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export interface EntregaDetallePayload {
+  accion: 'derivar_logistica' | 'recojo_oficina'
+  comentario?: string | null
+  notificar_solicitante?: boolean
+  notificar_logistica?: boolean
+}
+
+export const entregaDetalleSolicitud = async (
+  id: number | string,
+  payload: EntregaDetallePayload,
+): Promise<DetalleSolicitudAccionResponse> => {
+  return apiFetch(`/api/solicitudes/detalles/${id}/entrega`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export const subirActaDetalle = async (
+  id: number | string,
+  formData: FormData,
+): Promise<any> => {
+  const config = useRuntimeConfig()
+  const token = useCookie<string | null>('auth_token')
+
+  const response = await fetch(`${config.public.apiBaseUrl}/api/solicitudes/detalles/${id}/acta`, {
+    method: 'POST',
+    headers: {
+      ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+    },
+    body: formData,
+  })
+
+  const raw = await response.text()
+  const data = raw ? (() => {
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return raw
+    }
+  })() : null
+
+  if (!response.ok) {
+    if (data && typeof data === 'object') {
+      throw { ...(data as any), status: response.status }
+    }
+    throw { message: String(data ?? response.statusText ?? 'Error'), status: response.status }
+  }
+
+  return data
 }

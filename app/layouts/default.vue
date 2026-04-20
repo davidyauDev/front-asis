@@ -67,15 +67,29 @@ const inventoryLinks = [{
     exact: true,
     onSelect: () => { open.value = false }
   }, {
-    label: 'Solicitudes',
-    icon: 'i-lucide-list-checks',
+    label: 'Solicitar Reabastecimiento',
+    icon: 'i-lucide-package-plus',
+    to: '/rrhh/inventario/solicitar-reabastecimiento',
+    exact: true,
+    onSelect: () => { open.value = false }
+  }]
+}]
+
+// Solicitudes
+const requestsLinks = [{
+  label: 'Solicitudes',
+  icon: 'i-lucide-list-checks',
+  defaultOpen: true,
+  children: [{
+    label: 'Mixta',
+    icon: 'i-lucide-layers-3',
     to: '/rrhh/inventario/solicitudes',
     exact: true,
     onSelect: () => { open.value = false }
   }, {
-    label: 'Solicitar Reabastecimiento',
-    icon: 'i-lucide-package-plus',
-    to: '/rrhh/inventario/solicitar-reabastecimiento',
+    label: 'Compra',
+    icon: 'i-lucide-shopping-bag',
+    to: '/rrhh/inventario/solicitudes/compra',
     exact: true,
     onSelect: () => { open.value = false }
   }]
@@ -118,7 +132,7 @@ const systemLinks = [{
   onSelect: () => { open.value = false }
 }]
 
-const links = [dashboardLinks, managementLinks, inventoryLinks, reportLinks, systemLinks] satisfies NavigationMenuItem[][]
+const links = [dashboardLinks, managementLinks, inventoryLinks, requestsLinks, reportLinks, systemLinks] satisfies NavigationMenuItem[][]
 
 const groups = computed(() => [{
   id: 'links',
@@ -204,13 +218,27 @@ onMounted(async () => {
 
         <UDivider v-if="!collapsed" class="my-2" />
 
+        <!-- Solicitudes -->
+        <div v-if="!collapsed" class="px-3 mb-1">
+          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Solicitudes</p>
+        </div>
+        <UNavigationMenu
+          :collapsed="collapsed"
+          :items="links[3]"
+          orientation="vertical"
+          tooltip
+          popover
+        />
+
+        <UDivider v-if="!collapsed" class="my-2" />
+
         <!-- Reportes -->
         <div v-if="!collapsed" class="px-3 mb-1">
           <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Reportes</p>
         </div>
         <UNavigationMenu
           :collapsed="collapsed"
-          :items="links[3]"
+          :items="links[4]"
           orientation="vertical"
           tooltip
           popover
@@ -224,7 +252,7 @@ onMounted(async () => {
         <!-- Sistema -->
         <UNavigationMenu
           :collapsed="collapsed"
-          :items="links[4]"
+          :items="links[5]"
           orientation="vertical"
           tooltip
           popover

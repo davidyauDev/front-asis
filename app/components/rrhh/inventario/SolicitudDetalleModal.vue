@@ -7,6 +7,8 @@ import type {
 import {
   aprobarDetalleSolicitud,
   rechazarDetalleSolicitud,
+  entregaDetalleSolicitud,
+  subirActaDetalle,
 } from '~/services/rrhh/solicitudes'
 
 const props = defineProps<{
@@ -102,12 +104,17 @@ const actaOpen = ref(false)
 const actaItem = ref<SolicitudDetalleItem | null>(null)
 const actaFileName = ref('')
 const actaComment = ref('')
+const actaFile = ref<File | null>(null)
+const actaSubmitting = ref(false)
+const actaError = ref<string | null>(null)
 const deliveryOpen = ref(false)
 const deliveryItem = ref<SolicitudDetalleItem | null>(null)
 const deliveryDecision = ref<DeliveryDecision>('derivar_logistica')
 const deliveryComment = ref('')
 const deliveryNotifyRequester = ref(true)
 const deliveryNotifyLogistics = ref(true)
+const deliverySubmitting = ref(false)
+const deliveryError = ref<string | null>(null)
 const imagePreviewOpen = ref(false)
 const imagePreviewSrc = ref<string | null>(null)
 const imagePreviewAlt = ref('Imagen del producto')
@@ -244,12 +251,44 @@ const closeActaModal = () => {
 
 const onActaFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement | null
-  const file = input?.files?.[0]
+  const file = input?.files?.[0] ?? null
+  actaFile.value = file
   actaFileName.value = file?.name ?? ''
 }
 
-const submitActaMock = () => {
-  closeActaModal()
+const submitActa = async () => {
+  if (!actaItem.value) return
+  if (!actaFile.value) {
+    actaError.value = 'Selecciona un archivo para subir el acta.'
+    return
+  }
+
+  actaError.value = null
+  actaSubmitting.value = true
+
+  try {
+    const id = actaItem.value.id_detalle_solicitud
+    if (id === null || id === undefined) throw new Error('No se pudo identificar el detalle.')
+
+    const fd = new FormData()
+    fd.append('file', actaFile.value)
+    fd.append('comentario', actaComment.value || '')
+
+    await subirActaDetalle(id, fd)
+
+    actaItem.value.observacion_atencion = actaComment.value || actaItem.value.observacion_atencion
+    actaItem.value.fecha_atencion = new Date().toISOString()
+    actaItem.value.estado = { descripcion: 'Acta subida - Recojo en oficina' }
+
+    closeActaModal()
+    emit('submitted')
+  } catch (cause) {
+    actaError.value = cause && typeof cause === 'object' && 'message' in cause
+      ? String((cause as { message?: unknown }).message ?? 'No se pudo subir el acta')
+      : 'No se pudo subir el acta'
+  } finally {
+    actaSubmitting.value = false
+  }
 }
 
 const openDeliveryModal = (item: SolicitudDetalleItem) => {
@@ -267,8 +306,46 @@ const closeDeliveryModal = () => {
   deliveryItem.value = null
 }
 
-const submitDeliveryMock = () => {
-  closeDeliveryModal()
+const submitDelivery = async () => {
+  const item = deliveryItem.value
+  const decision = deliveryDecision.value
+
+  deliveryError.value = null
+  deliverySubmitting.value = true
+
+  try {
+    if (!item) throw new Error('No se seleccionó item')
+    const id = item.id_detalle_solicitud
+    if (id === null || id === undefined) throw new Error('No se pudo identificar el detalle')
+
+    await entregaDetalleSolicitud(id, {
+      accion: decision,
+      comentario: deliveryComment.value || null,
+      notificar_solicitante: Boolean(deliveryNotifyRequester.value),
+      notificar_logistica: Boolean(deliveryNotifyLogistics.value),
+    })
+
+    closeDeliveryModal()
+
+    if (decision === 'recojo_oficina') {
+      actaItem.value = item
+      actaFileName.value = ''
+      actaFile.value = null
+      actaComment.value = ''
+      actaOpen.value = true
+    } else {
+      item.estado = { descripcion: 'Derivado a logística' }
+      item.observacion_atencion = deliveryComment.value || item.observacion_atencion
+      item.fecha_atencion = new Date().toISOString()
+      emit('submitted')
+    }
+  } catch (cause) {
+    deliveryError.value = cause && typeof cause === 'object' && 'message' in cause
+      ? String((cause as { message?: unknown }).message ?? 'No se pudo procesar la entrega')
+      : 'No se pudo procesar la entrega'
+  } finally {
+    deliverySubmitting.value = false
+  }
 }
 
 const openImagePreview = (item: SolicitudDetalleItem) => {
@@ -331,31 +408,30 @@ const confirmManage = async () => {
 </script>
 
 <template>
-  <UModal
-    v-model:open="modalOpen"
-    class="w-full max-w-[96rem]"
-    :ui="{
-      header: 'relative flex items-stretch p-0 min-h-0',
-      wrapper: 'flex-1 min-w-0 w-full',
-      title: 'w-full p-0',
-      body: 'p-0',
-    }"
-    :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
-  >
+  <UModal v-model:open="modalOpen" class="w-full max-w-[96rem]" :ui="{
+    header: 'relative flex items-stretch p-0 min-h-0',
+    wrapper: 'flex-1 min-w-0 w-full',
+    title: 'w-full p-0',
+    body: 'p-0',
+  }" :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }">
     <template #title>
-      <div class="flex w-full items-center justify-between gap-3 border-b border-gray-200 bg-[#f8fafc] px-4 py-3 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+      <div
+        class="flex w-full items-center justify-between gap-3 border-b border-gray-200 bg-[#f8fafc] px-4 py-3 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
         <div class="flex min-w-0 items-center gap-3">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-[#13203a] dark:text-[#9cb7f5] dark:ring-[#29406f]">
+          <span
+            class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-[#13203a] dark:text-[#9cb7f5] dark:ring-[#29406f]">
             <UIcon name="i-lucide-file-search" class="h-4 w-4" />
           </span>
           <div class="min-w-0 leading-tight">
             <p class="text-sm font-semibold tracking-wide text-gray-950 dark:text-white">Detalle de solicitud</p>
             <p class="text-[11px] text-gray-500 dark:text-gray-400">Items asociados a la solicitud seleccionada.</p>
-            <p class="text-[11px] text-gray-500 dark:text-gray-400">Las acciones de gestión solo están habilitadas para items del area RR.HH.</p>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">Las acciones de gestión solo están habilitadas para
+              items del area RR.HH.</p>
           </div>
         </div>
 
-        <span class="hidden shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-gray-900 dark:text-[#9cb7f5] dark:ring-gray-800 sm:inline-flex">
+        <span
+          class="hidden shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-gray-900 dark:text-[#9cb7f5] dark:ring-gray-800 sm:inline-flex">
           #{{ selectedRequest?.id_solicitud ?? '--' }}
         </span>
       </div>
@@ -363,10 +439,8 @@ const confirmManage = async () => {
 
     <template #body>
       <div class="bg-white px-5 py-5 dark:bg-gray-950">
-        <div
-          v-if="loading && !detail"
-          class="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40"
-        >
+        <div v-if="loading && !detail"
+          class="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40">
           <div class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-[#2d5fc0]" />
             <span>Cargando detalle...</span>
@@ -374,29 +448,26 @@ const confirmManage = async () => {
         </div>
 
         <div v-else class="space-y-5">
-          <div
-            v-if="error"
-            class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
-          >
+          <div v-if="error"
+            class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p>{{ error }}</p>
-              <UButton
-                color="primary"
-                variant="soft"
-                class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                size="xs"
-                @click="emit('retry')"
-              >
+              <UButton color="primary" variant="soft"
+                class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]" size="xs"
+                @click="emit('retry')">
                 Reintentar
               </UButton>
             </div>
           </div>
 
           <div class="grid gap-3 md:grid-cols-3">
-            <div class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Solicitante</p>
+            <div
+              class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+                Solicitante</p>
               <div class="mt-2.5 flex items-center gap-3">
-                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0f172a] text-sm font-black text-white">
+                <div
+                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0f172a] text-sm font-black text-white">
                   {{ initials(selectedSolicitante) }}
                 </div>
                 <div class="min-w-0">
@@ -406,16 +477,22 @@ const confirmManage = async () => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Registro</p>
+            <div
+              class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Registro
+              </p>
               <div class="mt-2.5 space-y-1">
-                <p class="text-[22px] font-black tracking-[-0.04em] text-gray-950 dark:text-white">{{ formatDate(selectedRequest?.fecha_registro) }}</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatTime(selectedRequest?.fecha_registro) }}</p>
+                <p class="text-[22px] font-black tracking-[-0.04em] text-gray-950 dark:text-white">{{
+                  formatDate(selectedRequest?.fecha_registro) }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatTime(selectedRequest?.fecha_registro) }}
+                </p>
               </div>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Justificacion</p>
+            <div
+              class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+                Justificacion</p>
               <p class="mt-2 text-sm leading-5 text-gray-700 dark:text-gray-300">
                 {{ textValue(selectedRequest?.justificacion) }}
               </p>
@@ -426,113 +503,103 @@ const confirmManage = async () => {
               <table class="w-full table-fixed border-separate border-spacing-0">
                 <thead class="bg-[#2d5fc0] text-white">
                   <tr>
-                    <th class="rounded-tl-2xl px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[72px]">ID</th>
-                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[220px]">Producto</th>
-                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[92px]">Area</th>
-                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[74px]">Solicitado</th>
-                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[74px]">Aprobado</th>
-                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[92px]">Imagen</th>
-                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[124px]">Estado</th>
-                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[220px]">Motivo / Fecha atencion</th>
-                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[84px] whitespace-nowrap">Stock actual</th>
-                    <th class="rounded-tr-2xl px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[96px]">Acciones</th>
+                    <th
+                      class="rounded-tl-2xl px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[72px]">
+                      ID</th>
+                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[220px]">
+                      Producto</th>
+                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[92px]">Area
+                    </th>
+                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[74px]">
+                      Solicitado</th>
+                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[74px]">
+                      Aprobado</th>
+                    <th class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[92px]">Imagen
+                    </th>
+                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[124px]">Estado
+                    </th>
+                    <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider w-[220px]">Motivo
+                      / Fecha atencion</th>
+                    <th
+                      class="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[84px] whitespace-nowrap">
+                      Stock actual</th>
+                    <th
+                      class="rounded-tr-2xl px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider w-[96px]">
+                      Acciones</th>
                   </tr>
                 </thead>
 
                 <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-                  <tr
-                    v-for="item in selectedItems"
+                  <tr v-for="item in selectedItems"
                     :key="String(item.id_detalle_solicitud ?? item.id_inventario ?? item.area_id ?? 'detail')"
-                    class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
-                  >
-                    <td class="px-3 py-3 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">#{{ formatNumber(item.id_detalle_solicitud) }}</td>
+                    class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60">
+                    <td class="px-3 py-3 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">#{{
+                      formatNumber(item.id_detalle_solicitud) }}</td>
                     <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
                       <div class="space-y-1">
-                        <p class="truncate font-semibold leading-5" :title="getItemProduct(item)">{{ getItemProduct(item) }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Inv. {{ formatNumber(item.id_inventario) }}</p>
+                        <p class="truncate font-semibold leading-5" :title="getItemProduct(item)">{{
+                          getItemProduct(item) }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Inv. {{ formatNumber(item.id_inventario) }}
+                        </p>
                       </div>
                     </td>
                     <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                      <span class="inline-flex rounded-md bg-[#fff4d6] px-2 py-1 text-[11px] font-bold text-[#a16207] ring-1 ring-[#f7d27a]">{{ textValue(item.area) }}</span>
+                      <span
+                        class="inline-flex rounded-md bg-[#fff4d6] px-2 py-1 text-[11px] font-bold text-[#a16207] ring-1 ring-[#f7d27a]">{{
+                        textValue(item.area) }}</span>
                     </td>
-                    <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{{ formatNumber(item.solicitado) }}</td>
-                    <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{{ formatNumber(item.aprobado) }}</td>
+                    <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{{
+                      formatNumber(item.solicitado) }}</td>
+                    <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{{
+                      formatNumber(item.aprobado) }}</td>
                     <td class="px-3 py-3 text-center">
-                      <button
-                        v-if="getItemImageUrl(item)"
-                        type="button"
+                      <button v-if="getItemImageUrl(item)" type="button"
                         class="mx-auto block rounded-lg transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d5fc0] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
                         :title="`Ver imagen de ${getItemProduct(item)}`"
-                        :aria-label="`Ver imagen de ${getItemProduct(item)}`"
-                        @click="openImagePreview(item)"
-                      >
-                        <img
-                          :src="getItemImageUrl(item) || ''"
-                          :alt="`Imagen de ${getItemProduct(item)}`"
+                        :aria-label="`Ver imagen de ${getItemProduct(item)}`" @click="openImagePreview(item)">
+                        <img :src="getItemImageUrl(item) || ''" :alt="`Imagen de ${getItemProduct(item)}`"
                           class="h-12 w-12 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-gray-700"
-                          loading="lazy"
-                        >
+                          loading="lazy">
                       </button>
                       <span v-else class="text-xs font-semibold text-gray-400 dark:text-gray-500">
                         Producto no requiere imagen
                       </span>
                     </td>
                     <td class="px-3 py-3">
-                      <span :class="['inline-flex rounded-md px-3 py-1 text-[11px] font-bold', stateTone(getItemState(item))]">
+                      <span
+                        :class="['inline-flex rounded-md px-3 py-1 text-[11px] font-bold', stateTone(getItemState(item))]">
                         {{ getItemState(item) }}
                       </span>
                     </td>
                     <td class="px-3 py-3 text-sm text-gray-600 dark:text-gray-300">
                       <div class="space-y-1">
                         <p class="truncate leading-5" :title="getItemReason(item)">{{ getItemReason(item) }}</p>
-                        <p class="truncate text-xs text-gray-500 dark:text-gray-400" :title="`${formatDate(item.fecha_atencion)} ${formatTime(item.fecha_atencion)}`">
+                        <p class="truncate text-xs text-gray-500 dark:text-gray-400"
+                          :title="`${formatDate(item.fecha_atencion)} ${formatTime(item.fecha_atencion)}`">
                           {{ formatDate(item.fecha_atencion) }} {{ formatTime(item.fecha_atencion) }}
                         </p>
                       </div>
                     </td>
-                    <td class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">{{ formatNumber(item.stock_actual) }}</td>
+                    <td
+                      class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                      {{ formatNumber(item.stock_actual) }}</td>
                     <td class="px-3 py-3 text-center">
                       <div v-if="canManageItem(item)" class="flex items-center justify-center gap-1.5">
-                        <UButton
-                          color="primary"
-                          variant="soft"
-                          icon="i-lucide-sliders-horizontal"
+                        <UButton color="primary" variant="soft" icon="i-lucide-sliders-horizontal"
                           class="rounded-full bg-[#eef4ff] px-2 text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                          size="2xs"
-                          :ui="{ label: 'hidden' }"
-                          :title="getManageButtonTitle(item)"
-                          :aria-label="getManageButtonTitle(item)"
-                          :disabled="isManageButtonDisabled(item)"
-                          @click="openManageModal(item)"
-                        />
-                        <UButton
-                          color="neutral"
-                          variant="soft"
-                          icon="i-lucide-truck"
-                          class="rounded-full px-2"
-                          size="2xs"
-                          :ui="{ label: 'hidden' }"
-                          :title="getDeliveryButtonTitle(item)"
-                          :aria-label="getDeliveryButtonTitle(item)"
-                          @click="openDeliveryModal(item)"
-                        />
-                        <UButton
-                          color="neutral"
-                          variant="soft"
-                          icon="i-lucide-upload"
-                          class="rounded-full px-2"
-                          size="2xs"
-                          :ui="{ label: 'hidden' }"
-                          title="Subir acta"
-                          aria-label="Subir acta"
-                          @click="openActaModal(item)"
-                        />
+                          size="2xs" :ui="{ label: 'hidden' }" :title="getManageButtonTitle(item)"
+                          :aria-label="getManageButtonTitle(item)" :disabled="isManageButtonDisabled(item)"
+                          @click="openManageModal(item)" />
+                        <UButton color="neutral" variant="soft" icon="i-lucide-truck" class="rounded-full px-2"
+                          size="2xs" :ui="{ label: 'hidden' }" :title="getDeliveryButtonTitle(item)"
+                          :aria-label="getDeliveryButtonTitle(item)" @click="openDeliveryModal(item)" />
+                        <UButton color="neutral" variant="soft" icon="i-lucide-upload" class="rounded-full px-2"
+                          size="2xs" :ui="{ label: 'hidden' }" title="Subir acta" aria-label="Subir acta"
+                          @click="openActaModal(item)" />
                       </div>
-                      <span
-                        v-else
+                      <span v-else
                         class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-500"
-                        title="Solo habilitado para RR.HH."
-                      >
+                        title="Solo habilitado para RR.HH.">
                         No aplica
                       </span>
                     </td>
@@ -561,13 +628,10 @@ const confirmManage = async () => {
   <UModal v-model:open="imagePreviewOpen" title="Vista previa de imagen">
     <template #content>
       <div class="space-y-3 p-4 sm:p-5">
-        <div class="flex min-h-[260px] max-h-[78vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60">
-          <img
-            v-if="imagePreviewSrc"
-            :src="imagePreviewSrc"
-            :alt="imagePreviewAlt"
-            class="max-h-[74vh] w-auto max-w-full object-contain"
-          >
+        <div
+          class="flex min-h-[260px] max-h-[78vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60">
+          <img v-if="imagePreviewSrc" :src="imagePreviewSrc" :alt="imagePreviewAlt"
+            class="max-h-[74vh] w-auto max-w-full object-contain">
           <p v-else class="text-sm text-gray-500 dark:text-gray-400">
             No hay imagen para mostrar.
           </p>
@@ -582,20 +646,17 @@ const confirmManage = async () => {
     </template>
   </UModal>
 
-  <UModal
-    v-model:open="actaOpen"
-    class="w-full max-w-lg"
-    :ui="{
-      header: 'relative flex items-stretch p-0 min-h-0',
-      wrapper: 'flex-1 min-w-0 w-full',
-      title: 'w-full p-0',
-      body: 'p-0',
-    }"
-    :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
-  >
+  <UModal v-model:open="actaOpen" class="w-full max-w-lg" :ui="{
+    header: 'relative flex items-stretch p-0 min-h-0',
+    wrapper: 'flex-1 min-w-0 w-full',
+    title: 'w-full p-0',
+    body: 'p-0',
+  }" :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }">
     <template #title>
-      <div class="flex w-full items-start gap-3 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
-        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-200 dark:ring-indigo-900/60">
+      <div
+        class="flex w-full items-start gap-3 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+        <span
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-200 dark:ring-indigo-900/60">
           <UIcon name="i-lucide-file-up" class="h-5 w-5" />
         </span>
         <div class="min-w-0 leading-tight">
@@ -608,20 +669,19 @@ const confirmManage = async () => {
     <template #body>
       <div class="bg-white px-5 py-5 dark:bg-gray-950">
         <div class="space-y-5">
-          <div class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto</p>
+          <div
+            class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto
+            </p>
             <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">{{ actaProduct }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Solo maqueta (sin API)</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Adjunta el acta; se enviará al backend.</p>
           </div>
 
           <div class="space-y-2">
             <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Archivo del acta</label>
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               class="block w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#2d5fc0] hover:file:bg-[#dfe9ff] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-              @change="onActaFileChange"
-            >
+              @change="onActaFileChange">
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ actaFileName || 'Aun no se selecciona archivo.' }}
             </p>
@@ -629,29 +689,22 @@ const confirmManage = async () => {
 
           <div class="space-y-2">
             <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario</label>
-            <UTextarea
-              v-model="actaComment"
-              :rows="3"
-              placeholder="Comentario interno del acta (opcional)"
-            />
+            <UTextarea v-model="actaComment" :rows="3" placeholder="Comentario interno del acta (opcional)" />
           </div>
 
+          <p v-if="actaError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">{{ actaError }}</p>
+
           <p class="text-xs text-amber-700 dark:text-amber-300">
-            Maqueta UI: el archivo no se guarda todavia y no se envia al backend.
+            El archivo se subirá al backend cuando confirme.
           </p>
 
           <div class="flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
             <UButton color="neutral" variant="soft" class="px-5" @click="closeActaModal">
               Cancelar
             </UButton>
-            <UButton
-              color="primary"
-              class="px-5 font-semibold"
-              icon="i-lucide-upload"
-              :disabled="!actaFileName"
-              @click="submitActaMock"
-            >
-              Subir acta (maqueta)
+            <UButton color="primary" class="px-5 font-semibold" icon="i-lucide-upload" :loading="actaSubmitting" :disabled="actaSubmitting || !actaFileName"
+              @click="submitActa">
+              Subir acta
             </UButton>
           </div>
         </div>
@@ -660,128 +713,184 @@ const confirmManage = async () => {
   </UModal>
 
   <UModal
-    v-model:open="deliveryOpen"
-    class="w-full max-w-lg"
-    :ui="{
-      header: 'relative flex items-stretch p-0 min-h-0',
-      wrapper: 'flex-1 min-w-0 w-full',
-      title: 'w-full p-0',
-      body: 'p-0',
-    }"
-    :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
-  >
-    <template #title>
-      <div class="flex w-full items-start gap-3 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
-        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-200 dark:ring-sky-900/60">
-          <UIcon name="i-lucide-truck" class="h-5 w-5" />
-        </span>
-        <div class="min-w-0 leading-tight">
-          <p class="text-sm font-semibold tracking-wide text-gray-950 dark:text-white">Derivar / recojo en oficina</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            Maqueta para items del area RR.HH.
+  v-model:open="deliveryOpen"
+  class="w-full max-w-2xl"
+  :ui="{
+    content: 'overflow-hidden rounded-3xl',
+    header: 'relative flex items-stretch p-0 min-h-0',
+    wrapper: 'flex-1 min-w-0 w-full',
+    title: 'w-full p-0',
+    body: 'p-0'
+  }"
+  :close="{
+    color: 'neutral',
+    variant: 'ghost',
+    class: 'rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white'
+  }"
+>
+  <template #title>
+    <div class="w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+      <div class="flex items-start gap-4 px-6 py-5">
+        <div
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-900/60"
+        >
+          <UIcon name="i-lucide-truck" class="h-6 w-6" />
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <h3 class="text-base font-semibold text-gray-950 dark:text-white">
+            Derivar / recojo en oficina
+          </h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Gestiona la entrega del item para el área RR.HH.
           </p>
         </div>
       </div>
-    </template>
+    </div>
+  </template>
 
-    <template #body>
-      <div class="bg-white px-5 py-5 dark:bg-gray-950">
-        <div class="space-y-5">
-          <div class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto</p>
-            <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">{{ deliveryProduct }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Area RR.HH.</p>
+  <template #body>
+    <div class="bg-gray-50 dark:bg-gray-950">
+      <div class="space-y-6 px-6 py-6">
+        <!-- Resumen -->
+        <div
+          class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+        >
+          <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+            Producto
+          </p>
+
+          <div class="mt-3 space-y-1">
+            <p class="text-xl font-bold text-gray-950 dark:text-white">
+              {{ deliveryProduct }}
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Área RR.HH.
+            </p>
           </div>
+        </div>
 
+        <!-- Tipo de acción -->
+        <section class="space-y-3">
           <div>
-            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-gray-900 dark:text-gray-100">Tipo de accion</p>
-            <div class="flex rounded-2xl bg-gray-100 p-1 dark:bg-gray-900">
-              <button
-                type="button"
-                class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
-                :class="deliveryDecision === 'derivar_logistica'
-                  ? 'bg-white text-gray-950 shadow-sm ring-1 ring-gray-200 dark:bg-gray-950 dark:text-white dark:ring-gray-800'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="deliveryDecision = 'derivar_logistica'"
-              >
-                Derivar
-              </button>
-
-              <button
-                type="button"
-                class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
-                :class="deliveryDecision === 'recojo_oficina'
-                  ? 'bg-white text-gray-950 shadow-sm ring-1 ring-gray-200 dark:bg-gray-950 dark:text-white dark:ring-gray-800'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="deliveryDecision = 'recojo_oficina'"
-              >
-                Recojo en oficina
-              </button>
-            </div>
+            <p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-900 dark:text-gray-100">
+              Tipo de acción
+            </p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Selecciona cómo se entregará este item.
+            </p>
           </div>
 
-          <div class="space-y-2">
-            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario</label>
+          <div class="grid grid-cols-2 gap-2 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            <button
+              type="button"
+              class="rounded-xl px-4 py-3 text-sm font-medium transition-all"
+              :class="
+                deliveryDecision === 'derivar_logistica'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
+              "
+              @click="deliveryDecision = 'derivar_logistica'"
+            >
+              <div class="flex items-center justify-center gap-2">
+                <UIcon name="i-lucide-send" class="h-4 w-4" />
+                <span>Derivar a logística</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="rounded-xl px-4 py-3 text-sm font-medium transition-all"
+              :class="
+                deliveryDecision === 'recojo_oficina'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
+              "
+              @click="deliveryDecision = 'recojo_oficina'"
+            >
+              <div class="flex items-center justify-center gap-2">
+                <UIcon name="i-lucide-briefcase" class="h-4 w-4" />
+                <span>Recojo en oficina</span>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        <!-- Comentario -->
+        <section class="space-y-3">
+          <div>
+            <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Comentario
+            </label>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Agrega una observación interna para dejar trazabilidad.
+            </p>
+          </div>
+
+          <div class="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
             <UTextarea
               v-model="deliveryComment"
-              :rows="3"
-              placeholder="Comentario interno (solo maqueta)"
+              :rows="4"
+              placeholder="Escribe un comentario interno..."
+              class="w-full"
             />
           </div>
+        </section>
+        <div v-if="deliveryError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+          {{ deliveryError }}
+        </div>
 
-          <div class="space-y-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900/40">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-700 dark:text-gray-200">Notificar solicitante</span>
-              <USwitch v-model="deliveryNotifyRequester" />
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-700 dark:text-gray-200">Notificar logistica</span>
-              <USwitch v-model="deliveryNotifyLogistics" :disabled="deliveryDecision !== 'derivar_logistica'" />
-            </div>
-          </div>
+        
+      </div>
 
-          <p class="text-xs text-amber-700 dark:text-amber-300">
-            Maqueta UI: no realiza derivacion real ni envio de notificaciones.
-          </p>
+      <!-- Footer -->
+      <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <UButton
+            color="neutral"
+            variant="soft"
+            class="justify-center px-5"
+            @click="closeDeliveryModal"
+          >
+            Cancelar
+          </UButton>
 
-          <div class="flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
-            <UButton color="neutral" variant="soft" class="px-5" @click="closeDeliveryModal">
-              Cancelar
-            </UButton>
-            <UButton
-              color="primary"
-              class="px-5 font-semibold"
-              :icon="deliveryDecision === 'derivar_logistica' ? 'i-lucide-send' : 'i-lucide-briefcase'"
-              @click="submitDeliveryMock"
-            >
-              {{ deliveryConfirmLabel }}
-            </UButton>
-          </div>
+          <UButton
+            color="primary"
+            class="justify-center px-5 font-semibold"
+            :icon="deliveryDecision === 'derivar_logistica' ? 'i-lucide-send' : 'i-lucide-briefcase'"
+            :loading="deliverySubmitting"
+            :disabled="deliverySubmitting"
+            @click="submitDelivery"
+          >
+            {{ deliveryDecision === 'derivar_logistica'
+              ? 'Derivar al área de logística'
+              : 'Confirmar recojo en oficina' }}
+          </UButton>
         </div>
       </div>
-    </template>
-  </UModal>
+    </div>
+  </template>
+</UModal>
 
-  <UModal
-    v-model:open="manageOpen"
-    class="w-full max-w-xl"
-    :ui="{
-      header: 'relative flex items-stretch p-0 min-h-0',
-      wrapper: 'flex-1 min-w-0 w-full',
-      title: 'w-full p-0',
-      body: 'p-0',
-    }"
-    :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
-  >
+  <UModal v-model:open="manageOpen" class="w-full max-w-xl" :ui="{
+    header: 'relative flex items-stretch p-0 min-h-0',
+    wrapper: 'flex-1 min-w-0 w-full',
+    title: 'w-full p-0',
+    body: 'p-0',
+  }" :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }">
     <template #title>
-      <div class="flex w-full items-start justify-between gap-4 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+      <div
+        class="flex w-full items-start justify-between gap-4 border-b border-gray-200 bg-white px-5 py-4 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
         <div class="flex items-start gap-3">
-          <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-800">
+          <span
+            class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-800">
             <UIcon name="i-lucide-circle-check-big" class="h-5 w-5" />
           </span>
           <div class="min-w-0 leading-tight">
             <p class="text-sm font-semibold tracking-wide text-gray-950 dark:text-white">Gestionar producto</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Aprueba o rechaza la solicitud del producto seleccionado.</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Aprueba o rechaza la solicitud del producto
+              seleccionado.</p>
           </div>
         </div>
       </div>
@@ -790,48 +899,49 @@ const confirmManage = async () => {
     <template #body>
       <div class="bg-white px-5 py-5 dark:bg-gray-950">
         <div class="space-y-5">
-          <div class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto</p>
+          <div
+            class="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/40">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Producto
+            </p>
             <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">{{ manageProduct }}</p>
             <p class="text-sm text-gray-500 dark:text-gray-400">{{ manageProductId }}</p>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
               <div class="rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Solicitado</p>
-                <p class="mt-1 text-[28px] font-black leading-none tracking-[-0.04em] text-gray-950 dark:text-white">{{ formatNumber(managedItem?.solicitado) }}</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+                  Solicitado</p>
+                <p class="mt-1 text-[28px] font-black leading-none tracking-[-0.04em] text-gray-950 dark:text-white">{{
+                  formatNumber(managedItem?.solicitado) }}</p>
               </div>
               <div class="rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">En stock</p>
-                <p class="mt-1 text-[28px] font-black leading-none tracking-[-0.04em] text-gray-950 dark:text-white">{{ formatNumber(managedItem?.stock_actual) }}</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">En
+                  stock</p>
+                <p class="mt-1 text-[28px] font-black leading-none tracking-[-0.04em] text-gray-950 dark:text-white">{{
+                  formatNumber(managedItem?.stock_actual) }}</p>
               </div>
             </div>
           </div>
 
           <div>
-            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-gray-900 dark:text-gray-100">Selecciona una acción</p>
+            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-gray-900 dark:text-gray-100">
+              Selecciona una acción</p>
             <div class="flex rounded-2xl bg-gray-100 p-1 dark:bg-gray-900">
-              <button
-                type="button"
-                class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
+              <button type="button" class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
                 :class="manageDecision === 'aprobar'
                   ? 'bg-white text-gray-950 shadow-sm ring-1 ring-gray-200 dark:bg-gray-950 dark:text-white dark:ring-gray-800'
                   : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="manageDecision = 'aprobar'"
-              >
+                @click="manageDecision = 'aprobar'">
                 <span class="inline-flex items-center gap-2">
                   <UIcon name="i-lucide-circle-check-big" class="h-4 w-4 text-emerald-600" />
                   Aprobar
                 </span>
               </button>
 
-              <button
-                type="button"
-                class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
+              <button type="button" class="flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition"
                 :class="manageDecision === 'rechazar'
                   ? 'bg-white text-gray-950 shadow-sm ring-1 ring-gray-200 dark:bg-gray-950 dark:text-white dark:ring-gray-800'
                   : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="manageDecision = 'rechazar'"
-              >
+                @click="manageDecision = 'rechazar'">
                 <span class="inline-flex items-center gap-2">
                   <UIcon name="i-lucide-circle-x" class="h-4 w-4 text-[#e53946]" />
                   Rechazar
@@ -840,46 +950,29 @@ const confirmManage = async () => {
             </div>
           </div>
 
-          <div
-            class="rounded-xl border px-4 py-3 text-sm transition"
-            :class="manageDecision === 'aprobar'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200'
-              : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200'"
-          >
+          <div class="rounded-xl border px-4 py-3 text-sm transition" :class="manageDecision === 'aprobar'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200'
+            : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200'">
             {{ manageHelpText }}
           </div>
 
-          <div
-            v-if="manageError"
-            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200"
-          >
+          <div v-if="manageError"
+            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
             {{ manageError }}
           </div>
 
           <div class="space-y-2">
             <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Cantidad a aprobar</label>
-            <UInput
-              v-model="manageQuantity"
-              type="number"
-              min="0"
-              :max="manageMaxQuantity"
-              class="w-full"
-              :disabled="manageSubmitting || manageDecision === 'rechazar'"
-            />
+            <UInput v-model="manageQuantity" type="number" min="0" :max="manageMaxQuantity" class="w-full"
+              :disabled="manageSubmitting || manageDecision === 'rechazar'" />
             <p class="text-sm text-gray-500 dark:text-gray-400">Máximo disponible: {{ manageMaxQuantity }} unidades</p>
           </div>
 
           <div class="space-y-2">
             <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario / motivo</label>
-            <UTextarea
-              v-model="manageComment"
-              :placeholder="manageDecision === 'aprobar'
-                ? 'Escribe un comentario para aprobar'
-                : 'Escribe un comentario para rechazar'"
-              :rows="4"
-              class="w-full"
-              :disabled="manageSubmitting"
-            />
+            <UTextarea v-model="manageComment" :placeholder="manageDecision === 'aprobar'
+              ? 'Escribe un comentario para aprobar'
+              : 'Escribe un comentario para rechazar'" :rows="4" class="w-full" :disabled="manageSubmitting" />
             <p class="text-sm text-gray-500 dark:text-gray-400">{{ manageCommentHint }}</p>
           </div>
 
@@ -887,14 +980,8 @@ const confirmManage = async () => {
             <UButton color="neutral" variant="soft" class="px-5" :disabled="manageSubmitting" @click="closeManageModal">
               Cancelar
             </UButton>
-            <UButton
-              color="primary"
-              class="px-5 font-semibold"
-              :class="manageConfirmClass"
-              :loading="manageSubmitting"
-              :disabled="!canSubmitManage"
-              @click="confirmManage"
-            >
+            <UButton color="primary" class="px-5 font-semibold" :class="manageConfirmClass" :loading="manageSubmitting"
+              :disabled="!canSubmitManage" @click="confirmManage">
               {{ manageConfirmLabel }}
             </UButton>
           </div>
@@ -903,5 +990,3 @@ const confirmManage = async () => {
     </template>
   </UModal>
 </template>
-
-
