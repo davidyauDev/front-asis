@@ -45,7 +45,7 @@
           color="neutral"
           variant="outline"
           size="md"
-          :icon="filtersVisible ? 'i-lucide-panel-top-close' : 'i-lucide-panel-top-open'"
+          :icon="'i-lucide-filter'"
           class="min-w-[170px] justify-center whitespace-nowrap border-[#cfdcf7] bg-white text-[#30508f] font-semibold shadow-sm transition-all hover:bg-[#eef4ff] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900"
           @click="emit('toggle-filters')"
         >
@@ -74,7 +74,7 @@
           </UButton>
         </UTooltip>
 
-        <span class="inline-flex items-center rounded-full border border-[#cfdcf7] bg-[#eef4ff] px-3 py-2 text-sm font-semibold text-[#30508f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+        <span class="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-900/70 dark:text-gray-300">
           {{ dailyListAttendaces.length }} registros
         </span>
       </div>
@@ -90,9 +90,9 @@
         :loading="dataLoading"
         :ui="{
           base: 'min-w-[1460px] w-full table-fixed border-separate border-spacing-0 [&_th]:border-0 [&_td]:border-0',
-          root: 'relative max-h-[calc(105vh-300px)] overflow-y-auto overflow-x-auto',
+          root: 'relative max-h-[calc(105vh-245px)] overflow-y-auto overflow-x-auto',
           thead: 'sticky top-0 z-10 bg-[#2d5fc0] text-white',
-          th: 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white',
+          th: 'px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-white',
           td: 'px-4 py-4 text-sm text-gray-900 dark:text-gray-100 align-top',
           tr: 'transition-colors  dark:hover:bg-gray-900/60',
           tbody: 'divide-y divide-gray-100/70 dark:divide-gray-800/60 bg-white dark:bg-gray-950',
@@ -395,23 +395,6 @@ const isLateAttendance = (original: TakenAttendaceRow) => {
 }
 
 const rowClass = (row: any) => {
-  const original = row?.original as TakenAttendaceRow | undefined
-  if (!original) {
-    return "hover:bg-gray-50 dark:hover:bg-gray-900/50"
-  }
-
-  if (isPreIncidenciaRow(row)) {
-    return "bg-amber-50/60 dark:bg-amber-950/25 hover:bg-amber-50/80 dark:hover:bg-amber-950/35"
-  }
-
-  if (!original.Ingreso) {
-    return "bg-slate-50 dark:bg-slate-900/30 hover:bg-slate-100/60 dark:hover:bg-slate-900/40"
-  }
-
-  if (isLateAttendance(original)) {
-    return "bg-red-50/60 dark:bg-red-950/20 hover:bg-red-50/80 dark:hover:bg-red-950/30"
-  }
-
   return "hover:bg-gray-50 dark:hover:bg-gray-900/50"
 }
 
@@ -827,7 +810,7 @@ const sortColumButton = (column: any, label: string) => {
         : "i-lucide-arrow-down-wide-narrow"
       : "i-lucide-arrow-up-down",
     class:
-      "-mx-2.5 rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wider !text-white !bg-transparent hover:!text-white hover:!bg-white/10 focus-visible:!ring-2 focus-visible:!ring-white/35",
+      "-mx-2.5 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider !text-white !bg-transparent hover:!text-white hover:!bg-white/10 focus-visible:!ring-2 focus-visible:!ring-white/35",
     onClick: () => column.toggleSorting(isSorted === "asc"),
   });
 };
@@ -899,14 +882,11 @@ const columns: TableColumn<TakenAttendace>[] = [
           "span",
           {
             class:
-              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold " +
-              "bg-slate-50 text-slate-600 ring-1 ring-slate-200 " +
-              "dark:bg-slate-900/40 dark:text-slate-300 dark:ring-slate-700",
+              "inline-flex items-center justify-center min-h-7 rounded-md px-2 py-0.5 text-xs font-semibold font-mono " +
+              "bg-[#f8fafc] text-[#334155] ring-1 ring-[#e2e8f0] " +
+              "dark:bg-[#0f172a]/50 dark:text-[#cbd5e1] dark:ring-[#334155]",
           },
-          [
-            h(UIcon, { name: "i-lucide-clock", class: "w-4 h-4" }),
-            "Sin horario",
-          ]
+          "Sin horario"
         );
       }
 
@@ -914,9 +894,9 @@ const columns: TableColumn<TakenAttendace>[] = [
         "span",
         {
           class:
-            "inline-flex items-center rounded-md px-2 py-1 text-sm font-semibold font-mono " +
-            "bg-slate-50 text-slate-700 ring-1 ring-slate-200 " +
-            "dark:bg-slate-900/40 dark:text-slate-200 dark:ring-slate-700",
+            "inline-flex items-center justify-center min-h-7 rounded-md px-2 py-0.5 text-xs font-semibold font-mono " +
+            "bg-[#f8fafc] text-[#334155] ring-1 ring-[#e2e8f0] " +
+            "dark:bg-[#0f172a]/50 dark:text-[#cbd5e1] dark:ring-[#334155]",
         },
         horario
       );
@@ -934,14 +914,11 @@ const columns: TableColumn<TakenAttendace>[] = [
           "span",
           {
             class:
-              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold " +
-              "bg-slate-50 text-slate-600 ring-1 ring-slate-200 " +
-              "dark:bg-slate-900/40 dark:text-slate-300 dark:ring-slate-700",
+              "inline-flex items-center justify-center min-h-7 rounded-md px-2 py-0.5 text-xs font-semibold font-mono " +
+              "bg-[#f8fafc] text-[#334155] ring-1 ring-[#e2e8f0] " +
+              "dark:bg-[#0f172a]/50 dark:text-[#cbd5e1] dark:ring-[#334155]",
           },
-          [
-            h(UIcon, { name: "i-lucide-log-in", class: "w-4 h-4" }),
-            "Sin ingreso",
-          ]
+          "Sin ingreso"
         );
       }
 
@@ -950,14 +927,11 @@ const columns: TableColumn<TakenAttendace>[] = [
           "span",
           {
             class:
-              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-semibold font-mono " +
-              "bg-slate-50 text-slate-700 ring-1 ring-slate-200 " +
-              "dark:bg-slate-900/40 dark:text-slate-200 dark:ring-slate-700",
+              "inline-flex items-center justify-center min-h-7 rounded-md px-2 py-0.5 text-xs font-semibold font-mono " +
+              "bg-[#f8fafc] text-[#334155] ring-1 ring-[#e2e8f0] " +
+              "dark:bg-[#0f172a]/50 dark:text-[#cbd5e1] dark:ring-[#334155]",
           },
-          [
-            h(UIcon, { name: "i-lucide-log-in", class: "w-4 h-4" }),
-            ingreso,
-          ]
+          ingreso
         );
       }
 
@@ -969,18 +943,12 @@ const columns: TableColumn<TakenAttendace>[] = [
         "span",
         {
           class:
-            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-semibold font-mono ring-1 " +
+            "inline-flex items-center justify-center min-h-7 rounded-md px-2 py-0.5 text-xs font-semibold font-mono ring-1 " +
             (isLate
-              ? "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/25 dark:text-red-300 dark:ring-red-900/40"
-              : "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/25 dark:text-emerald-300 dark:ring-emerald-900/40"),
+              ? "bg-[#fff1f2] text-[#be123c] ring-[#fecdd3] dark:bg-[#4c0519]/30 dark:text-[#fda4af] dark:ring-[#9f1239]/40"
+              : "bg-[#ecfdf3] text-[#047857] ring-[#a7f3d0] dark:bg-[#052e26]/40 dark:text-[#6ee7b7] dark:ring-[#065f46]/45"),
         },
-        [
-          h(UIcon, {
-            name: isLate ? "i-lucide-alert-circle" : "i-lucide-check-circle",
-            class: "w-4 h-4",
-          }),
-          ingreso,
-        ]
+        ingreso
       );
     },
   },
@@ -992,22 +960,16 @@ const columns: TableColumn<TakenAttendace>[] = [
 
       if (!salida) {
         return h(
-          "div",
-          { class: "inline-flex items-center gap-1.5 text-gray-400 dark:text-gray-500" },
-          [
-            h(UIcon, { name: "i-lucide-clock", class: "w-4 h-4" }),
-            h("span", { class: "text-sm" }, "Sin salida"),
-          ]
+          "span",
+          { class: "text-sm text-gray-400 dark:text-gray-500" },
+          "Sin salida"
         );
       }
 
       return h(
-        "div",
-        { class: "inline-flex items-center gap-1.5 text-gray-600 dark:text-gray-400" },
-        [
-          h(UIcon, { name: "i-lucide-log-out", class: "w-4 h-4" }),
-          h("span", { class: "font-mono text-sm" }, salida)
-        ]
+        "span",
+        { class: "font-mono text-sm text-gray-600 dark:text-gray-400" },
+        salida
       );
     },
   },

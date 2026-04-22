@@ -48,11 +48,6 @@ const managementLinks = [{
   to: '/rrhh/empleados-biotime',
   exact: true,
   onSelect: () => { open.value = false }
-}, {
-  label: 'Rutas GPS',
-  icon: 'i-lucide-route',
-  to: '/rrhh/rutas',
-  onSelect: () => { open.value = false }
 }]
 
 // Inventario
@@ -100,6 +95,11 @@ const reportLinks = [{
   label: 'Incidencias',
   icon: 'i-lucide-alert-triangle',
   to: '/rrhh/incidencias',
+  onSelect: () => { open.value = false }
+}, {
+  label: 'Tardanzas',
+  icon: 'i-lucide-clock-3',
+  to: '/rrhh/tardanzas',
   onSelect: () => { open.value = false }
 }, {
   label: 'Movilidad',
@@ -166,20 +166,20 @@ onMounted(async () => {
       v-model:open="open"
       collapsible
       resizable
-      class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
+      class="sidebar-shell"
+      :ui="{ body: 'px-3 py-3', footer: 'border-t border-gray-200/80 px-3 py-2 dark:border-gray-800' }"
     >
       <template #header="{ collapsed }">
-        <TeamsMenu :collapsed="collapsed" />
-      </template>
-
-      <template #default="{ collapsed }">
-        <div :class="collapsed ? 'sidebar-search sidebar-search--collapsed' : 'sidebar-search'">
-          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+        <div class="sidebar-header">
+          <TeamsMenu :collapsed="collapsed" />
         </div>
+      </template>
+      <template #default="{ collapsed }">
+        <!-- <div :class="collapsed ? 'sidebar-search sidebar-search--collapsed' : 'sidebar-search'">
+          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+        </div> -->
 
-        <div :class="['sidebar-nav', collapsed ? 'mt-1 sidebar-nav--collapsed space-y-1.5' : 'mt-3 space-y-3']">
-        <!-- Dashboard -->
+        <div :class="['sidebar-nav', collapsed ? 'mt-1 sidebar-nav--collapsed space-y-2' : 'mt-2 space-y-2']">
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[0]"
@@ -188,12 +188,8 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider v-if="!collapsed" class="my-2" />
-
         <!-- Gestión -->
-        <div v-if="!collapsed" class="px-3 mb-1">
-          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Gestión</p>
-        </div>
+        <!-- <div v-if="!collapsed" class="sidebar-section-title">Gestión</div> -->
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[1]"
@@ -202,12 +198,8 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider v-if="!collapsed" class="my-2" />
-
         <!-- Inventario -->
-        <div v-if="!collapsed" class="px-3 mb-1">
-          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Inventario</p>
-        </div>
+        <div v-if="!collapsed" class="sidebar-section-title">Inventario</div>
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[2]"
@@ -216,12 +208,8 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider v-if="!collapsed" class="my-2" />
-
         <!-- Solicitudes -->
-        <div v-if="!collapsed" class="px-3 mb-1">
-          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Solicitudes</p>
-        </div>
+        <div v-if="!collapsed" class="sidebar-section-title">Solicitudes</div>
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[3]"
@@ -230,12 +218,8 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider v-if="!collapsed" class="my-2" />
-
         <!-- Reportes -->
-        <div v-if="!collapsed" class="px-3 mb-1">
-          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Reportes</p>
-        </div>
+        <!-- <div v-if="!collapsed" class="sidebar-section-title">Reportes</div> -->
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[4]"
@@ -244,11 +228,7 @@ onMounted(async () => {
           popover
         />
 
-        <UDivider v-if="!collapsed" class="my-2" />
-
-        <div v-if="!collapsed" class="px-3 mb-1">
-          <p class="text-[11px] font-semibold tracking-wide uppercase text-gray-500 dark:text-gray-400">Sistema</p>
-        </div>
+        <div v-if="!collapsed" class="sidebar-section-title">Sistema</div>
         <!-- Sistema -->
         <UNavigationMenu
           :collapsed="collapsed"
@@ -279,25 +259,63 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.sidebar-shell {
+  margin: 0.75rem;
+  border: 1px solid rgb(233 236 241);
+  border-radius: 1rem;
+  background: #eceef2;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.sidebar-header {
+  border-bottom: 1px solid rgb(221 226 232);
+  padding: 0.2rem 0.15rem;
+}
+
+.sidebar-section-title {
+  margin-top: 0.3rem;
+  margin-bottom: 0.15rem;
+  padding: 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(107 114 128);
+}
+
 .sidebar-nav :deep(a),
 .sidebar-nav :deep(button[role='menuitem']),
 .sidebar-nav :deep(button[role='menuitemcheckbox']),
 .sidebar-nav :deep(button[role='menuitemradio']) {
-  font-size: 0.95rem;
-  line-height: 1.25rem;
+  font-size: 0.92rem;
+  line-height: 1.2rem;
 }
 
 .sidebar-nav :deep(a),
 .sidebar-nav :deep(button) {
-  border-radius: 0.9rem;
-  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  padding: 0.62rem 0.82rem;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.sidebar-nav :deep(a:hover),
+.sidebar-nav :deep(button:hover),
+.sidebar-nav :deep(a[data-state='open']),
+.sidebar-nav :deep(button[data-state='open']) {
+  background: rgb(255 255 255 / 0.9);
+  color: rgb(17 24 39);
+  border-color: rgb(237 239 243);
+  box-shadow: none;
 }
 
 .sidebar-nav :deep(a[aria-current='page']),
 .sidebar-nav :deep(button[aria-current='page']) {
-  background: rgb(45 95 192 / 0.1);
-  color: rgb(45 95 192);
-  box-shadow: inset 0 0 0 1px rgb(45 95 192 / 0.15);
+  background: rgb(255 255 255);
+  color: rgb(17 24 39);
+  border-color: rgb(233 236 241);
+  box-shadow: none;
 }
 
 .sidebar-nav :deep(a[aria-current='page'] span[class*='i-']),
@@ -306,15 +324,26 @@ onMounted(async () => {
 .sidebar-nav :deep(button[aria-current='page'] span[class*='i-']),
 .sidebar-nav :deep(button[aria-current='page'] .iconify),
 .sidebar-nav :deep(button[aria-current='page'] svg) {
-  color: rgb(45 95 192);
+  color: rgb(75 85 99);
   stroke: currentColor;
 }
 
 :global(.dark) .sidebar-nav :deep(a[aria-current='page']),
 :global(.dark) .sidebar-nav :deep(button[aria-current='page']) {
-  background: rgb(45 95 192 / 0.18);
-  color: rgb(201 217 255);
-  box-shadow: inset 0 0 0 1px rgb(111 143 218 / 0.22);
+  background: rgb(31 41 55 / 0.92);
+  color: rgb(229 231 235);
+  border-color: rgb(82 92 108);
+  box-shadow: none;
+}
+
+:global(.dark) .sidebar-nav :deep(a:hover),
+:global(.dark) .sidebar-nav :deep(button:hover),
+:global(.dark) .sidebar-nav :deep(a[data-state='open']),
+:global(.dark) .sidebar-nav :deep(button[data-state='open']) {
+  background: rgb(31 41 55 / 0.86);
+  color: rgb(229 231 235);
+  border-color: rgb(82 92 108);
+  box-shadow: none;
 }
 
 :global(.dark) .sidebar-nav :deep(a[aria-current='page'] span[class*='i-']),
@@ -323,35 +352,28 @@ onMounted(async () => {
 :global(.dark) .sidebar-nav :deep(button[aria-current='page'] span[class*='i-']),
 :global(.dark) .sidebar-nav :deep(button[aria-current='page'] .iconify),
 :global(.dark) .sidebar-nav :deep(button[aria-current='page'] svg) {
-  color: rgb(201 217 255);
+  color: rgb(229 231 235);
 }
 
 .sidebar-nav :deep(span[class*='i-']),
 .sidebar-nav :deep(.iconify),
 .sidebar-nav :deep(svg) {
-  width: 1.1rem;
-  height: 1.1rem;
-}
-
-.sidebar-search--collapsed :deep(button) {
-  width: 2.5rem;
-  height: 2.5rem;
-  min-height: 2.5rem;
-  padding: 0;
-  margin-inline: auto;
+  width: 1rem;
+  height: 1rem;
 }
 
 .sidebar-nav--collapsed :deep(a),
 .sidebar-nav--collapsed :deep(button[role='menuitem']),
 .sidebar-nav--collapsed :deep(button[role='menuitemcheckbox']),
 .sidebar-nav--collapsed :deep(button[role='menuitemradio']) {
-  width: 2.5rem;
-  height: 2.5rem;
-  min-height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-height: 2.25rem;
   padding: 0;
   margin-inline: auto;
   justify-content: center;
-  border-radius: 0.8rem;
+  border-radius: 0.7rem;
 }
 </style>
+
 

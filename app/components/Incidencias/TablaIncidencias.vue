@@ -661,9 +661,9 @@ defineExpose({
     <thead>
   <!-- FILA 1: CONTEXTO -->
   <tr>
-    <th
+<th
       colspan="4"
-      class="sticky left-0 z-30 bg-gradient-to-r from-[#2d5fc0] to-[#4a7dff] text-white text-center py-3 font-bold border dark:from-[#244a95] dark:to-[#355fba] dark:text-gray-100 dark:border-gray-700"
+      class="sticky left-0 z-30 bg-[#2d5fc0] text-white text-center py-3 font-bold border dark:bg-[#244a95] dark:text-gray-100 dark:border-gray-700"
     >
       INCIDENCIAS JUSTIFICADAS 
     </th>

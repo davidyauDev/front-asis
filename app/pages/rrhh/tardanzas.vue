@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import TablaIncidencias from "~/components/Incidencias/TablaIncidencias.vue";
+import TablaCalculo from "~/components/Incidencias/Tardanzas/TablaCalculo.vue";
 const hoy = new Date();
 const pad2 = (value: number) => String(value).padStart(2, '0')
 
@@ -42,7 +42,7 @@ const filtroDepartamento = useCookie<string>('incidencias-filtro-departamento', 
   sameSite: 'lax'
 });
 const exportando = ref(false)
-const tablaIncidenciasRef = ref<InstanceType<typeof TablaIncidencias> | null>(null);
+const tablaCalculoRef = ref<InstanceType<typeof TablaCalculo> | null>(null);
 
 
 watch(filaSeleccionada, async () => {
@@ -54,8 +54,8 @@ async function descargarExcel() {
   if (exportando.value) return; // Evitar múltiples clics
   exportando.value = true;
   try {
-    if (tablaIncidenciasRef.value && typeof tablaIncidenciasRef.value.descargarExcel === 'function') {
-      await tablaIncidenciasRef.value.descargarExcel({
+    if (tablaCalculoRef.value && typeof tablaCalculoRef.value.descargarExcel === 'function') {
+      await tablaCalculoRef.value.descargarExcel({
         fechaInicio: fechaInicio.value,
         fechaFin: fechaFin.value,
         filtroUsuario: filtroUsuario.value
@@ -72,10 +72,10 @@ async function descargarExcel() {
 </script>
 
 <template>
-  <UDashboardPanel id="incidencias">
+  <UDashboardPanel id="tardanzas">
     <template #header>
-      <AppDashboardHeader title="Gestion de Incidencias" mobile-title="Incidencias" subtitle-icon="i-heroicons-clock"
-        notification-tooltip="Incidencias pendientes" notification-attention
+      <AppDashboardHeader title="Calculo de Tardanzas" mobile-title="Tardanzas" subtitle-icon="i-heroicons-clock"
+        notification-tooltip="Tardanzas pendientes" notification-attention
         @notification-click="openRrhhNotifications" />
     </template>
     <template #body>
@@ -150,8 +150,8 @@ async function descargarExcel() {
           </div>
         </div>
         <div class="overflow-x-auto rounded-lg shadow dark:bg-gray-900">
-          <TablaIncidencias
-            ref="tablaIncidenciasRef"
+          <TablaCalculo
+            ref="tablaCalculoRef"
             :filtro-usuario="filtroUsuario"
             :filtro-empresa="filtroEmpresa"
             :filtro-departamento="filtroDepartamento"

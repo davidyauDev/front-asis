@@ -8,6 +8,12 @@ import PurchaseActionPanel from '~/components/rrhh/inventario/solicitudes/compra
 import PurchaseProgressStepper from '~/components/rrhh/inventario/solicitudes/compra/ProgressStepper.vue'
 import PurchaseRequestSummary from '~/components/rrhh/inventario/solicitudes/compra/RequestSummary.vue'
 
+definePageMeta({ middleware: 'auth' })
+
+useHead({
+  title: 'RRHH - Solicitudes Compra',
+})
+
 type PurchaseQuickFilter =
   | 'all'
   | 'pendiente'

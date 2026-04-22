@@ -398,45 +398,7 @@ const confirmManage = async () => {
     body: 'p-0',
   }" :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }">
     <template #title>
-      <div
-        class="flex w-full items-center justify-between gap-3 border-b border-gray-200 bg-[#f8fafc] px-4 py-3 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
-        <div class="flex min-w-0 items-center gap-3">
-          <span
-            class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-[#13203a] dark:text-[#9cb7f5] dark:ring-[#29406f]">
-            <UIcon name="i-lucide-file-search" class="h-4 w-4" />
-          </span>
-          <div class="min-w-0 leading-tight">
-            <p class="text-sm font-semibold tracking-wide text-gray-950 dark:text-white">Detalle de solicitud</p>
-            <p class="text-[11px] text-gray-500 dark:text-gray-400">Items asociados a la solicitud seleccionada.</p>
-            <p class="text-[11px] text-gray-500 dark:text-gray-400">Las acciones de gestión solo están habilitadas para
-              items del area RR.HH.</p>
-          </div>
-        </div>
-
-        <div class="flex shrink-0 items-center gap-2">
-          <UButton
-            v-if="isInternalRequest"
-            color="primary"
-            size="xs"
-            icon="i-lucide-check-circle-2"
-            class="rounded-full bg-[#2d5fc0] text-white hover:bg-[#244ea4]"
-            :loading="globalSubmitting"
-            :disabled="!canSubmitGlobalFinalize"
-            :title="isInternalRequest && !globalInternalStatus
-              ? 'Selecciona un estado interno'
-              : 'Finalizar solicitud'"
-            @click="submitGlobalFinalize"
-          >
-            Finalizar solicitud
-          </UButton>
-
-          <span
-            class="hidden rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2d5fc0] ring-1 ring-[#cbdcff] dark:bg-gray-900 dark:text-[#9cb7f5] dark:ring-gray-800 sm:inline-flex"
-          >
-            #{{ selectedRequest?.id_solicitud ?? '--' }}
-          </span>
-        </div>
-      </div>
+      
     </template>
 
     <template #body>
@@ -462,44 +424,7 @@ const confirmManage = async () => {
             </div>
           </div>
 
-          <div class="grid gap-3 md:grid-cols-3">
-            <div
-              class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
-                Solicitante</p>
-              <div class="mt-2.5 flex items-center gap-3">
-                <div
-                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0f172a] text-sm font-black text-white">
-                  {{ initials(selectedSolicitante) }}
-                </div>
-                <div class="min-w-0">
-                  <p class="truncate text-base font-bold text-gray-950 dark:text-white">{{ selectedSolicitante }}</p>
-                  <p class="truncate text-sm text-gray-500 dark:text-gray-400">{{ selectedEmail }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Registro
-              </p>
-              <div class="mt-2.5 space-y-1">
-                <p class="text-[22px] font-black tracking-[-0.04em] text-gray-950 dark:text-white">{{
-                  formatDate(selectedRequest?.fecha_registro) }}</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatTime(selectedRequest?.fecha_registro) }}
-                </p>
-              </div>
-            </div>
-
-            <div
-              class="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
-                Justificacion</p>
-              <p class="mt-2 text-sm leading-5 text-gray-700 dark:text-gray-300">
-                {{ textValue(selectedRequest?.justificacion) }}
-              </p>
-            </div>
-          </div>
+        
 
           <div
             v-if="hasGlobalActions"

@@ -406,10 +406,11 @@ defineExpose({
             </div>
         </div>
 
-        <table v-else class="border-collapse w-full text-sm rounded shadow dark:bg-gray-900 dark:text-gray-200">
+        <div v-else class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
+        <table class="w-full border-separate border-spacing-0 text-sm">
             <thead>
-                <tr class="bg-[#1f4e78] text-white dark:bg-blue-900">
-                    <th class="border px-3 py-2 dark:border-gray-700">
+                <tr class="bg-[#2d5fc0] text-white">
+                    <th class="border border-[#5d83d4] px-3 py-2 dark:border-[#4a67a8]">
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
@@ -419,7 +420,7 @@ defineExpose({
                             <UIcon :name="sortIcon('dni')" class="w-4 h-4" />
                         </button>
                     </th>
-                    <th class="border px-4 py-2 dark:border-gray-700">
+                    <th class="border border-[#5d83d4] px-4 py-2 dark:border-[#4a67a8]">
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
@@ -429,7 +430,7 @@ defineExpose({
                             <UIcon :name="sortIcon('nombre')" class="w-4 h-4" />
                         </button>
                     </th>
-                    <th class="border px-4 py-2 dark:border-gray-700">
+                    <th class="border border-[#5d83d4] px-4 py-2 dark:border-[#4a67a8]">
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
@@ -439,7 +440,7 @@ defineExpose({
                             <UIcon :name="sortIcon('departamento')" class="w-4 h-4" />
                         </button>
                     </th>
-                    <th class="border px-4 py-2 dark:border-gray-700">
+                    <th class="border border-[#5d83d4] px-4 py-2 dark:border-[#4a67a8]">
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 font-semibold hover:text-blue-100 transition-colors"
@@ -449,41 +450,41 @@ defineExpose({
                             <UIcon :name="sortIcon('empresa')" class="w-4 h-4" />
                         </button>
                     </th>
-                    <th class="border px-3 py-2 bg-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border-gray-700">Tardanza Acumulada</th>
-                    <th class="border px-3 py-2 bg-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border-gray-700">Descuentos por Incidencia</th>
-                    <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">Tardanza Neta</th>
-                    <th class="border px-3 py-2 bg-green-700 dark:bg-green-800 dark:text-green-200 dark:border-gray-700">Acciones</th>
+                    <th class="border border-[#5d83d4] px-3 py-2 bg-[#2b59b3] dark:bg-[#244793] dark:border-[#4a67a8]">Tardanza Acumulada</th>
+                    <th class="border border-[#5d83d4] px-3 py-2 bg-[#2953a4] dark:bg-[#234182] dark:border-[#4a67a8]">Descuentos por Incidencia</th>
+                    <th class="border border-[#5d83d4] px-3 py-2 bg-[#244a93] dark:bg-[#1f3a73] dark:border-[#4a67a8]">Tardanza Neta</th>
+                    <th class="border border-[#5d83d4] px-3 py-2 bg-[#224487] dark:bg-[#1c345f] dark:border-[#4a67a8]">Acciones</th>
                 </tr>
             </thead>
 
             <tbody>
-                <tr v-for="emp in empleadosOrdenados" :key="emp.dni" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td class="border px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
-                    <td class="border px-3 dark:border-gray-700">
+                <tr v-for="emp in empleadosOrdenados" :key="emp.dni" class="hover:bg-[#f7f9ff] dark:hover:bg-gray-800/70">
+                    <td class="border border-gray-200 px-2 text-center dark:border-gray-700">{{ emp.dni }}</td>
+                    <td class="border border-gray-200 px-3 dark:border-gray-700">
                         {{ emp.apellidos }} {{ emp.nombre }}
                     </td>
-                    <td class="border px-3 dark:border-gray-700">
+                    <td class="border border-gray-200 px-3 dark:border-gray-700">
                         {{ emp.departamento || '' }}
                     </td>
-                    <td class="border px-3 dark:border-gray-700">
+                    <td class="border border-gray-200 px-3 dark:border-gray-700">
                         {{ emp.empresa || '' }}
                     </td>
 
-                    <td class="border px-2 text-center bg-blue-50 dark:bg-blue-900 dark:text-blue-200 dark:border-gray-700">
+                    <td class="border border-gray-200 px-2 text-center bg-[#f2f6ff] dark:bg-[#1f2f55] dark:text-blue-200 dark:border-gray-700">
                         {{ obtenerDuracionExacta(emp, 'bruto') }}
                     </td>
 
-                    <td class="border px-2 text-center bg-purple-50 font-bold dark:bg-purple-900 dark:text-purple-200 dark:border-gray-700">
+                    <td class="border border-gray-200 px-2 text-center bg-[#eef3ff] font-bold dark:bg-[#1c2a4b] dark:text-indigo-200 dark:border-gray-700">
                         {{ obtenerDuracionExacta(emp, 'incidencias') }}
                     </td>
 
-                    <td class="border px-2 text-center font-bold dark:border-gray-700" :class="esMayorAUnaHora(obtenerDuracionExacta(emp, 'neto'))
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    <td class="border border-gray-200 px-2 text-center font-bold dark:border-gray-700" :class="esMayorAUnaHora(obtenerDuracionExacta(emp, 'neto'))
+                        ? 'bg-[#fff1f2] text-[#be123c] dark:bg-[#4c0519]/30 dark:text-[#fda4af]'
+                        : 'bg-[#ecfdf3] text-[#047857] dark:bg-[#052e26]/40 dark:text-[#6ee7b7]'
                         ">
                         {{ obtenerDuracionExacta(emp, 'neto') }}
                     </td>
-                    <td class="border px-2 text-center dark:border-gray-700">
+                    <td class="border border-gray-200 px-2 text-center dark:border-gray-700">
                         <UButton
                             size="sm"
                             color="info"
@@ -506,6 +507,7 @@ defineExpose({
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
 
     <UModal

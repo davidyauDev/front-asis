@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
   showLiveBadge: true,
   liveTooltip: 'Datos actualizados',
   liveLabel: 'En vivo',
-  showModulesButton: true,
+  showModulesButton: false,
   modulesButtonLabel: 'Ver modulos',
   modulesButtonTo: '/',
   modulesButtonTooltip: 'Ver todos los modulos',
@@ -80,7 +80,10 @@ const hasNotificationCount = computed(
     props.notificationCount !== null &&
     props.notificationCount !== '',
 )
-const showAttentionDot = computed(() => props.notificationAttention && !hasNotificationCount.value)
+const fallbackNotificationCount = 2
+const displayNotificationCount = computed(() =>
+  hasNotificationCount.value ? props.notificationCount : fallbackNotificationCount
+)
 const userAvatar = computed(() => user.value?.avatar || { alt: displayUserName.value || 'Usuario' })
 
 const handleLogout = async () => {
@@ -153,11 +156,11 @@ const toneStyles = computed(() => {
       userName: 'truncate text-sm font-semibold text-gray-800 dark:text-gray-100',
       userChevron: 'h-4 w-4 text-gray-400 dark:text-gray-500',
       notificationButton:
-        'relative group rounded-full border border-[#d7e1f5] bg-white/90 transition-colors hover:bg-[#eef4ff] dark:border-[#29426d] dark:bg-gray-900/75 dark:hover:bg-[#13203a]',
+        'relative group rounded-md border border-gray-200 bg-[#f3f4f6] transition-colors hover:bg-[#e5e7eb] dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700',
       notificationIcon:
-        'h-5 w-5 text-[#47679f] transition-colors group-hover:text-[#2d5fc0] dark:text-[#9cb7f5] dark:group-hover:text-[#c9d9ff]',
+        'h-4 w-4 text-gray-500 transition-colors group-hover:text-gray-700 dark:text-gray-300 dark:group-hover:text-gray-100',
       notificationBadge:
-        'absolute -top-1.5 -right-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full border border-white bg-[#2d5fc0] px-1 text-[9px] font-semibold text-white dark:border-gray-900',
+        'absolute -top-1 -right-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full border border-white bg-[#ef4444] px-1 text-[8px] font-semibold leading-none text-white dark:border-gray-900',
     }
   }
 
@@ -176,16 +179,16 @@ const toneStyles = computed(() => {
     userChevron: 'h-4 w-4 text-gray-400 dark:text-gray-500',
     notificationButton:
       props.notificationAttention
-        ? 'relative group rounded-full border border-amber-200 bg-amber-50/90 transition-colors hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/20 dark:hover:bg-amber-950/35'
-        : 'relative group rounded-full border border-[#d7e1f5] bg-white/90 transition-colors hover:bg-[#eef4ff] dark:border-[#29426d] dark:bg-gray-900/75 dark:hover:bg-[#13203a]',
+        ? 'relative group rounded-md border border-gray-200 bg-[#f3f4f6] transition-colors hover:bg-[#e5e7eb] dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
+        : 'relative group rounded-md border border-gray-200 bg-[#f3f4f6] transition-colors hover:bg-[#e5e7eb] dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700',
     notificationIcon:
       props.notificationAttention
-        ? 'animate-ring h-5 w-5 text-amber-600 transition-colors group-hover:text-amber-700 dark:text-amber-300 dark:group-hover:text-amber-200'
-        : 'animate-ring h-5 w-5 text-[#47679f] transition-colors group-hover:text-[#2d5fc0] dark:text-[#9cb7f5] dark:group-hover:text-[#c9d9ff]',
+        ? 'h-4 w-4 text-gray-500 transition-colors group-hover:text-gray-700 dark:text-gray-300 dark:group-hover:text-gray-100'
+        : 'h-4 w-4 text-gray-500 transition-colors group-hover:text-gray-700 dark:text-gray-300 dark:group-hover:text-gray-100',
     notificationBadge:
       props.notificationAttention
-        ? 'absolute -top-1.5 -right-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full border border-white bg-amber-500 px-1 text-[9px] font-semibold text-white dark:border-gray-900 dark:bg-amber-400'
-        : 'absolute -top-1.5 -right-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full border border-white bg-[#2d5fc0] px-1 text-[9px] font-semibold text-white dark:border-gray-900',
+        ? 'absolute -top-1 -right-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full border border-white bg-[#ef4444] px-1 text-[8px] font-semibold leading-none text-white dark:border-gray-900'
+        : 'absolute -top-1 -right-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full border border-white bg-[#ef4444] px-1 text-[8px] font-semibold leading-none text-white dark:border-gray-900',
   }
 })
 </script>
@@ -193,10 +196,8 @@ const toneStyles = computed(() => {
 <template>
   <UDashboardNavbar :ui="{ right: 'gap-3' }">
     <template #leading>
-      <div class="flex items-center gap-4">
-        <UDashboardSidebarCollapse />
-
-        <div class="flex items-center gap-3 border-l border-gray-200 pl-3 dark:border-gray-800">
+      <div class="flex items-center">
+        <div class="flex items-center gap-3">
           <div class="hidden items-center gap-3 sm:flex">
             <div v-if="icon" :class="toneStyles.iconOuter">
               <div :class="toneStyles.iconInner">
@@ -236,21 +237,6 @@ const toneStyles = computed(() => {
         <slot name="right" />
 
         <UTooltip
-          v-if="showModulesButton"
-          :text="modulesButtonTooltip"
-        >
-          <UButton
-            :to="modulesButtonTo"
-            color="info"
-            variant="soft"
-            icon="i-lucide-layout-grid"
-            class="rounded-full shadow-sm"
-          >
-            {{ modulesButtonLabel }}
-          </UButton>
-        </UTooltip>
-
-        <UTooltip
           v-if="showNotifications"
           :text="notificationTooltip"
           :shortcuts="notificationShortcuts"
@@ -260,20 +246,15 @@ const toneStyles = computed(() => {
             variant="ghost"
             square
             :class="toneStyles.notificationButton"
-            class="size-10 p-0 flex items-center justify-center"
+            class="size-9 p-0 flex items-center justify-center"
             @click="emit('notification-click')"
           >
             <div class="relative flex h-full w-full items-center justify-center">
               <UIcon name="i-heroicons-bell" :class="toneStyles.notificationIcon" />
 
-              <div v-if="hasNotificationCount" :class="toneStyles.notificationBadge">
-                {{ notificationCount }}
+              <div :class="toneStyles.notificationBadge">
+                {{ displayNotificationCount }}
               </div>
-
-              <span
-                v-else-if="showAttentionDot"
-                class="absolute -top-1.5 -right-1.5 h-2.5 w-2.5 rounded-full bg-amber-500 shadow-[0_0_0_0_rgba(245,158,11,0.35)] animate-ping"
-              />
             </div>
           </UButton>
         </UTooltip>
@@ -314,22 +295,3 @@ const toneStyles = computed(() => {
     </template>
   </UDashboardNavbar>
 </template>
-
-<style scoped>
-@keyframes ring {
-  0% { transform: rotate(0deg); }
-  10% { transform: rotate(15deg); }
-  20% { transform: rotate(-15deg); }
-  30% { transform: rotate(10deg); }
-  40% { transform: rotate(-10deg); }
-  50% { transform: rotate(5deg); }
-  60% { transform: rotate(-5deg); }
-  70% { transform: rotate(0deg); }
-  100% { transform: rotate(0deg); }
-}
-
-.animate-ring {
-  animation: ring 2s ease-in-out infinite;
-  transform-origin: 50% 0%;
-}
-</style>
