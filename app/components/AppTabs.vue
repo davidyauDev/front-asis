@@ -24,7 +24,7 @@ const modelValue = defineModel<TabValue>({
 })
 
 const listClasses = computed(() => [
-  'flex gap-0 border-b-2 border-[#2d5fc0] dark:border-[#6f8fda]',
+  '',
   props.listClass,
 ])
 

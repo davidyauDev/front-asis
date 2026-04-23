@@ -27,6 +27,7 @@ const dashboardLinks = [{
   label: 'Asistencias',
   icon: 'i-lucide-clipboard-check',
   to: '/rrhh',
+  exact: true,
   onSelect: () => { open.value = false }
 }]
 
@@ -35,6 +36,7 @@ const managementLinks = [{
   label: 'Seguimiento',
   icon: 'i-lucide-hard-hat',
   to: '/rrhh/seguimiento',
+  exact: true,
   onSelect: () => { open.value = false }
 }, {
   label: 'Usuarios',
@@ -54,7 +56,7 @@ const managementLinks = [{
 const inventoryLinks = [{
   label: 'Inventario',
   icon: 'i-lucide-boxes',
-  defaultOpen: true,
+  defaultOpen: false,
   children: [{
     label: 'Gestion de Inventario',
     icon: 'i-lucide-clipboard-list',
@@ -74,7 +76,7 @@ const inventoryLinks = [{
 const requestsLinks = [{
   label: 'Solicitudes',
   icon: 'i-lucide-list-checks',
-  defaultOpen: true,
+  defaultOpen: false,
   children: [{
     label: 'Mixta',
     icon: 'i-lucide-layers-3',
@@ -84,7 +86,7 @@ const requestsLinks = [{
   }, {
     label: 'Compra',
     icon: 'i-lucide-shopping-bag',
-    to: '/rrhh/inventario/solicitudes/compra',
+    to: '/rrhh/inventario/solicitudes-compra',
     exact: true,
     onSelect: () => { open.value = false }
   }]
@@ -95,11 +97,13 @@ const reportLinks = [{
   label: 'Incidencias',
   icon: 'i-lucide-alert-triangle',
   to: '/rrhh/incidencias',
+  exact: true,
   onSelect: () => { open.value = false }
 }, {
   label: 'Tardanzas',
   icon: 'i-lucide-clock-3',
   to: '/rrhh/tardanzas',
+  exact: true,
   onSelect: () => { open.value = false }
 }, {
   label: 'Movilidad',
@@ -121,6 +125,7 @@ const reportLinks = [{
   label: 'Eventos',
   icon: 'i-lucide-calendar-days',
   to: '/rrhh/eventos',
+  exact: true,
   onSelect: () => { open.value = false }
 }]
 
@@ -175,9 +180,7 @@ onMounted(async () => {
         </div>
       </template>
       <template #default="{ collapsed }">
-        <!-- <div :class="collapsed ? 'sidebar-search sidebar-search--collapsed' : 'sidebar-search'">
-          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
-        </div> -->
+
 
         <div :class="['sidebar-nav', collapsed ? 'mt-1 sidebar-nav--collapsed space-y-2' : 'mt-2 space-y-2']">
         <UNavigationMenu
@@ -297,25 +300,34 @@ onMounted(async () => {
   border-radius: 0.75rem;
   border: 1px solid transparent;
   padding: 0.62rem 0.82rem;
-  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .sidebar-nav :deep(a:hover),
-.sidebar-nav :deep(button:hover),
-.sidebar-nav :deep(a[data-state='open']),
-.sidebar-nav :deep(button[data-state='open']) {
-  background: rgb(255 255 255 / 0.9);
+.sidebar-nav :deep(button:hover) {
+  background: rgb(255 255 255 / 0.98);
   color: rgb(17 24 39);
-  border-color: rgb(237 239 243);
+  border-color: rgb(212 219 230);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.08);
+  transform: translateX(1px);
+}
+
+.sidebar-nav :deep(a[data-state='open']:not([aria-current='page'])),
+.sidebar-nav :deep(button[data-state='open']:not([aria-current='page'])) {
+  background: transparent;
+  color: rgb(55 65 81);
+  border-color: transparent;
   box-shadow: none;
+  transform: none;
 }
 
 .sidebar-nav :deep(a[aria-current='page']),
 .sidebar-nav :deep(button[aria-current='page']) {
   background: rgb(255 255 255);
   color: rgb(17 24 39);
-  border-color: rgb(233 236 241);
-  box-shadow: none;
+  border-color: rgb(191 203 222);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.08);
+  font-weight: 600;
 }
 
 .sidebar-nav :deep(a[aria-current='page'] span[class*='i-']),
@@ -330,20 +342,29 @@ onMounted(async () => {
 
 :global(.dark) .sidebar-nav :deep(a[aria-current='page']),
 :global(.dark) .sidebar-nav :deep(button[aria-current='page']) {
-  background: rgb(31 41 55 / 0.92);
-  color: rgb(229 231 235);
-  border-color: rgb(82 92 108);
-  box-shadow: none;
+  background: rgb(31 41 55 / 0.96);
+  color: rgb(243 244 246);
+  border-color: rgb(100 112 130);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.28);
+  font-weight: 600;
 }
 
 :global(.dark) .sidebar-nav :deep(a:hover),
-:global(.dark) .sidebar-nav :deep(button:hover),
-:global(.dark) .sidebar-nav :deep(a[data-state='open']),
-:global(.dark) .sidebar-nav :deep(button[data-state='open']) {
-  background: rgb(31 41 55 / 0.86);
-  color: rgb(229 231 235);
-  border-color: rgb(82 92 108);
+:global(.dark) .sidebar-nav :deep(button:hover) {
+  background: rgb(31 41 55 / 0.92);
+  color: rgb(243 244 246);
+  border-color: rgb(96 109 128);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.22);
+  transform: translateX(1px);
+}
+
+:global(.dark) .sidebar-nav :deep(a[data-state='open']:not([aria-current='page'])),
+:global(.dark) .sidebar-nav :deep(button[data-state='open']:not([aria-current='page'])) {
+  background: transparent;
+  color: rgb(209 213 219);
+  border-color: transparent;
   box-shadow: none;
+  transform: none;
 }
 
 :global(.dark) .sidebar-nav :deep(a[aria-current='page'] span[class*='i-']),

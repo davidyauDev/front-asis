@@ -63,20 +63,16 @@
             class="min-w-[190px] justify-center whitespace-nowrap border-transparent !bg-[#2d5fc0] !text-white font-semibold shadow-sm transition-all hover:!bg-[#244ea4] active:!bg-[#1d428d] disabled:shadow-none"
           >
             <template #leading>
-              <UIcon name="i-lucide-file-spreadsheet" class="w-4 h-4" />
+              <UIcon name="i-lucide-download" class="w-4 h-4" />
             </template>
             <span class="hidden sm:inline">
-              {{ exportando ? 'Descargando...' : 'Descargar reporte' }}
+              {{ exportando ? 'Descargando...' : 'Descargar' }}
             </span>
             <span class="sm:hidden">
-              {{ exportando ? 'Descargando...' : 'Excel' }}
+              {{ exportando ? 'Descargando...' : 'Descargar' }}
             </span>
           </UButton>
         </UTooltip>
-
-        <span class="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-900/70 dark:text-gray-300">
-          {{ dailyListAttendaces.length }} registros
-        </span>
       </div>
 
     </div>
