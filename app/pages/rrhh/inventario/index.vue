@@ -14,14 +14,14 @@ const inventorySections = [
     title: 'Solicitudes Mixta',
     description: 'Seguimiento de pedidos internos mixtos.',
     icon: 'i-lucide-list-checks',
-    to: '/rrhh/inventario/solicitudes',
+    to: '/rrhh/solicitud',
     tone: 'from-emerald-500/20 to-teal-500/10',
   },
   {
     title: 'Solicitudes Compra',
     description: 'Flujo de aprobacion y reembolso de compras.',
     icon: 'i-lucide-shopping-bag',
-    to: '/rrhh/inventario/solicitudes-compra',
+    to: '/rrhh/solicitud/compra',
     tone: 'from-cyan-500/20 to-blue-500/10',
   },
   {

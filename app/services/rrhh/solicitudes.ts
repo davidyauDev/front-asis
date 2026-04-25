@@ -153,6 +153,98 @@ export interface SolicitudProductosRrhhResponse {
   data: SolicitudProductoRrhhItem[]
 }
 
+export interface ComprobanteGastoRrhhItem {
+  id: number
+  solicitud_gasto_id: number
+  monto_estimado?: number | null
+  monto_real?: number | null
+  solicitud_gasto: {
+    id: number
+    staff_id: number
+    solicitante: string
+    username?: string | null
+    area?: string | null
+    motivo?: string | null
+    estado: string
+    fecha_solicitud?: string | null
+    fecha_aprobacion: string | null
+    fecha_reembolso: string | null
+  }
+  solicitud_gasto_detalles: Array<{
+    id: number
+    solicitud_gasto_id: number
+    id_producto: number
+    cantidad: number | string
+    precio_estimado: number | string | null
+    precio_real: number | string | null
+    descripcion_adicional: string | null
+    ruta_imagen: string | null
+    url_imagen: string | null
+    producto?: string | null
+  }>
+  comprobante: {
+    id: number
+    tipo: string
+    numero: string
+    monto: number | string
+    archivo_url: string | null
+  }
+}
+
+export interface ComprobantesGastoRrhhResponse {
+  success: boolean
+  message?: string
+  data: ComprobanteGastoRrhhItem[] | null
+}
+
+export interface ComprobantesGastoRrhhParams {
+  staff_id?: number | string
+  estado?: string
+}
+
+export interface SolicitudGastoHistorialUsuario {
+  staff_id?: number | null
+  username?: string | null
+  firstname?: string | null
+  lastname?: string | null
+  full_name?: string | null
+  area?: string | null
+}
+
+export interface SolicitudGastoHistorialItem {
+  id: number
+  solicitud_gasto_id: number
+  estado_anterior: string | null
+  estado_nuevo: string | null
+  comentario: string | null
+  fecha: string | null
+  usuario: SolicitudGastoHistorialUsuario | null
+}
+
+export interface SolicitudGastoHistorialData {
+  solicitud_gasto: {
+    id: number
+    staff_id: number
+    solicitante: string
+    username: string
+    area: string
+    motivo: string
+    monto_estimado: number | null
+    monto_real: number | null
+    estado: string
+    fecha_solicitud: string
+    fecha_aprobacion: string | null
+    fecha_reembolso: string | null
+  }
+  data: SolicitudGastoHistorialItem[]
+}
+
+export interface SolicitudGastoHistorialResponse {
+  success: boolean
+  message?: string
+  data: SolicitudGastoHistorialData | null
+}
+
 export interface AprobarDetalleSolicitudPayload {
   cantidad_aprobada: number
   motivo?: string | null
@@ -187,6 +279,16 @@ export interface SolicitudListParams {
 export interface SolicitudProductosRrhhParams {
   staff_id?: number | string
   id_producto?: number | string
+}
+
+const buildComprobantesGastoQuery = (params: ComprobantesGastoRrhhParams) => {
+  const query = new URLSearchParams()
+
+  if (params.staff_id !== undefined && params.staff_id !== '') query.set('staff_id', String(params.staff_id))
+  if (params.estado !== undefined && params.estado !== '') query.set('estado', params.estado)
+
+  const queryString = query.toString()
+  return queryString ? `?${queryString}` : ''
 }
 
 const buildQuery = (params: SolicitudListParams) => {
@@ -228,6 +330,18 @@ export const getSolicitudProductosRrhh = async (
   params: SolicitudProductosRrhhParams = {},
 ): Promise<SolicitudProductosRrhhResponse> => {
   return apiFetch(`/api/solicitudes/productos-rrhh${buildProductosRrhhQuery(params)}`)
+}
+
+export const getComprobantesGastoRrhh = async (
+  params: ComprobantesGastoRrhhParams = {},
+): Promise<ComprobantesGastoRrhhResponse> => {
+  return apiFetch(`/api/solicitudes-gasto/comprobantes${buildComprobantesGastoQuery(params)}`)
+}
+
+export const getSolicitudGastoHistorial = async (
+  id: number | string,
+): Promise<SolicitudGastoHistorialResponse> => {
+  return apiFetch(`/api/solicitudes-gasto/${id}/historial`)
 }
 
 export const aprobarDetalleSolicitud = async (

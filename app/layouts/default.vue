@@ -80,13 +80,13 @@ const requestsLinks = [{
   children: [{
     label: 'Mixta',
     icon: 'i-lucide-layers-3',
-    to: '/rrhh/inventario/solicitudes',
+    to: '/rrhh/solicitud',
     exact: true,
     onSelect: () => { open.value = false }
   }, {
     label: 'Compra',
     icon: 'i-lucide-shopping-bag',
-    to: '/rrhh/inventario/solicitudes-compra',
+    to: '/rrhh/solicitud/compra',
     exact: true,
     onSelect: () => { open.value = false }
   }]
