@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import {
-  getComprobantesGastoRrhh,
+  aprobarSolicitudCompraFinal,
+  enviarSolicitudCompraGerencia,
+  getSolicitudesCompraRrhh,
+  rechazarSolicitudCompra,
   type ComprobanteGastoRrhhItem,
+  type SolicitudCompraWorkflowActionPayload,
 } from '~/services/rrhh/solicitudes'
 
 definePageMeta({ middleware: 'auth' })
@@ -16,10 +20,30 @@ const loading = shallowRef(false)
 const error = shallowRef<string | null>(null)
 const comprobantes = shallowRef<ComprobanteGastoRrhhItem[]>([])
 const expandedItemId = shallowRef<number | null>(null)
+const manageModalOpen = shallowRef(false)
+const managingItemId = shallowRef<number | null>(null)
+const manageSubmitting = shallowRef(false)
+const manageComment = shallowRef('')
 const staffIdFilter = shallowRef('')
 const estadoFilter = shallowRef('')
-const mockEstadoMap = reactive<Record<number, string>>({})
 const toast = useToast()
+
+type WorkflowState = 'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobada_final' | 'rechazada'
+type SolicitudDetalle = {
+  id: number
+  id_producto: number | string
+  cantidad?: number | string | null
+  precio_estimado?: number | string | null
+  precio_real?: number | string | null
+  descripcion_adicional?: string | null
+  ruta_imagen?: string | null
+  url_imagen?: string | null
+  producto?: string | {
+    codigo_producto?: string | null
+    descripcion?: string | null
+    nombre?: string | null
+  } | null
+}
 
 const parseDate = (value?: string | null) => {
   if (!value) return null
@@ -73,8 +97,27 @@ const parseTextFilter = (value: string) => {
   return trimmed || undefined
 }
 
-const getEstadoColor = (estado?: string | null): 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
+const inferWorkflowState = (estado?: string | null): WorkflowState => {
   const normalized = (estado ?? '').toLowerCase()
+  if (normalized.includes('rech')) return 'rechazada'
+  if (normalized.includes('aprob')) return 'aprobada_final'
+  if (normalized.includes('geren')) return 'pendiente_gerencia'
+  return 'pendiente_rrhh'
+}
+
+const getVisibleEstado = (item: ComprobanteGastoRrhhItem): WorkflowState => {
+  const canonical = item.workflow_state
+  if (canonical === 'pendiente_rrhh' || canonical === 'pendiente_gerencia' || canonical === 'aprobada_final' || canonical === 'rechazada') {
+    return canonical
+  }
+  return inferWorkflowState(item.solicitud_gasto.estado)
+}
+
+const getEstadoColor = (estado?: WorkflowState | string | null): 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
+  const normalized = (estado ?? '').toLowerCase()
+  if (normalized === 'pendiente_rrhh' || normalized === 'pendiente_gerencia') return 'warning'
+  if (normalized === 'aprobada_final') return 'success'
+  if (normalized === 'rechazada') return 'error'
   if (normalized.includes('aprob')) return 'success'
   if (normalized.includes('pend')) return 'warning'
   if (normalized.includes('rech')) return 'error'
@@ -82,26 +125,55 @@ const getEstadoColor = (estado?: string | null): 'success' | 'warning' | 'error'
   return 'neutral'
 }
 
-const getEstadoLabel = (estado?: string | null) => {
+const getEstadoLabel = (estado?: WorkflowState | string | null) => {
+  if (estado === 'pendiente_rrhh') return 'Pendiente RRHH'
+  if (estado === 'pendiente_gerencia') return 'Pendiente Gerencia'
+  if (estado === 'aprobada_final') return 'Aprobada final'
+  if (estado === 'rechazada') return 'Rechazada'
   const normalized = (estado ?? '').trim()
   return normalized || '--'
 }
 
-const getVisibleEstado = (item: ComprobanteGastoRrhhItem) => {
-  return mockEstadoMap[item.solicitud_gasto.id] ?? item.solicitud_gasto.estado
+const getItemDetalles = (item: ComprobanteGastoRrhhItem): SolicitudDetalle[] => {
+  const fromNewApi = (item as ComprobanteGastoRrhhItem & { detalles?: SolicitudDetalle[] }).detalles
+  if (Array.isArray(fromNewApi)) return fromNewApi
+  if (Array.isArray(item.solicitud_gasto_detalles)) return item.solicitud_gasto_detalles as SolicitudDetalle[]
+  return []
 }
 
-const getDetalleImageUrl = (detalle: ComprobanteGastoRrhhItem['solicitud_gasto_detalles'][number]) => {
+const getDetalleImageUrl = (detalle: SolicitudDetalle) => {
   const url = detalle.url_imagen || detalle.ruta_imagen
   if (!url) return null
   const normalized = url.trim()
   return normalized || null
 }
 
-const getDetalleProductoLabel = (detalle: ComprobanteGastoRrhhItem['solicitud_gasto_detalles'][number]) => {
-  const producto = detalle.producto?.trim()
-  return producto || `Producto #${detalle.id_producto}`
+const getDetalleProductoLabel = (detalle: SolicitudDetalle) => {
+  if (typeof detalle.producto === 'string') {
+    const producto = detalle.producto.trim()
+    if (producto) return producto
+  }
+
+  if (detalle.producto && typeof detalle.producto === 'object') {
+    const descripcion = detalle.producto.descripcion?.trim()
+    if (descripcion) return descripcion
+    const nombre = detalle.producto.nombre?.trim()
+    if (nombre) return nombre
+  }
+
+  return `Producto #${detalle.id_producto}`
 }
+
+const getComprobanteById = (id?: number | null) => {
+  if (!id) return null
+  return comprobantes.value.find((item) => item.id === id) ?? null
+}
+
+const managingItem = computed(() => getComprobanteById(managingItemId.value))
+const managingState = computed<WorkflowState | null>(() => {
+  if (!managingItem.value) return null
+  return getVisibleEstado(managingItem.value)
+})
 
 const getSolicitanteLabel = (item: ComprobanteGastoRrhhItem) => {
   const name = item.solicitud_gasto.solicitante?.trim()
@@ -113,14 +185,95 @@ const getComprobanteTipo = (item: ComprobanteGastoRrhhItem) => {
   return tipo || '--'
 }
 
-const approveRequestMock = (item: ComprobanteGastoRrhhItem) => {
-  mockEstadoMap[item.solicitud_gasto.id] = 'aprobada'
-  toast.add({
-    title: 'Solicitud aprobada',
-    description: 'Cambio simulado solo en frontend.',
-    color: 'success',
-  })
+const openManageModal = (item: ComprobanteGastoRrhhItem) => {
+  managingItemId.value = item.id
+  manageComment.value = ''
+  manageModalOpen.value = true
 }
+
+const closeManageModal = () => {
+  manageModalOpen.value = false
+  managingItemId.value = null
+  manageComment.value = ''
+}
+
+const getManagePayload = (): SolicitudCompraWorkflowActionPayload => {
+  const comentario = manageComment.value.trim()
+  return comentario ? { comentario } : {}
+}
+
+const extractActionErrorMessage = (cause: unknown) => {
+  if (cause && typeof cause === 'object') {
+    const candidate = cause as { message?: unknown; data?: { message?: unknown } }
+    if (typeof candidate.data?.message === 'string') return candidate.data.message
+    if (typeof candidate.message === 'string') return candidate.message
+  }
+  return 'No se pudo completar la accion.'
+}
+
+const executeManageAction = async (
+  action: (id: number, payload: SolicitudCompraWorkflowActionPayload) => Promise<{ success: boolean; message?: string }>,
+  successTitle: string,
+  successColor: 'success' | 'info' | 'error',
+) => {
+  if (!managingItem.value || manageSubmitting.value) return
+
+  const id = managingItem.value.id
+  manageSubmitting.value = true
+
+  try {
+    const response = await action(id, getManagePayload())
+    toast.add({
+      title: successTitle,
+      description: response.message || 'Operacion realizada correctamente.',
+      color: successColor,
+    })
+    closeManageModal()
+    await loadComprobantes()
+  } catch (cause) {
+    toast.add({
+      title: 'Error',
+      description: extractActionErrorMessage(cause),
+      color: 'error',
+    })
+  } finally {
+    manageSubmitting.value = false
+  }
+}
+
+const sendToGerenciaFromManageModal = async () => {
+  await executeManageAction(enviarSolicitudCompraGerencia, 'Enviado a gerencia', 'info')
+}
+
+const approveFinalFromManageModal = async () => {
+  await executeManageAction(aprobarSolicitudCompraFinal, 'Solicitud aprobada final', 'success')
+}
+
+const rejectFromManageModal = async () => {
+  await executeManageAction(rechazarSolicitudCompra, 'Solicitud rechazada', 'error')
+}
+
+const getFlowStageTitle = (estado?: WorkflowState | null) => {
+  if (estado === 'pendiente_rrhh') return 'Validacion RRHH'
+  if (estado === 'pendiente_gerencia') return 'Decision de gerencia'
+  if (estado === 'aprobada_final') return 'Solicitud cerrada: aprobada'
+  if (estado === 'rechazada') return 'Solicitud cerrada: rechazada'
+  return 'Gestion de solicitud'
+}
+
+const getFlowStageDescription = (estado?: WorkflowState | null) => {
+  if (estado === 'pendiente_rrhh') return 'Primer paso: validar la solicitud y enviarla a gerencia.'
+  if (estado === 'pendiente_gerencia') return 'Esperando decision de gerencia: aprobar final o rechazar.'
+  if (estado === 'aprobada_final') return 'No hay acciones pendientes para esta solicitud.'
+  if (estado === 'rechazada') return 'No hay acciones pendientes para esta solicitud.'
+  return 'Flujo de aprobacion de solicitud de compra.'
+}
+
+const canSendToGerencia = computed(() => managingState.value === 'pendiente_rrhh')
+const canApproveFinal = computed(() => managingState.value === 'pendiente_gerencia')
+const canRejectInFlow = computed(() => {
+  return managingState.value === 'pendiente_rrhh' || managingState.value === 'pendiente_gerencia'
+})
 
 const extractErrorMessage = (cause: unknown) => {
   if (cause && typeof cause === 'object') {
@@ -142,9 +295,9 @@ const loadComprobantes = async () => {
   error.value = null
 
   try {
-    const response = await getComprobantesGastoRrhh({
+    const response = await getSolicitudesCompraRrhh({
       staff_id: parseNumberFilter(staffIdFilter.value),
-      estado: parseTextFilter(estadoFilter.value),
+      workflow_state: parseTextFilter(estadoFilter.value),
     })
 
     comprobantes.value = response.data ?? []
@@ -152,9 +305,13 @@ const loadComprobantes = async () => {
     if (expandedItemId.value && !comprobantes.value.some((item) => item.id === expandedItemId.value)) {
       expandedItemId.value = null
     }
+    if (manageModalOpen.value && managingItemId.value && !comprobantes.value.some((item) => item.id === managingItemId.value)) {
+      closeManageModal()
+    }
   } catch (cause) {
     comprobantes.value = []
     expandedItemId.value = null
+    closeManageModal()
     error.value = extractErrorMessage(cause)
   } finally {
     loading.value = false
@@ -210,7 +367,7 @@ onMounted(() => {
             />
             <UInput
               v-model="estadoFilter"
-              placeholder="estado"
+              placeholder="workflow_state"
               class="w-full sm:w-48"
             />
 
@@ -239,8 +396,8 @@ onMounted(() => {
                   <th class="w-[120px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ESTADO</th>
                   <th class="w-[150px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">FECHA SOLICITUD</th>
                   <th class="w-[120px] px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">MONTO</th>
-                  <th class="w-[150px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ARCHIVO</th>
-                  <th class="w-[120px] rounded-tr-2xl px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">DETALLE</th>
+                  <th class="w-[150px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">PRODUCTOS</th>
+                  <th class="w-[140px] rounded-tr-2xl px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ACCIONES</th>
                 </tr>
               </thead>
 
@@ -308,34 +465,26 @@ onMounted(() => {
                         </div>
                       </td>
                       <td class="px-3 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
-                        S/ {{ formatMoney(item.comprobante.monto) }}
+                        S/ 130.00
                       </td>
                       <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
-                        <UButton
-                          v-if="item.comprobante.archivo_url"
-                          :href="item.comprobante.archivo_url"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          color="primary"
-                          variant="soft"
-                          size="xs"
-                          class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                          @click.stop
-                        >
-                          Ver archivo
-                        </UButton>
-                        <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin archivo</span>
+                        <span class="font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
+                          {{ getItemDetalles(item).length }}
+                        </span>
+                        <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                          {{ getItemDetalles(item).length === 1 ? 'producto' : 'productos' }}
+                        </span>
                       </td>
                       <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
                         <UButton
                           color="primary"
                           variant="soft"
                           size="xs"
+                          icon="i-lucide-settings-2"
                           class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                          :icon="isExpanded(item) ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-                          @click.stop="toggleRow(item)"
+                          @click.stop="openManageModal(item)"
                         >
-                          {{ isExpanded(item) ? 'Ocultar' : 'Ver' }}
+                          Gestionar
                         </UButton>
                       </td>
                     </tr>
@@ -360,13 +509,13 @@ onMounted(() => {
                             <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
                               <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comprobante</p>
                               <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                                {{ getComprobanteTipo(item) }} - {{ displayValue(item.comprobante.numero) }}
+                                {{ getComprobanteTipo(item) }} - {{ displayValue(item.comprobante?.numero) }}
                               </p>
                               <p class="text-xs text-gray-500 dark:text-gray-400">
-                                Monto: S/ {{ formatMoney(item.comprobante.monto) }}
+                                Monto: S/ 130.00
                               </p>
                               <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                Archivo: {{ item.comprobante.archivo_url ? 'Disponible' : 'No disponible' }}
+                                Archivo: {{ item.comprobante?.archivo_url ? 'Disponible' : 'No disponible' }}
                               </p>
                             </div>
 
@@ -379,27 +528,6 @@ onMounted(() => {
                                 Solicitud #{{ item.solicitud_gasto.id }}
                               </p>
                             </div>
-                          </div>
-
-                          <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-                            <div>
-                              <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
-                                Accion simulada
-                              </p>
-                              <p class="text-xs text-emerald-800 dark:text-emerald-300">
-                                Este boton solo cambia el estado en el frontend.
-                              </p>
-                            </div>
-
-                            <UButton
-                              color="success"
-                              class="rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
-                              icon="i-lucide-check"
-                              :disabled="getVisibleEstado(item) === 'aprobada'"
-                              @click.stop="approveRequestMock(item)"
-                            >
-                              {{ getVisibleEstado(item) === 'aprobada' ? 'Aprobada' : 'Aprobar solicitud' }}
-                            </UButton>
                           </div>
 
                           <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
@@ -419,7 +547,7 @@ onMounted(() => {
 
                                 <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
                                   <tr
-                                    v-for="detalle in item.solicitud_gasto_detalles"
+                                    v-for="detalle in getItemDetalles(item)"
                                     :key="`detalle-${detalle.id}`"
                                     class="hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
                                   >
@@ -464,7 +592,7 @@ onMounted(() => {
                                     </td>
                                   </tr>
 
-                                  <tr v-if="!item.solicitud_gasto_detalles.length">
+                                  <tr v-if="!getItemDetalles(item).length">
                                     <td colspan="7" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                       No hay detalles para esta solicitud.
                                     </td>
@@ -491,4 +619,222 @@ onMounted(() => {
       </div>
     </template>
   </UDashboardPanel>
+
+  <UModal
+    v-model:open="manageModalOpen"
+    class="w-full max-w-6xl"
+    :title="`Gestionar solicitud #${managingItem?.solicitud_gasto.id ?? '--'}`"
+  >
+    <template #content>
+      <div class="space-y-4 p-4">
+        <div
+          v-if="managingItem"
+          class="space-y-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950/70"
+        >
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+            Flujo de aprobacion
+          </p>
+          <div class="space-y-1 text-sm text-gray-700 dark:text-gray-200">
+            <p>
+              <span class="font-semibold">Solicitante:</span>
+              {{ getSolicitanteLabel(managingItem) }}
+            </p>
+            <p>
+              <span class="font-semibold">Monto:</span>
+              S/ 130.00
+            </p>
+            <p class="flex items-center gap-2">
+              <span class="font-semibold">Estado:</span>
+              <UBadge class="capitalize" variant="subtle" :color="getEstadoColor(getVisibleEstado(managingItem))">
+                {{ getEstadoLabel(getVisibleEstado(managingItem)) }}
+              </UBadge>
+            </p>
+            <p>
+              <span class="font-semibold">Etapa:</span>
+              {{ getFlowStageTitle(managingState) }}
+            </p>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{ getFlowStageDescription(managingState) }}
+          </p>
+        </div>
+
+        <div
+          v-if="managingItem"
+          class="grid gap-3 xl:grid-cols-3"
+        >
+          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Solicitud</p>
+            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+              {{ getSolicitanteLabel(managingItem) }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ displayValue(managingItem.solicitud_gasto.username) }}
+            </p>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Area: {{ displayValue(managingItem.solicitud_gasto.area) }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Fecha: {{ formatDate(managingItem.solicitud_gasto.fecha_solicitud) }} {{ formatTime(managingItem.solicitud_gasto.fecha_solicitud) }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comprobante</p>
+            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+              {{ getComprobanteTipo(managingItem) }} - {{ displayValue(managingItem.comprobante?.numero) }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Monto: S/ 130.00
+            </p>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Archivo: {{ managingItem.comprobante?.archivo_url ? 'Disponible' : 'No disponible' }}
+            </p>
+            <UButton
+              v-if="managingItem.comprobante?.archivo_url"
+              :href="managingItem.comprobante?.archivo_url || undefined"
+              target="_blank"
+              rel="noopener noreferrer"
+              color="primary"
+              variant="soft"
+              size="xs"
+              class="mt-2 rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+            >
+              Ver archivo
+            </UButton>
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Resumen</p>
+            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+              Solicitud #{{ managingItem.solicitud_gasto.id }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Detalles: {{ getItemDetalles(managingItem).length }}
+            </p>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Motivo: {{ displayValue(managingItem.solicitud_gasto.motivo) }}
+            </p>
+          </div>
+        </div>
+
+        <div
+          v-if="managingItem"
+          class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800"
+        >
+          <div class="max-h-[32vh] overflow-auto">
+            <table class="min-w-[980px] w-full border-separate border-spacing-0">
+              <thead class="bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                <tr>
+                  <th class="rounded-tl-2xl px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Producto</th>
+                  <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
+                  <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio estimado</th>
+                  <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio real</th>
+                  <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
+                  <th class="rounded-tr-2xl px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Imagen</th>
+                </tr>
+              </thead>
+
+              <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                <tr
+                  v-for="detalle in getItemDetalles(managingItem)"
+                  :key="`manage-detalle-${detalle.id}`"
+                  class="hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
+                >
+                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    <div class="space-y-1">
+                      <p class="font-medium">{{ detalle.id_producto }}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">{{ getDetalleProductoLabel(detalle) }}</p>
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    {{ displayValue(detalle.cantidad) }}
+                  </td>
+                  <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">
+                    S/ {{ formatMoney(detalle.precio_estimado) }}
+                  </td>
+                  <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">
+                    S/ {{ formatMoney(detalle.precio_real) }}
+                  </td>
+                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(detalle.descripcion_adicional) }}</p>
+                  </td>
+                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    <div class="flex flex-col gap-1">
+                      <p class="max-w-[280px] truncate">{{ displayValue(detalle.url_imagen || detalle.ruta_imagen) }}</p>
+                      <UButton
+                        v-if="getDetalleImageUrl(detalle)"
+                        :href="getDetalleImageUrl(detalle) || undefined"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        color="primary"
+                        variant="soft"
+                        size="xs"
+                        class="w-fit rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                      >
+                        Abrir imagen
+                      </UButton>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr v-if="!getItemDetalles(managingItem).length">
+                  <td colspan="6" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No hay detalles para esta solicitud.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+            Comentario de gestion (opcional)
+          </p>
+          <UTextarea
+            v-model="manageComment"
+            :rows="3"
+            placeholder="Escribe un comentario para la transicion de estado"
+            :disabled="manageSubmitting"
+          />
+        </div>
+
+        <div class="flex flex-wrap justify-end gap-2">
+          <UButton color="neutral" variant="outline" :disabled="manageSubmitting" @click="closeManageModal">
+            Cancelar
+          </UButton>
+          <UButton
+            color="primary"
+            icon="i-lucide-send"
+            :loading="manageSubmitting"
+            :disabled="manageSubmitting || !canSendToGerencia"
+            @click="sendToGerenciaFromManageModal"
+          >
+            {{ canSendToGerencia ? 'Validar y enviar a gerencia' : 'Ya enviado a gerencia' }}
+          </UButton>
+          <UButton
+            color="error"
+            icon="i-lucide-x"
+            variant="soft"
+            :loading="manageSubmitting"
+            :disabled="manageSubmitting || !canRejectInFlow"
+            @click="rejectFromManageModal"
+          >
+            {{ canRejectInFlow ? 'Rechazar solicitud' : 'Rechazada' }}
+          </UButton>
+          <UButton
+            color="success"
+            icon="i-lucide-check"
+            class="rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
+            :loading="manageSubmitting"
+            :disabled="manageSubmitting || !canApproveFinal"
+            @click="approveFinalFromManageModal"
+          >
+            {{ canApproveFinal ? 'Aprobar final' : 'Aprobada final' }}
+          </UButton>
+        </div>
+      </div>
+    </template>
+  </UModal>
 </template>

@@ -158,6 +158,8 @@ export interface ComprobanteGastoRrhhItem {
   solicitud_gasto_id: number
   monto_estimado?: number | null
   monto_real?: number | null
+  workflow_state?: 'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobada_final' | 'rechazada' | null
+  workflow_allowed_actions?: string[] | null
   solicitud_gasto: {
     id: number
     staff_id: number
@@ -182,13 +184,29 @@ export interface ComprobanteGastoRrhhItem {
     url_imagen: string | null
     producto?: string | null
   }>
-  comprobante: {
+  detalles?: Array<{
+    id: number
+    solicitud_gasto_id: number
+    id_producto: number
+    cantidad: number | string
+    precio_estimado: number | string | null
+    precio_real: number | string | null
+    descripcion_adicional: string | null
+    ruta_imagen: string | null
+    url_imagen?: string | null
+    producto?: string | {
+      codigo_producto?: string | null
+      descripcion?: string | null
+      nombre?: string | null
+    } | null
+  }>
+  comprobante?: {
     id: number
     tipo: string
     numero: string
     monto: number | string
     archivo_url: string | null
-  }
+  } | null
 }
 
 export interface ComprobantesGastoRrhhResponse {
@@ -200,6 +218,30 @@ export interface ComprobantesGastoRrhhResponse {
 export interface ComprobantesGastoRrhhParams {
   staff_id?: number | string
   estado?: string
+}
+
+export type SolicitudCompraWorkflowState =
+  | 'pendiente_rrhh'
+  | 'pendiente_gerencia'
+  | 'aprobada_final'
+  | 'rechazada'
+
+export interface SolicitudesCompraRrhhParams {
+  solicitud_gasto_id?: number | string
+  staff_id?: number | string
+  id_area?: number | string
+  workflow_state?: SolicitudCompraWorkflowState | string
+}
+
+export interface SolicitudCompraWorkflowActionPayload {
+  comentario?: string | null
+  staff_id?: number | null
+}
+
+export interface SolicitudCompraWorkflowActionResponse {
+  success: boolean
+  message?: string
+  data?: ComprobanteGastoRrhhItem | null
 }
 
 export interface SolicitudGastoHistorialUsuario {
@@ -291,6 +333,20 @@ const buildComprobantesGastoQuery = (params: ComprobantesGastoRrhhParams) => {
   return queryString ? `?${queryString}` : ''
 }
 
+const buildSolicitudesCompraRrhhQuery = (params: SolicitudesCompraRrhhParams) => {
+  const query = new URLSearchParams()
+
+  if (params.solicitud_gasto_id !== undefined && params.solicitud_gasto_id !== '') {
+    query.set('solicitud_gasto_id', String(params.solicitud_gasto_id))
+  }
+  if (params.staff_id !== undefined && params.staff_id !== '') query.set('staff_id', String(params.staff_id))
+  if (params.id_area !== undefined && params.id_area !== '') query.set('id_area', String(params.id_area))
+  if (params.workflow_state !== undefined && params.workflow_state !== '') query.set('workflow_state', String(params.workflow_state))
+
+  const queryString = query.toString()
+  return queryString ? `?${queryString}` : ''
+}
+
 const buildQuery = (params: SolicitudListParams) => {
   const query = new URLSearchParams()
 
@@ -336,6 +392,42 @@ export const getComprobantesGastoRrhh = async (
   params: ComprobantesGastoRrhhParams = {},
 ): Promise<ComprobantesGastoRrhhResponse> => {
   return apiFetch(`/api/solicitudes-gasto/comprobantes${buildComprobantesGastoQuery(params)}`)
+}
+
+export const getSolicitudesCompraRrhh = async (
+  params: SolicitudesCompraRrhhParams = {},
+): Promise<ComprobantesGastoRrhhResponse> => {
+  return apiFetch(`/api/rrhh/solicitudes-compra${buildSolicitudesCompraRrhhQuery(params)}`)
+}
+
+export const enviarSolicitudCompraGerencia = async (
+  id: number | string,
+  payload: SolicitudCompraWorkflowActionPayload = {},
+): Promise<SolicitudCompraWorkflowActionResponse> => {
+  return apiFetch(`/api/rrhh/solicitudes-compra/${id}/enviar-gerencia`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export const aprobarSolicitudCompraFinal = async (
+  id: number | string,
+  payload: SolicitudCompraWorkflowActionPayload = {},
+): Promise<SolicitudCompraWorkflowActionResponse> => {
+  return apiFetch(`/api/rrhh/solicitudes-compra/${id}/aprobar-final`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export const rechazarSolicitudCompra = async (
+  id: number | string,
+  payload: SolicitudCompraWorkflowActionPayload = {},
+): Promise<SolicitudCompraWorkflowActionResponse> => {
+  return apiFetch(`/api/rrhh/solicitudes-compra/${id}/rechazar`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export const getSolicitudGastoHistorial = async (
