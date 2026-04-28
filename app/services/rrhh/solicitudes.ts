@@ -230,6 +230,7 @@ export interface SolicitudesCompraRrhhParams {
   solicitud_gasto_id?: number | string
   staff_id?: number | string
   id_area?: number | string
+  estado_id?: number | string
   workflow_state?: SolicitudCompraWorkflowState | string
 }
 
@@ -341,6 +342,7 @@ const buildSolicitudesCompraRrhhQuery = (params: SolicitudesCompraRrhhParams) =>
   }
   if (params.staff_id !== undefined && params.staff_id !== '') query.set('staff_id', String(params.staff_id))
   if (params.id_area !== undefined && params.id_area !== '') query.set('id_area', String(params.id_area))
+  if (params.estado_id !== undefined && params.estado_id !== '') query.set('estado_id', String(params.estado_id))
   if (params.workflow_state !== undefined && params.workflow_state !== '') query.set('workflow_state', String(params.workflow_state))
 
   const queryString = query.toString()
@@ -397,7 +399,7 @@ export const getComprobantesGastoRrhh = async (
 export const getSolicitudesCompraRrhh = async (
   params: SolicitudesCompraRrhhParams = {},
 ): Promise<ComprobantesGastoRrhhResponse> => {
-  return apiFetch(`/api/rrhh/solicitudes-compra${buildSolicitudesCompraRrhhQuery(params)}`)
+  return apiFetch(`/api/solicitudes-gasto/comprobantes${buildSolicitudesCompraRrhhQuery(params)}`)
 }
 
 export const enviarSolicitudCompraGerencia = async (

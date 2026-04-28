@@ -19,14 +19,21 @@ useHead({
 const loading = shallowRef(false)
 const error = shallowRef<string | null>(null)
 const comprobantes = shallowRef<ComprobanteGastoRrhhItem[]>([])
-const expandedItemId = shallowRef<number | null>(null)
 const manageModalOpen = shallowRef(false)
 const managingItemId = shallowRef<number | null>(null)
 const manageSubmitting = shallowRef(false)
 const manageComment = shallowRef('')
 const staffIdFilter = shallowRef('')
 const estadoFilter = shallowRef('')
+const entriesView = shallowRef('100')
+const activeListTab = shallowRef<'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobados' | 'rechazados'>('pendiente_rrhh')
 const toast = useToast()
+
+const getEstadoIdByTab = () => {
+  if (activeListTab.value === 'pendiente_rrhh') return 7
+  if (activeListTab.value === 'pendiente_gerencia') return 8
+  return undefined
+}
 
 type WorkflowState = 'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobada_final' | 'rechazada'
 type SolicitudDetalle = {
@@ -275,6 +282,19 @@ const canRejectInFlow = computed(() => {
   return managingState.value === 'pendiente_rrhh' || managingState.value === 'pendiente_gerencia'
 })
 
+const visibleComprobantes = computed(() => {
+  if (activeListTab.value === 'pendiente_rrhh') {
+    return comprobantes.value.filter((item) => getVisibleEstado(item) === 'pendiente_rrhh')
+  }
+  if (activeListTab.value === 'pendiente_gerencia') {
+    return comprobantes.value.filter((item) => getVisibleEstado(item) === 'pendiente_gerencia')
+  }
+  if (activeListTab.value === 'aprobados') {
+    return comprobantes.value.filter((item) => getVisibleEstado(item) === 'aprobada_final')
+  }
+  return comprobantes.value.filter((item) => getVisibleEstado(item) === 'rechazada')
+})
+
 const extractErrorMessage = (cause: unknown) => {
   if (cause && typeof cause === 'object') {
     const candidate = cause as { message?: unknown; data?: { message?: unknown } }
@@ -284,12 +304,6 @@ const extractErrorMessage = (cause: unknown) => {
   return 'No se pudieron consultar los comprobantes de gasto.'
 }
 
-const isExpanded = (item: ComprobanteGastoRrhhItem) => expandedItemId.value === item.id
-
-const toggleRow = (item: ComprobanteGastoRrhhItem) => {
-  expandedItemId.value = isExpanded(item) ? null : item.id
-}
-
 const loadComprobantes = async () => {
   loading.value = true
   error.value = null
@@ -297,20 +311,17 @@ const loadComprobantes = async () => {
   try {
     const response = await getSolicitudesCompraRrhh({
       staff_id: parseNumberFilter(staffIdFilter.value),
+      estado_id: getEstadoIdByTab(),
       workflow_state: parseTextFilter(estadoFilter.value),
     })
 
     comprobantes.value = response.data ?? []
 
-    if (expandedItemId.value && !comprobantes.value.some((item) => item.id === expandedItemId.value)) {
-      expandedItemId.value = null
-    }
     if (manageModalOpen.value && managingItemId.value && !comprobantes.value.some((item) => item.id === managingItemId.value)) {
       closeManageModal()
     }
   } catch (cause) {
     comprobantes.value = []
-    expandedItemId.value = null
     closeManageModal()
     error.value = extractErrorMessage(cause)
   } finally {
@@ -325,11 +336,14 @@ const refreshComprobantes = () => {
 const clearFilters = () => {
   staffIdFilter.value = ''
   estadoFilter.value = ''
-  expandedItemId.value = null
   void loadComprobantes()
 }
 
 onMounted(() => {
+  void loadComprobantes()
+})
+
+watch(activeListTab, () => {
   void loadComprobantes()
 })
 </script>
@@ -348,56 +362,119 @@ onMounted(() => {
 
     <template #body>
       <div class="space-y-5">
-        <div class="mx-5 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60 xl:flex-row xl:items-end xl:justify-between">
-          <div class="space-y-1">
-            <p class="text-sm font-semibold text-gray-900 dark:text-white">
-              Listado de comprobantes de gasto
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Haz clic en una fila para ver la cabecera, el comprobante y los detalles asociados.
-            </p>
+        <div class="mx-5 overflow-hidden rounded-2xl   dark:bg-gray-950/60">
+          <div class="flex items-center justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800">
+            <div class="flex items-center gap-3">
+              <h2 class="text-4xl font-light text-gray-600 dark:text-gray-200">
+              Compra
+              </h2>
+              <div class="h-8 w-px bg-gray-300 dark:bg-gray-700" />
+              <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <UIcon name="i-lucide-house" class="h-4 w-4 text-[#2d5fc0]" />
+                <UIcon name="i-lucide-chevron-right" class="h-4 w-4" />
+                <span>Main</span>
+              </div>
+            </div>
+            
           </div>
 
-          <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-            <UInput
-              v-model="staffIdFilter"
-              type="number"
-              placeholder="staff_id"
-              class="w-full sm:w-40"
-            />
-            <UInput
-              v-model="estadoFilter"
-              placeholder="workflow_state"
-              class="w-full sm:w-48"
-            />
-
-            <UButton
-              color="primary"
-              class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]"
-              :loading="loading"
-              @click="refreshComprobantes"
-            >
-              Buscar
-            </UButton>
-            <UButton color="neutral" variant="soft" @click="clearFilters">
-              Limpiar
-            </UButton>
+          <div class="border-b border-gray-200 px-4 pt-3 dark:border-gray-800">
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
+                :class="activeListTab === 'pendiente_rrhh'
+                  ? 'bg-[#2d5fc0] text-white shadow-sm'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
+                @click="activeListTab = 'pendiente_rrhh'"
+              >
+                Pendiente RRHH
+              </button>
+              <button
+                type="button"
+                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
+                :class="activeListTab === 'pendiente_gerencia'
+                  ? 'bg-[#2d5fc0] text-white shadow-sm'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
+                @click="activeListTab = 'pendiente_gerencia'"
+              >
+                Pendiente Gerencia
+              </button>
+              <button
+                type="button"
+                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
+                :class="activeListTab === 'aprobados'
+                  ? 'bg-[#2d5fc0] text-white shadow-sm'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
+                @click="activeListTab = 'aprobados'"
+              >
+                Aprobados
+              </button>
+              <button
+                type="button"
+                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
+                :class="activeListTab === 'rechazados'
+                  ? 'bg-[#2d5fc0] text-white shadow-sm'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
+                @click="activeListTab = 'rechazados'"
+              >
+                Rechazados
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="mx-5 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
-          <div class="max-h-[74vh] overflow-auto">
+          <div class="border-t-2 border-[#2d5fc0]/90 px-4 py-4 dark:border-[#2d5fc0]/70">
+            <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+              <div class="w-full xl:max-w-3xl">
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Buscador
+                </label>
+                <UInput
+                  v-model="staffIdFilter"
+                  icon="i-lucide-search"
+                  placeholder="Buscar por nombre, telefono o cuenta"
+                  class="w-full"
+                />
+              </div>
+              <div class="flex items-end gap-2">
+                <div>
+                  <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Registros
+                  </label>
+                  <select v-model="entriesView" class="h-10 min-w-[110px] rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                    <option value="100">100</option>
+                    <option value="50">50</option>
+                    <option value="25">25</option>
+                  </select>
+                </div>
+                <span class="mb-2 text-sm text-gray-500 dark:text-gray-400">por pagina</span>
+              </div>
+            </div>
+
+           
+
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-400">
+              <p class="font-semibold">Mostrando 1 a 84 de 84 registros</p>
+              <div class="flex items-center gap-2">
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500">‹</button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1290df] font-semibold text-white">1</button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500">›</button>
+              </div>
+            </div>
+          </div>
+          <div class="mx-4 mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+          <div class="min-h-[420px] max-h-[74vh] overflow-auto">
             <table class="min-w-[1280px] w-full border-separate border-spacing-0">
-              <thead class="bg-[#2d5fc0] text-white">
+              <thead class="bg-[#efedf6] text-gray-600 dark:bg-gray-900 dark:text-gray-200">
                 <tr>
-                  <th class="w-[80px] rounded-tl-2xl px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ID</th>
-                  <th class="w-[200px] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">SOLICITANTE</th>
-                  <th class="w-[150px] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">AREA</th>
-                  <th class="w-[120px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ESTADO</th>
-                  <th class="w-[150px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">FECHA SOLICITUD</th>
-                  <th class="w-[120px] px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">MONTO</th>
-                  <th class="w-[150px] px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">PRODUCTOS</th>
-                  <th class="w-[140px] rounded-tr-2xl px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">ACCIONES</th>
+                  <th class="w-[80px] rounded-tl-2xl px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">ID</th>
+                  <th class="w-[200px] px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">SOLICITANTE</th>
+                  <th class="w-[150px] px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">AREA</th>
+                  <th class="w-[120px] px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">ESTADO</th>
+                  <th class="w-[150px] px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">FECHA SOLICITUD</th>
+                  <th class="w-[120px] px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">MONTO</th>
+                  <th class="w-[150px] px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">PRODUCTOS</th>
+                  <th class="w-[140px] rounded-tr-2xl px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">ACCIONES</th>
                 </tr>
               </thead>
 
@@ -433,12 +510,8 @@ onMounted(() => {
                 </template>
 
                 <template v-else>
-                  <template v-for="item in comprobantes" :key="`comprobante-row-${item.id}`">
-                    <tr
-                      class="cursor-pointer transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
-                      :class="isExpanded(item) ? 'bg-[#eef4ff] dark:bg-gray-900/80' : ''"
-                      @click="toggleRow(item)"
-                    >
+                  <template v-for="item in visibleComprobantes" :key="`comprobante-row-${item.id}`">
+                    <tr class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60">
                       <td class="px-3 py-3 text-center text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
                         {{ item.solicitud_gasto_id }}
                       </td>
@@ -488,125 +561,9 @@ onMounted(() => {
                         </UButton>
                       </td>
                     </tr>
-
-                    <tr v-if="isExpanded(item)" :key="`comprobante-detail-${item.id}`">
-                      <td colspan="8" class="bg-[#f8fbff] px-4 py-4 dark:bg-gray-950/80">
-                        <div class="space-y-4">
-                          <div class="grid gap-3 xl:grid-cols-3">
-                            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
-                              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Solicitud</p>
-                              <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                                {{ getSolicitanteLabel(item) }}
-                              </p>
-                              <p class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ displayValue(item.solicitud_gasto.username) }}
-                              </p>
-                              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                Motivo: {{ displayValue(item.solicitud_gasto.motivo) }}
-                              </p>
-                            </div>
-
-                            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
-                              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comprobante</p>
-                              <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                                {{ getComprobanteTipo(item) }} - {{ displayValue(item.comprobante?.numero) }}
-                              </p>
-                              <p class="text-xs text-gray-500 dark:text-gray-400">
-                                Monto: S/ 130.00
-                              </p>
-                              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                Archivo: {{ item.comprobante?.archivo_url ? 'Disponible' : 'No disponible' }}
-                              </p>
-                            </div>
-
-                            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
-                              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Estado actual</p>
-                              <UBadge class="mt-1 capitalize" variant="subtle" :color="getEstadoColor(getVisibleEstado(item))">
-                                {{ getEstadoLabel(getVisibleEstado(item)) }}
-                              </UBadge>
-                              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                Solicitud #{{ item.solicitud_gasto.id }}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
-                            <div class="max-h-[42vh] overflow-auto">
-                              <table class="min-w-[1320px] w-full border-separate border-spacing-0">
-                                <thead class="bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200">
-                                  <tr>
-                                    <th class="rounded-tl-2xl px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">ID PRODUCTO</th>
-                                    <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">CANTIDAD</th>
-                                    <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">PRECIO ESTIMADO</th>
-                                    <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">PRECIO REAL</th>
-                                    <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">DESCRIPCION ADICIONAL</th>
-                                    <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">RUTA IMAGEN</th>
-                                    <th class="rounded-tr-2xl px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">URL IMAGEN</th>
-                                  </tr>
-                                </thead>
-
-                                <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-                                  <tr
-                                    v-for="detalle in getItemDetalles(item)"
-                                    :key="`detalle-${detalle.id}`"
-                                    class="hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
-                                  >
-                                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                                      <div class="space-y-1">
-                                        <p class="font-medium">{{ detalle.id_producto }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ getDetalleProductoLabel(detalle) }}</p>
-                                      </div>
-                                    </td>
-                                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                                      {{ displayValue(detalle.cantidad) }}
-                                    </td>
-                                    <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">
-                                      S/ {{ formatMoney(detalle.precio_estimado) }}
-                                    </td>
-                                    <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">
-                                      S/ {{ formatMoney(detalle.precio_real) }}
-                                    </td>
-                                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                                      <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(detalle.descripcion_adicional) }}</p>
-                                    </td>
-                                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                                      <p class="max-w-[260px] truncate">{{ displayValue(detalle.ruta_imagen) }}</p>
-                                    </td>
-                                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                                      <div class="flex flex-col gap-1">
-                                        <p class="max-w-[280px] truncate">{{ displayValue(detalle.url_imagen) }}</p>
-                                        <UButton
-                                          v-if="getDetalleImageUrl(detalle)"
-                                          :href="getDetalleImageUrl(detalle) || undefined"
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          color="primary"
-                                          variant="soft"
-                                          size="xs"
-                                          class="w-fit rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                                          @click.stop
-                                        >
-                                          Abrir imagen
-                                        </UButton>
-                                      </div>
-                                    </td>
-                                  </tr>
-
-                                  <tr v-if="!getItemDetalles(item).length">
-                                    <td colspan="7" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                                      No hay detalles para esta solicitud.
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
                   </template>
 
-                  <tr v-if="!comprobantes.length">
+                  <tr v-if="!visibleComprobantes.length">
                     <td colspan="8" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       No hay comprobantes de gasto para mostrar.
                     </td>
@@ -615,7 +572,24 @@ onMounted(() => {
               </tbody>
             </table>
           </div>
+          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+            <p class="text-sm font-semibold text-gray-400">
+              Mostrando 1 a 84 de 84 registros
+            </p>
+            <div class="flex items-center gap-2">
+              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-300">‹</button>
+              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1290df] font-semibold text-white">1</button>
+              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-300">›</button>
+            </div>
+          </div>
         </div>
+        </div>
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="px-5 py-3 text-center text-xs text-gray-500 dark:text-gray-400">
+        Desarrollador por Cechriza - Area TI
       </div>
     </template>
   </UDashboardPanel>
@@ -624,217 +598,142 @@ onMounted(() => {
     v-model:open="manageModalOpen"
     class="w-full max-w-6xl"
     :title="`Gestionar solicitud #${managingItem?.solicitud_gasto.id ?? '--'}`"
+    
   >
     <template #content>
-      <div class="space-y-4 p-4">
-        <div
-          v-if="managingItem"
-          class="space-y-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950/70"
-        >
-          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-            Flujo de aprobacion
-          </p>
-          <div class="space-y-1 text-sm text-gray-700 dark:text-gray-200">
-            <p>
-              <span class="font-semibold">Solicitante:</span>
-              {{ getSolicitanteLabel(managingItem) }}
-            </p>
-            <p>
-              <span class="font-semibold">Monto:</span>
-              S/ 130.00
-            </p>
-            <p class="flex items-center gap-2">
-              <span class="font-semibold">Estado:</span>
+      <div class="space-y-4 bg-white p-0 dark:bg-gray-950">
+        <div class="flex items-center justify-between bg-[#2d5fc0] px-5 py-3 text-white">
+          <p class="text-lg font-semibold uppercase tracking-wide">Gestionar solicitud</p>
+          <span class="rounded-md bg-white/20 px-2 py-1 text-xs font-semibold">
+            #{{ managingItem?.solicitud_gasto.id ?? '--' }}
+          </span>
+        </div>
+
+        <div class="space-y-4 px-5 pb-5">
+          <div v-if="managingItem" class="grid gap-3 md:grid-cols-2">
+            <div>
+              <p class="mb-1 text-sm text-gray-500 dark:text-gray-400">Solicitante</p>
+              <div class="rounded-md border border-[#1290df] bg-white px-4 py-2.5 text-sm font-medium text-[#2d5fc0] dark:bg-gray-900">
+                {{ getSolicitanteLabel(managingItem) }}
+              </div>
+            </div>
+            <div>
+              <p class="mb-1 text-sm text-gray-500 dark:text-gray-400">Etapa</p>
+              <div class="rounded-md border border-[#1290df] bg-white px-4 py-2.5 text-sm font-medium text-[#2d5fc0] dark:bg-gray-900">
+                {{ getFlowStageTitle(managingState) }}
+              </div>
+            </div>
+            <div class="rounded-md border border-gray-200 bg-[#f7f9ff] px-4 py-2.5 text-sm dark:border-gray-800 dark:bg-gray-900/60">
+              <span class="font-semibold text-gray-700 dark:text-gray-200">Monto:</span> S/ 130.00
+            </div>
+            <div class="rounded-md border border-gray-200 bg-[#f7f9ff] px-4 py-2.5 text-sm dark:border-gray-800 dark:bg-gray-900/60">
+              <span class="mr-2 font-semibold text-gray-700 dark:text-gray-200">Estado:</span>
               <UBadge class="capitalize" variant="subtle" :color="getEstadoColor(getVisibleEstado(managingItem))">
                 {{ getEstadoLabel(getVisibleEstado(managingItem)) }}
               </UBadge>
-            </p>
-            <p>
-              <span class="font-semibold">Etapa:</span>
-              {{ getFlowStageTitle(managingState) }}
-            </p>
-          </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            {{ getFlowStageDescription(managingState) }}
-          </p>
-        </div>
-
-        <div
-          v-if="managingItem"
-          class="grid gap-3 xl:grid-cols-3"
-        >
-          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Solicitud</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-              {{ getSolicitanteLabel(managingItem) }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ displayValue(managingItem.solicitud_gasto.username) }}
-            </p>
-            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Area: {{ displayValue(managingItem.solicitud_gasto.area) }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Fecha: {{ formatDate(managingItem.solicitud_gasto.fecha_solicitud) }} {{ formatTime(managingItem.solicitud_gasto.fecha_solicitud) }}
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 md:col-span-2">
+              {{ getFlowStageDescription(managingState) }}
             </p>
           </div>
 
-          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comprobante</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-              {{ getComprobanteTipo(managingItem) }} - {{ displayValue(managingItem.comprobante?.numero) }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Monto: S/ 130.00
-            </p>
-            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Archivo: {{ managingItem.comprobante?.archivo_url ? 'Disponible' : 'No disponible' }}
-            </p>
+          <div v-if="managingItem" class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
+            <div class="min-h-[280px] max-h-[38vh] overflow-auto">
+              <table class="min-w-[980px] w-full border-separate border-spacing-0">
+                <thead class="bg-[#efedf6] text-gray-600 dark:bg-gray-900 dark:text-gray-200">
+                  <tr>
+                    <th class="rounded-tl-lg px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Producto</th>
+                    <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
+                    <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio estimado</th>
+                    <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio real</th>
+                    <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
+                    <th class="rounded-tr-lg px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Imagen</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                  <tr
+                    v-for="detalle in getItemDetalles(managingItem)"
+                    :key="`manage-detalle-${detalle.id}`"
+                    class="hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
+                  >
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                      <div class="space-y-1">
+                        <p class="font-medium">{{ detalle.id_producto }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ getDetalleProductoLabel(detalle) }}</p>
+                      </div>
+                    </td>
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">{{ displayValue(detalle.cantidad) }}</td>
+                    <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_estimado) }}</td>
+                    <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_real) }}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                      <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(detalle.descripcion_adicional) }}</p>
+                    </td>
+                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                      <div class="flex flex-col gap-1">
+                        <p class="max-w-[280px] truncate">{{ displayValue(detalle.url_imagen || detalle.ruta_imagen) }}</p>
+                        <UButton
+                          v-if="getDetalleImageUrl(detalle)"
+                          :href="getDetalleImageUrl(detalle) || undefined"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          color="primary"
+                          variant="soft"
+                          size="xs"
+                          class="w-fit rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                        >
+                          Abrir imagen
+                        </UButton>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-if="!getItemDetalles(managingItem).length">
+                    <td colspan="6" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">There are no records to show</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
+            <div class="space-y-1">
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comentario de gestion</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Opcional, usado para justificar la accion</p>
+            </div>
+            <UTextarea
+              v-model="manageComment"
+              :rows="4"
+              placeholder="Ej: Aprobado porque cumple con politicas internas"
+              :disabled="manageSubmitting"
+              class="mt-3 w-full min-h-[130px] rounded-xl [&_textarea]:min-h-[130px] [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:px-3 [&_textarea]:py-2.5"
+            />
+          </div>
+
+          <div class="flex flex-wrap justify-end gap-2 pb-1">
+            <UButton color="neutral" variant="outline" :disabled="manageSubmitting" @click="closeManageModal">Cancelar</UButton>
             <UButton
-              v-if="managingItem.comprobante?.archivo_url"
-              :href="managingItem.comprobante?.archivo_url || undefined"
-              target="_blank"
-              rel="noopener noreferrer"
               color="primary"
-              variant="soft"
-              size="xs"
-              class="mt-2 rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+              icon="i-lucide-send"
+              :loading="manageSubmitting"
+              :disabled="manageSubmitting || !canSendToGerencia"
+              @click="sendToGerenciaFromManageModal"
             >
-              Ver archivo
+              {{ canSendToGerencia ? 'Validar y enviar a gerencia' : 'Ya enviado a gerencia' }}
+            </UButton>
+            <UButton
+              color="error"
+              icon="i-lucide-x"
+              variant="soft"
+              :loading="manageSubmitting"
+              :disabled="manageSubmitting || !canRejectInFlow"
+              @click="rejectFromManageModal"
+            >
+              {{ canRejectInFlow ? 'Rechazar solicitud' : 'Rechazada' }}
             </UButton>
           </div>
-
-          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Resumen</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-              Solicitud #{{ managingItem.solicitud_gasto.id }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Detalles: {{ getItemDetalles(managingItem).length }}
-            </p>
-            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Motivo: {{ displayValue(managingItem.solicitud_gasto.motivo) }}
-            </p>
-          </div>
-        </div>
-
-        <div
-          v-if="managingItem"
-          class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800"
-        >
-          <div class="max-h-[32vh] overflow-auto">
-            <table class="min-w-[980px] w-full border-separate border-spacing-0">
-              <thead class="bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200">
-                <tr>
-                  <th class="rounded-tl-2xl px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Producto</th>
-                  <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
-                  <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio estimado</th>
-                  <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio real</th>
-                  <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
-                  <th class="rounded-tr-2xl px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Imagen</th>
-                </tr>
-              </thead>
-
-              <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-                <tr
-                  v-for="detalle in getItemDetalles(managingItem)"
-                  :key="`manage-detalle-${detalle.id}`"
-                  class="hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
-                >
-                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                    <div class="space-y-1">
-                      <p class="font-medium">{{ detalle.id_producto }}</p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">{{ getDetalleProductoLabel(detalle) }}</p>
-                    </div>
-                  </td>
-                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                    {{ displayValue(detalle.cantidad) }}
-                  </td>
-                  <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">
-                    S/ {{ formatMoney(detalle.precio_estimado) }}
-                  </td>
-                  <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">
-                    S/ {{ formatMoney(detalle.precio_real) }}
-                  </td>
-                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                    <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(detalle.descripcion_adicional) }}</p>
-                  </td>
-                  <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                    <div class="flex flex-col gap-1">
-                      <p class="max-w-[280px] truncate">{{ displayValue(detalle.url_imagen || detalle.ruta_imagen) }}</p>
-                      <UButton
-                        v-if="getDetalleImageUrl(detalle)"
-                        :href="getDetalleImageUrl(detalle) || undefined"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        color="primary"
-                        variant="soft"
-                        size="xs"
-                        class="w-fit rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                      >
-                        Abrir imagen
-                      </UButton>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr v-if="!getItemDetalles(managingItem).length">
-                  <td colspan="6" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No hay detalles para esta solicitud.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-            Comentario de gestion (opcional)
-          </p>
-          <UTextarea
-            v-model="manageComment"
-            :rows="3"
-            placeholder="Escribe un comentario para la transicion de estado"
-            :disabled="manageSubmitting"
-          />
-        </div>
-
-        <div class="flex flex-wrap justify-end gap-2">
-          <UButton color="neutral" variant="outline" :disabled="manageSubmitting" @click="closeManageModal">
-            Cancelar
-          </UButton>
-          <UButton
-            color="primary"
-            icon="i-lucide-send"
-            :loading="manageSubmitting"
-            :disabled="manageSubmitting || !canSendToGerencia"
-            @click="sendToGerenciaFromManageModal"
-          >
-            {{ canSendToGerencia ? 'Validar y enviar a gerencia' : 'Ya enviado a gerencia' }}
-          </UButton>
-          <UButton
-            color="error"
-            icon="i-lucide-x"
-            variant="soft"
-            :loading="manageSubmitting"
-            :disabled="manageSubmitting || !canRejectInFlow"
-            @click="rejectFromManageModal"
-          >
-            {{ canRejectInFlow ? 'Rechazar solicitud' : 'Rechazada' }}
-          </UButton>
-          <UButton
-            color="success"
-            icon="i-lucide-check"
-            class="rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
-            :loading="manageSubmitting"
-            :disabled="manageSubmitting || !canApproveFinal"
-            @click="approveFinalFromManageModal"
-          >
-            {{ canApproveFinal ? 'Aprobar final' : 'Aprobada final' }}
-          </UButton>
         </div>
       </div>
     </template>
   </UModal>
 </template>
+
+
