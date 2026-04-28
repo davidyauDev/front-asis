@@ -23,6 +23,8 @@ const manageModalOpen = shallowRef(false)
 const managingItemId = shallowRef<number | null>(null)
 const manageSubmitting = shallowRef(false)
 const manageComment = shallowRef('')
+const imagePreviewOpen = shallowRef(false)
+const imagePreviewUrl = shallowRef<string | null>(null)
 const staffIdFilter = shallowRef('')
 const estadoFilter = shallowRef('')
 const entriesView = shallowRef('100')
@@ -153,6 +155,12 @@ const getDetalleImageUrl = (detalle: SolicitudDetalle) => {
   if (!url) return null
   const normalized = url.trim()
   return normalized || null
+}
+
+const openImagePreview = (url?: string | null) => {
+  if (!url) return
+  imagePreviewUrl.value = url
+  imagePreviewOpen.value = true
 }
 
 const getDetalleProductoLabel = (detalle: SolicitudDetalle) => {
@@ -463,7 +471,7 @@ watch(activeListTab, () => {
             </div>
           </div>
           <div class="mx-4 mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
-          <div class="min-h-[420px] max-h-[74vh] overflow-auto">
+          <div class="min-h-[210px] max-h-[37vh] overflow-auto">
             <table class="min-w-[1280px] w-full border-separate border-spacing-0">
               <thead class="bg-[#efedf6] text-gray-600 dark:bg-gray-900 dark:text-gray-200">
                 <tr>
@@ -638,14 +646,14 @@ watch(activeListTab, () => {
           </div>
 
           <div v-if="managingItem" class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
-            <div class="min-h-[280px] max-h-[38vh] overflow-auto">
+            <div class="min-h-[140px] max-h-[19vh] overflow-auto">
               <table class="min-w-[980px] w-full border-separate border-spacing-0">
                 <thead class="bg-[#efedf6] text-gray-600 dark:bg-gray-900 dark:text-gray-200">
                   <tr>
                     <th class="rounded-tl-lg px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Producto</th>
-                    <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
-                    <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio estimado</th>
-                    <th class="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">Precio real</th>
+                    <th class="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
+                    <th class="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Precio estimado</th>
+                    <th class="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Precio real</th>
                     <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
                     <th class="rounded-tr-lg px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Imagen</th>
                   </tr>
@@ -658,31 +666,36 @@ watch(activeListTab, () => {
                   >
                     <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
                       <div class="space-y-1">
-                        <p class="font-medium">{{ detalle.id_producto }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ getDetalleProductoLabel(detalle) }}</p>
+                        <p class="font-medium">{{ getDetalleProductoLabel(detalle) }}</p>
                       </div>
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">{{ displayValue(detalle.cantidad) }}</td>
-                    <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_estimado) }}</td>
-                    <td class="px-3 py-3 text-right text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_real) }}</td>
+                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">{{ displayValue(detalle.cantidad) }}</td>
+                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_estimado) }}</td>
+                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_real) }}</td>
                     <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
                       <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(detalle.descripcion_adicional) }}</p>
                     </td>
                     <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                      <div class="flex flex-col gap-1">
-                        <p class="max-w-[280px] truncate">{{ displayValue(detalle.url_imagen || detalle.ruta_imagen) }}</p>
-                        <UButton
+                      <div class="flex flex-col gap-2">
+                        <button
                           v-if="getDetalleImageUrl(detalle)"
-                          :href="getDetalleImageUrl(detalle) || undefined"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          color="primary"
-                          variant="soft"
-                          size="xs"
-                          class="w-fit rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                          type="button"
+                          class="group w-fit"
+                          @click="openImagePreview(getDetalleImageUrl(detalle))"
                         >
-                          Abrir imagen
-                        </UButton>
+                          <img
+                            :src="getDetalleImageUrl(detalle) || ''"
+                            alt="Producto"
+                            class="h-14 w-14 rounded-md border border-gray-200 object-cover transition group-hover:opacity-90 dark:border-gray-700"
+                          >
+                        </button>
+                        <div
+                          v-else
+                          class="inline-flex h-14 w-14 items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-xl dark:border-gray-700 dark:bg-gray-900"
+                          title="Sin imagen"
+                        >
+                          👢
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -704,15 +717,24 @@ watch(activeListTab, () => {
               :rows="4"
               placeholder="Ej: Aprobado porque cumple con politicas internas"
               :disabled="manageSubmitting"
-              class="mt-3 w-full min-h-[130px] rounded-xl [&_textarea]:min-h-[130px] [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:px-3 [&_textarea]:py-2.5"
+              class="mt-3 w-full min-h-[130px] rounded-xl [&_textarea]:min-h-[130px] [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:px-3 [&_textarea]:py-2.5 [&_textarea]:focus:border-[#2d5fc0] [&_textarea]:focus:ring-2 [&_textarea]:focus:ring-[#2d5fc0]/30"
             />
           </div>
 
-          <div class="flex flex-wrap justify-end gap-2 pb-1">
-            <UButton color="neutral" variant="outline" :disabled="manageSubmitting" @click="closeManageModal">Cancelar</UButton>
+          <div class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
+            <UButton
+              color="neutral"
+              variant="soft"
+              class="rounded-md px-4 text-gray-700 dark:text-gray-200"
+              :disabled="manageSubmitting"
+              @click="closeManageModal"
+            >
+              Cancelar
+            </UButton>
             <UButton
               color="primary"
               icon="i-lucide-send"
+              class="rounded-md bg-[#2d5fc0] px-4 text-white hover:bg-[#244ea4]"
               :loading="manageSubmitting"
               :disabled="manageSubmitting || !canSendToGerencia"
               @click="sendToGerenciaFromManageModal"
@@ -723,6 +745,7 @@ watch(activeListTab, () => {
               color="error"
               icon="i-lucide-x"
               variant="soft"
+              class="rounded-md bg-red-50 px-4 text-red-700 ring-1 ring-red-200 hover:bg-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900"
               :loading="manageSubmitting"
               :disabled="manageSubmitting || !canRejectInFlow"
               @click="rejectFromManageModal"
@@ -731,6 +754,19 @@ watch(activeListTab, () => {
             </UButton>
           </div>
         </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="imagePreviewOpen" class="w-full max-w-3xl" title="Vista de imagen">
+    <template #content>
+      <div class="p-4">
+        <img
+          v-if="imagePreviewUrl"
+          :src="imagePreviewUrl"
+          alt="Vista ampliada"
+          class="max-h-[75vh] w-full rounded-lg object-contain"
+        >
       </div>
     </template>
   </UModal>
