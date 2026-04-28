@@ -25,15 +25,19 @@ const manageSubmitting = shallowRef(false)
 const manageComment = shallowRef('')
 const imagePreviewOpen = shallowRef(false)
 const imagePreviewUrl = shallowRef<string | null>(null)
+const emailModalOpen = shallowRef(false)
+const emailTargetName = shallowRef('')
 const staffIdFilter = shallowRef('')
 const estadoFilter = shallowRef('')
 const entriesView = shallowRef('100')
-const activeListTab = shallowRef<'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobados' | 'rechazados'>('pendiente_rrhh')
+const activeListTab = shallowRef<'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobados' | 'rechazados' | 'reembolso' | 'cerrado'>('pendiente_rrhh')
 const toast = useToast()
 
 const getEstadoIdByTab = () => {
   if (activeListTab.value === 'pendiente_rrhh') return 7
   if (activeListTab.value === 'pendiente_gerencia') return 8
+  if (activeListTab.value === 'aprobados') return 9
+  if (activeListTab.value === 'rechazados') return 10
   return undefined
 }
 
@@ -163,6 +167,22 @@ const openImagePreview = (url?: string | null) => {
   imagePreviewOpen.value = true
 }
 
+const openEmailModal = (item: ComprobanteGastoRrhhItem) => {
+  emailTargetName.value = getSolicitanteLabel(item)
+  emailModalOpen.value = true
+}
+
+const emailBodyPreview = computed(() => {
+  return `Hola ${emailTargetName.value || 'XXXXXX'} buenas tardes,
+Con respecto a tus botas de seguridad fueron aprobados, favor de tener en cuenta lo siguiente:
+
+- Deben ser botas dielectricas y con puntera de seguridad (solicitar ficha tecnica a la tienda)
+- El monto subvencionado es de s/130.00, el cual será reembolsado con la factura de compra respectiva
+- Si el monto de compra es mayor al indicado, el excedente deberá ser subvencionado por el trabajador, de igual manera presentando la factura de compra.
+
+Cualquier consulta adicional favor de comentarme.`
+})
+
 const getDetalleProductoLabel = (detalle: SolicitudDetalle) => {
   if (typeof detalle.producto === 'string') {
     const producto = detalle.producto.trim()
@@ -290,18 +310,7 @@ const canRejectInFlow = computed(() => {
   return managingState.value === 'pendiente_rrhh' || managingState.value === 'pendiente_gerencia'
 })
 
-const visibleComprobantes = computed(() => {
-  if (activeListTab.value === 'pendiente_rrhh') {
-    return comprobantes.value.filter((item) => getVisibleEstado(item) === 'pendiente_rrhh')
-  }
-  if (activeListTab.value === 'pendiente_gerencia') {
-    return comprobantes.value.filter((item) => getVisibleEstado(item) === 'pendiente_gerencia')
-  }
-  if (activeListTab.value === 'aprobados') {
-    return comprobantes.value.filter((item) => getVisibleEstado(item) === 'aprobada_final')
-  }
-  return comprobantes.value.filter((item) => getVisibleEstado(item) === 'rechazada')
-})
+const visibleComprobantes = computed(() => comprobantes.value)
 
 const extractErrorMessage = (cause: unknown) => {
   if (cause && typeof cause === 'object') {
@@ -371,20 +380,7 @@ watch(activeListTab, () => {
     <template #body>
       <div class="space-y-5">
         <div class="mx-5 overflow-hidden rounded-2xl   dark:bg-gray-950/60">
-          <div class="flex items-center justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800">
-            <div class="flex items-center gap-3">
-              <h2 class="text-4xl font-light text-gray-600 dark:text-gray-200">
-              Compra
-              </h2>
-              <div class="h-8 w-px bg-gray-300 dark:bg-gray-700" />
-              <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <UIcon name="i-lucide-house" class="h-4 w-4 text-[#2d5fc0]" />
-                <UIcon name="i-lucide-chevron-right" class="h-4 w-4" />
-                <span>Main</span>
-              </div>
-            </div>
-            
-          </div>
+         
 
           <div class="border-b border-gray-200 px-4 pt-3 dark:border-gray-800">
             <div class="flex flex-wrap gap-2">
@@ -428,35 +424,33 @@ watch(activeListTab, () => {
               >
                 Rechazados
               </button>
+              <button
+                type="button"
+                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
+                :class="activeListTab === 'reembolso'
+                  ? 'bg-[#2d5fc0] text-white shadow-sm'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
+                @click="activeListTab = 'reembolso'"
+              >
+                Reembolso
+              </button>
+              <button
+                type="button"
+                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
+                :class="activeListTab === 'cerrado'
+                  ? 'bg-[#2d5fc0] text-white shadow-sm'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
+                @click="activeListTab = 'cerrado'"
+              >
+                Cerrado
+              </button>
             </div>
           </div>
 
           <div class="border-t-2 border-[#2d5fc0]/90 px-4 py-4 dark:border-[#2d5fc0]/70">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-              <div class="w-full xl:max-w-3xl">
-                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Buscador
-                </label>
-                <UInput
-                  v-model="staffIdFilter"
-                  icon="i-lucide-search"
-                  placeholder="Buscar por nombre, telefono o cuenta"
-                  class="w-full"
-                />
-              </div>
-              <div class="flex items-end gap-2">
-                <div>
-                  <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Registros
-                  </label>
-                  <select v-model="entriesView" class="h-10 min-w-[110px] rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                    <option value="100">100</option>
-                    <option value="50">50</option>
-                    <option value="25">25</option>
-                  </select>
-                </div>
-                <span class="mb-2 text-sm text-gray-500 dark:text-gray-400">por pagina</span>
-              </div>
+             
+              
             </div>
 
            
@@ -471,7 +465,7 @@ watch(activeListTab, () => {
             </div>
           </div>
           <div class="mx-4 mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
-          <div class="min-h-[210px] max-h-[37vh] overflow-auto">
+          <div class="min-h-[420px] max-h-[62vh] overflow-auto">
             <table class="min-w-[1280px] w-full border-separate border-spacing-0">
               <thead class="bg-[#efedf6] text-gray-600 dark:bg-gray-900 dark:text-gray-200">
                 <tr>
@@ -557,16 +551,29 @@ watch(activeListTab, () => {
                         </span>
                       </td>
                       <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
-                        <UButton
-                          color="primary"
-                          variant="soft"
-                          size="xs"
-                          icon="i-lucide-settings-2"
-                          class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                          @click.stop="openManageModal(item)"
-                        >
-                          Gestionar
-                        </UButton>
+                        <div class="flex items-center justify-center gap-2">
+                          <UButton
+                            color="primary"
+                            variant="soft"
+                            size="xs"
+                            icon="i-lucide-settings-2"
+                            class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                            @click.stop="openManageModal(item)"
+                          >
+                            Gestionar
+                          </UButton>
+                          <UButton
+                            v-if="activeListTab === 'aprobados'"
+                            color="info"
+                            variant="soft"
+                            size="xs"
+                            icon="i-lucide-mail"
+                            class="rounded-full bg-[#eaf4ff] text-[#1d75cf] ring-1 ring-[#cfe2ff] hover:bg-[#dcebff]"
+                            @click.stop="openEmailModal(item)"
+                          >
+                            Correo
+                          </UButton>
+                        </div>
                       </td>
                     </tr>
                   </template>
@@ -707,7 +714,10 @@ watch(activeListTab, () => {
             </div>
           </div>
 
-          <div class="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60">
+          <div
+            v-if="managingState !== 'pendiente_gerencia'"
+            class="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950/60"
+          >
             <div class="space-y-1">
               <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comentario de gestion</p>
               <p class="text-xs text-gray-500 dark:text-gray-400">Opcional, usado para justificar la accion</p>
@@ -721,7 +731,10 @@ watch(activeListTab, () => {
             />
           </div>
 
-          <div class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
+          <div
+            v-if="managingState !== 'pendiente_gerencia'"
+            class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800"
+          >
             <UButton
               color="neutral"
               variant="soft"
@@ -767,6 +780,30 @@ watch(activeListTab, () => {
           alt="Vista ampliada"
           class="max-h-[75vh] w-full rounded-lg object-contain"
         >
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="emailModalOpen" class="w-full max-w-3xl" title="Portal de envio de correo">
+    <template #content>
+      <div class="space-y-4 p-4">
+        <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950/60">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Mensaje</p>
+          <UTextarea
+            :model-value="emailBodyPreview"
+            :rows="12"
+            readonly
+            class="mt-3 w-full [&_textarea]:whitespace-pre-line"
+          />
+        </div>
+        <div class="flex justify-end gap-2">
+          <UButton color="neutral" variant="outline" @click="emailModalOpen = false">
+            Cerrar
+          </UButton>
+          <UButton color="primary" class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]">
+            Enviar correo
+          </UButton>
+        </div>
       </div>
     </template>
   </UModal>

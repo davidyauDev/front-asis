@@ -426,10 +426,17 @@ export const rechazarSolicitudCompra = async (
   id: number | string,
   payload: SolicitudCompraWorkflowActionPayload = {},
 ): Promise<SolicitudCompraWorkflowActionResponse> => {
-  return apiFetch(`/api/rrhh/solicitudes-compra/${id}/rechazar`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  try {
+    return await apiFetch(`/api/rrhh/solicitudes-compra/${id}/rechazar-rrhh`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    return apiFetch(`/api/rrhh/solicitudes-compra/${id}/rechazar`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }
 }
 
 export const getSolicitudGastoHistorial = async (
