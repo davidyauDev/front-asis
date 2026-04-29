@@ -128,7 +128,8 @@ const getVisibleEstado = (item: ComprobanteGastoRrhhItem): WorkflowState => {
 
 const getEstadoColor = (estado?: WorkflowState | string | null): 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
   const normalized = (estado ?? '').toLowerCase()
-  if (normalized === 'pendiente_rrhh' || normalized === 'pendiente_gerencia') return 'warning'
+  if (normalized === 'pendiente_rrhh') return 'warning'
+  if (normalized === 'pendiente_gerencia') return 'info'
   if (normalized === 'aprobada_final') return 'success'
   if (normalized === 'rechazada') return 'error'
   if (normalized.includes('aprob')) return 'success'
@@ -145,6 +146,19 @@ const getEstadoLabel = (estado?: WorkflowState | string | null) => {
   if (estado === 'rechazada') return 'Rechazada'
   const normalized = (estado ?? '').trim()
   return normalized || '--'
+}
+
+const getEstadoDetalleNombre = (item: ComprobanteGastoRrhhItem) => {
+  const solicitudGasto = item.solicitud_gasto as typeof item.solicitud_gasto & {
+    estado_detalle?: { nombre?: string | null } | null
+  }
+  const estadoDetalle = solicitudGasto?.estado_detalle
+  const nombre = estadoDetalle?.nombre?.trim()
+  return nombre || null
+}
+
+const getEstadoDisplayLabel = (item: ComprobanteGastoRrhhItem) => {
+  return getEstadoDetalleNombre(item) || '--'
 }
 
 const getItemDetalles = (item: ComprobanteGastoRrhhItem): SolicitudDetalle[] => {
@@ -329,6 +343,7 @@ const loadComprobantes = async () => {
     const response = await getSolicitudesCompraRrhh({
       staff_id: parseNumberFilter(staffIdFilter.value),
       estado_id: getEstadoIdByTab(),
+      id_area: 11,
       workflow_state: parseTextFilter(estadoFilter.value),
     })
 
@@ -350,11 +365,6 @@ const refreshComprobantes = () => {
   void loadComprobantes()
 }
 
-const clearFilters = () => {
-  staffIdFilter.value = ''
-  estadoFilter.value = ''
-  void loadComprobantes()
-}
 
 onMounted(() => {
   void loadComprobantes()
@@ -530,7 +540,7 @@ watch(activeListTab, () => {
                       </td>
                       <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
                         <UBadge class="capitalize" variant="subtle" :color="getEstadoColor(getVisibleEstado(item))">
-                          {{ getEstadoLabel(getVisibleEstado(item)) }}
+                          {{ getEstadoDisplayLabel(item) }}
                         </UBadge>
                       </td>
                       <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
@@ -561,17 +571,6 @@ watch(activeListTab, () => {
                             @click.stop="openManageModal(item)"
                           >
                             Gestionar
-                          </UButton>
-                          <UButton
-                            v-if="activeListTab === 'aprobados'"
-                            color="info"
-                            variant="soft"
-                            size="xs"
-                            icon="i-lucide-mail"
-                            class="rounded-full bg-[#eaf4ff] text-[#1d75cf] ring-1 ring-[#cfe2ff] hover:bg-[#dcebff]"
-                            @click.stop="openEmailModal(item)"
-                          >
-                            Correo
                           </UButton>
                         </div>
                       </td>
@@ -644,7 +643,7 @@ watch(activeListTab, () => {
             <div class="rounded-md border border-gray-200 bg-[#f7f9ff] px-4 py-2.5 text-sm dark:border-gray-800 dark:bg-gray-900/60">
               <span class="mr-2 font-semibold text-gray-700 dark:text-gray-200">Estado:</span>
               <UBadge class="capitalize" variant="subtle" :color="getEstadoColor(getVisibleEstado(managingItem))">
-                {{ getEstadoLabel(getVisibleEstado(managingItem)) }}
+                {{ getEstadoDisplayLabel(managingItem) }}
               </UBadge>
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-400 md:col-span-2">
