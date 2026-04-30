@@ -7,6 +7,7 @@ import type {
 } from '~/services/rrhh/solicitudes'
 import {
   aprobarDetalleSolicitud,
+  derivarDetalleALogistica,
   rechazarDetalleSolicitud,
   subirActaRrhh,
   updateEstadoRrhh,
@@ -115,6 +116,34 @@ const isMixtoRequest = computed(() => {
   return type === 'mixto' || type.includes('mixt')
 })
 const hasGlobalActions = computed(() => isInternalRequest.value || isMixtoRequest.value)
+const selectedRequestActaUrl = computed(() => {
+  const request = selectedRequest.value as { acta_rrhh_url?: string | null } | null
+  return request?.acta_rrhh_url?.trim() || ''
+})
+const selectedRequestSeguimiento = computed(() => {
+  const request = selectedRequest.value as {
+    estado_rrhh?: string | null
+    estado_rrhh_comentario?: string | null
+  } | null
+  return {
+    estado: normalize(request?.estado_rrhh),
+    comentario: request?.estado_rrhh_comentario?.trim() || '',
+  }
+})
+const hasRegisteredActa = computed(() => Boolean(selectedRequestActaUrl.value))
+const hasRegisteredSeguimiento = computed(() => {
+  const { estado, comentario } = selectedRequestSeguimiento.value
+  return estado === 'derivar_logistica' || estado === 'recojo_oficina' || Boolean(comentario)
+})
+const hasPendingAttentionDetail = computed(() => {
+  return selectedItems.value.some((item) => {
+    const state = normalize(getItemState(item))
+    return item.id_estado_detalle === 11 || state.includes('pendiente de atencion')
+  })
+})
+const showActaAction = computed(() => hasGlobalActions.value && !hasRegisteredActa.value)
+const showSeguimientoAction = computed(() => hasGlobalActions.value && !hasRegisteredSeguimiento.value)
+const hasVisibleGlobalActions = computed(() => showActaAction.value || showSeguimientoAction.value)
 
 const manageOpen = ref(false)
 const managedItem = ref<SolicitudDetalleItem | null>(null)
@@ -127,26 +156,19 @@ const manageError = ref<string | null>(null)
 const globalDeliveryComment = ref('')
 const internalStatusOptions: InternalStatusOption[] = [
   { value: 'pendiente', label: 'Pendiente' },
-  { value: 'derivar_logistica', label: 'Derivar a logistica' },
+  { value: 'derivar_logistica', label: 'Derivado a logistica' },
   { value: 'recojo_oficina', label: 'Recojo en oficina' },
 ]
 const globalInternalStatus = ref('')
 const globalActaFileName = ref('')
 const globalActaComment = ref('')
 const globalActaFile = ref<File | null>(null)
-const globalSubmitting = ref(false)
-const globalError = ref<string | null>(null)
-const globalProgress = ref(0)
-const isActaRequiredForFinalize = computed(() => {
-  if (!isInternalRequest.value) return false
-  return globalInternalStatus.value === 'recojo_oficina'
-})
-const shouldUploadActa = computed(() => {
-  if (!globalActaFile.value) return false
-  if (isInternalRequest.value) return globalInternalStatus.value === 'recojo_oficina'
-  if (isMixtoRequest.value) return false
-  return false
-})
+const actaModalOpen = ref(false)
+const seguimientoModalOpen = ref(false)
+const actaSubmitting = ref(false)
+const seguimientoSubmitting = ref(false)
+const actaError = ref<string | null>(null)
+const seguimientoError = ref<string | null>(null)
 const selectedInternalStatusLabel = computed(() => (
   internalStatusOptions.find(option => option.value === globalInternalStatus.value)?.label || ''
 ))
@@ -278,39 +300,103 @@ const onGlobalActaFileChange = (event: Event) => {
   globalActaFileName.value = file?.name ?? ''
 }
 
-const canSubmitGlobalFinalize = computed(() => {
+const openActaModal = () => {
+  if (hasPendingAttentionDetail.value) return
+  actaError.value = null
+  actaModalOpen.value = true
+}
+
+const openSeguimientoModal = () => {
+  if (hasPendingAttentionDetail.value) return
+  seguimientoError.value = null
+  seguimientoModalOpen.value = true
+}
+
+const canSubmitActa = computed(() => {
   if (!hasGlobalActions.value) return false
-  if (globalSubmitting.value) return false
+  if (hasPendingAttentionDetail.value) return false
+  if (actaSubmitting.value) return false
+  return !!globalActaFile.value
+})
+
+const submitActa = async () => {
+  actaError.value = null
+  actaSubmitting.value = true
+
+  try {
+    const requestId = selectedRequest.value?.id_solicitud
+    if (!requestId) throw new Error('No se pudo identificar la solicitud.')
+    if (!globalActaFile.value) throw new Error('Selecciona un archivo de acta.')
+
+    const response = await subirActaRrhh(requestId, {
+      acta_rrhh: globalActaFile.value,
+      acta_rrhh_comentario: globalActaComment.value.trim() || null,
+    })
+
+    const uploadedData = response.data ?? null
+    const uploadedUrl = uploadedData?.acta_rrhh_url?.trim() || null
+    const uploadedComment = uploadedData?.acta_rrhh_comentario?.trim() || globalActaComment.value.trim() || null
+    const request = selectedRequest.value as { acta_rrhh_url?: string | null; acta_rrhh_comentario?: string | null } | null
+
+    if (request) {
+      request.acta_rrhh_url = uploadedUrl
+      request.acta_rrhh_comentario = uploadedComment
+    }
+
+    toast.add({ title: 'Acta registrada', description: 'El acta se subio correctamente.', color: 'success' })
+    actaModalOpen.value = false
+    emit('submitted')
+  } catch (cause) {
+    actaError.value = cause && typeof cause === 'object' && 'message' in cause
+      ? String((cause as { message?: unknown }).message ?? 'No se pudo subir el acta')
+      : 'No se pudo subir el acta'
+  } finally {
+    actaSubmitting.value = false
+  }
+}
+
+const canSubmitSeguimiento = computed(() => {
+  if (!hasGlobalActions.value) return false
+  if (hasPendingAttentionDetail.value) return false
+  if (seguimientoSubmitting.value) return false
   if (!selectedItems.value.length) return false
   if (isInternalRequest.value && !globalInternalStatus.value) return false
   return true
 })
 
-const submitGlobalFinalize = async () => {
-  globalError.value = null
-  globalProgress.value = 0
-  globalSubmitting.value = true
+const submitSeguimiento = async () => {
+  seguimientoError.value = null
+  seguimientoSubmitting.value = true
 
   try {
     const requestId = selectedRequest.value?.id_solicitud
     if (!requestId) throw new Error('No se pudo identificar la solicitud.')
     if (!globalInternalStatus.value) throw new Error('Selecciona un estado para registrar seguimiento.')
 
+    if (isMixtoRequest.value) {
+      const detailIds = selectedItems.value
+        .filter(item => item.area_id === 11)
+        .map(item => item.id_detalle_solicitud)
+        .filter((id): id is number => typeof id === 'number' && Number.isFinite(id))
+
+      if (!detailIds.length) throw new Error('No hay detalles del area RR.HH. para derivar a logistica.')
+
+      await Promise.all(detailIds.map(id => derivarDetalleALogistica(id)))
+    }
+
     await updateEstadoRrhh(requestId, {
       estado_rrhh: globalInternalStatus.value,
       estado_rrhh_comentario: globalDeliveryComment.value.trim() || null,
     })
 
-    globalProgress.value = 40
+    const request = selectedRequest.value as {
+      estado_rrhh?: string | null
+      estado_rrhh_comentario?: string | null
+    } | null
 
-    if (shouldUploadActa.value && globalActaFile.value) {
-      await subirActaRrhh(requestId, {
-        acta_rrhh: globalActaFile.value,
-        acta_rrhh_comentario: globalActaComment.value.trim() || null,
-      })
-      globalProgress.value = 100
-    } else {
-      globalProgress.value = 100
+    if (request) {
+      request.estado_rrhh = globalInternalStatus.value
+      request.estado_rrhh_comentario = globalDeliveryComment.value.trim() || null
     }
 
     const internalStatusLabel = selectedInternalStatusLabel.value || 'Seguimiento actualizado'
@@ -320,14 +406,15 @@ const submitGlobalFinalize = async () => {
       item.fecha_atencion = new Date().toISOString()
     })
 
-    toast.add({ title: 'Seguimiento registrado', description: 'El estado RR.HH. se actualizó correctamente.', color: 'success' })
+    toast.add({ title: 'Seguimiento registrado', description: 'El estado RR.HH. se actualizo correctamente.', color: 'success' })
+    seguimientoModalOpen.value = false
     emit('submitted')
   } catch (cause) {
-    globalError.value = cause && typeof cause === 'object' && 'message' in cause
+    seguimientoError.value = cause && typeof cause === 'object' && 'message' in cause
       ? String((cause as { message?: unknown }).message ?? 'No se pudo registrar el seguimiento')
       : 'No se pudo registrar el seguimiento'
   } finally {
-    globalSubmitting.value = false
+    seguimientoSubmitting.value = false
   }
 }
 
@@ -426,8 +513,8 @@ const confirmManage = async () => {
 
         
 
-          <div
-            v-if="hasGlobalActions"
+                    <div
+            v-if="hasVisibleGlobalActions"
             class="rounded-2xl border border-[#2d5fc0]/15 bg-[#f7f9ff] p-4 shadow-sm dark:border-[#29406f]/40 dark:bg-[#0b1220] sm:p-5"
           >
             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -436,12 +523,7 @@ const confirmManage = async () => {
                   Acciones globales ({{ isMixtoRequest ? 'MIXTO' : 'INTERNO' }})
                 </p>
                 <p class="text-xs text-gray-600 dark:text-gray-300">
-                  <span v-if="isMixtoRequest">
-                    Define la entrega global y opcionalmente adjunta acta.
-                  </span>
-                  <span v-else>
-                    Solicitud interna: solo requiere subir acta para finalizar.
-                  </span>
+                  Gestiona acta y seguimiento desde modales separados.
                 </p>
               </div>
               <span
@@ -452,100 +534,36 @@ const confirmManage = async () => {
               </span>
             </div>
 
-            <div
-              v-if="globalError"
-              class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
-            >
-              {{ globalError }}
-            </div>
-
-            <div class="mt-4 grid gap-4 lg:grid-cols-2">
-              <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
-                  Subir acta (global)
-                </p>
-                <input
-                  type="file"
-                  accept=".pdf,image/*"
-                  class="mt-3 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#2d5fc0] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
-                  :disabled="globalSubmitting"
-                  @change="onGlobalActaFileChange"
-                >
-                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  {{ globalActaFileName || 'Sin archivo seleccionado' }}
-                </p>
-
-                <div class="mt-4 space-y-2">
-                  <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario del acta</label>
-                  <UTextarea
-                    v-model="globalActaComment"
-                    placeholder="Ej: Acta firmada por el solicitante..."
-                    :rows="3"
-                    class="w-full"
-                    :disabled="globalSubmitting"
-                  />
-                </div>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+              <div
+                v-if="hasPendingAttentionDetail"
+                class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
+              >
+                Debes gestionar los detalles con estado Pendiente de Atencion antes de subir acta o registrar seguimiento.
               </div>
-
-              <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
-                  Seguimiento
-                </p>
-
-                <div v-if="isMixtoRequest" class="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
-                  Acción global: derivar a logística.
-                </div>
-                <p v-else class="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
-                  Selecciona el estado de seguimiento RR.HH. y agrega comentario opcional.
-                </p>
-
-                <div v-if="hasGlobalActions" class="mt-4 space-y-2">
-                  <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Estado RR.HH.</label>
-                  <select
-                    v-model="globalInternalStatus"
-                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
-                    :disabled="globalSubmitting || isMixtoRequest"
-                  >
-                    <option value="" disabled>Selecciona un estado</option>
-                    <option
-                      v-for="option in internalStatusOptions"
-                      :key="option.value"
-                      :value="option.value"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
-                </div>
-
-                <div class="mt-4 space-y-2">
-                  <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {{ isMixtoRequest ? 'Comentario de derivación' : 'Comentario interno' }}
-                  </label>
-                  <UTextarea
-                    v-model="globalDeliveryComment"
-                    :placeholder="isMixtoRequest ? 'Ej: Entrega urgente. Coordinar con almacén...' : 'Ej: Derivado hoy a logística.'"
-                    :rows="3"
-                    class="w-full"
-                    :disabled="globalSubmitting"
-                  />
-                </div>
-
-                <div class="mt-4 flex items-center justify-end gap-3">
-                  <UButton
-                    v-if="hasGlobalActions"
-                    color="primary"
-                    class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]"
-                    :loading="globalSubmitting"
-                    :disabled="!canSubmitGlobalFinalize"
-                    @click="submitGlobalFinalize"
-                  >
-                    Registrar
-                  </UButton>
-                </div>
-              </div>
+              <UButton
+                v-if="showActaAction"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-file-up"
+                class="rounded-md bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+                :disabled="hasPendingAttentionDetail"
+                @click="openActaModal"
+              >
+                Subir acta
+              </UButton>
+              <UButton
+                v-if="showSeguimientoAction"
+                color="primary"
+                icon="i-lucide-git-branch-plus"
+                class="rounded-md bg-[#2d5fc0] text-white hover:bg-[#244ea4]"
+                :disabled="hasPendingAttentionDetail"
+                @click="openSeguimientoModal"
+              >
+                Seguimiento
+              </UButton>
             </div>
           </div>
-
           <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
             <div class="overflow-x-auto">
               <table class="w-full table-fixed border-separate border-spacing-0">
@@ -662,6 +680,80 @@ const confirmManage = async () => {
           <UButton color="neutral" variant="soft" class="px-5" @click="emit('update:open', false)">
             Cerrar
           </UButton>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="actaModalOpen" class="w-full max-w-2xl" title="Subir acta global">
+    <template #content>
+      <div class="space-y-4 p-4">
+        <div v-if="actaError" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          {{ actaError }}
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Archivo de acta</label>
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#eef4ff] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#2d5fc0] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+            :disabled="actaSubmitting"
+            @change="onGlobalActaFileChange"
+          >
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ globalActaFileName || 'Sin archivo seleccionado' }}</p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Comentario del acta</label>
+          <UTextarea v-model="globalActaComment" :rows="3" class="w-full" :disabled="actaSubmitting" />
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <UButton color="neutral" variant="soft" :disabled="actaSubmitting" @click="actaModalOpen = false">Cancelar</UButton>
+          <UButton color="primary" class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]" :loading="actaSubmitting" :disabled="!canSubmitActa" @click="submitActa">Registrar acta</UButton>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="seguimientoModalOpen" class="w-full max-w-2xl" title="Seguimiento global">
+    <template #content>
+      <div class="space-y-4 p-4">
+        <div v-if="seguimientoError" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          {{ seguimientoError }}
+        </div>
+
+        <div v-if="isMixtoRequest" class="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
+          Accion global: derivar a logistica (solo area RR.HH.).
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">Estado RR.HH.</label>
+          <select
+            v-model="globalInternalStatus"
+            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+            :disabled="seguimientoSubmitting || isMixtoRequest"
+          >
+            <option value="" disabled>Selecciona un estado</option>
+            <option v-for="option in internalStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ isMixtoRequest ? 'Comentario de derivacion' : 'Comentario interno' }}</label>
+          <UTextarea
+            v-model="globalDeliveryComment"
+            :placeholder="isMixtoRequest ? 'Ej: Entrega urgente. Coordinar con almacen...' : 'Ej: Derivado hoy a logistica.'"
+            :rows="3"
+            class="w-full"
+            :disabled="seguimientoSubmitting"
+          />
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <UButton color="neutral" variant="soft" :disabled="seguimientoSubmitting" @click="seguimientoModalOpen = false">Cancelar</UButton>
+          <UButton color="primary" class="bg-[#2d5fc0] text-white hover:bg-[#244ea4]" :loading="seguimientoSubmitting" :disabled="!canSubmitSeguimiento" @click="submitSeguimiento">Registrar seguimiento</UButton>
         </div>
       </div>
     </template>
@@ -805,3 +897,5 @@ const confirmManage = async () => {
     </template>
   </UModal>
 </template>
+
+

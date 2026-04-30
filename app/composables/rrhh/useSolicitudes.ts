@@ -28,7 +28,7 @@ export const useSolicitudes = () => {
     const estado = normalize(item.estado_rrhh)
     if (!estado) return '--'
     if (estado === 'pendiente') return 'Pendiente'
-    if (estado === 'derivar_logistica') return 'Derivar a logistica'
+    if (estado === 'derivar_logistica') return 'Derivado a logistica'
     if (estado === 'recojo_oficina') return 'Recojo en oficina'
     return estado.replace(/_/g, ' ')
   }

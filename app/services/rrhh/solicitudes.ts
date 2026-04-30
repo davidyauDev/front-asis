@@ -311,6 +311,16 @@ export interface DetalleSolicitudAccionResponse {
   }
 }
 
+export interface DerivarDetalleLogisticaResponse {
+  success: boolean
+  message?: string
+  data?: {
+    id_detalle_solicitud?: number | null
+    id_solicitud?: number | null
+    derivado_a_logistica?: boolean | null
+  } | null
+}
+
 export interface SolicitudListParams {
   search?: string
   from?: string
@@ -462,6 +472,14 @@ export const rechazarDetalleSolicitud = async (
   return apiFetch(`/api/solicitudes/detalles/${id}/rechazar`, {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+}
+
+export const derivarDetalleALogistica = async (
+  id: number | string,
+): Promise<DerivarDetalleLogisticaResponse> => {
+  return apiFetch(`/api/solicitudes/detalles/${id}/derivar-logistica`, {
+    method: 'PATCH',
   })
 }
 
