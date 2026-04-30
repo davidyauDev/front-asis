@@ -106,9 +106,14 @@ const revokeBlobUrl = (url?: string | null) => {
 }
 
 const getActaKey = (item: SolicitudListItem) => item.id_solicitud ?? null
+const getActaUrl = (item: SolicitudListItem) => {
+  const value = item.acta_rrhh_url?.trim()
+  return value || null
+}
+
 const hasActa = (item: SolicitudListItem) => {
   const key = getActaKey(item)
-  return Boolean(key && item.acta_rrhh_url)
+  return Boolean(key && getActaUrl(item))
 }
 
 const openActaModal = (item: SolicitudListItem) => {
@@ -336,6 +341,23 @@ onBeforeUnmount(() => {
           >
             {{ row.estado_rrhh_comentario }}
           </p>
+          <a
+            v-if="getActaUrl(row)"
+            :href="getActaUrl(row) || '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1 text-xs font-medium text-[#2d5fc0] hover:text-[#244ea4] hover:underline dark:text-[#9cb7f5] dark:hover:text-[#bfd0ff]"
+          >
+            <UIcon name="i-lucide-file-text" class="h-3.5 w-3.5" />
+            Ver acta RR.HH.
+          </a>
+          <span
+            v-else
+            class="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:ring-amber-900/60"
+          >
+            <UIcon name="i-lucide-clock-3" class="h-3.5 w-3.5" />
+            Acta pendiente
+          </span>
         </div>
       </template>
 
@@ -350,17 +372,6 @@ onBeforeUnmount(() => {
             @click.stop="openDetail(row)"
           >
             Gestionar
-          </UButton>
-
-          <UButton
-            :color="hasActa(row) ? 'success' : 'neutral'"
-            variant="soft"
-            icon="i-lucide-upload"
-            size="xs"
-            :ui="{ base: 'rounded-full' }"
-            @click.stop="openActaModal(row)"
-          >
-            {{ hasActa(row) ? 'Acta cargada' : 'Subir acta' }}
           </UButton>
         </div>
       </template>
@@ -384,6 +395,31 @@ onBeforeUnmount(() => {
             class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
           >
             {{ actaModalError }}
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-[#f8fafc] p-4 dark:border-gray-800 dark:bg-gray-900/40">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+              Estado actual
+            </p>
+            <div class="mt-3">
+              <a
+                v-if="actaRequest && getActaUrl(actaRequest)"
+                :href="getActaUrl(actaRequest) || '#'"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 text-sm font-medium text-[#2d5fc0] hover:text-[#244ea4] hover:underline dark:text-[#9cb7f5] dark:hover:text-[#bfd0ff]"
+              >
+                <UIcon name="i-lucide-file-check-2" class="h-4 w-4" />
+                Ver acta cargada
+              </a>
+              <span
+                v-else
+                class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:ring-amber-900/60"
+              >
+                <UIcon name="i-lucide-clock-3" class="h-4 w-4" />
+                Acta pendiente
+              </span>
+            </div>
           </div>
 
           <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950/60">
@@ -444,7 +480,7 @@ onBeforeUnmount(() => {
       </template>
         </UModal>
 
-        <UModal v-model:open="derivarModalOpen" :title="`Derivar a logistica - Solicitud #${derivarRequest?.id_solicitud ?? '--'}`">
+        <UModal v-model:open="derivarModalOpen" :title="`Derivado a logistica - Solicitud #${derivarRequest?.id_solicitud ?? '--'}`">
       <template #content>
         <div class="space-y-4 p-4 sm:p-5">
           <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
