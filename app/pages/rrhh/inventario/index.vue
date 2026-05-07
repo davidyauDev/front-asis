@@ -21,7 +21,7 @@ const inventorySections = [
     title: 'Solicitudes Compra',
     description: 'Flujo de aprobacion y reembolso de compras.',
     icon: 'i-lucide-shopping-bag',
-    to: '/rrhh/solicitud/compra',
+    to: '/rrhh/solicitud/botas',
     tone: 'from-cyan-500/20 to-blue-500/10',
   },
   {
