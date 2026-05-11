@@ -9,7 +9,24 @@ const toast = useToast()
 const config = useRuntimeConfig()
 const authToken = useCookie<string | null>('auth_token', { sameSite: 'lax' })
 
-type ReabastecimientoTab = 'pendientes' | 'procesando' | 'cerrados'
+const ESTADO_REABASTECIMIENTO = {
+  PENDIENTE: 10,
+  APROBADO: 11,
+  COMPLETADO: 12,
+  RECHAZADO: 13,
+  CANCELADO: 14,
+  OBSERVADO: 15,
+} as const
+
+
+
+const REABASTECIMIENTO_TABS = ['pendientes', 'observadas', 'aprobadas', 'rechazadas', 'completadas', 'canceladas'] as const
+const REABASTECIMIENTO_ESTADOS_SOLICITANTE_EDITABLES: number[] = [
+  ESTADO_REABASTECIMIENTO.PENDIENTE,
+  ESTADO_REABASTECIMIENTO.OBSERVADO,
+]
+
+type ReabastecimientoTab = typeof REABASTECIMIENTO_TABS[number]
 
 type ReabastecimientoEstadoInventario = {
   id_estado: number
@@ -28,6 +45,8 @@ type ReabastecimientoRequest = {
   fecha_creacion: string
   justificacion: string
   detalles_count: number
+  total_productos?: number
+  total_unidades?: number
 }
 
 type ReabastecimientoRequestListMeta = {
@@ -201,12 +220,13 @@ type ReabastecimientoTrackingStaff = {
 
 type ReabastecimientoTrackingItem = {
   id_flujo_reb: number
-  id_log_reb: number
+  id_log_reb?: number
   id_solicitud_reb: number
   id_area_responsable?: number | null
   id_usuario_asignado?: number | null
   id_usuario_comenta?: number | null
   id_estado?: number | null
+  estado_descripcion?: string | null
   comentarios?: string | null
   comentario?: string | null
   archivo?: string | null
@@ -274,9 +294,12 @@ const requestLoading = shallowRef(false)
 const requestError = shallowRef<string | null>(null)
 const requestItems = ref<ReabastecimientoRequest[]>([])
 const requestTabsMeta = ref<ReabastecimientoRequestListMeta['tabs']>({
-  pendientes: { label: 'PENDIENTES', count: 0 },
-  procesando: { label: 'PROCESANDO', count: 0 },
-  cerrados: { label: 'CERRADOS', count: 0 },
+  pendientes: { label: 'Pendientes', count: 0 },
+  observadas: { label: 'Observadas', count: 0 },
+  aprobadas: { label: 'Aprobadas', count: 0 },
+  rechazadas: { label: 'Rechazadas', count: 0 },
+  completadas: { label: 'Completadas', count: 0 },
+  canceladas: { label: 'Canceladas', count: 0 },
 })
 const requestPagination = ref({
   currentPage: 1,
@@ -328,249 +351,14 @@ const detailProductEditSubmitting = shallowRef(false)
 const detailProductDeleteSubmitting = shallowRef(false)
 const detailProductCreateSubmitting = shallowRef(false)
 const requestSubmitting = shallowRef(false)
-
-/* const requests = ref<any[]>([
-  {
-    id: 'CECH_REA_0000006',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'justificacion prueba',
-    createdAt: '2025-11-24 11:15:23',
-  },
-  {
-    id: 'CECH_REA_0000007',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'prueba',
-    createdAt: '2025-11-24 11:16:03',
-  },
-  {
-    id: 'CECH_REA_0000008',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'solicitud de prueba',
-    createdAt: '2025-11-24 11:17:51',
-  },
-  {
-    id: 'CECH_REA_0000009',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: '',
-    createdAt: '2025-11-24 11:23:22',
-  },
-  {
-    id: 'CECH_REA_0000010',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'justificacion de prueba',
-    createdAt: '2025-11-24 11:29:06',
-  },
-  {
-    id: 'CECH_REA_0000013',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'sdads',
-    createdAt: '2025-11-24 11:34:25',
-  },
-  {
-    id: 'CECH_REA_0000014',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'prueba',
-    createdAt: '2025-11-24 11:36:49',
-  },
-  {
-    id: 'CECH_REA_0000015',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'prueba',
-    createdAt: '2025-11-24 11:38:53',
-  },
-  {
-    id: 'CECH_REA_0000016',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'justificacion prueba',
-    createdAt: '2025-11-24 11:46:16',
-  },
-  {
-    id: 'CECH_REA_0000018',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'justificacion prueba',
-    createdAt: '2025-11-24 11:51:51',
-  },
-  {
-    id: 'CECH_REA_0000019',
-    requester: 'Johana Cecilia Camacho Caceda',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'Reposicion de EPP para ingreso a planta',
-    createdAt: '2025-11-24 12:03:18',
-  },
-  {
-    id: 'CECH_REA_0000020',
-    requester: 'Joel Ronald Colque Fuentes',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'Solicitud en revision por compras',
-    createdAt: '2025-11-24 12:10:42',
-  },
-  {
-    id: 'CECH_REA_0000021',
-    requester: 'Karen Aytlen Orozco Guerrero',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'Aprobado para entrega parcial',
-    createdAt: '2025-11-24 12:18:09',
-  },
-  {
-    id: 'CECH_REA_0000022',
-    requester: 'Joana Melissa Ortiz Reyes',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'Reposicion de stock por campaña interna',
-    createdAt: '2025-11-24 12:24:55',
-  },
-  {
-    id: 'CECH_REA_0000023',
-    requester: 'Marjorie Alexandra Osorio la Rosa',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'Se valida disponibilidad en almacén',
-    createdAt: '2025-11-24 12:31:16',
-  },
-  {
-    id: 'CECH_REA_0000024',
-    requester: 'Axel Fabian Panduro Acosta',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'Solicitud finalizada sin observaciones',
-    createdAt: '2025-11-24 12:39:40',
-  },
-  {
-    id: 'CECH_REA_0000025',
-    requester: 'Julian Arturo Romero Sosa',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'Pedido urgente por reposicion de stock',
-    createdAt: '2025-11-24 12:45:12',
-  },
-  {
-    id: 'CECH_REA_0000026',
-    requester: 'Luis Alberto Camacho Caceda',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'En revision por disponibilidad de almacén',
-    createdAt: '2025-11-24 12:53:26',
-  },
-  {
-    id: 'CECH_REA_0000027',
-    requester: 'Emma Soledad Julian Iturbe',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'Aprobado y derivado a entrega',
-    createdAt: '2025-11-24 13:01:44',
-  },
-  {
-    id: 'CECH_REA_0000028',
-    requester: 'Marjorie Alexandra Osorio la Rosa',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'Solicitud adicional por cambio de turno',
-    createdAt: '2025-11-24 13:08:09',
-  },
-  {
-    id: 'CECH_REA_0000029',
-    requester: 'Rosa Elena Huamani Paredes',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'Reposicion de implementos por cierre mensual',
-    createdAt: '2025-11-24 13:12:31',
-  },
-  {
-    id: 'CECH_REA_0000030',
-    requester: 'Daniel Alberto Velez Rojas',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'Aprobado para entrega de almacén',
-    createdAt: '2025-11-24 13:19:05',
-  },
-  {
-    id: 'CECH_REA_0000031',
-    requester: 'Fiorella Milagros Torres Prado',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'Pedido de EPP para nuevo ingreso',
-    createdAt: '2025-11-24 13:24:48',
-  },
-  {
-    id: 'CECH_REA_0000032',
-    requester: 'Kevin Joel Salazar Luna',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'Pedido en revisión por compras',
-    createdAt: '2025-11-24 13:29:12',
-  },
-  {
-    id: 'CECH_REA_0000033',
-    requester: 'Milagros Andrea Cueva Torres',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'Solicitud cerrada y entregada',
-    createdAt: '2025-11-24 13:35:40',
-  },
-  {
-    id: 'CECH_REA_0000034',
-    requester: 'Renzo Martin Diaz Salas',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'Reposicion por stock minimo',
-    createdAt: '2025-11-24 13:41:07',
-  },
-  {
-    id: 'CECH_REA_0000035',
-    requester: 'Jazmin Alejandra Romero Leon',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'Validación de inventario en curso',
-    createdAt: '2025-11-24 13:46:22',
-  },
-  {
-    id: 'CECH_REA_0000036',
-    requester: 'Luis Fernando Montes Velarde',
-    area: 'RR.HH.',
-    status: 'closed',
-    justification: 'Aprobado y enviado a despacho',
-    createdAt: '2025-11-24 13:52:58',
-  },
-  {
-    id: 'CECH_REA_0000037',
-    requester: 'Camila Sofia Pinedo Vargas',
-    area: 'RR.HH.',
-    status: 'pending',
-    justification: 'Pedido programado para mañana',
-    createdAt: '2025-11-24 13:58:14',
-  },
-  {
-    id: 'CECH_REA_0000038',
-    requester: 'Oscar Jesus Medina Castillo',
-    area: 'RR.HH.',
-    status: 'processing',
-    justification: 'Pendiente de autorización final',
-    createdAt: '2025-11-24 14:03:41',
-  },
-]) */
+const stateChangeModalOpen = shallowRef(false)
+const stateChangeRequest = shallowRef<ReabastecimientoRequest | null>(null)
+const stateChangeTargetEstado = shallowRef<number | null>(null)
+const stateChangeActionLabel = shallowRef('')
+const stateChangeComment = shallowRef('')
+const stateChangeFile = shallowRef<File | null>(null)
+const stateChangeFileInput = ref<HTMLInputElement | null>(null)
+const stateChangeSubmitting = shallowRef(false)
 
 const modalCatalogItems = ref<CatalogItem[]>([])
 
@@ -602,11 +390,11 @@ const perPageOptions = [
   { label: '20', value: 20 },
 ]
 
-const tabItems = computed(() => [
-  { label: requestTabsMeta.value.pendientes.label, value: 'pendientes', badge: requestTabsMeta.value.pendientes.count },
-  { label: requestTabsMeta.value.procesando.label, value: 'procesando', badge: requestTabsMeta.value.procesando.count },
-  { label: requestTabsMeta.value.cerrados.label, value: 'cerrados', badge: requestTabsMeta.value.cerrados.count },
-])
+const tabItems = computed(() => REABASTECIMIENTO_TABS.map(tab => ({
+  label: requestTabsMeta.value[tab]?.label ?? tab,
+  value: tab,
+  badge: requestTabsMeta.value[tab]?.count ?? 0,
+})))
 
 const visibleRequests = computed(() => {
   return requestItems.value
@@ -630,11 +418,105 @@ const requestShowingEnd = computed(() => {
   return Math.min(requestPagination.value.currentPage * requestPagination.value.perPage, requestPagination.value.total)
 })
 
-const detailActionsLocked = computed(() => {
-  return Number(selectedRequestSummary.value?.estado_inventario.id_estado) === 7
+const getRequestStateId = (request?: ReabastecimientoRequest | null) => {
+  return Number(request?.estado_inventario?.id_estado ?? request?.id_estado_general ?? 0)
+}
+
+const currentDetailStateId = computed(() => getRequestStateId(selectedRequestSummary.value))
+const canCancelSelectedRequest = computed(() => currentDetailStateId.value === ESTADO_REABASTECIMIENTO.PENDIENTE)
+const canResubmitSelectedRequest = computed(() => currentDetailStateId.value === ESTADO_REABASTECIMIENTO.OBSERVADO)
+const canEditDetailProducts = computed(() => currentDetailStateId.value === ESTADO_REABASTECIMIENTO.OBSERVADO)
+const canManageDetailFiles = computed(() => REABASTECIMIENTO_ESTADOS_SOLICITANTE_EDITABLES.includes(currentDetailStateId.value))
+const canManageDetailTracking = computed(() => canManageDetailFiles.value)
+const detailActionsLocked = computed(() => !canEditDetailProducts.value)
+const detailFilesLocked = computed(() => !canManageDetailFiles.value)
+const detailTrackingLocked = computed(() => !canManageDetailTracking.value)
+const canRegisterDetailTracking = computed(() => canManageDetailTracking.value && Boolean(detailTrackingComment.value.trim() || detailTrackingFile.value))
+const canRegisterDetailFile = computed(() => canManageDetailFiles.value && Boolean(detailFilesUploadComment.value.trim() || detailFilesUploadFile.value))
+
+const detailStateBanner = computed(() => {
+  if (!selectedRequestSummary.value) {
+    return null
+  }
+
+  const stateId = currentDetailStateId.value
+
+  if (stateId === ESTADO_REABASTECIMIENTO.OBSERVADO) {
+    return {
+      tone: 'bg-[#7c74ff] text-white',
+      title: 'La solicitud está observada. Puedes ajustar productos y adjuntos antes de volver a solicitar.',
+    }
+  }
+
+  if (stateId === ESTADO_REABASTECIMIENTO.PENDIENTE) {
+    return {
+      tone: 'bg-[#eef4ff] text-[#2d5fc0]',
+      title: 'Solicitud pendiente de aprobación por Compras.',
+    }
+  }
+
+  if (stateId === ESTADO_REABASTECIMIENTO.APROBADO) {
+    return {
+      tone: 'bg-[#eaf8ef] text-[#2f8f1f]',
+      title: 'Solicitud aprobada. El seguimiento ya está cerrado para edición.',
+    }
+  }
+
+  if (stateId === ESTADO_REABASTECIMIENTO.RECHAZADO) {
+    return {
+      tone: 'bg-[#fff0f2] text-[#cf3444]',
+      title: 'Solicitud rechazada. Revisa el historial para identificar la observación.',
+    }
+  }
+
+  if (stateId === ESTADO_REABASTECIMIENTO.COMPLETADO) {
+    return {
+      tone: 'bg-[#eef7ff] text-[#1676c2]',
+      title: 'Solicitud completada. El detalle se mantiene solo como consulta.',
+    }
+  }
+
+  if (stateId === ESTADO_REABASTECIMIENTO.CANCELADO) {
+    return {
+      tone: 'bg-[#f3f4f6] text-[#5f6b7a]',
+      title: 'Solicitud cancelada por el solicitante.',
+    }
+  }
+
+  return null
 })
-const canRegisterDetailTracking = computed(() => Boolean(detailTrackingComment.value.trim() || detailTrackingFile.value))
-const canRegisterDetailFile = computed(() => Boolean(detailFilesUploadComment.value.trim() || detailFilesUploadFile.value))
+
+const detailActionMeta = computed(() => {
+  if (currentDetailStateId.value === ESTADO_REABASTECIMIENTO.PENDIENTE) {
+    return {
+      title: 'Acción disponible',
+      label: 'Cancelar',
+      icon: 'i-lucide-ban',
+      tone: 'error' as const,
+      buttonClass: 'font-semibold',
+      submitLabel: 'Guardar estado',
+      targetEstado: ESTADO_REABASTECIMIENTO.CANCELADO,
+      hint: 'Puedes cancelar la solicitud mientras siga pendiente.',
+    }
+  }
+
+  if (currentDetailStateId.value === ESTADO_REABASTECIMIENTO.OBSERVADO) {
+    return {
+      title: 'Acción disponible',
+      label: 'Volver a solicitar',
+      icon: 'i-lucide-send',
+      tone: 'warning' as const,
+      buttonClass: 'bg-[#f4d36b] text-[#7a5a00] hover:bg-[#efc84e]',
+      submitLabel: 'Guardar estado',
+      targetEstado: ESTADO_REABASTECIMIENTO.PENDIENTE,
+      hint: 'Actualiza el detalle y reenvía la solicitud a revisión.',
+    }
+  }
+
+  return null
+})
+
+const canCancelRequestItem = (request: ReabastecimientoRequest) => getRequestStateId(request) === ESTADO_REABASTECIMIENTO.PENDIENTE
 
 const filteredCatalog = computed(() => {
   const query = catalogSearch.value.trim().toLowerCase()
@@ -663,9 +545,9 @@ type CreateReabastecimientoDetail = {
 }
 
 type CreateReabastecimientoPayload = {
-  id_usuario_solicitante: number
-  id_area_solicitante: number
-  id_estado_general: number
+  id_usuario_solicitante?: number
+  id_area_solicitante?: number
+  id_estado_general?: number
   justificacion: string
   detalles: CreateReabastecimientoDetail[]
 }
@@ -678,6 +560,31 @@ type CreateReabastecimientoResponse = {
   } | null
   message?: string
 }
+
+type UpdateReabastecimientoStateResponse = {
+  success: boolean
+  data: {
+    id_solicitud_reb: number
+    id_estado_final: number
+    id_flujo_reb: number
+  } | null
+  message: string
+}
+
+
+const formatLocalDate = (dateString: string) => {
+  // const dateUtc = 
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
 
 const loadRequests = async () => {
   requestLoading.value = true
@@ -728,6 +635,9 @@ const loadCatalog = async () => {
   try {
     const response = await $fetch<InventoryApiResponse>(`${config.public.apiBaseUrl}/api/inventario`, {
       method: 'GET',
+      params: {
+        noBotas: true
+      },
       headers: {
         Accept: 'application/json',
         ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
@@ -753,27 +663,31 @@ const loadCatalog = async () => {
   }
 }
 
-const requestStateTone = (descripcion: string, idEstado?: number) => {
+const requestStateTone = (descripcion: string, idEstado?: number | null) => {
   const tone = descripcion?.toLowerCase?.() ?? ''
 
-  if (idEstado === 1 || tone.includes('pendiente')) {
+  if (idEstado === ESTADO_REABASTECIMIENTO.PENDIENTE || tone.includes('pendiente')) {
     return 'bg-[#f2cb21] text-[#6a4b00]'
   }
 
-  if (tone.includes('proces') || tone.includes('revision')) {
+  if (idEstado === ESTADO_REABASTECIMIENTO.OBSERVADO || tone.includes('observ')) {
     return 'bg-[#2d5fc0] text-white'
   }
 
-  if (tone.includes('aprob')) {
+  if (idEstado === ESTADO_REABASTECIMIENTO.APROBADO || tone.includes('aprob')) {
     return 'bg-[#67c51f] text-white'
   }
 
-  if (tone.includes('cerr') || tone.includes('final')) {
-    return 'bg-[#5f6b7a] text-white'
+  if (idEstado === ESTADO_REABASTECIMIENTO.COMPLETADO || tone.includes('complet') || tone.includes('final')) {
+    return 'bg-[#0ea5e9] text-white'
   }
 
-  if (tone.includes('rech') || tone.includes('anul')) {
+  if (idEstado === ESTADO_REABASTECIMIENTO.RECHAZADO || tone.includes('rech')) {
     return 'bg-[#e53946] text-white'
+  }
+
+  if (idEstado === ESTADO_REABASTECIMIENTO.CANCELADO || tone.includes('cancel') || tone.includes('anul')) {
+    return 'bg-[#5f6b7a] text-white'
   }
 
   return 'bg-[#2d5fc0] text-white'
@@ -1201,13 +1115,8 @@ const resetDetailModalState = () => {
   resetDetailTrackingState()
   resetDetailFilesState()
   resetDetailProductState()
+  resetStateChange()
 }
-
-const detailStateOptions = [
-  'Aceptacion de Recepcion',
-  'Pendiente de Revision',
-  'Cerrado',
-]
 
 const addToRequest = (item: CatalogItem) => {
   const exists = requestLines.value.some(row => row.idProducto === item.idProducto || row.description === item.name)
@@ -1294,6 +1203,41 @@ const resetRequestForm = () => {
   catalogSearch.value = ''
 }
 
+const uploadInitialAttachments = async (requestId: number) => {
+  const rows = attachmentRows.value.filter(row => row.description.trim() || row.file)
+  let uploaded = 0
+
+  for (const row of rows) {
+    const formData = new FormData()
+    const comentario = row.description.trim()
+
+    if (comentario) {
+      formData.append('comentario', comentario)
+    }
+
+    if (row.file) {
+      formData.append('archivo', row.file)
+    }
+
+    const response = await $fetch<ReabastecimientoFileUploadResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/solicitudes/${requestId}/archivos`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (!response.success) {
+      throw new Error(response.message || 'No se pudo registrar un adjunto inicial.')
+    }
+
+    uploaded += 1
+  }
+
+  return uploaded
+}
+
 const processRequest = async () => {
   if (requestSubmitting.value) {
     return
@@ -1336,9 +1280,6 @@ const processRequest = async () => {
         ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
       },
       body: {
-        id_usuario_solicitante: 179,
-        id_area_solicitante: 11,
-        id_estado_general: 1,
         justificacion,
         detalles,
       } satisfies CreateReabastecimientoPayload,
@@ -1348,9 +1289,25 @@ const processRequest = async () => {
       throw new Error(response.message || 'No se pudo registrar la solicitud de reabastecimiento.')
     }
 
+    let adjuntosRegistrados = 0
+    const solicitudId = response.data?.id_solicitud_reb
+
+    if (solicitudId) {
+      try {
+        adjuntosRegistrados = await uploadInitialAttachments(solicitudId)
+      } catch (attachmentError: any) {
+        console.error('Error registrando adjuntos iniciales:', attachmentError)
+        toast.add({
+          title: 'Solicitud registrada con advertencia',
+          description: attachmentError?.data?.message || attachmentError?.message || 'La solicitud fue creada, pero no se pudieron guardar todos los adjuntos.',
+          color: 'warning',
+        })
+      }
+    }
+
     toast.add({
       title: 'Solicitud registrada',
-      description: `Se registró la solicitud ${response.data?.id_solicitud_reb ?? ''} con ${response.data?.detalles_registrados ?? detalles.length} detalle(s).`.trim(),
+      description: `Se registró la solicitud ${solicitudId ?? ''} con ${response.data?.detalles_registrados ?? detalles.length} detalle(s)${adjuntosRegistrados ? ` y ${adjuntosRegistrados} adjunto(s)` : ''}.`.trim(),
       color: 'success',
     })
 
@@ -1407,6 +1364,31 @@ const openRequestDetail = async (item: ReabastecimientoRequest) => {
 
     requestDetailData.value = response.data
     syncDetailProductRows(response.data.detalles || [])
+
+    if (getRequestStateId(item) === ESTADO_REABASTECIMIENTO.PENDIENTE) {
+      stateChangeRequest.value = item
+      stateChangeTargetEstado.value = ESTADO_REABASTECIMIENTO.CANCELADO
+      stateChangeActionLabel.value = 'Cancelar'
+      stateChangeComment.value = ''
+      stateChangeFile.value = null
+
+      if (stateChangeFileInput.value) {
+        stateChangeFileInput.value.value = ''
+      }
+    } else if (getRequestStateId(item) === ESTADO_REABASTECIMIENTO.OBSERVADO) {
+      stateChangeRequest.value = item
+      stateChangeTargetEstado.value = ESTADO_REABASTECIMIENTO.PENDIENTE
+      stateChangeActionLabel.value = 'Volver a solicitar'
+      stateChangeComment.value = ''
+      stateChangeFile.value = null
+
+      if (stateChangeFileInput.value) {
+        stateChangeFileInput.value.value = ''
+      }
+    } else {
+      resetStateChange()
+    }
+
     await Promise.all([
       loadDetailTrackingHistory(item.id_solicitud_reb),
       loadRequestFiles(item.id_solicitud_reb),
@@ -1512,7 +1494,7 @@ const upsertDetailTrackingItem = (item: ReabastecimientoTrackingItem) => {
 }
 
 const openDetailFilesUpload = () => {
-  if (detailActionsLocked.value) {
+  if (detailFilesLocked.value) {
     return
   }
 
@@ -1549,7 +1531,7 @@ const applyDetailFilesSearch = () => {
 }
 
 const confirmDetailFilesUpload = async () => {
-  if (detailActionsLocked.value) {
+  if (detailFilesLocked.value) {
     return
   }
 
@@ -1627,7 +1609,7 @@ const confirmDetailFilesUpload = async () => {
 }
 
 const promptRemoveDetailFile = (item: ReabastecimientoFileLogItem) => {
-  if (detailActionsLocked.value) {
+  if (detailFilesLocked.value) {
     return
   }
 
@@ -1642,7 +1624,7 @@ const cancelRemoveDetailFile = () => {
 }
 
 const confirmRemoveDetailFile = async () => {
-  if (detailActionsLocked.value) {
+  if (detailFilesLocked.value) {
     return
   }
 
@@ -1711,7 +1693,7 @@ const onDetailTrackingFileChange = (event: Event) => {
 }
 
 const registerDetailTracking = async () => {
-  if (detailActionsLocked.value) {
+  if (detailTrackingLocked.value) {
     return
   }
 
@@ -1790,7 +1772,7 @@ const registerDetailTracking = async () => {
 }
 
 const removeDetailTracking = async (item: ReabastecimientoTrackingItem) => {
-  if (detailActionsLocked.value) {
+  if (detailTrackingLocked.value) {
     return
   }
 
@@ -1803,11 +1785,11 @@ const removeDetailTracking = async (item: ReabastecimientoTrackingItem) => {
     return
   }
 
-  detailTrackingDeletingId.value = item.id_log_reb
+  detailTrackingDeletingId.value = item.id_flujo_reb
 
   try {
-    const response = await $fetch<{ success: boolean; data: null | { id_log_reb: number }; message: string }>(
-      `${config.public.apiBaseUrl}/api/reabastecimiento/seguimiento/${item.id_log_reb}`,
+    const response = await $fetch<{ success: boolean; data: null | { id_flujo_reb: number }; message: string }>(
+      `${config.public.apiBaseUrl}/api/reabastecimiento/seguimiento/${item.id_flujo_reb}`,
       {
         method: 'DELETE',
         headers: {
@@ -1840,6 +1822,132 @@ const removeDetailTracking = async (item: ReabastecimientoTrackingItem) => {
   }
 }
 
+const resetStateChange = () => {
+  stateChangeModalOpen.value = false
+  stateChangeRequest.value = null
+  stateChangeTargetEstado.value = null
+  stateChangeActionLabel.value = ''
+  stateChangeComment.value = ''
+  stateChangeFile.value = null
+  stateChangeSubmitting.value = false
+
+  if (stateChangeFileInput.value) {
+    stateChangeFileInput.value.value = ''
+  }
+}
+
+const openStateChange = (request: ReabastecimientoRequest, targetEstado: number) => {
+  const currentState = getRequestStateId(request)
+
+  if (targetEstado === ESTADO_REABASTECIMIENTO.CANCELADO && currentState !== ESTADO_REABASTECIMIENTO.PENDIENTE) {
+    return
+  }
+
+  if (targetEstado === ESTADO_REABASTECIMIENTO.PENDIENTE && currentState !== ESTADO_REABASTECIMIENTO.OBSERVADO) {
+    return
+  }
+
+  stateChangeRequest.value = request
+  stateChangeTargetEstado.value = targetEstado
+  stateChangeActionLabel.value = targetEstado === ESTADO_REABASTECIMIENTO.CANCELADO ? 'Cancelar solicitud' : 'Reenviar solicitud'
+  stateChangeComment.value = targetEstado === ESTADO_REABASTECIMIENTO.CANCELADO
+    ? 'Solicitud cancelada por el solicitante.'
+    : 'Solicitud actualizada y reenviada para revisión.'
+  stateChangeFile.value = null
+  stateChangeModalOpen.value = true
+
+  if (stateChangeFileInput.value) {
+    stateChangeFileInput.value.value = ''
+  }
+}
+
+const openStateChangeForSelected = (targetEstado: number) => {
+  if (!selectedRequestSummary.value) {
+    return
+  }
+
+  openStateChange(selectedRequestSummary.value, targetEstado)
+}
+
+const onStateChangeFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  stateChangeFile.value = input.files?.[0] ?? null
+}
+
+const submitStateChange = async () => {
+  if (!stateChangeRequest.value || !stateChangeTargetEstado.value || stateChangeSubmitting.value) {
+    return
+  }
+
+  const comentario = stateChangeComment.value.trim()
+  if (!comentario) {
+    toast.add({
+      title: 'Comentario requerido',
+      description: 'El comentario es obligatorio para cambiar el estado.',
+      color: 'warning',
+    })
+    return
+  }
+
+  const requestId = stateChangeRequest.value.id_solicitud_reb
+  const targetEstado = stateChangeTargetEstado.value
+  const formData = new FormData()
+  formData.append('id_estado_reb', String(targetEstado))
+  formData.append('comentario', comentario)
+
+  if (stateChangeFile.value) {
+    formData.append('archivo', stateChangeFile.value)
+  }
+
+  stateChangeSubmitting.value = true
+
+  try {
+    const response = await $fetch<UpdateReabastecimientoStateResponse>(`${config.public.apiBaseUrl}/api/reabastecimiento/solicitudes/${requestId}/estado`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || 'No se pudo actualizar la solicitud.')
+    }
+
+    toast.add({
+      title: 'Estado actualizado',
+      description: response.message || 'La solicitud fue actualizada correctamente.',
+      color: 'success',
+    })
+
+    resetStateChange()
+    await loadRequests()
+
+    if (selectedRequestSummary.value?.id_solicitud_reb === requestId) {
+      const refreshed = requestItems.value.find(item => item.id_solicitud_reb === requestId)
+      if (refreshed) {
+        await openRequestDetail(refreshed)
+      } else {
+        closeRequestDetail()
+      }
+    }
+  } catch (error: any) {
+    console.error('Error actualizando estado de reabastecimiento:', error)
+    const validationMessages = error?.data?.errors
+      ? Object.values(error.data.errors).flat().filter(Boolean).join(' ')
+      : ''
+
+    toast.add({
+      title: 'No se pudo actualizar',
+      description: validationMessages || error?.data?.message || error?.message || 'No se pudo actualizar la solicitud.',
+      color: 'error',
+    })
+  } finally {
+    stateChangeSubmitting.value = false
+  }
+}
+
 watch([requestSearch, requestDateFrom, requestDateTo, requestPerPage, activeTab], () => {
   if (requestPage.value !== 1) {
     requestPage.value = 1
@@ -1861,8 +1969,22 @@ watch(detailActionsLocked, (isLocked) => {
   cancelAddDetailProductRow()
   cancelConfirmEditDetailProductRow()
   cancelRemoveDetailProductRow()
+})
+
+watch(detailFilesLocked, (isLocked) => {
+  if (!isLocked) {
+    return
+  }
+
   resetDetailFilesUploadState()
   cancelRemoveDetailFile()
+})
+
+watch(detailTrackingLocked, (isLocked) => {
+  if (!isLocked) {
+    return
+  }
+
   detailTrackingComment.value = ''
   detailTrackingFile.value = null
   detailTrackingSubmitting.value = false
@@ -1903,7 +2025,7 @@ onMounted(() => {
             Solicitar Reabastecimiento
           </h1>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            Seguimiento de solicitudes, aprobaciones y trazabilidad del pedido.
+            Seguimiento de tus solicitudes y trazabilidad del pedido.
           </p>
         </div>
 
@@ -1959,6 +2081,8 @@ onMounted(() => {
                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Solicitante</th>
                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Area</th>
                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Estado</th>
+                <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Productos</th>
+                <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Unidades</th>
                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Justificacion</th>
                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha de Creacion</th>
                 <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Acciones</th>
@@ -1967,13 +2091,13 @@ onMounted(() => {
 
             <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
               <tr v-if="requestLoading">
-                <td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colspan="9" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                   Cargando solicitudes de reabastecimiento...
                 </td>
               </tr>
 
               <tr v-else-if="requestError">
-                <td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colspan="9" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                   <div class="space-y-2">
                     <p>{{ requestError }}</p>
                     <UButton color="primary" variant="soft" size="xs" @click="loadRequests">
@@ -2004,6 +2128,12 @@ onMounted(() => {
                       {{ item.estado_inventario.descripcion }}
                     </span>
                   </td>
+                  <td class="px-5 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    {{ item.total_productos ?? item.detalles_count ?? 0 }}
+                  </td>
+                  <td class="px-5 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    {{ item.total_unidades ?? '-' }}
+                  </td>
                   <td class="px-5 py-3 text-sm text-gray-700 dark:text-gray-200">
                     {{ item.justificacion || '-' }}
                   </td>
@@ -2023,21 +2153,22 @@ onMounted(() => {
                         @click.stop="openRequestDetail(item)"
                       />
                       <UButton
-                        color="primary"
+                        v-if="canCancelRequestItem(item)"
+                        color="error"
                         variant="soft"
-                        icon="i-lucide-history"
-                        class="rounded-full bg-[#eef4ff] text-[#2d5fc0] hover:bg-[#dfe9ff]"
+                        icon="i-lucide-ban"
+                        class="rounded-full"
                         size="xs"
-                        aria-label="Historial"
-                        title="Historial"
-                        @click.stop="openRequestDetail(item)"
+                        aria-label="Cancelar solicitud"
+                        title="Cancelar solicitud"
+                        @click.stop="openStateChange(item, ESTADO_REABASTECIMIENTO.CANCELADO)"
                       />
                     </div>
                   </td>
                 </tr>
 
                 <tr v-if="!visibleRequests.length">
-                  <td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colspan="9" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                     No hay resultados para el filtro actual
                   </td>
                 </tr>
@@ -2206,7 +2337,7 @@ onMounted(() => {
               </div>
             </UCard>
 
-            <UCard class="min-w-0 h-full overflow-hidden border-gray-200/70 bg-white/90 shadow-sm dark:border-gray-800/70 dark:bg-gray-950/90" :ui="{ body: 'flex h-full min-h-0 flex-col p-0' }">
+            <UCard class="min-w-0 h-full border-gray-200/70 bg-white/90 shadow-sm dark:border-gray-800/70 dark:bg-gray-950/90" :ui="{ body: 'flex h-full min-h-0 flex-col p-0' }">
               <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
                   Solicitud de Productos
@@ -2216,8 +2347,8 @@ onMounted(() => {
                 </h3>
               </div>
 
-              <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
-                <div class="space-y-2">
+              <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+                <div class="space-y-2 shrink-0">
                   <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
                     <input
                       v-model="showJustification"
@@ -2235,7 +2366,7 @@ onMounted(() => {
                   />
                 </div>
 
-                <div class="h-[260px] overflow-y-auto overflow-x-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                <div class="min-h-[150px] flex-1 overflow-y-auto overflow-x-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
                   <table class="min-w-full border-separate border-spacing-0">
                     <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
                       <tr>
@@ -2279,7 +2410,7 @@ onMounted(() => {
                   </table>
                 </div>
 
-                <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+                <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60 shrink-0">
                   <div class="mb-4 flex items-center gap-2">
                     <UIcon name="i-lucide-paperclip" class="h-4 w-4 text-[#2d5fc0]" />
                     <h4 class="text-sm font-semibold text-gray-950 dark:text-white">
@@ -2287,7 +2418,7 @@ onMounted(() => {
                     </h4>
                   </div>
 
-                  <div class="max-h-[280px] space-y-4 overflow-y-auto pr-1">
+                  <div class="max-h-[150px] sm:max-h-[180px] md:max-h-[220px] space-y-4 overflow-y-auto pr-1">
                     <div
                       v-for="row in attachmentRows"
                       :key="row.id"
@@ -2361,7 +2492,7 @@ onMounted(() => {
 
                 <UButton
                   color="primary"
-                  class="w-full justify-center bg-[#2d5fc0] py-3 font-semibold text-white shadow-[0_12px_26px_rgba(45,95,192,0.18)] hover:bg-[#244ea4]"
+                  class="w-full justify-center bg-[#2d5fc0] py-3 font-semibold text-white shadow-[0_12px_26px_rgba(45,95,192,0.18)] hover:bg-[#244ea4] shrink-0"
                   :loading="requestSubmitting"
                   :disabled="requestSubmitting"
                   @click="processRequest"
@@ -2392,38 +2523,61 @@ onMounted(() => {
 
     <UModal
       v-model:open="detailModalOpen"
-      class="w-[calc(100vw-1rem)] max-w-[1680px]"
+      class="w-screen max-w-none"
       @close="closeRequestDetail"
       :ui="{
-        content: 'h-[96vh] overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        content: 'h-screen max-h-screen overflow-hidden rounded-none ring-0',
         header: 'p-0',
-        body: 'h-[calc(96vh-72px)] overflow-y-auto overflow-x-hidden p-0',
-        wrapper: 'items-center justify-center',
+        body: 'h-[calc(100vh-62px)] overflow-y-auto overflow-x-hidden bg-[#f2f5fa] p-0',
+        wrapper: 'items-stretch justify-stretch p-0',
       }"
-      :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+      :close="{ color: 'neutral', variant: 'soft', class: 'rounded-md bg-white text-[#1e355f] hover:bg-[#eef4ff]' }"
     >
       <template #title>
-        <div class="flex w-full items-center justify-between border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+        <div class="flex min-h-[62px] w-full items-center justify-between gap-3 bg-[#1e355f] px-5 py-3 text-white shadow-[0_10px_26px_rgba(15,23,42,0.16)]">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-[#c7d2fe]">
               Detalle de solicitud
             </p>
-            <h2 class="mt-1 text-lg font-bold text-gray-950 dark:text-white">
+            <h2 class="mt-1 text-lg font-bold text-white">
               {{ selectedRequestSummary?.codigo || 'Sin solicitud seleccionada' }}
             </h2>
           </div>
 
-          <UBadge
-            v-if="selectedRequestSummary"
-            :class="['rounded-full px-3 py-1', requestStateTone(selectedRequestSummary.estado_inventario.descripcion, selectedRequestSummary.estado_inventario.id_estado)]"
-          >
-            {{ selectedRequestSummary.estado_inventario.descripcion }}
-          </UBadge>
+          <div v-if="selectedRequestSummary" class="flex flex-wrap items-center justify-end gap-2 pr-10">
+            <UButton
+              v-if="canCancelSelectedRequest"
+              color="error"
+              variant="solid"
+              size="sm"
+              icon="i-lucide-ban"
+              class="font-semibold"
+              @click="openStateChangeForSelected(ESTADO_REABASTECIMIENTO.CANCELADO)"
+            >
+              Cancelar
+            </UButton>
+            <UButton
+              v-if="canResubmitSelectedRequest"
+              color="primary"
+              variant="solid"
+              size="sm"
+              icon="i-lucide-send"
+              class="bg-[#57bf24] font-semibold text-white hover:bg-[#49a61d]"
+              @click="openStateChangeForSelected(ESTADO_REABASTECIMIENTO.PENDIENTE)"
+            >
+              Reenviar
+            </UButton>
+            <UBadge
+              :class="['rounded-full px-3 py-1', requestStateTone(selectedRequestSummary.estado_inventario.descripcion, selectedRequestSummary.estado_inventario.id_estado)]"
+            >
+              {{ selectedRequestSummary.estado_inventario.descripcion }}
+            </UBadge>
+          </div>
         </div>
       </template>
 
       <template #body>
-        <div v-if="selectedRequestSummary" class="space-y-5 bg-white  dark:bg-gray-950">
+        <div v-if="selectedRequestSummary" class="space-y-5 bg-[#f2f5fa] p-4 dark:bg-gray-950">
           
 
 
@@ -2475,216 +2629,248 @@ onMounted(() => {
           </template>
 
           <template v-else>
-          <div class="grid gap-5 lg:grid-cols-2">
-            <div class="space-y-5">
-              <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <div class="border-b border-gray-200 px-5 py-4 text-center dark:border-gray-800">
-                <h3 class="text-base font-bold text-gray-950 dark:text-white">
-                  Lista de Pedido
-                </h3>
-              </div>
-
-              <div class="p-5">
-                <div v-if="requestDetailLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
-                  Cargando detalle de la solicitud...
-                </div>
-
-                <div v-else-if="requestDetailError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                  <p>{{ requestDetailError }}</p>
-                  <UButton color="primary" variant="soft" size="xs" @click="retryRequestDetail">
-                    Reintentar
-                  </UButton>
-                </div>
-
-                <div v-else class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
-                  <table class="min-w-full border-separate border-spacing-0">
-                    <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
-                      <tr>
-                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Id Detalle</th>
-                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
-                        <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
-                        <th v-if="!detailActionsLocked" class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Opciones</th>
-                      </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-                      <tr
-                        v-for="detalle in detailProductRows"
-                        :key="detalle.id_detalle_reb"
-                        class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
-                      >
-                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                          {{ detalle.id_detalle_reb }}
-                        </td>
-                        <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                          {{ detalle.descripcion }}
-                        </td>
-                        <td class="px-4 py-2.5 text-center">
-                          <UInput
-                            v-model="detalle.cantidad_solicitada"
-                            type="number"
-                            min="1"
-                            class="mx-auto w-24"
-                            :disabled="detailActionsLocked || !isDetailProductRowEditing(detalle.id_detalle_reb)"
-                          />
-                        </td>
-                        <td v-if="!detailActionsLocked" class="px-4 py-2.5 text-center">
-                          <div class="flex items-center justify-center gap-2">
-                            <UButton
-                              v-if="!isDetailProductRowEditing(detalle.id_detalle_reb)"
-                              color="primary"
-                              variant="soft"
-                              icon="i-lucide-pencil"
-                              class="rounded-md bg-[#eef4ff] text-[#2d5fc0] hover:bg-[#dfe9ff]"
-                              aria-label="Editar producto"
-                              title="Editar producto"
-                              @click="startEditDetailProductRow(detalle)"
-                            />
-                            <template v-else>
-                              <UButton
-                                color="primary"
-                                variant="soft"
-                                icon="i-lucide-check"
-                                class="rounded-md bg-[#e6f8dd] text-[#2f8f1f] hover:bg-[#d6f2ca]"
-                                aria-label="Confirmar cambio"
-                                title="Confirmar cambio"
-                                @click="promptConfirmEditDetailProductRow(detalle)"
-                              />
-                              <UButton
-                                color="neutral"
-                                variant="soft"
-                                icon="i-lucide-x"
-                                class="rounded-md"
-                                aria-label="Cancelar edición"
-                                title="Cancelar edición"
-                                @click="cancelEditDetailProductRow(detalle)"
-                              />
-                            </template>
-                            <UButton
-                              color="error"
-                              variant="soft"
-                              icon="i-lucide-trash-2"
-                              class="rounded-md"
-                              aria-label="Eliminar producto"
-                              title="Eliminar producto"
-                              @click="promptRemoveDetailProductRow(detalle)"
-                            />
-                          </div>
-                        </td>
-                      </tr>
-
-                      <tr v-if="!detailProductRows.length">
-                        <td :colspan="detailActionsLocked ? 3 : 4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                          No hay detalles para esta solicitud.
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div
-                  v-if="detailActionsLocked"
-                  class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
-                >
-                  Esta solicitud está cerrada. El detalle es de solo lectura.
-                </div>
-
-                <div v-else-if="!requestDetailLoading && !requestDetailError" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_100px_180px]">
-                  <USelectMenu
-                    v-model="detailProductSelected"
-                    :items="detailProductOptions"
-                    value-key="value"
-                    label-key="label"
-                    :loading="catalogLoading"
-                    :disabled="catalogLoading || catalogError !== null"
-                    placeholder="Selecciona un producto"
-                    class="w-full"
-                  />
-                  <UInput v-model="detailProductQuantity" type="number" min="1" class="w-full" />
-                  <UButton
-                    color="primary"
-                    class="justify-center bg-[#57bf24] font-semibold text-white shadow-none hover:bg-[#49a61d]"
-                    icon="i-lucide-plus"
-                    @click="addDetailProductRow"
-                  >
-                    Agregar Producto
-                  </UButton>
-                </div>
-              </div>
-            </div>
-              <div
-                v-if="!requestDetailLoading && !requestDetailError"
-                class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950"
-              >
-                <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-                  <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="grid gap-5 lg:grid-cols-[minmax(0,1.28fr)_minmax(360px,0.72fr)]">
+              <div class="space-y-5">
+                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                  <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
                     <div class="flex items-center gap-2">
-                      <UIcon name="i-lucide-paperclip" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <UIcon name="i-lucide-file-text" class="h-4 w-4 text-[#2d5fc0]" />
                       <div>
                         <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
-                          Archivos adjuntos
+                          Detalle de solicitud
                         </p>
-                        <p class="mt-1 text-base font-bold text-gray-950 dark:text-white">
-                          Historial y Archivos
+                        <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
+                          Información general
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-4 p-5">
+                    <div v-if="detailStateBanner" :class="['rounded-2xl px-4 py-3 text-sm font-medium', detailStateBanner.tone]">
+                      {{ detailStateBanner.title }}
+                    </div>
+
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                          Solicitante
+                        </p>
+                        <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">
+                          {{ selectedRequestSummary?.solicitante || '-' }}
+                        </p>
+                      </div>
+
+                      <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                          Área
+                        </p>
+                        <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">
+                          {{ selectedRequestSummary?.area || '-' }}
+                        </p>
+                      </div>
+
+                      <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                          Fecha
+                        </p>
+                        <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">
+                          {{ selectedRequestSummary?.fecha_creacion || '-' }}
+                        </p>
+                      </div>
+
+                      <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                          Estado
+                        </p>
+                        <p class="mt-2 text-sm font-semibold text-gray-950 dark:text-white">
+                          {{ selectedRequestSummary?.estado_inventario?.descripcion || '-' }}
                         </p>
                       </div>
                     </div>
 
-                    <UButton
-                      v-if="!detailActionsLocked"
-                      color="primary"
-                      icon="i-lucide-paperclip"
-                      class="w-fit bg-[#2d5fc0] font-semibold text-white shadow-[0_10px_24px_rgba(45,95,192,0.18)] hover:bg-[#244ea4]"
-                      @click="openDetailFilesUpload"
-                    >
-                      Adjuntar archivo
-                    </UButton>
+                    <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                        Justificación
+                      </p>
+                      <p class="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                        {{ requestDetailData?.solicitud?.justificacion || selectedRequestSummary?.justificacion || '-' }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <div class="mb-3 flex items-center gap-2">
+                        <UIcon name="i-lucide-package" class="h-4 w-4 text-[#2d5fc0]" />
+                        <h4 class="text-sm font-bold text-gray-950 dark:text-white">
+                          Productos solicitados
+                        </h4>
+                      </div>
+
+                      <div v-if="requestDetailLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+                        Cargando detalle de la solicitud...
+                      </div>
+
+                      <div v-else-if="requestDetailError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                        <p>{{ requestDetailError }}</p>
+                        <UButton color="primary" variant="soft" size="xs" @click="retryRequestDetail">
+                          Reintentar
+                        </UButton>
+                      </div>
+
+                      <div v-else class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                        <table class="min-w-full border-separate border-spacing-0">
+                          <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
+                            <tr>
+                              <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Id Detalle</th>
+                              <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripción</th>
+                              <th class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
+                              <th v-if="!detailActionsLocked" class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Opciones</th>
+                            </tr>
+                          </thead>
+
+                          <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                            <tr
+                              v-for="detalle in detailProductRows"
+                              :key="detalle.id_detalle_reb"
+                              class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
+                            >
+                              <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                                {{ detalle.id_detalle_reb }}
+                              </td>
+                              <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                                {{ detalle.descripcion }}
+                              </td>
+                              <td class="px-4 py-2.5 text-center">
+                                <UInput
+                                  v-model="detalle.cantidad_solicitada"
+                                  type="number"
+                                  min="1"
+                                  class="mx-auto w-24"
+                                  :disabled="detailActionsLocked || !isDetailProductRowEditing(detalle.id_detalle_reb)"
+                                />
+                              </td>
+                              <td v-if="!detailActionsLocked" class="px-4 py-2.5 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                  <UButton
+                                    v-if="!isDetailProductRowEditing(detalle.id_detalle_reb)"
+                                    color="primary"
+                                    variant="soft"
+                                    icon="i-lucide-pencil"
+                                    class="rounded-md bg-[#eef4ff] text-[#2d5fc0] hover:bg-[#dfe9ff]"
+                                    aria-label="Editar producto"
+                                    title="Editar producto"
+                                    @click="startEditDetailProductRow(detalle)"
+                                  />
+                                  <template v-else>
+                                    <UButton
+                                      color="primary"
+                                      variant="soft"
+                                      icon="i-lucide-check"
+                                      class="rounded-md bg-[#e6f8dd] text-[#2f8f1f] hover:bg-[#d6f2ca]"
+                                      aria-label="Confirmar cambio"
+                                      title="Confirmar cambio"
+                                      @click="promptConfirmEditDetailProductRow(detalle)"
+                                    />
+                                    <UButton
+                                      color="neutral"
+                                      variant="soft"
+                                      icon="i-lucide-x"
+                                      class="rounded-md"
+                                      aria-label="Cancelar edición"
+                                      title="Cancelar edición"
+                                      @click="cancelEditDetailProductRow(detalle)"
+                                    />
+                                  </template>
+                                  <UButton
+                                    color="error"
+                                    variant="soft"
+                                    icon="i-lucide-trash-2"
+                                    class="rounded-md"
+                                    aria-label="Eliminar producto"
+                                    title="Eliminar producto"
+                                    @click="promptRemoveDetailProductRow(detalle)"
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+
+                            <tr v-if="!detailProductRows.length">
+                              <td :colspan="detailActionsLocked ? 3 : 4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                No hay detalles para esta solicitud.
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div
+                        v-if="detailActionsLocked"
+                        class="mt-3 rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
+                      >
+                        El detalle solo se puede editar cuando la solicitud está observada.
+                      </div>
+
+                      <div v-else-if="!requestDetailLoading && !requestDetailError" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_100px_180px]">
+                        <USelectMenu
+                          v-model="detailProductSelected"
+                          :items="detailProductOptions"
+                          value-key="value"
+                          label-key="label"
+                          :loading="catalogLoading"
+                          :disabled="catalogLoading || catalogError !== null"
+                          placeholder="Selecciona un producto"
+                          class="w-full"
+                        />
+                        <UInput v-model="detailProductQuantity" type="number" min="1" class="w-full" />
+                        <UButton
+                          color="primary"
+                          class="justify-center bg-[#57bf24] font-semibold text-white shadow-none hover:bg-[#49a61d]"
+                          icon="i-lucide-plus"
+                          @click="addDetailProductRow"
+                        >
+                          Agregar Producto
+                        </UButton>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </section>
 
-                <div class="space-y-4 p-4">
-                  <div
-                    v-if="detailActionsLocked"
-                    class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
-                  >
-                    Esta solicitud está cerrada. No se pueden agregar ni eliminar archivos.
+                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                  <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                    <div class="flex items-center gap-2">
+                      <UIcon name="i-lucide-paperclip" class="h-4 w-4 text-[#2d5fc0]" />
+                      <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                          Comentarios y adjuntos iniciales
+                        </p>
+                        <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
+                          Historial de comentarios
+                        </h3>
+                      </div>
+                    </div>
                   </div>
 
-                  <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
-                    <UInput
-                      v-model="detailFilesSearch"
-                      icon="i-lucide-search"
-                      placeholder="Buscar por archivo, comentario o usuario..."
-                      class="w-full lg:flex-1"
-                      @keyup.enter="applyDetailFilesSearch"
-                    />
+                  <div class="space-y-4 p-4">
+                    <div v-if="detailFilesLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+                      Cargando comentarios y adjuntos...
+                    </div>
 
-                    <UButton color="primary" variant="soft" @click="applyDetailFilesSearch">
-                      Buscar
-                    </UButton>
-                  </div>
+                    <div v-else-if="detailFilesError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <p>{{ detailFilesError }}</p>
+                      <UButton color="primary" variant="soft" size="xs" @click="() => loadRequestFiles()">
+                        Reintentar
+                      </UButton>
+                    </div>
 
-                  <div v-if="detailFilesLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
-                    Cargando archivos adjuntos...
-                  </div>
-
-                  <div v-else-if="detailFilesError" class="space-y-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                    <p>{{ detailFilesError }}</p>
-                    <UButton color="primary" variant="soft" size="xs" @click="() => loadRequestFiles()">
-                      Reintentar
-                    </UButton>
-                  </div>
-
-                  <div v-else class="space-y-4">
-                    <div v-if="detailFilesItems.length" class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                    <div v-else-if="detailFilesItems.length" class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
                       <table class="min-w-full border-separate border-spacing-0">
                         <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
                           <tr>
-                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Archivo</th>
-                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Comentario</th>
                             <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Usuario</th>
+                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Comentario</th>
+                            <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Adjunto</th>
                             <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha</th>
-                            <th v-if="!detailActionsLocked" class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Acciones</th>
+                            <th v-if="!detailFilesLocked" class="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Quitar</th>
                           </tr>
                         </thead>
 
@@ -2694,36 +2880,41 @@ onMounted(() => {
                             :key="item.id_log_reb"
                             class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
                           >
-                            <td class="px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100">
-                              <a
-                                :href="item.archivo_url"
-                                target="_blank"
-                                rel="noreferrer"
-                                class="font-semibold text-[#2d5fc0] hover:underline"
-                              >
-                                {{ item.archivo_nombre_original }}
-                              </a>
-                            </td>
-                            <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                              {{ item.comentario || '-' }}
-                            </td>
                             <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
                               {{ item.staff?.full_name || item.staff?.username || '-' }}
                             </td>
                             <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                              {{ item.fecha_creacion }}
+                              {{ item.comentario || '-' }}
                             </td>
-                            <td v-if="!detailActionsLocked" class="px-4 py-2.5 text-center">
+                            <td class="px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100">
                               <a
+                                v-if="item.archivo_url"
                                 :href="item.archivo_url"
                                 target="_blank"
                                 rel="noreferrer"
-                                class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eef4ff] text-[#2d5fc0] transition hover:bg-[#dfe9ff]"
-                                aria-label="Abrir archivo"
-                                title="Abrir archivo"
+                                class="inline-flex items-center gap-1 rounded-full border border-[#b7c7f1] px-2 py-1 text-xs font-semibold text-[#2d5fc0] hover:bg-[#eef4ff]"
                               >
-                                <UIcon name="i-lucide-external-link" class="h-4 w-4" />
+                                <UIcon name="i-lucide-paperclip" class="h-3.5 w-3.5" />
+                                {{ item.archivo_nombre_original || 'Ver archivo' }}
                               </a>
+                              <span v-else class="text-gray-500 dark:text-gray-400">
+                                {{ item.archivo_nombre_original || '-' }}
+                              </span>
+                            </td>
+                            <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+                              {{ item.fecha_creacion }}
+                            </td>
+                            <td v-if="!detailFilesLocked" class="px-4 py-2.5 text-center">
+                              <UButton
+                                color="error"
+                                variant="soft"
+                                icon="i-lucide-trash-2"
+                                size="xs"
+                                class="rounded-md"
+                                aria-label="Eliminar archivo"
+                                title="Eliminar archivo"
+                                @click="promptRemoveDetailFile(item)"
+                              />
                             </td>
                           </tr>
                         </tbody>
@@ -2734,172 +2925,234 @@ onMounted(() => {
                       v-else
                       class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
                     >
-                      Aun no hay archivos adjuntos para esta solicitud.
+                      No hay comentarios iniciales para esta solicitud.
                     </div>
 
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="!requestDetailLoading && !requestDetailError"
-              class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950"
-            >
-              <div class="border-b border-gray-200 px-5 py-4 text-center dark:border-gray-800">
-                <h3 class="text-base font-bold text-gray-950 dark:text-white">
-                  Seguimiento y Comentarios
-                </h3>
-              </div>
-
-              <div class="space-y-4 p-4">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div class="flex items-center gap-2">
-                    <UIcon name="i-lucide-history" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <p class="text-base font-bold text-gray-950 dark:text-white">
-                      Seguimiento y Comentarios
-                    </p>
-                  </div>
-
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Registra comentarios o adjunta archivos sin cambiar el estado desde este formulario.
-                  </p>
-                </div>
-
-                <div
-                  v-if="detailActionsLocked"
-                  class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
-                >
-                  Esta solicitud está cerrada. El seguimiento es de solo lectura.
-                </div>
-
-                <div v-if="detailTrackingLoading" class="rounded-2xl border border-gray-200 bg-[#fafbff] px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-400">
-                  Cargando seguimiento...
-                </div>
-
-                <div v-else-if="detailTrackingError" class="space-y-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200">
-                  <p class="font-semibold">
-                    No se pudo cargar el seguimiento.
-                  </p>
-                  <p>{{ detailTrackingError }}</p>
-                  <UButton color="primary" variant="soft" size="sm" @click="loadDetailTrackingHistory()">
-                    Reintentar
-                  </UButton>
-                </div>
-
-                <template v-else>
-                  <div v-if="detailTrackingHistory.length" class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
-                    <table class="min-w-full border-separate border-spacing-0">
-                      <thead class="bg-[#f4f1ff] text-[#49558f] dark:bg-[#101b31] dark:text-[#d1ddfb]">
-                        <tr>
-                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Id Flujo</th>
-                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Responsable</th>
-                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Comentarios</th>
-                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Adjuntos</th>
-                          <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Fecha</th>
-                        </tr>
-                      </thead>
-
-                      <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
-                        <tr
-                          v-for="item in detailTrackingHistory"
-                          :key="item.id_log_reb"
-                          class="transition-colors hover:bg-[#f8f7ff] dark:hover:bg-gray-900/60"
-                        >
-                          <td class="px-4 py-2.5 text-sm font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
-                            {{ item.id_flujo_reb }}
-                          </td>
-                          <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                            {{ item.responsable || item.staff?.full_name || item.staff?.username || '-' }}
-                          </td>
-                          <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                            {{ item.comentarios || item.comentario || '-' }}
-                          </td>
-                          <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                            <div class="flex items-center justify-between gap-3">
-                              <a
-                                v-if="item.archivo_url"
-                                :href="item.archivo_url"
-                                target="_blank"
-                                rel="noreferrer"
-                                class="inline-flex items-center gap-1 font-semibold text-[#2d5fc0] hover:underline"
-                              >
-                                <UIcon name="i-lucide-paperclip" class="h-3.5 w-3.5" />
-                                {{ item.archivo_nombre_original || 'Archivo adjunto' }}
-                              </a>
-                              <span
-                                v-else-if="item.archivo || item.archivo_nombre_original"
-                                class="font-medium text-gray-700 dark:text-gray-200"
-                              >
-                                {{ item.archivo_nombre_original || item.archivo || 'Archivo adjunto' }}
-                              </span>
-                              <span v-else class="text-gray-500 dark:text-gray-400">-</span>
-
-                              
-                            </div>
-                          </td>
-                          <td class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200">
-                            {{ item.fecha_creacion || item.fecha_actualizacion || '-' }}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div
-                    v-else
-                    class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
-                  >
-                    Aun no hay historial registrado para esta solicitud.
-                  </div>
-
-                </template>
-
-                <div
-                  v-if="!detailActionsLocked"
-                  class="space-y-4 rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60"
-                >
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Comentario
-                    </label>
-                    <UTextarea
-                      v-model="detailTrackingComment"
-                      :rows="3"
-                      placeholder="Escribe un comentario..."
-                      class="w-full"
-                    />
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Archivo
-                    </label>
-                    <input
-                      ref="detailTrackingFileInput"
-                      type="file"
-                      class="block w-full rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-transparent file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#2d5fc0] hover:file:cursor-pointer hover:file:underline dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
-                      @change="onDetailTrackingFileChange"
+                    <div
+                      v-if="!detailFilesLocked"
+                      class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 dark:border-gray-800 dark:bg-gray-950/60"
                     >
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      Debes agregar un comentario o un archivo para registrar el seguimiento.
-                    </p>
-                  </div>
-                </div>
+                      <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end">
+                        <div class="space-y-2">
+                          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Comentario
+                          </label>
+                          <UInput
+                            v-model="detailFilesUploadComment"
+                            placeholder="Escribe un comentario..."
+                            class="w-full"
+                          />
+                        </div>
 
-                <UButton
-                  v-if="!detailActionsLocked"
-                  color="primary"
-                  class="w-full justify-center bg-[#6f5ce8] py-3 font-semibold text-white shadow-[0_10px_24px_rgba(111,92,232,0.16)] hover:bg-[#5c48df]"
-                  :loading="detailTrackingSubmitting"
-                  :disabled="detailTrackingSubmitting || !canRegisterDetailTracking"
-                  @click="registerDetailTracking"
-                >
-                  Registrar Seguimiento
-                </UButton>
+                        <div class="space-y-2">
+                          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Archivo
+                          </label>
+                          <input
+                            ref="detailFilesUploadFileInput"
+                            type="file"
+                            class="block w-full rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-transparent file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#2d5fc0] hover:file:cursor-pointer hover:file:underline dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                            @change="onDetailFilesUploadFileChange"
+                          >
+                        </div>
+
+                        <UButton
+                          color="primary"
+                          class="justify-center bg-[#57bf24] font-semibold text-white shadow-none hover:bg-[#49a61d]"
+                          :loading="detailFilesUploadSubmitting"
+                          :disabled="detailFilesUploadSubmitting || !canRegisterDetailFile"
+                          icon="i-lucide-upload"
+                          @click="confirmDetailFilesUpload"
+                        >
+                          Adjuntar
+                        </UButton>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div class="space-y-5">
+                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                  <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                    <div class="flex items-center gap-2">
+                      <UIcon name="i-lucide-history" class="h-4 w-4 text-[#2d5fc0]" />
+                      <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                          Seguimiento
+                        </p>
+                        <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
+                          Historial y comentarios
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-4 p-4">
+                    <div
+                      v-if="detailTrackingLocked"
+                      class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
+                    >
+                      El seguimiento se puede registrar en solicitudes pendientes u observadas.
+                    </div>
+
+                    <div v-if="detailTrackingLoading" class="rounded-2xl border border-gray-200 bg-[#fafbff] px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-400">
+                      Cargando seguimiento...
+                    </div>
+
+                    <div v-else-if="detailTrackingError" class="space-y-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200">
+                      <p class="font-semibold">
+                        No se pudo cargar el seguimiento.
+                      </p>
+                      <p>{{ detailTrackingError }}</p>
+                      <UButton color="primary" variant="soft" size="sm" @click="loadDetailTrackingHistory()">
+                        Reintentar
+                      </UButton>
+                    </div>
+
+                    <template v-else>
+                      <div v-if="detailTrackingHistory.length" class="space-y-3">
+                        <div
+                          v-for="item in detailTrackingHistory"
+                          :key="item.id_flujo_reb"
+                          class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950"
+                        >
+                       
+                          <div class="flex items-start justify-between gap-4">
+                            <div class="space-y-2">
+                              <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-sm font-semibold text-gray-950 dark:text-white">
+                                  {{ item.responsable || item.staff?.full_name || item.staff?.username || '-' }}
+                                </p>
+                                <span :class="['rounded-full px-3 py-1 text-xs font-semibold', requestStateTone(item.comentario || item.comentarios || '', item.id_estado)]">
+                                  <!-- {{ item.comentario || item.comentarios || 'Seguimiento' }} -->
+                                    {{item.estado_descripcion }}
+                                </span>
+                              </div>
+
+                              <p class="text-sm text-gray-700 dark:text-gray-200">
+                                {{ item.comentarios || item.comentario || '-' }}
+                              </p>
+
+                              <div v-if="item.archivo_url || item.archivo || item.archivo_nombre_original" class="pt-1">
+                                <a
+                                  v-if="item.archivo_url"
+                                  :href="item.archivo_url"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  class="inline-flex items-center gap-1 rounded-full border border-[#c3c9ff] px-2.5 py-1 text-xs font-semibold text-[#6f5ce8] hover:bg-[#f3f1ff]"
+                                >
+                                  <UIcon name="i-lucide-paperclip" class="h-3.5 w-3.5" />
+                                  {{ item.archivo_nombre_original || 'Ver archivo' }}
+                                </a>
+                                <span v-else class="text-xs text-gray-500 dark:text-gray-400">
+                                  {{ item.archivo_nombre_original || item.archivo || '-' }}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div class="text-right text-xs text-gray-500 dark:text-gray-400">
+                              
+                              {{  formatLocalDate(item.fecha_creacion || item.fecha_actualizacion || '-') }}
+                            </div>
+                          </div>
+
+                          
+                        </div>
+                      </div>
+
+                      <div
+                        v-else
+                        class="rounded-2xl border border-dashed border-gray-300 bg-[#fafbff] px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-950/60 dark:text-gray-400"
+                      >
+                        Aun no hay historial registrado para esta solicitud.
+                      </div>
+
+                    </template>
+
+                   
+                  </div>
+                </section>
+
+                <section v-if="detailActionMeta" class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                  <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                    <div class="flex items-center gap-2">
+                      <UIcon name="i-lucide-badge-alert" class="h-4 w-4 text-[#2d5fc0]" />
+                      <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                          {{ detailActionMeta.title }}
+                        </p>
+                        <h3 class="mt-1 text-base font-bold text-gray-950 dark:text-white">
+                          Acción del solicitante
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-4 p-4">
+                    <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 text-sm dark:border-gray-800 dark:bg-gray-950/60">
+                      <div class="flex items-center justify-between gap-4">
+                        <span class="font-semibold text-gray-500 dark:text-gray-400">Acción</span>
+                        <UButton
+                          :color="detailActionMeta.tone"
+                          variant="soft"
+                          size="xs"
+                          :icon="detailActionMeta.icon"
+                          :class="detailActionMeta.buttonClass"
+                          disabled
+                        >
+                          {{ detailActionMeta.label }}
+                        </UButton>
+                      </div>
+                      <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                        {{ detailActionMeta.hint }}
+                      </p>
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Comentario
+                      </label>
+                      <UTextarea
+                        v-model="stateChangeComment"
+                        :rows="4"
+                        placeholder="Escribe el comentario del cambio..."
+                        class="w-full"
+                      />
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Archivo
+                      </label>
+                      <input
+                        ref="stateChangeFileInput"
+                        type="file"
+                        class="block w-full rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-transparent file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#2d5fc0] hover:file:cursor-pointer hover:file:underline dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                        @change="onStateChangeFileChange"
+                      >
+                      <p v-if="stateChangeFile" class="text-xs text-gray-500 dark:text-gray-400">
+                        Seleccionado: {{ stateChangeFile.name }}
+                      </p>
+                    </div>
+
+                    <UButton
+                      color="primary"
+                      class="w-full justify-center bg-[#2d5fc0] font-semibold text-white shadow-none hover:bg-[#244ea4]"
+                      :loading="stateChangeSubmitting"
+                      :disabled="stateChangeSubmitting || !stateChangeComment.trim()"
+                      @click="submitStateChange"
+                    >
+                      {{ detailActionMeta.submitLabel }}
+                    </UButton>
+                  </div>
+                </section>
+
+                <section v-else class="rounded-2xl border border-gray-200 bg-white px-4 py-6 text-center text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-950 dark:text-gray-400">
+                  Sin acciones disponibles.
+                </section>
               </div>
             </div>
-          </div>
           </template>
 
           <div v-if="false" class="grid gap-5 lg:grid-cols-2">
@@ -2969,6 +3222,91 @@ onMounted(() => {
               </div>
             </div>
 
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="stateChangeModalOpen"
+      class="w-[calc(100vw-1rem)] max-w-lg"
+      @close="resetStateChange"
+      :ui="{
+        content: 'overflow-hidden rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800',
+        header: 'p-0',
+        body: 'p-0',
+        wrapper: 'items-center justify-center',
+      }"
+      :close="{ color: 'neutral', variant: 'ghost', class: 'rounded-full' }"
+    >
+      <template #title>
+        <div class="border-b border-gray-200 bg-[#1e355f] px-6 py-4 text-white dark:border-gray-800">
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-[#c7d2fe]">
+            Cambio de estado
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-white">
+            {{ stateChangeActionLabel || 'Actualizar solicitud' }}
+          </h2>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4 bg-white p-6 dark:bg-gray-950">
+          <div class="rounded-2xl border border-gray-200 bg-[#fbfbff] p-4 text-sm dark:border-gray-800 dark:bg-gray-950/60">
+            <div class="flex items-center justify-between gap-4">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Solicitud</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ stateChangeRequest?.codigo || '-' }}
+              </span>
+            </div>
+            <div class="mt-2 flex items-center justify-between gap-4">
+              <span class="font-semibold text-gray-500 dark:text-gray-400">Accion</span>
+              <span class="font-semibold text-gray-950 dark:text-white">
+                {{ stateChangeActionLabel || '-' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Comentario
+            </label>
+            <UTextarea
+              v-model="stateChangeComment"
+              :rows="4"
+              placeholder="Escribe el comentario del cambio..."
+              class="w-full"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Archivo
+            </label>
+            <input
+              ref="stateChangeFileInput"
+              type="file"
+              class="block w-full rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-transparent file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#2d5fc0] hover:file:cursor-pointer hover:file:underline dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+              @change="onStateChangeFileChange"
+            >
+            <p v-if="stateChangeFile" class="text-xs text-gray-500 dark:text-gray-400">
+              Seleccionado: {{ stateChangeFile.name }}
+            </p>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <UButton color="neutral" variant="soft" @click="resetStateChange">
+              Cerrar
+            </UButton>
+            <UButton
+              color="primary"
+              class="bg-[#2d5fc0] font-semibold text-white shadow-none hover:bg-[#244ea4]"
+              :loading="stateChangeSubmitting"
+              :disabled="stateChangeSubmitting || !stateChangeComment.trim()"
+              @click="submitStateChange"
+            >
+              Guardar estado
+            </UButton>
           </div>
         </div>
       </template>

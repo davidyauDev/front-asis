@@ -69,6 +69,12 @@ const inventoryLinks = [{
     to: '/rrhh/inventario/solicitar-reabastecimiento',
     exact: true,
     onSelect: () => { open.value = false }
+  }, {
+    label: 'Dashboard',
+    icon: 'i-lucide-pie-chart',
+    to: '/rrhh/inventario/dashboard',
+    exact: true,
+    onSelect: () => { open.value = false }
   }]
 }]
 
