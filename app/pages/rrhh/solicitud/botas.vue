@@ -27,11 +27,25 @@ const imagePreviewOpen = shallowRef(false)
 const imagePreviewUrl = shallowRef<string | null>(null)
 const emailModalOpen = shallowRef(false)
 const emailTargetName = shallowRef('')
+const rejectConfirmOpen = shallowRef(false)
+const rejectCommentModalOpen = shallowRef(false)
+const rejectingItemId = shallowRef<number | null>(null)
+const rejectComment = shallowRef('')
+const rejectSubmitting = shallowRef(false)
 const staffIdFilter = shallowRef('')
-const estadoFilter = shallowRef('')
 const entriesView = shallowRef('100')
 const activeListTab = shallowRef<'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobados' | 'rechazados' | 'reembolso' | 'cerrado'>('pendiente_rrhh')
+const searchFilter = shallowRef('')
 const toast = useToast()
+
+const tabsConfig = [
+  { key: 'pendiente_rrhh', label: 'Pendiente RRHH', icon: 'i-lucide-user-check' },
+  { key: 'pendiente_gerencia', label: 'Pendiente Gerencia', icon: 'i-lucide-briefcase-business' },
+  { key: 'aprobados', label: 'Aprobados', icon: 'i-lucide-check-check' },
+  { key: 'rechazados', label: 'Rechazados', icon: 'i-lucide-x-circle' },
+  { key: 'reembolso', label: 'Reembolso', icon: 'i-lucide-wallet' },
+  { key: 'cerrado', label: 'Cerrado', icon: 'i-lucide-lock' },
+] as const
 
 const getEstadoIdByTab = () => {
   if (activeListTab.value === 'pendiente_rrhh') return 7
@@ -191,8 +205,8 @@ const emailBodyPreview = computed(() => {
 Con respecto a tus botas de seguridad fueron aprobados, favor de tener en cuenta lo siguiente:
 
 - Deben ser botas dielectricas y con puntera de seguridad (solicitar ficha tecnica a la tienda)
-- El monto subvencionado es de s/130.00, el cual será reembolsado con la factura de compra respectiva
-- Si el monto de compra es mayor al indicado, el excedente deberá ser subvencionado por el trabajador, de igual manera presentando la factura de compra.
+- El monto subvencionado es de s/130.00, el cual será reembolsado con la factura respectiva de botas
+- Si el monto de botas es mayor al indicado, el excedente deberá ser subvencionado por el trabajador, de igual manera presentando la factura de botas.
 
 Cualquier consulta adicional favor de comentarme.`
 })
@@ -246,6 +260,12 @@ const closeManageModal = () => {
   manageComment.value = ''
 }
 
+const closeRejectCommentModal = () => {
+  rejectCommentModalOpen.value = false
+  rejectingItemId.value = null
+  rejectComment.value = ''
+}
+
 const getManagePayload = (): SolicitudCompraWorkflowActionPayload => {
   const comentario = manageComment.value.trim()
   return comentario ? { comentario } : {}
@@ -291,6 +311,14 @@ const executeManageAction = async (
 }
 
 const sendToGerenciaFromManageModal = async () => {
+  if (managingState.value === 'pendiente_rrhh' && !manageComment.value.trim()) {
+    toast.add({
+      title: 'Comentario requerido',
+      description: 'Agrega un comentario antes de derivar a gerencia.',
+      color: 'warning',
+    })
+    return
+  }
   await executeManageAction(enviarSolicitudCompraGerencia, 'Enviado a gerencia', 'info')
 }
 
@@ -298,8 +326,46 @@ const approveFinalFromManageModal = async () => {
   await executeManageAction(aprobarSolicitudCompraFinal, 'Solicitud aprobada final', 'success')
 }
 
-const rejectFromManageModal = async () => {
-  await executeManageAction(rechazarSolicitudCompra, 'Solicitud rechazada', 'error')
+const openRejectCommentModal = (item: ComprobanteGastoRrhhItem) => {
+  const state = getVisibleEstado(item)
+  if (!(state === 'pendiente_rrhh' || state === 'pendiente_gerencia')) return
+  rejectingItemId.value = item.id
+  rejectComment.value = ''
+  rejectCommentModalOpen.value = true
+}
+
+const openRejectConfirmFromTable = () => {
+  if (!rejectingItemId.value || !rejectComment.value.trim() || rejectSubmitting.value) return
+  rejectConfirmOpen.value = true
+}
+
+const confirmRejectFromTable = async () => {
+  if (!rejectingItemId.value || rejectSubmitting.value) return
+  rejectSubmitting.value = true
+
+  try {
+    const response = await rechazarSolicitudCompra(rejectingItemId.value, { comentario: rejectComment.value.trim() })
+    toast.add({
+      title: 'Solicitud rechazada',
+      description: response.message || 'Operacion realizada correctamente.',
+      color: 'error',
+    })
+    closeRejectCommentModal()
+    await loadComprobantes()
+  } catch (cause) {
+    toast.add({
+      title: 'Error',
+      description: extractActionErrorMessage(cause),
+      color: 'error',
+    })
+  } finally {
+    rejectSubmitting.value = false
+  }
+}
+
+const confirmRejectAction = async () => {
+  rejectConfirmOpen.value = false
+  await confirmRejectFromTable()
 }
 
 const getFlowStageTitle = (estado?: WorkflowState | null) => {
@@ -315,16 +381,43 @@ const getFlowStageDescription = (estado?: WorkflowState | null) => {
   if (estado === 'pendiente_gerencia') return 'Esperando decision de gerencia: aprobar final o rechazar.'
   if (estado === 'aprobada_final') return 'No hay acciones pendientes para esta solicitud.'
   if (estado === 'rechazada') return 'No hay acciones pendientes para esta solicitud.'
-  return 'Flujo de aprobacion de solicitud de compra.'
+  return 'Flujo de aprobacion de solicitud de botas.'
 }
 
 const canSendToGerencia = computed(() => managingState.value === 'pendiente_rrhh')
+const canSendToGerenciaWithComment = computed(() => {
+  if (!canSendToGerencia.value) return false
+  return manageComment.value.trim().length > 0
+})
 const canApproveFinal = computed(() => managingState.value === 'pendiente_gerencia')
-const canRejectInFlow = computed(() => {
-  return managingState.value === 'pendiente_rrhh' || managingState.value === 'pendiente_gerencia'
+
+const filteredComprobantes = computed(() => {
+  const search = searchFilter.value.trim().toLowerCase()
+
+  return comprobantes.value.filter((item) => {
+    const solicitante = getSolicitanteLabel(item).toLowerCase()
+    const username = (item.solicitud_gasto.username ?? '').toLowerCase()
+
+    const matchesSearch = !search || solicitante.includes(search) || username.includes(search) || String(item.solicitud_gasto_id).includes(search)
+
+    return matchesSearch
+  })
 })
 
-const visibleComprobantes = computed(() => comprobantes.value)
+const pagedComprobantes = computed(() => {
+  const take = Number(entriesView.value)
+  if (!Number.isFinite(take) || take <= 0) return filteredComprobantes.value
+  return filteredComprobantes.value.slice(0, take)
+})
+
+const visibleComprobantes = computed(() => pagedComprobantes.value)
+const showActionsColumn = computed(() => activeListTab.value !== 'pendiente_gerencia')
+const tableColspan = computed(() => (showActionsColumn.value ? 9 : 8))
+
+const clearFilters = () => {
+  searchFilter.value = ''
+  entriesView.value = '100'
+}
 
 const extractErrorMessage = (cause: unknown) => {
   if (cause && typeof cause === 'object') {
@@ -344,7 +437,6 @@ const loadComprobantes = async () => {
       staff_id: parseNumberFilter(staffIdFilter.value),
       estado_id: getEstadoIdByTab(),
       id_area: 11,
-      workflow_state: parseTextFilter(estadoFilter.value),
     })
 
     comprobantes.value = response.data ?? []
@@ -376,10 +468,10 @@ watch(activeListTab, () => {
 </script>
 
 <template>
-  <UDashboardPanel id="solicitud-compra">
+  <UDashboardPanel id="solicitud-botas">
     <template #header>
       <AppDashboardHeader
-        title="Comprobantes de gasto"
+        title="Solicitudes Botas de seguridad"
         :show-live-badge="false"
         notification-attention
         notification-tooltip="Alertas RRHH"
@@ -392,108 +484,94 @@ watch(activeListTab, () => {
         <div class="mx-5 overflow-hidden rounded-2xl   dark:bg-gray-950/60">
          
 
-          <div class="border-b border-gray-200 px-4 pt-3 dark:border-gray-800">
-            <div class="flex flex-wrap gap-2">
+          <div class="border-b border-gray-200 px-4 pt-4 dark:border-gray-800">
+            <div class="flex flex-wrap gap-2 pb-3">
               <button
+                v-for="tab in tabsConfig"
+                :key="tab.key"
                 type="button"
-                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
-                :class="activeListTab === 'pendiente_rrhh'
-                  ? 'bg-[#2d5fc0] text-white shadow-sm'
-                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
-                @click="activeListTab = 'pendiente_rrhh'"
+                class="group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all"
+                :class="activeListTab === tab.key
+                  ? 'border-[#2d5fc0] bg-[#2d5fc0] text-white shadow-sm shadow-[#2d5fc0]/25'
+                  : 'border-gray-300 bg-white text-gray-600 hover:border-[#2d5fc0]/40 hover:bg-[#f4f8ff] hover:text-[#2d5fc0] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-[#2d5fc0]/40 dark:hover:bg-gray-900/90'"
+                @click="activeListTab = tab.key"
               >
-                Pendiente RRHH
-              </button>
-              <button
-                type="button"
-                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
-                :class="activeListTab === 'pendiente_gerencia'
-                  ? 'bg-[#2d5fc0] text-white shadow-sm'
-                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
-                @click="activeListTab = 'pendiente_gerencia'"
-              >
-                Pendiente Gerencia
-              </button>
-              <button
-                type="button"
-                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
-                :class="activeListTab === 'aprobados'
-                  ? 'bg-[#2d5fc0] text-white shadow-sm'
-                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
-                @click="activeListTab = 'aprobados'"
-              >
-                Aprobados
-              </button>
-              <button
-                type="button"
-                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
-                :class="activeListTab === 'rechazados'
-                  ? 'bg-[#2d5fc0] text-white shadow-sm'
-                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
-                @click="activeListTab = 'rechazados'"
-              >
-                Rechazados
-              </button>
-              <button
-                type="button"
-                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
-                :class="activeListTab === 'reembolso'
-                  ? 'bg-[#2d5fc0] text-white shadow-sm'
-                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
-                @click="activeListTab = 'reembolso'"
-              >
-                Reembolso
-              </button>
-              <button
-                type="button"
-                class="rounded-t-lg px-10 py-2.5 text-sm font-medium transition"
-                :class="activeListTab === 'cerrado'
-                  ? 'bg-[#2d5fc0] text-white shadow-sm'
-                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'"
-                @click="activeListTab = 'cerrado'"
-              >
-                Cerrado
+                <UIcon :name="tab.icon" class="h-4 w-4" />
+                <span>{{ tab.label }}</span>
+                <span
+                  class="inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                  :class="activeListTab === tab.key ? 'bg-white/25 text-white' : 'bg-[#eaf1ff] text-[#2d5fc0] dark:bg-gray-800 dark:text-gray-200'"
+                >
+                  {{ comprobantes.length }}
+                </span>
               </button>
             </div>
           </div>
 
           <div class="border-t-2 border-[#2d5fc0]/90 px-4 py-4 dark:border-[#2d5fc0]/70">
-            <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-             
-              
-            </div>
-
-           
-
-            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-400">
-              <p class="font-semibold">Mostrando 1 a 84 de 84 registros</p>
-              <div class="flex items-center gap-2">
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500">‹</button>
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1290df] font-semibold text-white">1</button>
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500">›</button>
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div class="xl:col-span-2">
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Buscar</label>
+                <UInput
+                  v-model="searchFilter"
+                  icon="i-lucide-search"
+                  placeholder="Solicitante, usuario o ID..."
+                  class="w-full"
+                />
               </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Mostrar</label>
+                <select
+                  v-model="entriesView"
+                  class="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[#2d5fc0] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                >
+                  <option value="25">25 registros</option>
+                  <option value="50">50 registros</option>
+                  <option value="100">100 registros</option>
+                  <option value="200">200 registros</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Mostrando {{ visibleComprobantes.length }} de {{ comprobantes.length }} registros.
+              </p>
+              <UButton
+                color="neutral"
+                variant="soft"
+                size="xs"
+                icon="i-lucide-rotate-ccw"
+                @click="clearFilters"
+              >
+                Limpiar filtros
+              </UButton>
             </div>
           </div>
           <div class="mx-4 mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
-          <div class="min-h-[420px] max-h-[62vh] overflow-auto">
+          <div class="min-h-[400px] max-h-[65vh] overflow-auto">
             <table class="min-w-[1280px] w-full border-separate border-spacing-0">
               <thead class="bg-[#efedf6] text-gray-600 dark:bg-gray-900 dark:text-gray-200">
                 <tr>
                   <th class="w-[80px] rounded-tl-2xl px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">ID</th>
                   <th class="w-[200px] px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">SOLICITANTE</th>
-                  <th class="w-[150px] px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">AREA</th>
                   <th class="w-[120px] px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">ESTADO</th>
                   <th class="w-[150px] px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">FECHA SOLICITUD</th>
                   <th class="w-[120px] px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">MONTO</th>
-                  <th class="w-[150px] px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">PRODUCTOS</th>
-                  <th class="w-[140px] rounded-tr-2xl px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">ACCIONES</th>
+                  <th class="w-[340px] px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">PRODUCTO</th>
+                  <th class="w-[120px] px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">IMAGEN</th>
+                  <th
+                    v-if="showActionsColumn"
+                    class="w-[140px] rounded-tr-2xl px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider"
+                  >
+                    ACCIONES
+                  </th>
                 </tr>
               </thead>
 
               <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
                 <template v-if="loading">
                   <tr>
-                    <td colspan="8" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td :colspan="tableColspan" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       <div class="flex items-center justify-center gap-3">
                         <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-[#2d5fc0]" />
                         <span>Cargando comprobantes...</span>
@@ -504,7 +582,7 @@ watch(activeListTab, () => {
 
                 <template v-else-if="error">
                   <tr>
-                    <td colspan="8" class="px-3 py-8 text-center text-sm text-red-600 dark:text-red-400">
+                    <td :colspan="tableColspan" class="px-3 py-8 text-center text-sm text-red-600 dark:text-red-400">
                       <div class="space-y-3">
                         <p class="font-semibold">{{ error }}</p>
                         <UButton
@@ -535,9 +613,6 @@ watch(activeListTab, () => {
                           </p>
                         </div>
                       </td>
-                      <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                        <p class="max-w-[140px] truncate">{{ displayValue(item.solicitud_gasto.area) }}</p>
-                      </td>
                       <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
                         <UBadge class="capitalize" variant="subtle" :color="getEstadoColor(getVisibleEstado(item))">
                           {{ getEstadoDisplayLabel(item) }}
@@ -552,25 +627,59 @@ watch(activeListTab, () => {
                       <td class="px-3 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
                         S/ 130.00
                       </td>
-                      <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
-                        <span class="font-semibold text-[#2d5fc0] dark:text-[#9cb7f5]">
-                          {{ getItemDetalles(item).length }}
-                        </span>
-                        <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">
-                          {{ getItemDetalles(item).length === 1 ? 'producto' : 'productos' }}
-                        </span>
+                      <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
+                        <p class="max-w-[330px] whitespace-normal break-words font-medium leading-5">
+                          {{ getItemDetalles(item).length ? getDetalleProductoLabel(getItemDetalles(item)[0]) : '--' }}
+                        </p>
+                        <p
+                          v-if="getItemDetalles(item).length > 1"
+                          class="text-xs text-gray-500 dark:text-gray-400"
+                        >
+                          +{{ getItemDetalles(item).length - 1 }} adicional(es)
+                        </p>
                       </td>
                       <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
+                        <button
+                          v-if="getItemDetalles(item).length && getDetalleImageUrl(getItemDetalles(item)[0])"
+                          type="button"
+                          class="group inline-flex"
+                          @click="openImagePreview(getDetalleImageUrl(getItemDetalles(item)[0]))"
+                        >
+                          <img
+                            :src="getDetalleImageUrl(getItemDetalles(item)[0]) || ''"
+                            alt="Producto"
+                            class="h-12 w-12 rounded-md border border-gray-200 object-cover transition group-hover:opacity-90 dark:border-gray-700"
+                          >
+                        </button>
+                        <div
+                          v-else
+                          class="inline-flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-lg dark:border-gray-700 dark:bg-gray-900"
+                          title="Sin imagen"
+                        >
+                          <UIcon name="i-lucide-image-off" class="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                        </div>
+                      </td>
+                      <td v-if="showActionsColumn" class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">
                         <div class="flex items-center justify-center gap-2">
                           <UButton
                             color="primary"
                             variant="soft"
                             size="xs"
-                            icon="i-lucide-settings-2"
+                            icon="i-lucide-send"
                             class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
                             @click.stop="openManageModal(item)"
                           >
-                            Gestionar
+                            Derivar
+                          </UButton>
+                          <UButton
+                            color="error"
+                            variant="soft"
+                            size="xs"
+                            icon="i-lucide-x"
+                            class="rounded-full bg-red-50 text-red-700 ring-1 ring-red-200 hover:bg-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900"
+                            @click.stop="openRejectCommentModal(item)"
+                          >
+                            Rechazar
                           </UButton>
                         </div>
                       </td>
@@ -578,7 +687,7 @@ watch(activeListTab, () => {
                   </template>
 
                   <tr v-if="!visibleComprobantes.length">
-                    <td colspan="8" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td :colspan="tableColspan" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       No hay comprobantes de gasto para mostrar.
                     </td>
                   </tr>
@@ -586,24 +695,8 @@ watch(activeListTab, () => {
               </tbody>
             </table>
           </div>
-          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
-            <p class="text-sm font-semibold text-gray-400">
-              Mostrando 1 a 84 de 84 registros
-            </p>
-            <div class="flex items-center gap-2">
-              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-300">‹</button>
-              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1290df] font-semibold text-white">1</button>
-              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-300">›</button>
-            </div>
-          </div>
         </div>
         </div>
-      </div>
-    </template>
-
-    <template #footer>
-      <div class="px-5 py-3 text-center text-xs text-gray-500 dark:text-gray-400">
-        Desarrollador por Cechriza - Area TI
       </div>
     </template>
   </UDashboardPanel>
@@ -657,9 +750,6 @@ watch(activeListTab, () => {
                 <thead class="bg-[#efedf6] text-gray-600 dark:bg-gray-900 dark:text-gray-200">
                   <tr>
                     <th class="rounded-tl-lg px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Producto</th>
-                    <th class="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Cantidad</th>
-                    <th class="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Precio estimado</th>
-                    <th class="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider">Precio real</th>
                     <th class="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Descripcion</th>
                     <th class="rounded-tr-lg px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">Imagen</th>
                   </tr>
@@ -675,9 +765,6 @@ watch(activeListTab, () => {
                         <p class="font-medium">{{ getDetalleProductoLabel(detalle) }}</p>
                       </div>
                     </td>
-                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">{{ displayValue(detalle.cantidad) }}</td>
-                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_estimado) }}</td>
-                    <td class="px-3 py-3 text-center text-sm text-gray-700 dark:text-gray-200">S/ {{ formatMoney(detalle.precio_real) }}</td>
                     <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
                       <p class="max-w-[260px] whitespace-normal break-words">{{ displayValue(detalle.descripcion_adicional) }}</p>
                     </td>
@@ -706,7 +793,7 @@ watch(activeListTab, () => {
                     </td>
                   </tr>
                   <tr v-if="!getItemDetalles(managingItem).length">
-                    <td colspan="6" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">There are no records to show</td>
+                    <td colspan="3" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">There are no records to show</td>
                   </tr>
                 </tbody>
               </table>
@@ -719,7 +806,7 @@ watch(activeListTab, () => {
           >
             <div class="space-y-1">
               <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comentario de gestion</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Opcional, usado para justificar la accion</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Obligatorio para derivar a gerencia</p>
             </div>
             <UTextarea
               v-model="manageComment"
@@ -748,23 +835,61 @@ watch(activeListTab, () => {
               icon="i-lucide-send"
               class="rounded-md bg-[#2d5fc0] px-4 text-white hover:bg-[#244ea4]"
               :loading="manageSubmitting"
-              :disabled="manageSubmitting || !canSendToGerencia"
+              :disabled="manageSubmitting || !canSendToGerenciaWithComment"
               @click="sendToGerenciaFromManageModal"
             >
-              {{ canSendToGerencia ? 'Validar y enviar a gerencia' : 'Ya enviado a gerencia' }}
-            </UButton>
-            <UButton
-              color="error"
-              icon="i-lucide-x"
-              variant="soft"
-              class="rounded-md bg-red-50 px-4 text-red-700 ring-1 ring-red-200 hover:bg-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900"
-              :loading="manageSubmitting"
-              :disabled="manageSubmitting || !canRejectInFlow"
-              @click="rejectFromManageModal"
-            >
-              {{ canRejectInFlow ? 'Rechazar solicitud' : 'Rechazada' }}
+              {{ canSendToGerencia ? 'Derivar' : 'Derivado' }}
             </UButton>
           </div>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="rejectCommentModalOpen" class="w-full max-w-xl" title="Rechazar solicitud">
+    <template #content>
+      <div class="space-y-4 p-4">
+        <div class="space-y-1">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">Comentario de rechazo</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Obligatorio para continuar</p>
+        </div>
+        <UTextarea
+          v-model="rejectComment"
+          :rows="4"
+          placeholder="Ej: No cumple con los requisitos de aprobacion"
+          :disabled="rejectSubmitting"
+          class="w-full min-h-[130px] rounded-xl [&_textarea]:min-h-[130px] [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:px-3 [&_textarea]:py-2.5"
+        />
+        <div class="flex justify-end gap-2">
+          <UButton color="neutral" variant="soft" :disabled="rejectSubmitting" @click="closeRejectCommentModal">
+            Cancelar
+          </UButton>
+          <UButton
+            color="error"
+            icon="i-lucide-arrow-right"
+            :disabled="rejectSubmitting || !rejectComment.trim()"
+            @click="openRejectConfirmFromTable"
+          >
+            Continuar
+          </UButton>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="rejectConfirmOpen" class="w-full max-w-md" title="Confirmar rechazo">
+    <template #content>
+      <div class="space-y-4 p-4">
+        <p class="text-sm text-gray-700 dark:text-gray-200">
+          Esta accion rechazara la solicitud. ¿Deseas continuar?
+        </p>
+        <div class="flex justify-end gap-2">
+          <UButton color="neutral" variant="soft" :disabled="manageSubmitting || rejectSubmitting" @click="rejectConfirmOpen = false">
+            Cancelar
+          </UButton>
+          <UButton color="error" icon="i-lucide-x" :loading="manageSubmitting || rejectSubmitting" @click="confirmRejectAction">
+            Si, rechazar
+          </UButton>
         </div>
       </div>
     </template>

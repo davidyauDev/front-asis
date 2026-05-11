@@ -90,9 +90,9 @@ const requestsLinks = [{
     exact: true,
     onSelect: () => { open.value = false }
   }, {
-    label: 'Compra',
-    icon: 'i-lucide-shopping-bag',
-    to: '/rrhh/solicitud/compra',
+    label: 'Botas',
+    icon: 'i-lucide-footprints',
+    to: '/rrhh/solicitud/botas',
     exact: true,
     onSelect: () => { open.value = false }
   }]
