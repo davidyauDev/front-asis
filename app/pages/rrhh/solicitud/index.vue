@@ -4,8 +4,10 @@ import SolicitudesFilters from '~/components/rrhh/inventario/SolicitudesFilters.
 import AppDataTable from '~/components/common/AppDataTable.vue'
 import { useSolicitudes } from '~/composables/rrhh/useSolicitudes'
 import {
+  downloadActaRrhhPdf,
   getSolicitudById,
   subirActaRrhh,
+  type SolicitudDetalleItem,
   type SolicitudDetalleData,
   type SolicitudListItem,
 } from '~/services/rrhh/solicitudes'
@@ -39,6 +41,7 @@ const selectedRequest = ref<SolicitudListItem | null>(null)
 const selectedDetail = ref<SolicitudDetalleData | null>(null)
 
 type ActaFileKind = 'image' | 'pdf'
+type ActaDecision = 'aprobado' | 'rechazado' | null
 
 const actaModalOpen = ref(false)
 const actaRequest = ref<SolicitudListItem | null>(null)
@@ -50,6 +53,11 @@ const actaDraftComment = ref('')
 const actaSubmitting = ref(false)
 const actaModalError = ref<string | null>(null)
 const toast = useToast()
+const actaDecisionMap = reactive<Record<number, ActaDecision>>({})
+const actaPreviewOpen = ref(false)
+const actaPreviewRequest = ref<SolicitudListItem | null>(null)
+const actaPreviewUrl = ref<string | null>(null)
+const actaPreviewKind = ref<ActaFileKind>('pdf')
 
 interface DerivacionLogisticaRecord {
   comment: string
@@ -68,7 +76,8 @@ const columns = [
   { key: 'fecha_registro', label: 'Fecha de registro' },
   { key: 'departamento', label: 'Ubicacion' },
   { key: 'areas_intervienen', label: 'Areas que intervienen' },
-  { key: 'acta', label: 'Acta', align: 'center' as const },
+  { key: 'acta_cargada', label: 'Acta cargada', align: 'center' as const },
+  { key: 'acta', label: 'Acta Epp', align: 'center' as const },
   { key: 'acciones', label: 'Acciones', align: 'center' as const },
 ] as const
 
@@ -109,6 +118,41 @@ const getActaKey = (item: SolicitudListItem) => item.id_solicitud ?? null
 const getActaUrl = (item: SolicitudListItem) => {
   const value = item.acta_rrhh_url?.trim()
   return value || null
+}
+const getActaDecision = (item: SolicitudListItem): ActaDecision => {
+  const key = getActaKey(item)
+  if (!key) return null
+  return actaDecisionMap[key] ?? null
+}
+
+const getActaPreviewKindFromUrl = (url: string): ActaFileKind => {
+  const normalized = url.toLowerCase()
+  return normalized.endsWith('.pdf') ? 'pdf' : 'image'
+}
+
+const openActaPreview = (item: SolicitudListItem) => {
+  const url = getActaUrl(item)
+  if (!url) return
+  actaPreviewRequest.value = item
+  actaPreviewUrl.value = url
+  actaPreviewKind.value = getActaPreviewKindFromUrl(url)
+  actaPreviewOpen.value = true
+}
+
+const closeActaPreview = () => {
+  actaPreviewOpen.value = false
+  actaPreviewRequest.value = null
+  actaPreviewUrl.value = null
+}
+
+const setActaDecision = (item: SolicitudListItem, decision: Exclude<ActaDecision, null>) => {
+  const key = getActaKey(item)
+  if (!key) return
+  actaDecisionMap[key] = decision
+  toast.add({
+    title: `Acta ${decision} (solo frontend)`,
+    color: decision === 'aprobado' ? 'success' : 'warning',
+  })
 }
 
 const hasActa = (item: SolicitudListItem) => {
@@ -208,6 +252,42 @@ const saveActaDraft = async () => {
   }
 }
 
+const downloadActa = async (item: SolicitudListItem) => {
+  if (!import.meta.client) return
+  const id = item.id_solicitud
+  if (!id) return
+
+  try {
+    const { blob, fileName } = await downloadActaRrhhPdf(id)
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = fileName || `acta_rrhh_${id}.pdf`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  } catch (cause) {
+    toast.add({
+      title: extractErrorMessage(cause),
+      color: 'error',
+    })
+  }
+}
+
+const isDetalleAprobado = (detalle: SolicitudDetalleItem) => {
+  if (detalle.id_estado_detalle === 2) return true
+  if (typeof detalle.estado === 'string') return detalle.estado.trim().toLowerCase() === 'aprobado'
+  return (detalle.estado?.descripcion ?? '').trim().toLowerCase() === 'aprobado'
+}
+
+const canDownloadActa = (item: SolicitudListItem) => {
+  const details = (item as SolicitudListItem & { detalles?: SolicitudDetalleItem[] }).detalles
+  if (!Array.isArray(details) || details.length === 0) return false
+
+  return details.some(detalle => Number(detalle.area_id) === 11 && isDetalleAprobado(detalle))
+}
+
 const openDetail = async (item: SolicitudListItem) => {
   selectedRequest.value = item
   selectedDetail.value = null
@@ -276,7 +356,7 @@ onBeforeUnmount(() => {
           empty-text="No hay solicitudes para mostrar."
           row-key="id_solicitud"
           table-class="min-w-[1320px] w-full table-fixed border-separate border-spacing-0"
-          max-height-class="max-h-[68vh]"
+          max-height-class="max-h-[80vh]"
           body-class="divide-y divide-gray-100/80 bg-white dark:divide-gray-800/80 dark:bg-gray-950"
           row-class="transition-colors hover:bg-[#f7f9ff] dark:hover:bg-gray-900/60"
           @retry="refreshRequests"
@@ -337,24 +417,53 @@ onBeforeUnmount(() => {
         </div>
       </template>
 
-      <template #cell-acta="{ row }">
-        <div class="flex items-center justify-center">
-          <a
-            v-if="getActaUrl(row)"
-            :href="getActaUrl(row) || '#'"
-            download
-            class="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 p-2 text-white ring-1 ring-red-300 shadow-sm hover:brightness-110 dark:ring-red-700/70"
-            :aria-label="`Descargar acta solicitud ${row.id_solicitud ?? ''}`"
-          >
-            <UIcon name="i-mdi-file-pdf-box" class="h-4 w-4" />
-          </a>
+      <template #cell-acta_cargada="{ row }">
+        <div class="mx-auto flex max-w-[220px] flex-col items-center gap-2">
+          <template v-if="getActaUrl(row)">
+            <UButton
+              size="xs"
+              color="primary"
+              variant="soft"
+              icon="i-lucide-eye"
+              class="rounded-full bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
+              @click.stop="openActaPreview(row)"
+            >
+              Previsualizar
+            </UButton>
+            <UBadge
+              v-if="getActaDecision(row)"
+              :color="getActaDecision(row) === 'aprobado' ? 'success' : 'error'"
+              variant="soft"
+              class="capitalize"
+            >
+              {{ getActaDecision(row) }}
+            </UBadge>
+          </template>
           <span
             v-else
-            class="inline-flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-400 ring-1 ring-gray-200 dark:bg-gray-900/40 dark:text-gray-600 dark:ring-gray-800/60"
-            :aria-label="`Acta no disponible solicitud ${row.id_solicitud ?? ''}`"
+            class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:ring-amber-900/60"
           >
-            <UIcon name="i-mdi-file-pdf-box" class="h-4 w-4" />
+            <UIcon name="i-lucide-clock-3" class="h-3.5 w-3.5" />
+            Sin acta
           </span>
+        </div>
+      </template>
+
+      <template #cell-acta="{ row }">
+        <div class="flex items-center justify-center">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 p-2 text-white ring-1 ring-red-300 shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:brightness-100 dark:ring-red-700/70"
+            :aria-label="`Descargar acta solicitud ${row.id_solicitud ?? ''}`"
+            :disabled="!row.id_solicitud || !canDownloadActa(row)"
+            @click.stop="downloadActa(row)"
+          >
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" aria-hidden="true">
+              <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z" fill="currentColor" fill-opacity=".2" stroke="currentColor" stroke-width="1.5" />
+              <path d="M14 2v5h5" stroke="currentColor" stroke-width="1.5" />
+              <text x="12" y="17" text-anchor="middle" font-size="6.2" font-weight="700" fill="currentColor">PDF</text>
+            </svg>
+          </button>
         </div>
       </template>
 
@@ -517,6 +626,56 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </template>
+        </UModal>
+
+        <UModal v-model:open="actaPreviewOpen" class="w-full max-w-6xl" title="Vista previa del acta RR.HH.">
+          <template #content>
+            <div class="space-y-3 p-4 sm:p-5">
+              <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950/60">
+                <img
+                  v-if="actaPreviewUrl && actaPreviewKind === 'image'"
+                  :src="actaPreviewUrl"
+                  alt="Vista previa del acta"
+                  class="max-h-[78vh] w-full object-contain"
+                >
+                <iframe
+                  v-else-if="actaPreviewUrl"
+                  :src="actaPreviewUrl"
+                  class="h-[78vh] w-full"
+                  title="Vista previa del acta"
+                />
+              </div>
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <UButton
+                    size="sm"
+                    color="success"
+                    variant="soft"
+                    icon="i-lucide-check"
+                    class="rounded-full"
+                    :disabled="!actaPreviewRequest"
+                    @click="actaPreviewRequest && setActaDecision(actaPreviewRequest, 'aprobado')"
+                  >
+                    Aprobar
+                  </UButton>
+                  <UButton
+                    size="sm"
+                    color="error"
+                    variant="soft"
+                    icon="i-lucide-x"
+                    class="rounded-full"
+                    :disabled="!actaPreviewRequest"
+                    @click="actaPreviewRequest && setActaDecision(actaPreviewRequest, 'rechazado')"
+                  >
+                    Rechazar
+                  </UButton>
+                </div>
+                <UButton color="neutral" variant="outline" @click="closeActaPreview">
+                  Cerrar
+                </UButton>
+              </div>
+            </div>
+          </template>
         </UModal>
 
         <UModal v-model:open="derivarModalOpen" :title="`Derivado a logistica - Solicitud #${derivarRequest?.id_solicitud ?? '--'}`">

@@ -135,12 +135,19 @@ const hasRegisteredSeguimiento = computed(() => {
   const { estado, comentario } = selectedRequestSeguimiento.value
   return estado === 'derivar_logistica' || estado === 'recojo_oficina' || Boolean(comentario)
 })
-const hasPendingAttentionDetail = computed(() => {
-  return selectedItems.value.some((item) => {
-    const state = normalize(getItemState(item))
-    return item.id_estado_detalle === 11 || state.includes('pendiente de atencion')
-  })
-})
+const isApprovedRrhhDetail = (item: SolicitudDetalleItem) => {
+  if (Number(item.area_id) !== 11) return false
+  if (item.id_estado_detalle === 2) return true
+
+  if (typeof item.estado === 'string') {
+    return normalize(item.estado).includes('apro')
+  }
+
+  return normalize(item.estado?.descripcion).includes('apro')
+}
+const hasApprovedRrhhDetail = computed(() => selectedItems.value.some(isApprovedRrhhDetail))
+const canEnableGlobalActions = computed(() => hasGlobalActions.value && hasApprovedRrhhDetail.value)
+const showGlobalActionsBlockedMessage = computed(() => hasGlobalActions.value && !hasApprovedRrhhDetail.value)
 const showActaAction = computed(() => hasGlobalActions.value && !hasRegisteredActa.value)
 const showSeguimientoAction = computed(() => hasGlobalActions.value && !hasRegisteredSeguimiento.value)
 const hasVisibleGlobalActions = computed(() => showActaAction.value || showSeguimientoAction.value)
@@ -301,20 +308,19 @@ const onGlobalActaFileChange = (event: Event) => {
 }
 
 const openActaModal = () => {
-  if (hasPendingAttentionDetail.value) return
+  if (!canEnableGlobalActions.value) return
   actaError.value = null
   actaModalOpen.value = true
 }
 
 const openSeguimientoModal = () => {
-  if (hasPendingAttentionDetail.value) return
+  if (!canEnableGlobalActions.value) return
   seguimientoError.value = null
   seguimientoModalOpen.value = true
 }
 
 const canSubmitActa = computed(() => {
-  if (!hasGlobalActions.value) return false
-  if (hasPendingAttentionDetail.value) return false
+  if (!canEnableGlobalActions.value) return false
   if (actaSubmitting.value) return false
   return !!globalActaFile.value
 })
@@ -356,8 +362,7 @@ const submitActa = async () => {
 }
 
 const canSubmitSeguimiento = computed(() => {
-  if (!hasGlobalActions.value) return false
-  if (hasPendingAttentionDetail.value) return false
+  if (!canEnableGlobalActions.value) return false
   if (seguimientoSubmitting.value) return false
   if (!selectedItems.value.length) return false
   if (isInternalRequest.value && !globalInternalStatus.value) return false
@@ -536,10 +541,10 @@ const confirmManage = async () => {
 
             <div class="mt-4 flex flex-wrap items-center gap-3">
               <div
-                v-if="hasPendingAttentionDetail"
+                v-if="showGlobalActionsBlockedMessage"
                 class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
               >
-                Debes gestionar los detalles con estado Pendiente de Atencion antes de subir acta o registrar seguimiento.
+                Se habilita cuando exista al menos un item de RR.HH. (area_id 11) en estado Aprobado.
               </div>
               <UButton
                 v-if="showActaAction"
@@ -547,7 +552,7 @@ const confirmManage = async () => {
                 variant="soft"
                 icon="i-lucide-file-up"
                 class="rounded-md bg-[#eef4ff] text-[#2d5fc0] ring-1 ring-[#cbdcff] hover:bg-[#dfe9ff]"
-                :disabled="hasPendingAttentionDetail"
+                :disabled="!canEnableGlobalActions"
                 @click="openActaModal"
               >
                 Subir acta
@@ -557,7 +562,7 @@ const confirmManage = async () => {
                 color="primary"
                 icon="i-lucide-git-branch-plus"
                 class="rounded-md bg-[#2d5fc0] text-white hover:bg-[#244ea4]"
-                :disabled="hasPendingAttentionDetail"
+                :disabled="!canEnableGlobalActions"
                 @click="openSeguimientoModal"
               >
                 Seguimiento

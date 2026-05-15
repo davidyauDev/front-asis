@@ -518,6 +518,11 @@ export interface SubirActaRrhhResponse {
   } | null
 }
 
+export interface DownloadActaRrhhPdfResponse {
+  blob: Blob
+  fileName: string
+}
+
 export const entregaDetalleSolicitud = async (
   id: number | string,
   payload: EntregaDetallePayload,
@@ -608,4 +613,42 @@ export const subirActaDetalle = async (
   }
 
   return data
+}
+
+export const downloadActaRrhhPdf = async (
+  id: number | string,
+): Promise<DownloadActaRrhhPdfResponse> => {
+  const config = useRuntimeConfig()
+  const token = useCookie<string | null>('auth_token')
+
+  const response = await fetch(`${config.public.apiBaseUrl}/api/solicitudes/${id}/acta-rrhh/download`, {
+    method: 'GET',
+    headers: {
+      ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+      Accept: 'application/pdf,application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const raw = await response.text()
+    const data = raw ? (() => {
+      try {
+        return JSON.parse(raw)
+      } catch {
+        return raw
+      }
+    })() : null
+
+    if (data && typeof data === 'object') {
+      throw { ...(data as any), status: response.status }
+    }
+    throw { message: String(data ?? response.statusText ?? 'Error'), status: response.status }
+  }
+
+  const blob = await response.blob()
+  const contentDisposition = response.headers.get('content-disposition') || ''
+  const fileNameMatch = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i)
+  const fileName = (fileNameMatch?.[1] || `acta_rrhh_${id}.pdf`).replace(/"/g, '').trim()
+
+  return { blob, fileName }
 }
