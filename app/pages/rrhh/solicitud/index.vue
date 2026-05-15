@@ -66,9 +66,9 @@ const columns = [
   { key: 'solicitante', label: 'Solicitante' },
   { key: 'estado_general', label: 'Estado General' },
   { key: 'fecha_registro', label: 'Fecha de registro' },
-  { key: 'ubicacion', label: 'Ubicacion' },
-  { key: 'tipo', label: 'Tipo' },
-  { key: 'seguimiento_rrhh', label: 'Seguimiento RRHH' },
+  { key: 'departamento', label: 'Ubicacion' },
+  { key: 'areas_intervienen', label: 'Areas que intervienen' },
+  { key: 'acta', label: 'Acta', align: 'center' as const },
   { key: 'acciones', label: 'Acciones', align: 'center' as const },
 ] as const
 
@@ -246,13 +246,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <UDashboardPanel id="solicitud-mixta">
+  <UDashboardPanel id="solicitud-epps">
     <template #header>
       <AppDashboardHeader
-        title="Solicitudes Mixta"
+        title="Solicitudes Epps"
         :show-live-badge="false"
-        notification-attention
         notification-tooltip="Alertas RRHH"
+        notification-attention
         @notification-click="openRrhhNotifications"
       />
     </template>
@@ -297,9 +297,6 @@ onBeforeUnmount(() => {
       <template #cell-solicitante="{ row }">
         <div class="space-y-1 text-sm text-gray-700 dark:text-gray-200">
           <p class="max-w-[280px] font-semibold leading-5">{{ getRequesterName(row) }}</p>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-500">
-            Usuario #{{ row.id_usuario_solicitante ?? '--' }}
-          </p>
         </div>
       </template>
 
@@ -327,6 +324,38 @@ onBeforeUnmount(() => {
         <span class="text-sm text-gray-700 dark:text-gray-200">
           {{ row.tipo_solicitud ? row.tipo_solicitud.toUpperCase() : '--' }}
         </span>
+      </template>
+
+      <template #cell-areas_intervienen>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="inline-flex items-center rounded-full bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-900/20 dark:text-sky-300 dark:ring-sky-800/60">
+            SSOMA
+          </span>
+          <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800/60">
+            Logistica
+          </span>
+        </div>
+      </template>
+
+      <template #cell-acta="{ row }">
+        <div class="flex items-center justify-center">
+          <a
+            v-if="getActaUrl(row)"
+            :href="getActaUrl(row) || '#'"
+            download
+            class="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 p-2 text-white ring-1 ring-red-300 shadow-sm hover:brightness-110 dark:ring-red-700/70"
+            :aria-label="`Descargar acta solicitud ${row.id_solicitud ?? ''}`"
+          >
+            <UIcon name="i-mdi-file-pdf-box" class="h-4 w-4" />
+          </a>
+          <span
+            v-else
+            class="inline-flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-400 ring-1 ring-gray-200 dark:bg-gray-900/40 dark:text-gray-600 dark:ring-gray-800/60"
+            :aria-label="`Acta no disponible solicitud ${row.id_solicitud ?? ''}`"
+          >
+            <UIcon name="i-mdi-file-pdf-box" class="h-4 w-4" />
+          </span>
+        </div>
       </template>
 
       <template #cell-seguimiento_rrhh="{ row }">
@@ -373,6 +402,16 @@ onBeforeUnmount(() => {
           >
             Gestionar
           </UButton>
+          <UButton
+            color="success"
+            variant="soft"
+            icon="i-simple-icons-whatsapp"
+            class="rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:ring-emerald-800/60"
+            size="xs"
+            square
+            :aria-label="`WhatsApp solicitud ${row.id_solicitud ?? ''}`"
+            @click.stop
+          />
         </div>
       </template>
         </AppDataTable>

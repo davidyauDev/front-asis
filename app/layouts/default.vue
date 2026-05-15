@@ -84,7 +84,7 @@ const requestsLinks = [{
   icon: 'i-lucide-list-checks',
   defaultOpen: false,
   children: [{
-    label: 'Mixta',
+    label: 'Epps',
     icon: 'i-lucide-layers-3',
     to: '/rrhh/solicitud',
     exact: true,
