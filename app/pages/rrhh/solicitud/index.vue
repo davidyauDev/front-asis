@@ -4,9 +4,11 @@ import SolicitudesFilters from '~/components/rrhh/inventario/SolicitudesFilters.
 import AppDataTable from '~/components/common/AppDataTable.vue'
 import { useSolicitudes } from '~/composables/rrhh/useSolicitudes'
 import {
+  cerrarSolicitud,
   downloadActaRrhhPdf,
   getSolicitudById,
   subirActaRrhh,
+  type CerrarSolicitudEstado,
   type SolicitudDetalleItem,
   type SolicitudDetalleData,
   type SolicitudListItem,
@@ -41,7 +43,7 @@ const selectedRequest = ref<SolicitudListItem | null>(null)
 const selectedDetail = ref<SolicitudDetalleData | null>(null)
 
 type ActaFileKind = 'image' | 'pdf'
-type ActaDecision = 'aprobado' | 'rechazado' | null
+type ActaDecision = CerrarSolicitudEstado | null
 
 const actaModalOpen = ref(false)
 const actaRequest = ref<SolicitudListItem | null>(null)
@@ -54,6 +56,7 @@ const actaSubmitting = ref(false)
 const actaModalError = ref<string | null>(null)
 const toast = useToast()
 const actaDecisionMap = reactive<Record<number, ActaDecision>>({})
+const actaDecisionSubmitting = ref(false)
 const actaPreviewOpen = ref(false)
 const actaPreviewRequest = ref<SolicitudListItem | null>(null)
 const actaPreviewUrl = ref<string | null>(null)
@@ -148,11 +151,34 @@ const closeActaPreview = () => {
 const setActaDecision = (item: SolicitudListItem, decision: Exclude<ActaDecision, null>) => {
   const key = getActaKey(item)
   if (!key) return
-  actaDecisionMap[key] = decision
-  toast.add({
-    title: `Acta ${decision} (solo frontend)`,
-    color: decision === 'aprobado' ? 'success' : 'warning',
-  })
+
+  actaDecisionSubmitting.value = true
+
+  cerrarSolicitud(key, { estado: decision })
+    .then(async (response) => {
+      actaDecisionMap[key] = decision
+      await loadRequests()
+      toast.add({
+        title: response.message || 'Estado actualizado correctamente',
+        color: decision === 'cerrada' ? 'success' : 'warning',
+      })
+      closeActaPreview()
+    })
+    .catch((cause: unknown) => {
+      const status = (cause as { status?: number })?.status
+      let message = extractErrorMessage(cause)
+      if (status === 404) message = 'Solicitud no encontrada'
+      else if (status === 422) message = 'Validacion fallida: estado invalido'
+      else if (status === 500) message = 'Error interno del servidor'
+
+      toast.add({
+        title: message,
+        color: 'error',
+      })
+    })
+    .finally(() => {
+      actaDecisionSubmitting.value = false
+    })
 }
 
 const hasActa = (item: SolicitudListItem) => {
@@ -432,7 +458,7 @@ onBeforeUnmount(() => {
             </UButton>
             <UBadge
               v-if="getActaDecision(row)"
-              :color="getActaDecision(row) === 'aprobado' ? 'success' : 'error'"
+              :color="getActaDecision(row) === 'cerrada' ? 'success' : 'error'"
               variant="soft"
               class="capitalize"
             >
@@ -653,10 +679,11 @@ onBeforeUnmount(() => {
                     variant="soft"
                     icon="i-lucide-check"
                     class="rounded-full"
-                    :disabled="!actaPreviewRequest"
-                    @click="actaPreviewRequest && setActaDecision(actaPreviewRequest, 'aprobado')"
+                    :loading="actaDecisionSubmitting"
+                    :disabled="!actaPreviewRequest || actaDecisionSubmitting"
+                    @click="actaPreviewRequest && setActaDecision(actaPreviewRequest, 'cerrada')"
                   >
-                    Aprobar
+                    Cerrar
                   </UButton>
                   <UButton
                     size="sm"
@@ -664,13 +691,14 @@ onBeforeUnmount(() => {
                     variant="soft"
                     icon="i-lucide-x"
                     class="rounded-full"
-                    :disabled="!actaPreviewRequest"
-                    @click="actaPreviewRequest && setActaDecision(actaPreviewRequest, 'rechazado')"
+                    :loading="actaDecisionSubmitting"
+                    :disabled="!actaPreviewRequest || actaDecisionSubmitting"
+                    @click="actaPreviewRequest && setActaDecision(actaPreviewRequest, 'rechazada')"
                   >
                     Rechazar
                   </UButton>
                 </div>
-                <UButton color="neutral" variant="outline" @click="closeActaPreview">
+                <UButton color="neutral" variant="outline" :disabled="actaDecisionSubmitting" @click="closeActaPreview">
                   Cerrar
                 </UButton>
               </div>

@@ -503,6 +503,18 @@ export interface UpdateEstadoRrhhResponse {
   data?: Record<string, unknown> | null
 }
 
+export type CerrarSolicitudEstado = 'cerrada' | 'rechazada'
+
+export interface CerrarSolicitudPayload {
+  estado: CerrarSolicitudEstado
+}
+
+export interface CerrarSolicitudResponse {
+  success: boolean
+  message?: string
+  data?: Record<string, unknown> | null
+}
+
 export interface SubirActaRrhhPayload {
   acta_rrhh: File
   acta_rrhh_comentario?: string | null
@@ -538,6 +550,16 @@ export const updateEstadoRrhh = async (
   payload: UpdateEstadoRrhhPayload,
 ): Promise<UpdateEstadoRrhhResponse> => {
   return apiFetch(`/api/solicitudes/${id}/estado-rrhh`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export const cerrarSolicitud = async (
+  id: number | string,
+  payload: CerrarSolicitudPayload,
+): Promise<CerrarSolicitudResponse> => {
+  return apiFetch(`/api/solicitudes/${id}/cerrar`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })

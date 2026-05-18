@@ -34,7 +34,7 @@ const rejectComment = shallowRef('')
 const rejectSubmitting = shallowRef(false)
 const staffIdFilter = shallowRef('')
 const entriesView = shallowRef('100')
-const activeListTab = shallowRef<'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobados' | 'rechazados' | 'reembolso' | 'cerrado'>('pendiente_rrhh')
+const activeListTab = shallowRef<'pendiente_rrhh' | 'pendiente_gerencia' | 'aprobados' | 'rechazados' | 'reembolso'>('pendiente_rrhh')
 const searchFilter = shallowRef('')
 const toast = useToast()
 
@@ -44,7 +44,6 @@ const tabsConfig = [
   { key: 'aprobados', label: 'Aprobados', icon: 'i-lucide-check-check' },
   { key: 'rechazados', label: 'Rechazados', icon: 'i-lucide-x-circle' },
   { key: 'reembolso', label: 'Reembolso', icon: 'i-lucide-wallet' },
-  { key: 'cerrado', label: 'Cerrado', icon: 'i-lucide-lock' },
 ] as const
 
 const getEstadoIdByTab = () => {
@@ -411,7 +410,11 @@ const pagedComprobantes = computed(() => {
 })
 
 const visibleComprobantes = computed(() => pagedComprobantes.value)
-const showActionsColumn = computed(() => activeListTab.value !== 'pendiente_gerencia')
+const showActionsColumn = computed(() => (
+  activeListTab.value !== 'pendiente_gerencia'
+  && activeListTab.value !== 'aprobados'
+  && activeListTab.value !== 'reembolso'
+))
 const tableColspan = computed(() => (showActionsColumn.value ? 9 : 8))
 
 const clearFilters = () => {
@@ -498,12 +501,6 @@ watch(activeListTab, () => {
               >
                 <UIcon :name="tab.icon" class="h-4 w-4" />
                 <span>{{ tab.label }}</span>
-                <span
-                  class="inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
-                  :class="activeListTab === tab.key ? 'bg-white/25 text-white' : 'bg-[#eaf1ff] text-[#2d5fc0] dark:bg-gray-800 dark:text-gray-200'"
-                >
-                  {{ comprobantes.length }}
-                </span>
               </button>
             </div>
           </div>
