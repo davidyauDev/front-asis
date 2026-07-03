@@ -27,6 +27,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Private keys (only available on server-side)
+    accessApi: process.env.ACCESS_API || '',
+    developmentRequestsApiBaseUrl: process.env.DEVELOPMENT_REQUESTS_API_BASE_URL || 'https://sistemas-ti.cechriza.com/api',
     
     // Public keys (exposed to client-side)
     public: {

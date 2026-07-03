@@ -43,6 +43,7 @@ const _useAuth = () => {
         email: u.email,
         emp_code: u.emp_code,
         role: 'user',
+        staff_id: u.staff_id,
         avatar: {
           alt: u.name
         }

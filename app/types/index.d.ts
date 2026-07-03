@@ -68,6 +68,7 @@ export interface AuthUser {
   email: string;
   emp_code: string;
   role?: "admin" | "user" | "moderator";
+  staff_id?: number;
   avatar?: {
     src?: string;
     alt?: string;
@@ -98,6 +99,8 @@ export interface LoginResponse {
       id: number;
       name: string;
       email: string;
+      emp_code: string;
+      staff_id: number;
       emp_code: string;
     };
   };

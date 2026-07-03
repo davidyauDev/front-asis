@@ -39,6 +39,18 @@ const managementLinks = [{
   exact: true,
   onSelect: () => { open.value = false }
 }, {
+  label: 'Desarrollo',
+  icon: 'i-lucide-code-2',
+  to: '/rrhh/desarrollo',
+  exact: true,
+  onSelect: () => { open.value = false }
+}, {
+  label: 'Tickets',
+  icon: 'i-lucide-ticket',
+  to: '/rrhh/tickets',
+  exact: true,
+  onSelect: () => { open.value = false }
+}, {
   label: 'Usuarios',
   icon: 'i-lucide-users',
   to: '/rrhh/users',
