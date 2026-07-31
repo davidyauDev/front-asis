@@ -17,6 +17,7 @@ export interface SolicitudListItem {
   id_estado_general?: number | null
   fecha_registro?: string | null
   ubicacion?: string | null
+  departamento?: string | null
   estado?: SolicitudEstado | null
   firstname?: string | null
   lastname?: string | null

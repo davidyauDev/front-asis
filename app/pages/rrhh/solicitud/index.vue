@@ -55,6 +55,8 @@ const actaDraftComment = ref('')
 const actaSubmitting = ref(false)
 const actaModalError = ref<string | null>(null)
 const toast = useToast()
+const closeRequestModalOpen = ref(false)
+const closeRequestTarget = ref<SolicitudListItem | null>(null)
 const actaDecisionMap = reactive<Record<number, ActaDecision>>({})
 const actaDecisionSubmitting = ref(false)
 const actaPreviewOpen = ref(false)
@@ -128,7 +130,23 @@ const getActaDecision = (item: SolicitudListItem): ActaDecision => {
   return actaDecisionMap[key] ?? null
 }
 
-const canCloseRequest = (item: SolicitudListItem) => Number(item.estado?.id_estado) === 50
+const canCloseRequest = (item: SolicitudListItem) => {
+  const stateId = Number(item.estado?.id_estado)
+  const department = item.departamento?.trim().toUpperCase()
+
+  return stateId === 50 || (stateId === 20 && department === 'LIMA')
+}
+
+const openCloseRequestModal = (item: SolicitudListItem) => {
+  closeRequestTarget.value = item
+  closeRequestModalOpen.value = true
+}
+
+const closeCloseRequestModal = () => {
+  if (actaDecisionSubmitting.value) return
+  closeRequestModalOpen.value = false
+  closeRequestTarget.value = null
+}
 
 const getActaPreviewKindFromUrl = (url: string): ActaFileKind => {
   const normalized = url.toLowerCase()
@@ -164,6 +182,8 @@ const setActaDecision = (item: SolicitudListItem, decision: Exclude<ActaDecision
         title: response.message || 'Estado actualizado correctamente',
         color: decision === 'cerrada' ? 'success' : 'warning',
       })
+      closeRequestModalOpen.value = false
+      closeRequestTarget.value = null
       closeActaPreview()
     })
     .catch((cause: unknown) => {
@@ -548,7 +568,7 @@ onBeforeUnmount(() => {
             size="xs"
             :loading="actaDecisionSubmitting"
             :disabled="!row.id_solicitud || actaDecisionSubmitting"
-            @click.stop="setActaDecision(row, 'cerrada')"
+            @click.stop="openCloseRequestModal(row)"
           >
             Cerrar solicitud
           </UButton>
@@ -565,6 +585,48 @@ onBeforeUnmount(() => {
         </div>
       </template>
         </AppDataTable>
+
+        <UModal
+          v-model:open="closeRequestModalOpen"
+          :title="`Cerrar solicitud #${closeRequestTarget?.id_solicitud ?? '--'}`"
+        >
+          <template #content>
+            <div class="space-y-5 p-5 text-center sm:p-6">
+              <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300">
+                <UIcon name="i-lucide-triangle-alert" class="h-8 w-8" />
+              </div>
+
+              <div class="space-y-2">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  ¿Deseas cerrar esta solicitud?
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Esta acción finalizará la solicitud seleccionada.
+                </p>
+              </div>
+
+              <div class="flex justify-center gap-3">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  :disabled="actaDecisionSubmitting"
+                  @click="closeCloseRequestModal"
+                >
+                  Cancelar
+                </UButton>
+                <UButton
+                  color="success"
+                  icon="i-lucide-circle-check-big"
+                  :loading="actaDecisionSubmitting"
+                  :disabled="!closeRequestTarget?.id_solicitud || actaDecisionSubmitting"
+                  @click="closeRequestTarget && setActaDecision(closeRequestTarget, 'cerrada')"
+                >
+                  Sí, cerrar solicitud
+                </UButton>
+              </div>
+            </div>
+          </template>
+        </UModal>
 
         <SolicitudDetalleModal
           v-model:open="detailOpen"
