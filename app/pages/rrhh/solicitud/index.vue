@@ -128,6 +128,8 @@ const getActaDecision = (item: SolicitudListItem): ActaDecision => {
   return actaDecisionMap[key] ?? null
 }
 
+const canCloseRequest = (item: SolicitudListItem) => Number(item.estado?.id_estado) === 50
+
 const getActaPreviewKindFromUrl = (url: string): ActaFileKind => {
   const normalized = url.toLowerCase()
   return normalized.endsWith('.pdf') ? 'pdf' : 'image'
@@ -536,6 +538,19 @@ onBeforeUnmount(() => {
             @click.stop="openDetail(row)"
           >
             Gestionar
+          </UButton>
+          <UButton
+            v-if="canCloseRequest(row)"
+            color="success"
+            variant="soft"
+            icon="i-lucide-circle-check-big"
+            class="rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:ring-emerald-800/60"
+            size="xs"
+            :loading="actaDecisionSubmitting"
+            :disabled="!row.id_solicitud || actaDecisionSubmitting"
+            @click.stop="setActaDecision(row, 'cerrada')"
+          >
+            Cerrar solicitud
           </UButton>
           <UButton
             color="success"

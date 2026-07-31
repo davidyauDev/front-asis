@@ -26,7 +26,7 @@ const openEventDetails = (evento: EventoCalendario) => {
 }
 
 const currentDate = ref(new Date());
-const selectedDate = ref<Date | null>(new Date()); // Inicializar con la fecha de hoy
+const selectedDate = ref<Date | null>(new Date());
 const viewMode = ref<'month' | 'week' | 'day'>('month');
 
 const currentMonth = computed(() => currentDate.value.getMonth());
@@ -37,7 +37,7 @@ const monthNames = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const formatLocalYMD = (date: Date) => {
   const y = date.getFullYear();
@@ -57,44 +57,38 @@ const parseYMDToLocalDate = (ymd: string) => {
 const calendarDays = computed(() => {
   const year = currentYear.value;
   const month = currentMonth.value;
-  
+
   const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
   const startDate = new Date(firstDay);
   startDate.setDate(startDate.getDate() - firstDay.getDay());
-  
+
   const days = [];
   let currentDay = new Date(startDate);
-  
-  // Generar 42 días (6 semanas)
+
   for (let i = 0; i < 42; i++) {
-    // Comparación sin desfases: comparar por YYYY-MM-DD local
     const currentDayYMD = formatLocalYMD(currentDay);
     const dayEvents = props.eventos.filter(evento => {
-      const eventDate = typeof evento.fecha === 'string' ? parseYMDToLocalDate(evento.fecha) : new Date(evento.fecha as any);
+      const eventDate = typeof evento.fecha === 'string'
+        ? parseYMDToLocalDate(evento.fecha)
+        : new Date(evento.fecha as any);
       return formatLocalYMD(eventDate) === currentDayYMD;
     });
-    
+
     const isToday = currentDay.toDateString() === new Date().toDateString();
     const isSelected = selectedDate.value !== null && selectedDate.value.toDateString() === currentDay.toDateString();
-    
-    // Debug para día 7
-    if (currentDay.getDate() === 7) {
-      console.log(`Día 7 - isToday: ${isToday}, isSelected: ${isSelected}, selectedDate: ${selectedDate.value?.toDateString()}`);
-    }
-    
+
     days.push({
       date: new Date(currentDay),
       dayNumber: currentDay.getDate(),
       isCurrentMonth: currentDay.getMonth() === month,
-      isToday: isToday,
-      isSelected: isSelected,
+      isToday,
+      isSelected,
       events: dayEvents
     });
-    
+
     currentDay.setDate(currentDay.getDate() + 1);
   }
-  
+
   return days;
 });
 
@@ -109,7 +103,7 @@ const nextMonth = () => {
 };
 
 const selectDate = (date: Date) => {
-  selectedDate.value = new Date(date); 
+  selectedDate.value = new Date(date);
   console.log('Fecha seleccionada:', date.toDateString(), 'selectedDate:', selectedDate.value?.toDateString());
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -159,7 +153,9 @@ const selectedDateEvents = computed(() => {
   if (!selectedDate.value) return [];
   const selectedYMD = formatLocalYMD(selectedDate.value);
   return props.eventos.filter(evento => {
-    const eventDate = typeof evento.fecha === 'string' ? parseYMDToLocalDate(evento.fecha) : new Date(evento.fecha as any);
+    const eventDate = typeof evento.fecha === 'string'
+      ? parseYMDToLocalDate(evento.fecha)
+      : new Date(evento.fecha as any);
     return formatLocalYMD(eventDate) === selectedYMD;
   });
 });
@@ -185,7 +181,7 @@ onMounted(() => {
               </p>
             </div>
           </div>
-          
+
           <div class="flex items-center gap-1 bg-white/20 rounded-lg p-1">
             <UButton
               icon="i-lucide-chevron-left"
@@ -214,7 +210,7 @@ onMounted(() => {
             <UIcon name="i-lucide-calendar-days" class="w-4 h-4 mr-2" />
             Hoy
           </UButton>
-          
+
           <USelectMenu
             v-model="viewMode"
             :options="[
@@ -230,23 +226,20 @@ onMounted(() => {
     </div>
 
     <div class="flex bg-gray-50 dark:bg-gray-800">
-      <!-- 📅 Vista del calendario principal -->
       <div class="flex-1 bg-white dark:bg-gray-900">
-        <!-- Días de la semana con mejor diseño -->
-        <div class="grid grid-cols-7 bg-linear-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700">
-          <div 
-            v-for="day in weekDays" 
+        <div class="grid grid-cols-7 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] relative z-10">
+          <div
+            v-for="day in weekDays"
             :key="day"
-            class="p-4 text-center font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-300 dark:border-gray-600 last:border-r-0"
+            class="bg-white px-4 py-4 text-left font-semibold text-gray-900 border-r border-gray-200 last:border-r-0"
           >
-            <div class="text-sm uppercase tracking-wider">{{ day }}</div>
+            <div class="text-sm leading-none">{{ day }}</div>
           </div>
         </div>
 
-        <!-- Grid de días mejorado -->
         <div class="grid grid-cols-7 bg-white dark:bg-gray-900">
-          <div 
-            v-for="day in calendarDays" 
+          <div
+            v-for="day in calendarDays"
             :key="day.date.getTime()"
             class="min-h-[140px] border-r border-b border-gray-200 dark:border-gray-700 p-3 cursor-pointer transition-all duration-200 group relative"
             :class="{
@@ -257,9 +250,8 @@ onMounted(() => {
             }"
             @click="selectDate(day.date)"
           >
-            <!-- Número del día con mejor estilo -->
             <div class="flex items-center justify-between mb-2">
-              <div 
+              <div
                 class="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors"
                 :class="{
                   'text-gray-400 dark:text-gray-600': !day.isCurrentMonth,
@@ -270,12 +262,11 @@ onMounted(() => {
               >
                 {{ day.dayNumber }}
               </div>
-              
-              <!-- Indicador de eventos mejorado -->
+
               <div v-if="day.events.length > 0" class="flex items-center gap-1">
                 <div class="flex -space-x-1">
-                  <div 
-                    v-for="(evento, index) in day.events.slice(0, 3)" 
+                  <div
+                    v-for="(evento, index) in day.events.slice(0, 3)"
                     :key="index"
                     class="w-2 h-2 rounded-full border border-white dark:border-gray-900"
                     :class="getCategoriaColor(evento.categoria)"
@@ -287,10 +278,9 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Eventos del día con mejor diseño -->
             <div class="space-y-1">
-              <div 
-                v-for="evento in day.events.slice(0, 2)" 
+              <div
+                v-for="evento in day.events.slice(0, 2)"
                 :key="evento.id"
                 class="text-xs p-2 rounded-md cursor-pointer hover:shadow-sm transition-all duration-200 border-l-2"
                 :class="getCategoriaColor(evento.categoria) + ' bg-opacity-10 hover:bg-opacity-20 text-gray-800 dark:text-gray-200'"
@@ -304,9 +294,8 @@ onMounted(() => {
                   <span class="text-green-600 font-medium">Auto</span>
                 </div>
               </div>
-              
-              <!-- Indicador de más eventos -->
-              <div 
+
+              <div
                 v-if="day.events.length > 2"
                 class="text-xs text-gray-500 dark:text-gray-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer p-1 rounded bg-gray-100 dark:bg-gray-800"
               >
@@ -315,19 +304,18 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Overlay de hover -->
             <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded"></div>
           </div>
         </div>
       </div>
 
-      <DayEventPanel 
+      <DayEventPanel
         :selected-date="selectedDate"
         :selected-date-events="selectedDateEvents"
         @add-event="handleAddEvent"
       />
     </div>
-    
+
     <EventDetailModal v-model="isDetailModalOpen" :evento="selectedEventoForDetail" />
   </div>
 </template>

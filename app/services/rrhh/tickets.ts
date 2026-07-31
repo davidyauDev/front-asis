@@ -127,6 +127,7 @@ const appendArray = (searchParams: URLSearchParams, key: string, values?: Array<
 
 const buildQuery = (params: TicketFilterParams = {}) => {
   const searchParams = new URLSearchParams()
+  searchParams.set('onlyRHHH', 'true')
 
   if (params.searchTerm?.trim()) {
     searchParams.set('searchTerm', params.searchTerm.trim())
