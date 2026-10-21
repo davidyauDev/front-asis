@@ -86,9 +86,17 @@ export const filterSeguimientoSinRutas = (
   users: Usuario[],
   search: string,
   filtroEstado: SeguimientoEstadoFiltro,
+  empresaId: number | null = null,
+  companyByDepartment: Record<number, number> = {},
 ): Usuario[] => {
   let tecnicos = users
   const searchValue = search.trim().toLowerCase()
+
+  if (empresaId !== null) {
+    tecnicos = tecnicos.filter((tecnico) =>
+      Number(tecnico.company_id ?? tecnico.empresa_id ?? companyByDepartment[tecnico.department_id]) === empresaId,
+    )
+  }
 
   if (searchValue) {
     tecnicos = tecnicos.filter((tecnico) => {
@@ -129,9 +137,17 @@ export const filterAndSortSeguimientoConRutas = (
   search: string,
   filtroEstado: SeguimientoEstadoFiltro,
   ordenarPor: SeguimientoOrden,
+  empresaId: number | null = null,
+  companyByDepartment: Record<number, number> = {},
 ): TecnicoConRutaEntry[] => {
   let datos = entries
   const searchValue = search.trim().toLowerCase()
+
+  if (empresaId !== null) {
+    datos = datos.filter(([, tecnicoData]) =>
+      Number(tecnicoData.usuario.company_id ?? tecnicoData.usuario.empresa_id ?? companyByDepartment[tecnicoData.usuario.department_id]) === empresaId,
+    )
+  }
 
   if (searchValue) {
     datos = datos.filter(([dni, tecnicoData]) => {

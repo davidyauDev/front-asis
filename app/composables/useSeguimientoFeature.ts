@@ -14,6 +14,7 @@ import type {
   ValidationTarget,
 } from '~/types/seguimiento'
 import { createEmployeeConcept, getSeguimientoTecnico } from '~/services/seguimiento.service'
+import { useAttendanceReport, type Company, type Department } from '~/composables/useAttendanceReport'
 import {
   buildSeguimientoRowsFromConRutas,
   buildSeguimientoRowsFromSinRutas,
@@ -39,9 +40,13 @@ import {
 export function useSeguimientoFeature() {
   const toast = useToast()
   const route = useRoute()
+  const { fetchCompanies, fetchDepartments } = useAttendanceReport()
 
   const search = shallowRef('')
   const filtroEstado = shallowRef<SeguimientoEstadoFiltro>('todos')
+  const empresaSeleccionada = shallowRef<number | null>(null)
+  const empresas = ref<Company[]>([])
+  const departamentos = ref<Department[]>([])
   const ordenarPor = shallowRef<SeguimientoOrden>('original')
   const todayIso = new Date().toISOString().split('T')[0] || ''
   const queryTab = Array.isArray(route.query.tab) ? route.query.tab[0] : route.query.tab
@@ -183,12 +188,17 @@ export function useSeguimientoFeature() {
 
   const tecnicosConRutas = computed(() => usuariosConRutaData.value.length)
   const tecnicosSinRutas = computed(() => usuariosSinRutaData.value.length)
+  const companyByDepartment = computed(() =>
+    Object.fromEntries(departamentos.value.map((departamento) => [departamento.id, departamento.company_id])) as Record<number, number>,
+  )
 
   const tecnicosSinRutasFiltrados = computed(() =>
     filterSeguimientoSinRutas(
       usuariosSinRutaData.value,
       search.value,
       filtroEstado.value,
+      empresaSeleccionada.value,
+      companyByDepartment.value,
     ),
   )
 
@@ -198,6 +208,8 @@ export function useSeguimientoFeature() {
       search.value,
       filtroEstado.value,
       ordenarPor.value,
+      empresaSeleccionada.value,
+      companyByDepartment.value,
     ),
   )
 
@@ -280,6 +292,18 @@ export function useSeguimientoFeature() {
 
   const recargarDatos = () => cargarDatos()
 
+  const cargarEmpresas = async () => {
+    try {
+      const [companyList, departmentList] = await Promise.all([fetchCompanies(), fetchDepartments()])
+      empresas.value = companyList
+      departamentos.value = departmentList
+    } catch (err) {
+      console.error('Error al cargar empresas para el filtro de seguimiento:', err)
+      empresas.value = []
+      departamentos.value = []
+    }
+  }
+
   const handleFechaSeleccionada = (value: string) => {
     fechaSeleccionada.value = value
     cargarDatos()
@@ -314,6 +338,7 @@ export function useSeguimientoFeature() {
 
   onMounted(() => {
     cargarDatos()
+    cargarEmpresas()
   })
 
   return {
@@ -323,6 +348,8 @@ export function useSeguimientoFeature() {
     currentEmptyState,
     currentListCount,
     error,
+    empresas,
+    empresaSeleccionada,
     fechaSeleccionada,
     filtroEstado,
     handleFechaSeleccionada,

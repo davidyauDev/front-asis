@@ -13,6 +13,8 @@ const {
   currentEmptyState,
   currentListCount,
   error,
+  empresas,
+  empresaSeleccionada,
   fechaSeleccionada,
   filtroEstado,
   handleFechaSeleccionada,
@@ -140,12 +142,15 @@ const { openNotifications: openRrhhNotifications } = useRrhhNotificationsPanel()
             <SeguimientoFilters
               :search="search"
               :filtro-estado="filtroEstado"
+              :empresa-seleccionada="empresaSeleccionada"
+              :empresas="empresas"
               :ordenar-por="ordenarPor"
               :fecha-seleccionada="fechaSeleccionada"
               :current-list-count="currentListCount"
               :is-loading="isLoading"
               @update:search="search = $event"
               @update:filtro-estado="filtroEstado = $event"
+              @update:empresa-seleccionada="empresaSeleccionada = $event"
               @update:ordenar-por="ordenarPor = $event"
               @update:fecha-seleccionada="fechaSeleccionada = $event"
               @change-date="handleFechaSeleccionada"

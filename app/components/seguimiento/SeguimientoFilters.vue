@@ -4,6 +4,8 @@ import type { SeguimientoEstadoFiltro, SeguimientoOrden } from '~/types/seguimie
 const props = defineProps<{
   search: string
   filtroEstado: SeguimientoEstadoFiltro
+  empresaSeleccionada: number | null
+  empresas: Array<{ id: number; company_name: string }>
   ordenarPor: SeguimientoOrden
   fechaSeleccionada: string
   currentListCount: number
@@ -13,6 +15,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:search': [value: string]
   'update:filtroEstado': [value: SeguimientoEstadoFiltro]
+  'update:empresaSeleccionada': [value: number | null]
   'update:ordenarPor': [value: SeguimientoOrden]
   'update:fechaSeleccionada': [value: string]
   'change-date': [value: string]
@@ -32,6 +35,11 @@ const orderOptions = [
   { label: 'Mas marcaciones', value: 'marcaciones' },
 ] satisfies Array<{ label: string; value: SeguimientoOrden }>
 
+const companyOptions = computed(() => [
+  { label: 'Todas las empresas', value: null as number | null },
+  ...props.empresas.map((empresa) => ({ label: empresa.company_name, value: empresa.id as number | null })),
+])
+
 const todayDate = new Date().toISOString().split('T')[0] || ''
 const hasSearch = computed(() => props.search.trim().length > 0)
 const hasCustomDate = computed(() =>
@@ -50,7 +58,7 @@ const onFechaChange = (value: string | number) => {
 <template>
   <div class="border-gray-200/70 px-4 py-4 dark:border-gray-800/70">
     <div class="flex flex-col gap-3">
-      <div class="grid gap-3 xl:grid-cols-[minmax(0,1.9fr)_repeat(3,minmax(0,1fr))]">
+      <div class="grid gap-3 xl:grid-cols-[minmax(0,1.9fr)_repeat(4,minmax(0,1fr))]">
         <UInput
           :model-value="props.search"
           icon="i-lucide-search"
@@ -60,6 +68,17 @@ const onFechaChange = (value: string | number) => {
           class="w-full"
           :ui="{ base: 'rounded-xl' }"
           @update:model-value="emit('update:search', String($event || ''))"
+        />
+
+        <USelect
+          :model-value="props.empresaSeleccionada"
+          :items="companyOptions"
+          item-label="label"
+          item-value="value"
+          size="md"
+          class="w-full"
+          :ui="{ base: 'rounded-xl' }"
+          @update:model-value="emit('update:empresaSeleccionada', $event as number | null)"
         />
 
         <USelect
@@ -103,6 +122,14 @@ const onFechaChange = (value: string | number) => {
           class="rounded-full px-3 py-1"
         >
           Busqueda activa
+        </UBadge>
+        <UBadge
+          v-if="props.empresaSeleccionada !== null"
+          color="primary"
+          variant="soft"
+          class="rounded-full px-3 py-1"
+        >
+          Empresa filtrada
         </UBadge>
         <UBadge
           v-if="props.filtroEstado !== 'todos'"
