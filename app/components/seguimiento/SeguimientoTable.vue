@@ -120,6 +120,7 @@ const selectedProfileItems = computed(() => {
   }
 
   return [
+    { label: 'Empresa', value: row.usuario.empresa?.trim() || 'Sin empresa asignada' },
     { label: 'Cargo', value: row.posicion || 'Sin cargo registrado' },
     { label: 'Departamento', value: row.usuario.departamento || 'Sin departamento' },
     { label: 'Cobertura', value: `${row.rutasCount} rutas` },
@@ -196,6 +197,9 @@ const selectedConcept = computed(() =>
                   </div>
                   <div class="truncate text-sm text-gray-900 dark:text-gray-100">
                     {{ getEmployeeLines(row).secondary || '-' }}
+                  </div>
+                  <div class="truncate text-xs text-gray-500 dark:text-gray-400">
+                    {{ row.usuario.empresa?.trim() || 'Sin empresa asignada' }}
                   </div>
                 </div>
               </td>

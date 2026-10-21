@@ -63,8 +63,9 @@ export interface Usuario {
   apellido: string
   nombre_completo: string
   department_id: number
-  company_id?: number | null
   empresa_id?: number | null
+  empresa?: string | null
+  company_id?: number | null
   departamento: string
   position_id: number
   posicion: string
