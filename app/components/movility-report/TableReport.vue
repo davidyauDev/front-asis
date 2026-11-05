@@ -27,7 +27,7 @@
               <button
                 type="button"
                 class="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:bg-[#eef4ff] dark:hover:bg-[#13203a] transition-colors inline-flex items-center gap-2"
-                title="Seleccionar mes (máximo 30 días)"
+                title="Seleccionar mes calendario (hasta 31 días)"
               >
                 <UIcon name="i-lucide-calendar-range" class="h-4 w-4 text-[#2d5fc0] dark:text-[#9cb7f5]" />
                 <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono tabular-nums">
@@ -40,7 +40,7 @@
                 <div class="p-3">
                   <div class="flex items-center justify-between gap-3 mb-2">
                     <div class="text-xs text-gray-700 dark:text-gray-200">
-                      Mes calendario · <span class="font-semibold">máximo 30 días</span>
+                      Mes calendario · <span class="font-semibold">hasta 31 días</span>
                     </div>
                     <div class="text-[11px] text-gray-500 dark:text-gray-400 font-mono">
                       {{ periodDisplay }}
@@ -426,11 +426,11 @@ const formatLatam = (value: Date) =>
 const getMonthDateLimit = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
 
-const getMonthlyRangeMax30 = (anchor: Date) => {
+const getMonthlyRange = (anchor: Date, endDay = getMonthDateLimit(anchor)) => {
   const year = anchor.getFullYear()
   const month = anchor.getMonth()
   const start = new Date(year, month, 1)
-  const end = new Date(year, month, Math.min(30, getMonthDateLimit(anchor)))
+  const end = new Date(year, month, Math.min(endDay, getMonthDateLimit(anchor)))
 
   return { start, end }
 }
@@ -441,7 +441,8 @@ const selectedMonth = ref<Date>(new Date(
   1
 ))
 
-const periodRange = computed(() => getMonthlyRangeMax30(selectedMonth.value))
+const selectedEndDay = ref(getMonthDateLimit(selectedMonth.value))
+const periodRange = computed(() => getMonthlyRange(selectedMonth.value, selectedEndDay.value))
 
 const startDate = computed(() => toDateInputValue(periodRange.value.start))
 const endDate = computed(() => toDateInputValue(periodRange.value.end))
@@ -455,12 +456,10 @@ const isDateDisabled = (value: DateValue) => {
   const d = value.toDate(getLocalTimeZone())
   const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 
-  const start = periodRange.value.start
-  const end = periodRange.value.end
-  const startTs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
-  const endTs = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+  const monthStart = new Date(selectedMonth.value.getFullYear(), selectedMonth.value.getMonth(), 1).getTime()
+  const monthEnd = new Date(selectedMonth.value.getFullYear(), selectedMonth.value.getMonth(), getMonthDateLimit(selectedMonth.value)).getTime()
 
-  return ts < startTs || ts > endTs
+  return ts < monthStart || ts > monthEnd
 }
 
 const calendarPlaceholder = ref<any>(toCalendarMonth(selectedMonth.value))
@@ -478,6 +477,7 @@ watch(calendarPlaceholder, (value) => {
     next.getMonth() === selectedMonth.value.getMonth()
   ) return
   selectedMonth.value = next
+  selectedEndDay.value = getMonthDateLimit(next)
 })
 
 const calendarRange = computed({
@@ -490,7 +490,17 @@ const calendarRange = computed({
     if (!anchor) return
 
     const anchorDate = anchor.toDate(getLocalTimeZone())
-    selectedMonth.value = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1)
+    const nextMonth = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1)
+    if (
+      nextMonth.getFullYear() !== selectedMonth.value.getFullYear() ||
+      nextMonth.getMonth() !== selectedMonth.value.getMonth()
+    ) {
+      selectedMonth.value = nextMonth
+      selectedEndDay.value = getMonthDateLimit(nextMonth)
+      return
+    }
+
+    if (value?.end) selectedEndDay.value = value.end.day
   }
 })
 

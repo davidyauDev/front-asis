@@ -79,7 +79,7 @@
                   {{ calendarHeading }}
                 </h2>
                 <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Mes calendario · máximo 30 días · {{ periodLabel }}
+                  Mes calendario · hasta 31 días · {{ periodLabel }}
                 </div>
               </div>
               <UButton
@@ -416,9 +416,9 @@ const formatDMY = (date: Date) =>
 const getMonthDateLimit = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 
-const getMonthlyRangeMax30 = (anchor: Date) => ({
+const getMonthlyRange = (anchor: Date) => ({
   start: new Date(anchor.getFullYear(), anchor.getMonth(), 1),
-  end: new Date(anchor.getFullYear(), anchor.getMonth(), Math.min(30, getMonthDateLimit(anchor))),
+  end: new Date(anchor.getFullYear(), anchor.getMonth(), getMonthDateLimit(anchor)),
 });
 
 const calendarHeading = computed(() => {
@@ -433,7 +433,7 @@ const calendarHeading = computed(() => {
 
 const periodRange = computed(() => {
   if (props.periodRange) return props.periodRange;
-  return getMonthlyRangeMax30(currentDate.value);
+  return getMonthlyRange(currentDate.value);
 });
 
 const periodLabel = computed(() => `${formatDMY(periodRange.value.start)} - ${formatDMY(periodRange.value.end)}`);
